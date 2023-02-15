@@ -1,0 +1,215 @@
+import argparse
+import sys
+from pathlib import Path
+
+from rep_trans.arch.ke_architectures.unusable_downstream_gradient_reversal import (
+    FeatureTransferUnuseableDownstreamArch,
+)
+from rep_trans.training.ke_train_modules.KEUnusableDownstreamLightningModule import (
+    KEUnusableDownstreamLightningModule,
+)
+from rep_trans.training.ke_train_modules.utils import get_first_model_base_trainer
+from rep_trans.training.trainers.base_trainer import BaseTrainer
+from rep_trans.util import data_structs as ds
+from rep_trans.util import default_parser_args as dpa
+from rep_trans.util import file_io
+from rep_trans.util import find_architectures as fa
+from rep_trans.util import find_datamodules as fd
+from rep_trans.util import name_conventions as nc
+from rep_trans.util.data_structs import ArchitectureInfo
+from rep_trans.util.default_params import get_default_arch_params
+from rep_trans.util.default_params import get_default_parameters
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Specify model hyperparams.")
+    dpa.ke_unuseable_downstream_parser_arguments(parser)
+    args = parser.parse_args()
+
+    experiment_description: str = args.experiment_name
+    architecture: ds.BaseArchitecture = ds.BaseArchitecture(args.architecture)
+    dataset: ds.Dataset = ds.Dataset(args.dataset)
+    no_activations = args.no_activations
+    aggregate_reps = args.aggregate_reps
+
+    train_till_n_models = args.train_till_n_models
+
+    arch_params = get_default_arch_params(dataset)
+    p: ds.Params = get_default_parameters(architecture.value, dataset)
+    p = dpa.overwrite_params(p, args)
+    tbt_arch = fa.get_base_arch(architecture)
+    tmp_arch = tbt_arch(**arch_params)
+    max_hooks = len(tmp_arch.hooks)
+
+    datamodule = fd.get_datamodule(dataset=dataset)
+    if args.split >= datamodule.max_splits:
+        raise ValueError(
+            f"Can't use splits greater than max splits of Datamodule! (currently: {datamodule.max_splits})!"
+        )
+    del datamodule  # Only to check that the splits is in Range!
+
+    # KE specific values.
+    transfer_positions: list[int] = args.transfer_positions
+
+    tbt_hook: tuple[ds.Hook] = tuple([tmp_arch.hooks[h] for h in transfer_positions])
+
+    if any([trp > max_hooks for trp in transfer_positions]):
+        raise ValueError(f"Got {transfer_positions} but max hook id is {max_hooks}")
+
+    trans_depth = args.transfer_depth
+    trans_kernel = args.transfer_kernel
+    group_id = args.group_id
+
+    ce_weight = args.ce_loss_weight
+    trans_weight = args.transfer_loss_weight
+    grs = args.gradient_reversal_scaling
+    epochs_before_regularization = args.epochs_before_regularization
+    save_approximation = args.save_approximation_layers
+
+    exp_name = nc.KEUnusableDownstreamNameEncoder.encode(
+        experiment_description=experiment_description,
+        dataset=dataset.value,
+        architecture=architecture.value,
+        hook_positions=transfer_positions,
+        transfer_depth=trans_depth,
+        kernel_width=trans_kernel,
+        group_id=group_id,
+        transfer_loss_weight=trans_weight,
+        ce_loss_weight=ce_weight,
+        gradient_reversal_scale=grs,
+        epochs_before_regularization=epochs_before_regularization,
+    )
+
+    base_data_path = Path(file_io.get_experiments_data_root_path())
+    base_ckpt_path = Path(file_io.get_experiments_checkpoints_root_path())
+
+    ke_data_path = base_data_path / nc.KNOWLEDGE_UNUSEABLE_DIRNAME
+    ke_ckpt_path = base_ckpt_path / nc.KNOWLEDGE_UNUSEABLE_DIRNAME
+
+    ke_data_root_dir = ke_data_path / exp_name
+    ke_ckpt_root_dir = ke_ckpt_path / exp_name
+
+    # Do the baseline model creation if it not already exists!
+    first_model = file_io.get_first_model(
+        experiment_description=exp_name,
+        ke_data_path=ke_data_path,
+        ke_ckpt_path=ke_ckpt_path,
+        architecture=args.architecture,
+        dataset=p.dataset,
+        learning_rate=p.learning_rate,
+        split=p.split,
+        weight_decay=p.weight_decay,
+        batch_size=p.batch_size,
+        group_id=group_id,
+    )
+
+    hparams = {
+        "trans_depth": trans_depth,
+        "trans_kernel": trans_kernel,
+        "trans_hooks": str(transfer_positions),
+        "aggregate_source_reps": aggregate_reps,
+        "crossentropy_loss_weight": ce_weight,
+        "transfer_loss_weight": trans_weight,
+        "epochs_before_regularization": epochs_before_regularization,
+        "group_id": group_id,
+        "model_id": None,
+        "is_regularized": None,
+        **vars(p),
+    }
+
+    if not file_io.first_model_trained(first_model):
+        trainer = get_first_model_base_trainer(
+            first_model_info=first_model,
+            arch_params=arch_params,
+            hparams=hparams,
+            dataset=dataset,
+            base_info=first_model,
+            params=p,
+        )
+    else:
+        n_trained_models: int = len(file_io.get_trained_ke_unuseable_models(ke_data_root_dir, ke_ckpt_root_dir))
+        if (n_trained_models + 1) >= train_till_n_models:
+            return
+        else:
+            hparams.update({"model_id": n_trained_models + 1, "is_regularized": True})
+            prev_training_infos: list[ds.KEUnuseableDownstreamTrainingInfo] = file_io.get_trained_ke_unuseable_models(
+                ke_data_root_dir, ke_ckpt_root_dir
+            )
+            model_id = len(prev_training_infos) + 1
+            new_model = nc.MODEL_NAME_TMPLT.format(model_id)
+
+            tbt_model_data_dir = ke_data_root_dir / new_model
+            tbt_model_ckpt_dir = ke_ckpt_root_dir / new_model
+
+            training_info = ds.KEUnuseableDownstreamTrainingInfo(
+                experiment_name=exp_name,
+                experiment_description=experiment_description,
+                dir_name=new_model,
+                model_id=model_id,
+                group_id=group_id,
+                architecture=str(architecture.value),
+                dataset=str(dataset.value),
+                transfer_loss_weight=trans_weight,
+                crossentropy_loss_weight=ce_weight,
+                epochs_before_regularization=epochs_before_regularization,
+                learning_rate=p.learning_rate,
+                split=p.split,
+                weight_decay=p.weight_decay,
+                batch_size=p.batch_size,
+                trans_hooks=transfer_positions,
+                trans_depth=trans_depth,
+                trans_kernel=trans_kernel,
+                path_data_root=tbt_model_data_dir,
+                path_ckpt_root=tbt_model_ckpt_dir,
+                gradient_reversal_scale=grs,
+            )
+
+            all_src_arch_infos = [
+                ArchitectureInfo(first_model.architecture, arch_params, first_model.path_ckpt, tbt_hook)
+            ]
+            for pti in prev_training_infos:
+                all_src_arch_infos.append(ArchitectureInfo(pti.architecture, arch_params, pti.path_ckpt, tbt_hook))
+            tbt_arch_info = ArchitectureInfo(
+                training_info.architecture, arch_params, training_info.path_ckpt, tbt_hook
+            )
+            knowledge_extension_module = FeatureTransferUnuseableDownstreamArch(
+                old_models=all_src_arch_infos,
+                new_model=tbt_arch_info,
+                transfer_depth=trans_depth,
+                transfer_kernel_width=trans_kernel,
+                gradient_reversal_scale=grs,
+            )
+
+            kelm = KEUnusableDownstreamLightningModule(
+                model_info=training_info,
+                network=knowledge_extension_module,
+                save_checkpoints=True,
+                params=p,
+                hparams=hparams,
+                ce_loss_weight=ce_weight,
+                trans_loss_weight=trans_weight,
+                skip_n_epochs=None,
+                log=True,
+                save_approx=save_approximation,
+            )
+
+            datamodule = fd.get_datamodule(dataset=dataset)
+            trainer = BaseTrainer(
+                model=kelm,
+                datamodule=datamodule,
+                params=p,
+                basic_training_info=training_info,
+                arch_params=arch_params,
+            )
+    trainer.train()
+    trainer.save_outputs("test")
+    trainer.measure_generalization()
+    if not no_activations:
+        trainer.save_activations()
+
+    return
+
+
+if __name__ == "__main__":
+    main()
+    sys.exit(0)

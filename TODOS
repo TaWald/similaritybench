@@ -1,0 +1,18 @@
+0. Assert the way the coefficients are saved is actually in (target_channel_n x source_channel_n format)
+
+
+
+1. Test the generalization performance of the Full Ensembling (It should hopefully be more robust!)
+
+-- Do a grid search of the different Ensembling models and schemes.
+-- Also create some visualizations of that!
+2. Create an Averaging with the OneToOne comparison (All singles averaged with 50% weighting to the original?)
+3. Do Replacement of original with the OneToOne Comparison
+4. Do Averaging of the LeaveOneOut setting (50/50)
+5. Do Replacement of the original with the LeaveOneOut setting.
+
+6. Test different architectures how the transfer of the representations works best
+
+- The get_intermediate_model is broken for ResNets and DenseNets
+- Make sure the activations are not extracted by those functions or they differ (sometimes after ReLU and sometimes not!)
+- Make the get_linear_model get the rest of the architecture not considered feature extraction!

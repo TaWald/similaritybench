@@ -1,0 +1,100 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import torch
+from rep_trans.arch.abstract_acti_extr import AbsActiExtrArch
+from rep_trans.arch.arch_utils import deserialize_architecture_info
+from rep_trans.arch.ke_architectures.feature_approximation import FAArch
+from rep_trans.util import data_structs as ds
+from rep_trans.util import file_io
+from rep_trans.util import name_conventions as nc
+from rep_trans.util.data_structs import ArchitectureInfo
+from rep_trans.util.file_io import load_json
+from rep_trans.util.find_architectures import get_base_arch
+
+
+def instantiate_kemodule_from_path(source_data_path: Path, source_ckpt_path: Path):
+    """Loads the FAArch structure only no checkpoints loaded!."""
+    ckpt_dir_path = source_ckpt_path / nc.CKPT_DIR_NAME
+    approx_infos: list[dict] = []
+    approx_ckpts: list[Path] = []
+    for i in range(int((len(list(ckpt_dir_path.iterdir())) - 1) / 2)):
+        approx_infos.append(file_io.load(ckpt_dir_path / nc.APPROX_CKPT_INFO_NAME.format(i)))
+        approx_ckpts.append(ckpt_dir_path / nc.APPROX_CKPT_NAME.format(i))
+    src_arch_infos = [deserialize_architecture_info(i) for i in approx_infos[0]["architecture_infos"]]
+    for arch_info in src_arch_infos:
+        arch_info.checkpoint = arch_info.checkpoint.replace(
+            "/dkfz/cluster/gpu/checkpoints/OE0441/t006d", "/mnt/cluster-checkpoint"
+        )
+    output_json = file_io.load_json(source_data_path / nc.OUTPUT_TMPLT)
+    info_json = file_io.load_json(source_data_path / nc.KE_INFO_FILE)
+
+    tbt_arch_info = ArchitectureInfo(
+        arch_type_str=output_json["architecture_name"],
+        arch_kwargs={
+            "n_cls": output_json["n_cls"],
+            "in_ch": output_json["in_ch"],
+            "input_resolution": output_json["input_resolution"],
+            "early_downsampling": output_json["early_downsampling"],
+            "global_average_pooling": output_json["global_average_pooling"],
+        },
+        checkpoint=None,
+        hooks=src_arch_infos[0].hooks,  # Assumes hooks are the same!
+    )
+
+    ke_module = FAArch(
+        old_model_info=src_arch_infos,
+        new_model_info=tbt_arch_info,
+        aggregate_old_reps=info_json["aggregate_source_reps"],
+        transfer_depth=info_json["trans_depth"],
+        transfer_kernel_width=info_json["trans_kernel"],
+    )
+
+    return ke_module
+
+
+def load_kemodule_model(source_data_path: Path, source_ckpt_path: Path) -> FAArch:
+    """Loads the FAArch and
+    the checkpoints needed to restore behavior as at end of training."""
+    ckpt_dir_path = source_ckpt_path / nc.CKPT_DIR_NAME
+    approx_infos: list[dict] = []
+    approx_ckpts: list[Path] = []
+    for i in range(int((len(list(ckpt_dir_path.iterdir())) - 1) / 2)):
+        approx_infos.append(file_io.load(ckpt_dir_path / nc.APPROX_CKPT_INFO_NAME.format(i)))
+        approx_ckpts.append(ckpt_dir_path / nc.APPROX_CKPT_NAME.format(i))
+    src_arch_infos = [deserialize_architecture_info(i) for i in approx_infos[0]["architecture_infos"]]
+    info_json = file_io.load_json(source_data_path / nc.KE_INFO_FILE)
+
+    ke_module = instantiate_kemodule_from_path(source_data_path, source_ckpt_path)
+    ke_module.load_individual_state_dicts(
+        tbt_ckpt=info_json["path_ckpt"].replace(
+            "/dkfz/cluster/gpu/checkpoints/OE0441/t006d", "/mnt/cluster-checkpoint"
+        ),
+        approx_layer_ckpts=approx_ckpts,
+        source_arch_ckpts=[
+            ai.checkpoint.replace("/dkfz/cluster/gpu/checkpoints/OE0441/t006d", "/mnt/cluster-checkpoint")
+            for ai in src_arch_infos
+        ],
+    )
+
+    return ke_module
+
+
+def load_model(source_data_path: Path, source_ckpt_path: Path) -> AbsActiExtrArch:
+    """
+    Loads the architecture and checkpoint based off the path given and returns the initialized
+    ActivationExtractionArchitecture!
+    """
+    oj = load_json(source_data_path / nc.OUTPUT_TMPLT)
+    architecture_class = get_base_arch(ds.BaseArchitecture(oj["architecture_name"]))
+    architecture_inst: AbsActiExtrArch = architecture_class(
+        n_cls=oj["n_cls"],
+        in_ch=oj["in_ch"],
+        input_resolution=oj["input_resolution"],
+        early_downsampling=oj["early_downsampling"],
+        global_average_pooling=oj["global_average_pooling"],
+    )
+    ckpt_path = source_ckpt_path / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME
+    architecture_inst.load_state_dict(torch.load(ckpt_path))
+    return architecture_inst
