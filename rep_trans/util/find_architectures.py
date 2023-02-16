@@ -14,7 +14,7 @@ from torch import nn
 
 
 def get_base_arch(
-    arch: ds.BaseArchitecture,
+    arch: ds.BaseArchitecture | str,
 ) -> Type[abstract_acti_extr.AbsActiExtrArch]:
     """Finds a Model network by its name.
     Should the class not be found it will raise an Error.
@@ -23,6 +23,9 @@ def get_base_arch(
     :return: Subclass with same name as network_name
     """
     from rep_trans.arch import vgg, resnet
+
+    if isinstance(arch, str):
+        arch = ds.BaseArchitecture(arch)
 
     if arch == ds.BaseArchitecture.VGG16:
         return vgg.VGG16
