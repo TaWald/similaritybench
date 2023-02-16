@@ -1,4 +1,6 @@
+import numpy as np
 import torch
+
 
 def binary_cohens_kappa(preds_a: torch.Tensor, preds_b: torch.Tensor, gt: torch.Tensor) -> torch.Tensor:
     """Calculates the error consistency between the model a and model b
@@ -24,7 +26,6 @@ def binary_cohens_kappa(preds_a: torch.Tensor, preds_b: torch.Tensor, gt: torch.
     kappa = (c_observed - c_expected) / (1.0 + 1e-4 - c_expected)
 
     return kappa
-
 
 
 def class_wise_cohens_kappa(predictions_a: np.ndarray, predictions_b: np.ndarray, groundtruth: np.ndarray) -> float:
@@ -87,4 +88,3 @@ def class_wise_cohens_kappa(predictions_a: np.ndarray, predictions_b: np.ndarray
         total_result.append(classwise_kappa)
 
     return float(np.mean(total_result))
-
