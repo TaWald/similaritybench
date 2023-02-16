@@ -8,39 +8,32 @@ from typing import Optional
 import numpy as np
 import torch as t
 from numpy import genfromtxt
-from rep_trans.metrics.cohens_kappa import binary_cohens_kappa
 from rep_trans.losses.utils import celu_explained_variance
 from rep_trans.losses.utils import centered_kernel_alignment
 from rep_trans.losses.utils import correlation
 from rep_trans.losses.utils import cosine_similarity
 from rep_trans.losses.utils import euclidean_distance_csim
 from rep_trans.metrics.aurc import aurc
+from rep_trans.metrics.cohens_kappa import binary_cohens_kappa
 from rep_trans.metrics.error_ratios import error_ratios
 from rep_trans.util import data_structs as ds
 from torch.nn import functional as F
+from torch.nn.functional import cross_entropy
 from torchmetrics.functional import calibration_error
-
-# Read once and keep it in memory:
 
 
 @cache
-def get_csv_lookup(
-    dataset: ds.Dataset, architecture: ds.BaseArchitecture
-) -> np.ndarray:
+def get_csv_lookup(dataset: ds.Dataset, architecture: ds.BaseArchitecture) -> np.ndarray:
     if dataset == ds.Dataset.CIFAR10 and architecture == ds.BaseArchitecture.RESNET34:
         lookup_csv = pathlib.Path(__file__).parent / "cifar10_cohens_kappa_lookup.csv"
-        csv_lookup = genfromtxt(
-            lookup_csv, delimiter=",", skip_header=1, usecols=[1, 2, 3, 4]
-        )
+        csv_lookup = genfromtxt(lookup_csv, delimiter=",", skip_header=1, usecols=[1, 2, 3, 4])
         return csv_lookup
     else:
         raise NotImplementedError
 
 
 @cache
-def look_up_baseline_cohens_kappa(
-    accuracy: float, dataset: ds.Dataset, arch: ds.BaseArchitecture
-) -> float:
+def look_up_baseline_cohens_kappa(accuracy: float, dataset: ds.Dataset, arch: ds.BaseArchitecture) -> float:
     try:
         cohens_kappa_csv = get_csv_lookup(dataset, arch)
         row_id = np.argmin(np.abs(cohens_kappa_csv[:, 0] - accuracy))
@@ -53,6 +46,7 @@ def look_up_baseline_cohens_kappa(
 @dataclass
 class SingleOutMetrics:
     accuracy: float
+    ce: float
     ece: float
     aurc: float
 
@@ -80,19 +74,27 @@ def single_output_metrics(
     new_output: t.Tensor,
     groundtruth: t.Tensor,
 ) -> SingleOutMetrics:
+    """
+    Calculates a variety of metrics for a single model.
 
+    :param new_output: Logits of the new model [N_Samples x N_CLS]
+    :param groundtruth: Class int values (not one-hot)  [NSamples]
+    """
+
+    num_classes = new_output.shape[-1]
     new_prob = F.softmax(new_output, dim=-1)
     new_y_hat_class_id = t.argmax(new_prob, dim=-1)
-    acc = float(t.mean(new_y_hat_class_id == groundtruth, dtype=t.float).detach().cpu())
-    ece = calibration_error(new_prob, groundtruth, n_bins=15, norm="l1").detach().cpu()
+    acc: float = float(t.mean(new_y_hat_class_id == groundtruth, dtype=t.float).detach().cpu())
+    ece = calibration_error(new_prob, groundtruth, task="multiclass", n_bins=15, num_classes=num_classes)
     ece = float(ece.detach().cpu())
 
-    confidence = t.max(new_prob, dim=-1)  # Softmax max probability
-    residual = new_y_hat_class_id == groundtruth
+    ce = float(cross_entropy(new_output, groundtruth).detach().cpu())
+    confidence = (t.max(new_prob, dim=-1).values).to(t.float64)  # Softmax max probability
+    residual = (new_y_hat_class_id == groundtruth).to(t.float64)
 
     aurc_val = aurc(residual, confidence)
 
-    return SingleOutMetrics(accuracy=acc, ece=ece, aurc=aurc_val)
+    return SingleOutMetrics(accuracy=acc, ece=ece, aurc=aurc_val, ce=ce)
 
 
 def multi_output_metrics(
@@ -106,6 +108,7 @@ def multi_output_metrics(
     Calculates a variety of metrics that are based on multiple output predictions being present.
     """
     with t.no_grad():
+        num_classes = new_output.shape[-1]
         # Calculation of probabilties and predicted classes.
         old_probs = F.softmax(old_outputs, dim=-1)
         old_y_hat_class_ids = t.argmax(old_probs, dim=-1)
@@ -113,9 +116,7 @@ def multi_output_metrics(
         new_prob = F.softmax(new_output, dim=-1)
         new_y_hat_class_id = t.argmax(new_prob, dim=-1)
 
-        ensemble_probs = t.mean(
-            t.concat([old_probs, new_prob[None, ...]], dim=0), dim=0
-        )
+        ensemble_probs = t.mean(t.concat([old_probs, new_prob[None, ...]], dim=0), dim=0)
         ensemble_y_hat = t.argmax(ensemble_probs, dim=1)
         # ----------- Metric calculation -----------
         # ---- New model accuracy
@@ -123,20 +124,12 @@ def multi_output_metrics(
         acc = float(acc.detach().cpu())
         new_aurc = aurc(new_y_hat_class_id == groundtruth, t.max(new_prob, dim=-1))
         # ---- Old mean accuracy
-        old_acc = t.mean(
-            t.stack(
-                [
-                    t.mean(tmp_y == groundtruth, dtype=t.float)
-                    for tmp_y in old_y_hat_class_ids
-                ]
-            )
-        )
+        old_acc = t.mean(t.stack([t.mean(tmp_y == groundtruth, dtype=t.float) for tmp_y in old_y_hat_class_ids]))
         mean_old_acc = float(old_acc.detach().cpu())
 
         # ---- Error ratio
         all_error_ratios: list[float] = [
-            error_ratios(new_y_hat_class_id, old_pred_cls, groundtruth)
-            for old_pred_cls in old_y_hat_class_ids
+            error_ratios(new_y_hat_class_id, old_pred_cls, groundtruth) for old_pred_cls in old_y_hat_class_ids
         ]
         mean_error_ratio = float(np.mean(all_error_ratios))
 
@@ -144,15 +137,11 @@ def multi_output_metrics(
         ensemble_acc = t.mean(ensemble_y_hat == groundtruth, dtype=t.float)
         ensemble_acc = float(ensemble_acc.detach().cpu())
         ensemble_aurc = aurc(
-            ensemble_y_hat == groundtruth, t.max(ensemble_probs, dim=-1)
+            (ensemble_y_hat == groundtruth).to(t.float64), (t.max(ensemble_probs, dim=-1).values).to(t.float64)
         )
 
         # ---- Calibration Error
-        ece = (
-            calibration_error(new_prob, groundtruth, n_bins=15, norm="l1")
-            .detach()
-            .cpu()
-        )
+        ece = calibration_error(new_prob, groundtruth, task="multiclass", n_bins=15, num_classes=num_classes)
         ece = float(ece.detach().cpu())
         # ensemble_entropy = t.sum((-ensemble_probs * t.log(ensemble_probs)), dim=1)
         # ap = average_precision(preds=ensemble_probs, target=gt)
@@ -160,10 +149,7 @@ def multi_output_metrics(
         # false_entropy = t.mean(ensemble_entropy[~true_false])
         # outputs["ensemble_uncertainty"] = (false_entropy - true_entropy).detach()
         # ---- Cohens Kappa
-        cohens_kappas = [
-            binary_cohens_kappa(new_y_hat_class_id, y, groundtruth)
-            for y in old_y_hat_class_ids
-        ]
+        cohens_kappas = [binary_cohens_kappa(new_y_hat_class_id, y, groundtruth) for y in old_y_hat_class_ids]
         cohens_kappa = float(t.mean(t.stack(cohens_kappas)).detach().cpu())
 
         # ---- Relative Cohens Kappa
@@ -198,33 +184,19 @@ def representation_metrics(
         metrics = RepresentationMetrics()
         # ----------- Metric calculation -----------
         if calc_r2:
-            celu_r2 = celu_explained_variance(
-                new_intermediate_reps, old_intermediate_reps
-            )
-            metrics.celu_r2 = float(
-                t.mean(t.stack([t.mean(cev) for cev in celu_r2])).detach().cpu()
-            )
+            celu_r2 = celu_explained_variance(new_intermediate_reps, old_intermediate_reps)
+            metrics.celu_r2 = float(t.mean(t.stack([t.mean(cev) for cev in celu_r2])).detach().cpu())
         if calc_corr:
             corr, _ = correlation(new_intermediate_reps, old_intermediate_reps)
-            metrics.corr = float(
-                t.mean(t.stack([t.mean(t.abs(c)) for c in corr])).detach().cpu()
-            )
+            metrics.corr = float(t.mean(t.stack([t.mean(t.abs(c)) for c in corr])).detach().cpu())
         if calc_cka:
-            cka = centered_kernel_alignment(
-                new_intermediate_reps, old_intermediate_reps
-            )
-            metrics.cka = float(
-                t.mean(t.stack([t.stack(c) for c in cka])).detach().cpu()
-            )
+            cka = centered_kernel_alignment(new_intermediate_reps, old_intermediate_reps)
+            metrics.cka = float(t.mean(t.stack([t.stack(c) for c in cka])).detach().cpu())
         # Basically always makes sense to calculate it.
         if calc_cos:
             if new_intermediate_reps[0].shape[1] > sample_size:
-                new_intermediate_reps = [
-                    tr[:, :sample_size] for tr in new_intermediate_reps
-                ]
-                old_intermediate_reps = [
-                    a[:, :sample_size] for a in old_intermediate_reps
-                ]
+                new_intermediate_reps = [tr[:, :sample_size] for tr in new_intermediate_reps]
+                old_intermediate_reps = [a[:, :sample_size] for a in old_intermediate_reps]
             with t.no_grad():
                 cos_sim_tr = cosine_similarity(new_intermediate_reps)
                 cos_sim_apx = cosine_similarity(old_intermediate_reps)
