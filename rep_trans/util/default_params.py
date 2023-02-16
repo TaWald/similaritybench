@@ -100,7 +100,9 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset) -> ds.Pa
     return params
 
 
-def get_default_arch_params(dataset: ds.Dataset) -> dict:
+def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
+    if isinstance(dataset, str):
+        dataset = ds.Dataset(dataset)
     if dataset == ds.Dataset.CIFAR10:
         output_classes = 10
         in_ch = 3
