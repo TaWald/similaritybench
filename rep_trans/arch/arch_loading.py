@@ -8,6 +8,7 @@ from rep_trans.arch.arch_utils import deserialize_architecture_info
 from rep_trans.arch.ke_architectures.feature_approximation import FAArch
 from rep_trans.util import data_structs as ds
 from rep_trans.util import file_io
+from rep_trans.util import find_architectures as fa
 from rep_trans.util import name_conventions as nc
 from rep_trans.util.data_structs import ArchitectureInfo
 from rep_trans.util.file_io import load_json
@@ -98,3 +99,22 @@ def load_model(source_data_path: Path, source_ckpt_path: Path) -> AbsActiExtrArc
     ckpt_path = source_ckpt_path / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME
     architecture_inst.load_state_dict(torch.load(ckpt_path))
     return architecture_inst
+
+
+def load_model_from_info_file(model_info: ds.BasicTrainingInfo, load_ckpt: bool) -> AbsActiExtrArch:
+    """Loads model from a BasicTrainingInfo file.
+    :param model_info: Model configuration file to load from.
+    :param load_ckpt: Flag if the ckpt should be loaded as well.
+    """
+    arch = fa.get_base_arch(model_info.architecture)
+    oj = load_json(model_info.path_output_json)
+    arch_instance = arch(
+        n_cls=oj["n_cls"],
+        in_ch=oj["in_ch"],
+        input_resolution=oj["input_resolution"],
+        early_downsampling=oj["early_downsampling"],
+        global_average_pooling=oj["global_average_pooling"],
+    )
+    if load_ckpt:
+        arch_instance.load_state_dict(torch.load(model_info.path_ckpt))
+    return arch_instance
