@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 from rep_trans.util import name_conventions as nc
 
 
@@ -11,7 +12,7 @@ def is_calibrated(trained_model_data_root_path: Path) -> bool:
     :param trained_model_data_root_path: Data root directory of the model
     """
     calib_file = trained_model_data_root_path / nc.CALIB_TMPLT
-    return calib_file.exist()
+    return calib_file.exists()
 
 
 def is_trained(trained_model_data_root_path: Path) -> bool:
