@@ -13,7 +13,6 @@ from typing import Iterable
 from warnings import warn
 
 import numpy as np
-
 from rep_trans.data.base_datamodule import BaseDataModule
 from rep_trans.util import data_structs as ds
 from rep_trans.util import name_conventions as nc
@@ -339,6 +338,15 @@ def load_datamodule(source_path) -> BaseDataModule:
     Returns an instance of the datamodule that was used in training of the trained model from the path.
     """
     oj = load_json(source_path / nc.OUTPUT_TMPLT)
+    dataset = ds.Dataset(oj["dataset"])
+    return get_datamodule(dataset)
+
+
+def load_datamodule_from_info(model_info: ds.BasicTrainingInfo) -> BaseDataModule:
+    """
+    Returns an instance of the datamodule that was used in training of the trained model from the path.
+    """
+    oj = load_json(model_info.path_output_json)
     dataset = ds.Dataset(oj["dataset"])
     return get_datamodule(dataset)
 
@@ -711,4 +719,3 @@ def load_csv(filepath: str) -> np.ndarray:
     :return:
     """
     return np.loadtxt(filepath)
-
