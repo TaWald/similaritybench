@@ -1,48 +1,45 @@
 ## Representation Transfer
 
-This repo contains the codebase that was used to train, compare and replace representations, as described in the paper. There consist multiple main files that can be run and all
-have a parser containing the different arguments one can pass.
+This repo contains the codebase that was used to train models conditioned on pre-existing other models.
+It is focused on training a model conditioned on one/many pre-existing models that are supposed to change
+behavior of the new model.
 
-Later main functions depend on previous ones beeing run before (as one can't compare representations when no model is trained).
+To accomplish this there exist various ways of training models that can be broadly
+split into three categories:
 
-Initially one has to run train_model.py, ideally 10 times with different splits. After this one has to make sure the activations are extracted. This can take a lot of disk space,
-so an iterative approach might be suitable.
-
-Following this one can calculate the best prediction weights (on the test set) via linear regression by caling compare_models.py
-
-Once the weights are calculated we use them to predict the representations and replace them with fuse_models.py
-
-Moreover internal_noise_sensitivity calcualtes the noise, currently it needs the activation stats to be calculated
-(Which happens in compare_models.py -- i believe).
-
+- Adapting the input
+- Regularizing at the output (logits/predictions)
+- Regularizing in intermediate position of architecture ("hidden layers")
 -----
+### Intermediate regularization
+As this repo is focused on regularization at the very input some schemes are experimented with
+that are supposed to make the models more dissimilar at some intermediate layer.
+By doing so one enforces that the layer exhibits low levels of e.g. Correlation at some intermediate layer,
+which does not necessarily mean it stands in conflict with the task performance as it might be at the very output.
 
-#### Training new models.
+> Previous related work that tried to work on logits/probabilities had issues that e.g. trying to learn low correlation in logits
+> can lead to bad performance and hence is not really helpful.
 
-train_model.py --- Train one model of an arbitrary architecture.
+-----------
 
-All other functions depend on the already trained models!
+The following approaches are investigated:
 
-#### Extract activations (if not already done in train_model.py
+#### Knowledge Extension
+![Knowledge Extension](rep_trans/readme_images/knowledge_extension.png)
 
-eval_trained_models.py --- Extracts activations [Should the training error after finishing, or not automatically save activations (arg: -na 1 passed to it)
+Knowledge Extension is the original idea that regularizes representations at some intermediate layer
+by creating an adversarial setting of an old model that tries to approximate the newly learned representations of the
+new model, while the new model tries to circumvent this.
 
-#### Calculate similarity and Linear regression for prediction weights
+The **intermediate losses** that are used to enforce this are generally bounded in order to be invertible,
+to allow the new model to **minimize similarity** and to allow the old models to **maximize similarity**.
+Losses like L1/L2 Correlations therefore are appealing as well as some Explained Variance losses that can be
+wrapped in a CELU to bound it.
 
-compare_models.py --- Calculate the prediction weights of the linear regression between model of the same architecture
+The old model(s) remains frozen and the approximation is can only improve through training
+of the **approximation layers** that are some **CONV-BN-RELU** layers with either 1x1 or 3x3 kernel size and
+varying number. These hyperparameters allow to break some translation constraints and increase the
+"distance" that the representations have to have from each other in representation space.
 
-#### Replacement of representations through predictions from other model
-
-fuse_models.py --- Replaces all quartiles of representations in the target model one after another
-
-#### Noise evaluation
-
-internal_noise_sensitivity_evaluation.py --- Adds the noise to the different trained models
-
------
-
-There are other functions that were investigated, which are not part of the submission present in the repo. We kindly ask you to ignore these.
-
-#### Full Ensemble (all 10 models) calculation
-
-eval_ensembles
+This leads to a rather involved and finnicky process as huge variety of DOFs need to be
+explored.
