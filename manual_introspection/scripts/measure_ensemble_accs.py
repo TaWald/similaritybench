@@ -1,15 +1,16 @@
 from __future__ import annotations
+
 from pathlib import Path
 
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
-
 from rep_trans.metrics.ke_metrics import look_up_baseline_cohens_kappa
+from rep_trans.util import data_structs as ds
 from rep_trans.util import file_io as io
 from rep_trans.util import name_conventions as nc
 from rep_trans.util.file_io import load_json
-from rep_trans.util import data_structs as ds
+
 
 def get_models_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[tuple[Path, dict]]:
     matching_dirs: list[tuple[Path, dict]] = []
@@ -34,8 +35,8 @@ def get_models_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[
             agg,
             sm,
             ebr,
-            ) = decodes
-        
+        ) = decodes
+
         decoded_params = {
             "exp_name": exp_description,
             "dataset": dataset,
@@ -52,14 +53,14 @@ def get_models_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[
             "aggregate_reps": agg,
             "softmax": sm,
             "epochs_before_regularization": ebr,
-            }
+        }
         matches = True
-        
+
         for k, v in wanted_hparams.items():
             if not matches:
                 continue
             val = decoded_params[k]
-            
+
             if val != v:
                 matches = False
         if matches:
@@ -67,15 +68,13 @@ def get_models_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[
     return matching_dirs
 
 
-def get_model_with_id_from_dir(
-        model_paths: list[tuple[Path, dict]], wanted_model_id: int
-        ) -> list[Path]:
+def get_model_with_id_from_dir(model_paths: list[tuple[Path, dict]], wanted_model_id: int) -> list[Path]:
     """
     Extracts models
 
     """
     all_models_of_ensemble: list[Path] = []
-    
+
     for mp, hparams in model_paths:
         group_id = hparams["group_id_i"]
         dataset = hparams["dataset"]
@@ -83,9 +82,9 @@ def get_model_with_id_from_dir(
         wanted_model_path: Path | None = None
         if 0 == wanted_model_id:
             wanted_model_path = (
-                    mp.parent
-                    / nc.KE_FIRST_MODEL_DIR.format(dataset, architecture)
-                    / nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id)
+                mp.parent
+                / nc.KE_FIRST_MODEL_DIR.format(dataset, architecture)
+                / nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id)
             )
         for single_model_dir in mp.iterdir():
             model_id = int(single_model_dir.name.split("_")[-1])
@@ -104,12 +103,13 @@ def get_output_and_info_json(model_path: Path) -> dict | None:
     """
     if ((model_path / nc.OUTPUT_TMPLT).exists()) and ((model_path / nc.KE_INFO_FILE).exists()):
         output_json = load_json(model_path / nc.OUTPUT_TMPLT)
-        info_json = load_json(model_path /nc.KE_INFO_FILE)
+        info_json = load_json(model_path / nc.KE_INFO_FILE)
         output_json.update(info_json)
         return output_json
     else:
         return None
-    
+
+
 def get_info_json_path(model_path: Path) -> dict | None:
     """
     Returns the checkpoints of the paths.
@@ -135,7 +135,7 @@ layer_9_tdepth_9_expvar1 = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 layer_7_to_11_regularization_hparams = {
     "dataset": "CIFAR10",
@@ -151,7 +151,7 @@ layer_7_to_11_regularization_hparams = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 layer_5_to_13_regularization_hparams = {
     "dataset": "CIFAR10",
@@ -167,7 +167,7 @@ layer_5_to_13_regularization_hparams = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 layer_3_to_15_regularization_hparams = {
     "dataset": "CIFAR10",
@@ -183,7 +183,7 @@ layer_3_to_15_regularization_hparams = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 all_layer_regularization_hparams = {
     "dataset": "CIFAR10",
@@ -196,19 +196,19 @@ all_layer_regularization_hparams = {
     "dis_loss": "ExpVar",
     "ce_loss_weight": 1.00,
     "dis_loss_weight": 1.00,
-    }
+}
 
 all_layers_tdepth_9_all_sim_and_dis_losses = {
     "dataset": "CIFAR10",
     "architecture": "ResNet34",
-    "hooks": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],
+    "hooks": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     "trans_depth": 9,
     "kernel_width": 1,
     "ce_loss_weight": 1.00,
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 layer_7_tdepth_9_expvar_all = {
     "dataset": "CIFAR10",
@@ -222,7 +222,7 @@ layer_7_tdepth_9_expvar_all = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 
 layer_16_tdepth_9_expvar_all = {
@@ -235,7 +235,7 @@ layer_16_tdepth_9_expvar_all = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 layer_9_tdepth_1_expvar1 = {
     "dataset": "CIFAR10",
@@ -251,7 +251,7 @@ layer_9_tdepth_1_expvar1 = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 layer_9_tdepth_3_expvar1 = {
     "dataset": "CIFAR10",
@@ -267,7 +267,7 @@ layer_9_tdepth_3_expvar1 = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 layer_9_tdepth_5_expvar1 = {
     "dataset": "CIFAR10",
@@ -283,7 +283,7 @@ layer_9_tdepth_5_expvar1 = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 layer_9_tdepth_7_expvar1 = {
     "dataset": "CIFAR10",
@@ -299,7 +299,7 @@ layer_9_tdepth_7_expvar1 = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 baseline_unregularized = {
     "dataset": "CIFAR10",
@@ -315,7 +315,7 @@ baseline_unregularized = {
     #  "aggregate_reps": True,
     #  "softmax": True,
     #  "epochs_before_regularization": 0,
-    }
+}
 
 layer_15_regularization = {
     "dataset": "CIFAR10",
@@ -331,10 +331,12 @@ layer_15_regularization = {
     "aggregate_reps": True,
     "softmax": True,
     "epochs_before_regularization": 0,
-    }
+}
 
 
-def gather_results(hparams_dict: dict, model_id: int = 1, ckpt_path: Path = Path("/mnt/cluster-data/results/knowledge_extension")):
+def gather_results(
+    hparams_dict: dict, model_id: int = 1, ckpt_path: Path = Path("/mnt/cluster-data/results/knowledge_extension")
+):
     models = get_models_of_ke_ensembles(ckpt_path, hparams_dict)
     model_paths: list[Path] = get_model_with_id_from_dir(models, model_id)
     model_outputs: list[dict | None] = [get_output_and_info_json(mp) for mp in model_paths]
@@ -352,76 +354,19 @@ def add_description(results: list[dict], description: str) -> list[dict]:
 
 
 def visualize_impact_of_increasing_depth():
-    hparams = [baseline_unregularized, layer_9_tdepth_1_expvar1, layer_9_tdepth_3_expvar1, layer_9_tdepth_5_expvar1, layer_9_tdepth_7_expvar1, layer_9_tdepth_9_expvar1]
+    hparams = [
+        baseline_unregularized,
+        layer_9_tdepth_1_expvar1,
+        layer_9_tdepth_3_expvar1,
+        layer_9_tdepth_5_expvar1,
+        layer_9_tdepth_7_expvar1,
+        layer_9_tdepth_9_expvar1,
+    ]
     names = ["unregularized", "tdepth_1", "tdepth_3", "tdepth_5", "tdepth_7", "tdepth_9"]
     title_ens_acc = "Effect of increasing depth to ensemble accuracy -- ExpVar 1.0"
     title_acc = "Effect of increasing depth to new model accuracy -- ExpVar 1.0"
     title_coka = "Effect of increasing depth to baseline cohens_kappa -- ExpVar 1.0"
-    
-    all_results: list[dict] = []
-    for hparam, name in zip(hparams, names):
-        res: list[dict] = gather_results(hparam)
-        cleaned_res = []
-        for r in res:
-            r["name"] = name
-            r.update(r["val"])
-            r.pop("val")
-            r.pop("test")
-            # accuracy: float, dataset: ds.Dataset, arch: ds.BaseArchitecture)
-            base_cc = look_up_baseline_cohens_kappa(accuracy = r["acc"], dataset= ds.Dataset("CIFAR10"), arch=ds.BaseArchitecture("ResNet34"))
-            r["baseline_cohens_kappa"] = base_cc
-            r["relative_cohens_kappa"] = r["cohens_kappa"] - base_cc
-            cleaned_res.append(r)
-        all_results.extend(cleaned_res)
-    
-    all_results_df = pd.DataFrame(all_results)
-    mean_ensemble_acc = all_results_df[all_results_df["name"] == "unregularized"]["ensemble_acc"].mean()
-    std_ensemble_acc = all_results_df[all_results_df["name"] == "unregularized"]["ensemble_acc"].std()
-    
-    baseline_single_acc = all_results_df[all_results_df["name"] == "unregularized"]["acc"].mean()
-    std_single_acc = all_results_df[all_results_df["name"] == "unregularized"]["acc"].std()
-    
-    baseline_cohens_kappa = all_results_df[all_results_df["name"] == "unregularized"]["cohens_kappa"].mean()
-    std_cohens_kappa = all_results_df[all_results_df["name"] == "unregularized"]["cohens_kappa"].std()
-    
-    regularized_results = all_results_df[all_results_df["name"] != "unregularized"]
 
-    output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/measure_ensemble_accs")
-    plt.figure(figsize=(16,9))
-    g = sns.lineplot(data=regularized_results, x="trans_depth", y="ensemble_acc")
-    plt.hlines(y=mean_ensemble_acc, xmin=1, xmax=9, colors="r", linestyles="solid")
-    plt.hlines(y=mean_ensemble_acc + std_ensemble_acc, xmin=1, xmax=9, colors="r", linestyles="dashed")
-    plt.hlines(y=mean_ensemble_acc - std_ensemble_acc, xmin=1, xmax=9, colors="r", linestyles="dashed")
-    plt.title(title_ens_acc)
-    plt.savefig(output_plots / "transfer_depth_to_ensemble_accuracy_layer_9.png")
-    plt.close()
-    
-    plt.figure(figsize=(16,9))
-    g = sns.lineplot(data=regularized_results, x="trans_depth", y="acc")
-    plt.hlines(y=baseline_single_acc, xmin=1, xmax=9, colors="r", linestyles="solid")
-    plt.hlines(y=baseline_single_acc + std_single_acc, xmin=1, xmax=9, colors="r", linestyles="dashed")
-    plt.hlines(y=baseline_single_acc - std_single_acc, xmin=1, xmax=9, colors="r", linestyles="dashed")
-    plt.title(title_acc)
-    plt.savefig(output_plots / "transfer_depth_to_single_accuracy_layer_9.png")
-    plt.close()
-    
-    plt.figure(figsize=(16,9))
-    g = sns.lineplot(data=regularized_results, x="trans_depth", y="cohens_kappa")
-    sns.lineplot(data=regularized_results, x="trans_depth", y="baseline_cohens_kappa", color="r")
-    plt.title(title_coka)
-    plt.savefig(output_plots / "transfer_depth_to_cohens_kappa_layer_9.png")
-    plt.close()
-    
-    print("What what")
-
-
-def visualize_impact_of_increasing_dis_weight():
-    hparams = [baseline_unregularized, all_layers_tdepth_9_all_sim_and_dis_losses]
-    names = ["unregularized", "regularized"]
-    title_ens_acc = "Effect of increasing dissimilarity weight to ensemble accuracy -- All Layers"
-    title_acc = "Effect of increasing dissimilarity to single accuracy -- All Layers"
-    title_coka = "Effect of increasing dissimilarity to cohens kappa -- All Layers"
-    
     all_results: list[dict] = []
     for hparam, name in zip(hparams, names):
         res: list[dict] = gather_results(hparam)
@@ -434,34 +379,102 @@ def visualize_impact_of_increasing_dis_weight():
             # accuracy: float, dataset: ds.Dataset, arch: ds.BaseArchitecture)
             base_cc = look_up_baseline_cohens_kappa(
                 accuracy=r["acc"], dataset=ds.Dataset("CIFAR10"), arch=ds.BaseArchitecture("ResNet34")
-                )
+            )
             r["baseline_cohens_kappa"] = base_cc
             r["relative_cohens_kappa"] = r["cohens_kappa"] - base_cc
             cleaned_res.append(r)
         all_results.extend(cleaned_res)
-    
+
+    all_results_df = pd.DataFrame(all_results)
+    mean_ensemble_acc = all_results_df[all_results_df["name"] == "unregularized"]["ensemble_acc"].mean()
+    std_ensemble_acc = all_results_df[all_results_df["name"] == "unregularized"]["ensemble_acc"].std()
+
+    baseline_single_acc = all_results_df[all_results_df["name"] == "unregularized"]["acc"].mean()
+    std_single_acc = all_results_df[all_results_df["name"] == "unregularized"]["acc"].std()
+
+    baseline_cohens_kappa = all_results_df[all_results_df["name"] == "unregularized"]["cohens_kappa"].mean()  # noqa
+    std_cohens_kappa = all_results_df[all_results_df["name"] == "unregularized"]["cohens_kappa"].std()  # noqa
+
+    regularized_results = all_results_df[all_results_df["name"] != "unregularized"]
+
+    output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/measure_ensemble_accs")
+    plt.figure(figsize=(16, 9))
+    g = sns.lineplot(data=regularized_results, x="trans_depth", y="ensemble_acc")
+    plt.hlines(y=mean_ensemble_acc, xmin=1, xmax=9, colors="r", linestyles="solid")
+    plt.hlines(y=mean_ensemble_acc + std_ensemble_acc, xmin=1, xmax=9, colors="r", linestyles="dashed")
+    plt.hlines(y=mean_ensemble_acc - std_ensemble_acc, xmin=1, xmax=9, colors="r", linestyles="dashed")
+    plt.title(title_ens_acc)
+    plt.savefig(output_plots / "transfer_depth_to_ensemble_accuracy_layer_9.png")
+    plt.close()
+
+    plt.figure(figsize=(16, 9))
+    sns.lineplot(data=regularized_results, x="trans_depth", y="acc")
+    plt.hlines(y=baseline_single_acc, xmin=1, xmax=9, colors="r", linestyles="solid")
+    plt.hlines(y=baseline_single_acc + std_single_acc, xmin=1, xmax=9, colors="r", linestyles="dashed")
+    plt.hlines(y=baseline_single_acc - std_single_acc, xmin=1, xmax=9, colors="r", linestyles="dashed")
+    plt.title(title_acc)
+    plt.savefig(output_plots / "transfer_depth_to_single_accuracy_layer_9.png")
+    plt.close()
+
+    plt.figure(figsize=(16, 9))
+    g = sns.lineplot(data=regularized_results, x="trans_depth", y="cohens_kappa")
+    sns.lineplot(data=regularized_results, x="trans_depth", y="baseline_cohens_kappa", color="r", ax=g)
+    plt.title(title_coka)
+    plt.savefig(output_plots / "transfer_depth_to_cohens_kappa_layer_9.png")
+    plt.close()
+
+    print("What what")
+
+
+def visualize_impact_of_increasing_dis_weight():
+    hparams = [baseline_unregularized, all_layers_tdepth_9_all_sim_and_dis_losses]
+    names = ["unregularized", "regularized"]
+    title_ens_acc = "Effect of increasing dissimilarity weight to ensemble accuracy -- All Layers"
+    title_acc = "Effect of increasing dissimilarity to single accuracy -- All Layers"
+    title_coka = "Effect of increasing dissimilarity to cohens kappa -- All Layers"
+
+    all_results: list[dict] = []
+    for hparam, name in zip(hparams, names):
+        res: list[dict] = gather_results(hparam)
+        cleaned_res = []
+        for r in res:
+            r["name"] = name
+            r.update(r["val"])
+            r.pop("val")
+            r.pop("test")
+            # accuracy: float, dataset: ds.Dataset, arch: ds.BaseArchitecture)
+            base_cc = look_up_baseline_cohens_kappa(
+                accuracy=r["acc"], dataset=ds.Dataset("CIFAR10"), arch=ds.BaseArchitecture("ResNet34")
+            )
+            r["baseline_cohens_kappa"] = base_cc
+            r["relative_cohens_kappa"] = r["cohens_kappa"] - base_cc
+            cleaned_res.append(r)
+        all_results.extend(cleaned_res)
+
     all_results_df = pd.DataFrame(all_results)
     all_results_df = all_results_df.sort_values(by=["dissimilarity_loss_weight"])
     all_results_df["dissimilarity_loss_weight"] = all_results_df["dissimilarity_loss_weight"].round(2).apply(str)
     all_results_df = all_results_df
     mean_ensemble_acc = all_results_df[all_results_df["name"] == "unregularized"]["ensemble_acc"].mean()
     std_ensemble_acc = all_results_df[all_results_df["name"] == "unregularized"]["ensemble_acc"].std()
-    
+
     baseline_single_acc = all_results_df[all_results_df["name"] == "unregularized"]["acc"].mean()
     std_single_acc = all_results_df[all_results_df["name"] == "unregularized"]["acc"].std()
-    
+
     regularized_results = all_results_df[all_results_df["name"] != "unregularized"]
-    
+
     output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/measure_ensemble_accs")
     plt.figure(figsize=(16, 9))
-    g = sns.lineplot(data=regularized_results, x="dissimilarity_loss_weight", y="ensemble_acc", hue="dissimilarity_loss")
+    g = sns.lineplot(
+        data=regularized_results, x="dissimilarity_loss_weight", y="ensemble_acc", hue="dissimilarity_loss"
+    )
     plt.hlines(y=mean_ensemble_acc, xmin=0, xmax=7, colors="r", linestyles="solid")
     plt.hlines(y=mean_ensemble_acc + std_ensemble_acc, xmin=0, xmax=7, colors="r", linestyles="dashed")
     plt.hlines(y=mean_ensemble_acc - std_ensemble_acc, xmin=0, xmax=7, colors="r", linestyles="dashed")
     plt.title(title_ens_acc)
     plt.savefig(output_plots / "increasing_disweight_ensemble_acc_all_layers.png")
     plt.close()
-    
+
     plt.figure(figsize=(16, 9))
     g = sns.lineplot(data=regularized_results, x="dissimilarity_loss_weight", y="acc", hue="dissimilarity_loss")
     plt.hlines(y=baseline_single_acc, xmin=0, xmax=7, colors="r", linestyles="solid")
@@ -470,14 +483,23 @@ def visualize_impact_of_increasing_dis_weight():
     plt.title(title_acc)
     plt.savefig(output_plots / "increasing_disweight_single_acc_all_layers.png")
     plt.close()
-    
+
     plt.figure(figsize=(16, 9))
-    g = sns.lineplot(data=regularized_results, x="dissimilarity_loss_weight", y="cohens_kappa", hue="dissimilarity_loss")
-    sns.lineplot(data=regularized_results, x="dissimilarity_loss_weight", y="baseline_cohens_kappa", hue="dissimilarity_loss", linestyle="dashed", ax=g)
+    g = sns.lineplot(
+        data=regularized_results, x="dissimilarity_loss_weight", y="cohens_kappa", hue="dissimilarity_loss"
+    )
+    sns.lineplot(
+        data=regularized_results,
+        x="dissimilarity_loss_weight",
+        y="baseline_cohens_kappa",
+        hue="dissimilarity_loss",
+        linestyle="dashed",
+        ax=g,
+    )
     plt.title(title_coka)
     plt.savefig(output_plots / "increasing_disweight_cohens_kappa_all_layers.png")
     plt.close()
-    
+
     print("What what")
 
 
@@ -486,9 +508,9 @@ def visualize_effect_of_additional_models():
     names = ["unregularized", "regularized"]
     title_ens_acc = "Effect of increasing dissimilarity weight to ensemble accuracy -- All Layers"
     title_acc = "Effect of increasing dissimilarity to single accuracy -- All Layers"
-    
+
     all_results: list[dict] = []
-    for model_id in [1,2,3,4,5,6,7,8,9]:
+    for model_id in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
         for hparam, name in zip(hparams, names):
             res: list[dict] = gather_results(hparam, model_id)
             cleaned_res = []
@@ -503,38 +525,44 @@ def visualize_effect_of_additional_models():
                 # accuracy: float, dataset: ds.Dataset, arch: ds.BaseArchitecture)
                 base_cc = look_up_baseline_cohens_kappa(
                     accuracy=r["acc"], dataset=ds.Dataset("CIFAR10"), arch=ds.BaseArchitecture("ResNet34")
-                    )
+                )
                 r["baseline_cohens_kappa"] = base_cc
                 r["relative_cohens_kappa"] = r["cohens_kappa"] - base_cc
                 cleaned_res.append(r)
             all_results.extend(cleaned_res)
-    
+
     all_results_df = pd.DataFrame(all_results)
     all_results_df = all_results_df.sort_values(by=["dissimilarity_loss_weight"])
     all_results_df["dissimilarity_loss_weight"] = all_results_df["dissimilarity_loss_weight"].round(2).apply(str)
     un_regularized_df = all_results_df[all_results_df["name"] == "unregularized"]
     regularized_df = all_results_df[all_results_df["name"] != "unregularized"]
     n_colors = len(regularized_df["dissimilarity_loss_weight"].unique())
-    
+
     output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/measure_ensemble_accs")
     plt.figure(figsize=(16, 9))
     g: plt.Axes
     g = sns.lineplot(
-        data=regularized_df, x="Ensemble Size", y="ensemble_acc", hue="dissimilarity_loss_weight", palette=sns.color_palette("viridis", n_colors)
-        )
-    sns.lineplot(
-        data=un_regularized_df, x="Ensemble Size", y="ensemble_acc", color="k", ax=g
-        )
+        data=regularized_df,
+        x="Ensemble Size",
+        y="ensemble_acc",
+        hue="dissimilarity_loss_weight",
+        palette=sns.color_palette("viridis", n_colors),
+    )
+    sns.lineplot(data=un_regularized_df, x="Ensemble Size", y="ensemble_acc", color="k", ax=g)
     g.set_ylim(bottom=0.965, top=0.98)
     plt.title(title_ens_acc)
     plt.savefig(output_plots / "layer_7_regularization_to_ensemble_acc.png")
     plt.close()
-    
+
     plt.figure(figsize=(16, 9))
-    g = sns.lineplot(data=regularized_df,x="Ensemble Size", y="acc", hue="dissimilarity_loss_weight", palette=sns.color_palette("viridis", n_colors))
-    sns.lineplot(
-        data=un_regularized_df, x="Ensemble Size", y="acc", color="k", ax=g
-        )
+    g = sns.lineplot(
+        data=regularized_df,
+        x="Ensemble Size",
+        y="acc",
+        hue="dissimilarity_loss_weight",
+        palette=sns.color_palette("viridis", n_colors),
+    )
+    sns.lineplot(data=un_regularized_df, x="Ensemble Size", y="acc", color="k", ax=g)
     g.set_ylim(bottom=0.94, top=0.98)
     plt.title(title_acc)
     plt.savefig(output_plots / "layer_7_regularization_to_single_acc.png")
@@ -560,12 +588,12 @@ def visualize_last_layer_results():
             # accuracy: float, dataset: ds.Dataset, arch: ds.BaseArchitecture)
             base_cc = look_up_baseline_cohens_kappa(
                 accuracy=r["acc"], dataset=ds.Dataset("CIFAR10"), arch=ds.BaseArchitecture("ResNet34")
-                )
+            )
             r["baseline_cohens_kappa"] = base_cc
             r["relative_cohens_kappa"] = r["cohens_kappa"] - base_cc
             cleaned_res.append(r)
         all_results.extend(cleaned_res)
-    
+
     all_results_df = pd.DataFrame(all_results)
     all_results_df = all_results_df[all_results_df["acc"] > 0.9]
     all_results_df = all_results_df.sort_values(by=["dissimilarity_loss_weight"])
@@ -583,7 +611,7 @@ def visualize_last_layer_results():
     plt.figure(figsize=(16, 9))
     g = sns.lineplot(
         data=regularized_results, x="dissimilarity_loss_weight", y="ensemble_acc", hue="dissimilarity_loss"
-        )
+    )
     plt.hlines(y=mean_ensemble_acc, xmin=0, xmax=7, colors="r", linestyles="solid")
     plt.hlines(y=mean_ensemble_acc + std_ensemble_acc, xmin=0, xmax=7, colors="r", linestyles="dashed")
     plt.hlines(y=mean_ensemble_acc - std_ensemble_acc, xmin=0, xmax=7, colors="r", linestyles="dashed")
@@ -603,11 +631,15 @@ def visualize_last_layer_results():
     plt.figure(figsize=(16, 9))
     g = sns.lineplot(
         data=regularized_results, x="dissimilarity_loss_weight", y="cohens_kappa", hue="dissimilarity_loss"
-        )
+    )
     sns.lineplot(
-        data=regularized_results, x="dissimilarity_loss_weight", y="baseline_cohens_kappa", hue="dissimilarity_loss",
-        linestyle="dashed", ax=g
-        )
+        data=regularized_results,
+        x="dissimilarity_loss_weight",
+        y="baseline_cohens_kappa",
+        hue="dissimilarity_loss",
+        linestyle="dashed",
+        ax=g,
+    )
     plt.title(title_coka)
     plt.savefig(output_plots / "increasing_disweight_cohens_kappa_last_layers.png")
     plt.close()
@@ -616,10 +648,12 @@ def visualize_last_layer_results():
 
 
 def main():
-    a = "/mnt/E132-Projekte/Projects/2022_Wald_Knowledge_Extension/single_layer_dis_loss_weight_influence_lin_cka/knowledge_extension"
+    # a = ("/mnt/E132-Projekte/Projects/2022_Wald_Knowledge_Extension/"
+    #     + "single_layer_dis_loss_weight_influence_lin_cka/knowledge_extension")
     # visualize_impact_of_increasing_depth()
     # visualize_impact_of_increasing_dis_weight()
     visualize_last_layer_results()
+
 
 if __name__ == "__main__":
     main()
