@@ -2,6 +2,7 @@ six
 torch
 tensorboard
 pandas
+pytest
 tqdm
 matplotlib
 seaborn
