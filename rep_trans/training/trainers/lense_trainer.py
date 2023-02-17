@@ -6,7 +6,8 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from augmented_datasets.scripts.get_dataloaders import get_augmented_cifar10_test_dataloader
+from augmented_cifar.scripts.get_dataloaders import get_augmented_cifar100_test_dataloader
+from augmented_cifar.scripts.get_dataloaders import get_augmented_cifar10_test_dataloader
 from PIL import Image
 from pytorch_lightning import Trainer
 from rep_trans.training.ke_train_modules.AdversarialLenseLightningModule import AdversarialLenseLightningModule
@@ -120,7 +121,14 @@ class LenseTrainer(BaseTrainer):
         self.model.cuda()
         self.model.eval()
         self.model.clear_outputs = False
-        dataloaders = get_augmented_cifar10_test_dataloader(self.test_kwargs)
+
+        if self.params.dataset == "CIFAR10":
+            dataloaders = get_augmented_cifar10_test_dataloader(self.dataset_path, self.test_kwargs)
+        elif self.params.dataset == "CIFAR100":
+            dataloaders = get_augmented_cifar100_test_dataloader(self.dataset_path, self.test_kwargs)
+        else:
+            raise ValueError(f"Trying to measure generalization of unknown dataset! Got {self.params.dataset}")
+
         all_results = {}
         for dl in dataloaders:
             trainer.validate(self.model, dl.dataloader)

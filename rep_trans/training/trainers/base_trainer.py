@@ -6,7 +6,8 @@ from dataclasses import asdict
 from pathlib import Path
 
 import torch
-from augmented_datasets.scripts.get_dataloaders import get_augmented_cifar10_test_dataloader
+from augmented_cifar.scripts.get_dataloaders import get_augmented_cifar100_test_dataloader
+from augmented_cifar.scripts.get_dataloaders import get_augmented_cifar10_test_dataloader
 from pytorch_lightning import Trainer
 from rep_trans.data.base_datamodule import BaseDataModule
 from rep_trans.training.ke_train_modules.base_training_module import BaseLightningModule
@@ -38,6 +39,15 @@ class BaseTrainer:
         self.basic_training_info.path_ckpt_root.mkdir(exist_ok=True, parents=True)
         self.basic_training_info.path_activations.mkdir(exist_ok=True, parents=True)
         self.basic_training_info.path_ckpt.parent.mkdir(exist_ok=True, parents=True)
+
+        if "RAW_DATA" in os.environ:
+            dataset_path = os.environ["RAW_DATA"]
+        elif "data" in os.environ:
+            dataset_path = os.environ["data"]
+        else:
+            raise EnvironmentError
+
+        self.dataset_path = dataset_path
 
         self.train_kwargs = {
             "shuffle": True,
@@ -134,6 +144,7 @@ class BaseTrainer:
                 tbt_ke_dict[k] = v
         file_io.save_json(tbt_ke_dict, self.training_info.path_train_info_json)
 
+    # ToDo: Outsource this call to
     def measure_generalization(self):
         trainer = Trainer(
             enable_checkpointing=False,
@@ -150,7 +161,13 @@ class BaseTrainer:
         self.model.cuda()
         self.model.eval()
         self.model.clear_outputs = False
-        dataloaders = get_augmented_cifar10_test_dataloader(self.test_kwargs)
+        if self.params.dataset == "CIFAR10":
+            dataloaders = get_augmented_cifar10_test_dataloader(self.dataset_path, self.test_kwargs)
+        elif self.params.dataset == "CIFAR100":
+            dataloaders = get_augmented_cifar100_test_dataloader(self.dataset_path, self.test_kwargs)
+        else:
+            raise ValueError(f"Trying to measure generalization of unknown dataset! Got {self.params.dataset}")
+
         all_results = {}
         for dl in dataloaders:
             trainer.validate(self.model, dl.dataloader)
