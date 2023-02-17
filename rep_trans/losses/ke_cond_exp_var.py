@@ -11,22 +11,27 @@ class CondExpVarLoss(KEAbstractConditionalLoss):
         self.celu = nn.CELU(alpha=celu_alpha)
 
     def forward(
-        self, new_inter: list[torch.Tensor], old_inter: list[torch.Tensor],
-            new_out: torch.Tensor, old_outs: list[torch.Tensor], gt: torch.Tensor, make_dissimilar: bool
+        self,
+        new_inter: list[torch.Tensor],
+        old_inter: list[torch.Tensor],
+        new_out: torch.Tensor,
+        old_outs: list[torch.Tensor],
+        gt: torch.Tensor,
+        make_dissimilar: bool,
     ) -> torch.Tensor:
 
         # 1 When similar -inf when shitty
         # 1 when similar -alpha when shitty (after celu)
-        
+
         correct_trues = torch.argmax(new_out, dim=-1) == gt
         corret_outs = [torch.argmax(o, dim=-1) == gt for o in old_outs]
-        
-        both_true = [(correct_trues == co)  for co in corret_outs]
-        
+
+        both_true = [(correct_trues == co) for co in corret_outs]  # noqa
+
         # Goal is to not penalize where both are correct as that is okay
         #   Instead try to penalize
-        
-        celu_loss = celu_explained_variance(tbt_inter, approx_inter)
+
+        celu_loss = celu_explained_variance(tbt_inter, approx_inter)  # noqa
         loss = torch.mean(torch.stack([torch.mean(c) for c in celu_loss]))
 
         if make_dissimilar:
