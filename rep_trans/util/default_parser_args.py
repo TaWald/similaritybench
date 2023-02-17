@@ -5,9 +5,9 @@ import os
 from dataclasses import replace
 from typing import Iterable
 
+import git
 from rep_trans.util import data_structs as ds
 from rep_trans.util import name_conventions as nc
-import git
 
 
 def get_git_hash_of_repo() -> str:

@@ -1,5 +1,4 @@
 import numpy as np
-
 from augmented_datasets.augmentations import low_pass_filtering
 
 """
@@ -36,9 +35,7 @@ def high_pass_filtering(image: np.ndarray, sigma: float) -> np.ndarray:
     current_low_passed_image = low_pass_filtering.low_pass_filtering(image, sigma)
     low_passed_image_mean = np.mean(current_low_passed_image)
     current_image_mean = np.mean(image)
-    high_passed_image = (
-        image + (low_passed_image_mean - current_image_mean)
-    ) - current_low_passed_image
+    high_passed_image = (image + (low_passed_image_mean - current_image_mean)) - current_low_passed_image
 
     if np.max(high_passed_image) > 1 and np.min(high_passed_image) < 0:
         print("Warning: Values out of range 0 and 1.")

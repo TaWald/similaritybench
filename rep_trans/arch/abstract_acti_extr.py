@@ -41,7 +41,6 @@ class AbsActiExtrArch(nn.Module):
         self.slice_shift = 0
         self.downsampling_ids: list[int] = []
 
-
     def register_rep_hook(self, hook: Hook, wanted_spatial: int = 0) -> None:
         """Registers the next hook in the list of all hooks.
         Should the index of the hooks overflow returns False,

@@ -174,7 +174,6 @@ def main():
                 path_ckpt_root=tbt_model_ckpt_dir,
             )
 
-
             loss = KEAdversarialTrainLoss(
                 adversarial_loss=adv_l,
                 adversarial_loss_weight=adv_loss_weight,

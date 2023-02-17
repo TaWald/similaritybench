@@ -70,7 +70,7 @@ class KENameEncoder:
         agg: bool = bool(aggregate.split("_")[-1])
         sm: bool = bool(softmax_metrics.split("_")[-1])
         ebr: int = int(epochs_before_regularization.split("_")[-1])
-        
+
         return (
             exp_description,
             dataset,

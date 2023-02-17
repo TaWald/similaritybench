@@ -6,7 +6,7 @@ from rep_trans.arch.ke_architectures.feature_approximation import FAArch
 from rep_trans.losses.ke_loss import KETrainLoss
 from rep_trans.training.ke_train_modules.IntermediateRepresentationLightningModule import (
     IntermediateRepresentationLightningModule,
-    )
+)
 from rep_trans.training.ke_train_modules.utils import get_first_model_base_trainer
 from rep_trans.training.trainers.base_trainer import BaseTrainer
 from rep_trans.util import data_structs as ds

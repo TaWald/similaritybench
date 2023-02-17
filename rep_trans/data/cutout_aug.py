@@ -63,17 +63,13 @@ class Cutout:
 
         mask = np.ones((img_height, img_width, num_channels))
         zeros = np.zeros((mask_height, mask_width, num_channels))
-        mask[
-            upper_coord[0] : lower_coord[0], upper_coord[1] : lower_coord[1], :  #
-        ] = zeros
+        mask[upper_coord[0] : lower_coord[0], upper_coord[1] : lower_coord[1], :] = zeros  #
         return mask, upper_coord, lower_coord
 
     def __call__(self, pil_img):
         pil_img = pil_img.copy()
         img_height, img_width, num_channels = (pil_img.size[0], pil_img.size[1], 3)
-        _, upper_coord, lower_coord = self._create_cutout_mask(
-            img_height, img_width, num_channels, self.size
-        )
+        _, upper_coord, lower_coord = self._create_cutout_mask(img_height, img_width, num_channels, self.size)
         pixels = pil_img.load()  # create the pixel map
         for i in range(upper_coord[0], lower_coord[0]):  # for every col:
             for j in range(upper_coord[1], lower_coord[1]):  # For every row

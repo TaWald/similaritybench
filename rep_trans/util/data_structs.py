@@ -12,8 +12,10 @@ from rep_trans.util import name_conventions as nc
 
 logger = logging.getLogger(__name__)
 
+
 class Dataset(Enum):
     """Info which dataset should be used"""
+
     CIFAR10 = "CIFAR10"
     CIFAR100 = "CIFAR100"
     SPLITCIFAR100 = "SplitCIFAR100"
@@ -232,85 +234,6 @@ class KEAdversarialTrainingInfo(BasicTrainingInfo, TransferLayersInfo):
     epochs_before_regularization: int
 
 
-@dataclass(frozen=True)
-class TrainedModel:
-    """Contains infos about all trained models"""
-
-    experiment_name: str
-    model_name: str
-    model_id: int
-    dataset: Dataset
-    architecture: BaseArchitecture
-    root_data_dir_p: Path
-    root_ckpt_dir_p: Path
-    activation_p: Path
-    rel_quant_p: Path
-    output_json_p: Path
-    class_probs_of_activation_p: Path | None = None
-    class_gt_of_activation_p: Path | None = None
-    checkpoint_p: Path | None = None
-    prune_type: Pruning | None = None
-    prune_pct: str | None = None
-    is_distilled: bool = False
-    src_arch: BaseArchitecture | None = None
-
-
-@dataclass
-class RunInfo:
-    """Dataclass carrying all relevant infos to find the saving paths"""
-
-    experiment_name: str
-    dataset: Dataset
-    architecture: BaseArchitecture
-
-
-class ModelCompChoices(Enum):
-    SAME_MODEL_ID = "SameModel"
-    ALL_MODEL_COMPS = "All"
-    DIFF_MODEL_ID = "DiffModel"
-
-
-@dataclass
-class Comparison:
-    trained_model_src: TrainedModel
-    trained_model_tgt: TrainedModel
-    layer_id_src: int
-    layer_id_tgt: int
-    comparator_type: Comparator
-    comparison_output_path: Path
-    comparison_output_json_path: None | Path = None
-
-
-@dataclass
-class ComparisonInfo:
-    run_info_a: RunInfo
-    run_info_b: RunInfo
-    model_choice: ModelCompChoices
-    same_layer: bool
-    model_ids_a: None | list[int]
-    model_ids_b: None | list[int]
-    pruning_method_a: Pruning | None
-    pruning_pct_a: str | None
-    pruning_method_b: Pruning | None
-    pruning_pct_b: str | None
-    is_distilled_a: bool | None
-    is_distilled_b: bool | None
-
-
-@dataclass
-class ModelInfo:
-    model_id: int
-    layer_id: int
-    prune_pct: str
-
-
-@dataclass(frozen=True)
-class ModelActivations:
-    trained_model: TrainedModel
-    layer_id: int
-    acti_path: Path
-
-
 @dataclass
 class Params:
     """Dataclass containing all hyperparameters needed for a basic training"""
@@ -329,16 +252,6 @@ class Params:
     gamma: float
     split: int
     dataset: str
-
-
-@dataclass
-class MultiInputParams:
-    """Dataclass containing additional information needed for a Multi Head training
-    to take place."""
-
-    filter_redundant: bool
-    hook_id: int
-    dropout_probability: float
 
 
 @dataclass

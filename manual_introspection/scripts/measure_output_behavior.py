@@ -30,7 +30,7 @@ def load_pretrained_val(model_path: Path) -> Output | None:
         gt = io.load(test_gt)
         if len(gt.shape) == 1:
             old_gt = gt
-            gt = np.zeros((gt.shape[0], int(np.max(old_gt))+1))
+            gt = np.zeros((gt.shape[0], int(np.max(old_gt)) + 1))
             gt[np.arange(gt.shape[0]), old_gt] = 1.0
         return Output(prediction=preds, groundtruth=gt)
     else:
@@ -77,21 +77,22 @@ def main():
     # Scratch
     scratch_model_path = Path("/home/tassilowald/Data/Results/knowledge_extension_output_reg/unfrozen_scratch")
     scratch_trained_models = ["groupid_10", "groupid_11", "groupid_12", "groupid_13"]
-    
+
     linear_probing_with_warmup = Path("/home/tassilowald/Data/Results/test_pretraining")
     lp_trained_models = [
         "test_pretraining__CIFAR10__TvResNet34__GroupID_0__Pretrained_1__WarmUp_1__LinearProbeOnly_1",
         "test_pretraining__CIFAR10__TvResNet34__GroupID_1__Pretrained_1__WarmUp_1__LinearProbeOnly_1",
         "test_pretraining__CIFAR10__TvResNet34__GroupID_2__Pretrained_1__WarmUp_1__LinearProbeOnly_1",
         "test_pretraining__CIFAR10__TvResNet34__GroupID_3__Pretrained_1__WarmUp_1__LinearProbeOnly_1",
-        "test_pretraining__CIFAR10__TvResNet34__GroupID_4__Pretrained_1__WarmUp_1__LinearProbeOnly_1"]
+        "test_pretraining__CIFAR10__TvResNet34__GroupID_4__Pretrained_1__WarmUp_1__LinearProbeOnly_1",
+    ]
 
     pretrained_outputs = filter_none([load_pretrained_val(pretrain_init_path / ptm) for ptm in pretrained_models])
     scratch_outputs = filter_none([load_pretrained_val(scratch_model_path / ptm) for ptm in scratch_trained_models])
     lp_outputs = filter_none([load_pretrained_val(linear_probing_with_warmup / lptm) for lptm in lp_trained_models])
 
     combis = itertools.combinations(pretrained_outputs + scratch_outputs + lp_outputs, r=2)
-    all_close= []
+    all_close = []
     for out1, out2 in combis:
         all_close.append(np.allclose(out1.groundtruth, out2.groundtruth))
     assert np.all(all_close), "Should be same gt order!"
@@ -102,7 +103,7 @@ def main():
     pt_scr_combis = list(itertools.product(pretrained_outputs, scratch_outputs))
     pt_lp_combis = list(itertools.product(pretrained_outputs, lp_outputs))
     scr_lp_combis = list(itertools.product(scratch_outputs, lp_outputs))
-    
+
     pt_cohens_kappas = [calculate_cohens_kappa(out1, out2) for out1, out2 in pretrained_combis]
     sc_cohens_kappas = [calculate_cohens_kappa(out1, out2) for out1, out2 in scratch_combis]
     lp_cohens_kappas = [calculate_cohens_kappa(out1, out2) for out1, out2 in lp_combis]
@@ -110,28 +111,28 @@ def main():
     pt_lp_cross_cohens_kappas = [calculate_cohens_kappa(out1, out2) for out1, out2 in pt_lp_combis]
     scr_lp_cross_cohens_kappas = [calculate_cohens_kappa(out1, out2) for out1, out2 in scr_lp_combis]
 
-    mean_pt_cohens_kappa = np.mean(pt_cohens_kappas)
-    mean_sc_cohens_kappa = np.mean(sc_cohens_kappas)
-    maen_lp_cohens_kappa = np.mean(lp_cohens_kappas)
-    mean_pt_sc_cohens_kappa = np.mean(pt_sc_cross_cohens_kappas)
-    mean_pt_lp_cohens_kappa = np.mean(pt_lp_cross_cohens_kappas)
-    mean_scr_lp_cohens_kappa = np.mean(scr_lp_cross_cohens_kappas)
+    mean_pt_cohens_kappa = np.mean(pt_cohens_kappas)  # noqa
+    mean_sc_cohens_kappa = np.mean(sc_cohens_kappas)  # noqa
+    maen_lp_cohens_kappa = np.mean(lp_cohens_kappas)  # noqa
+    mean_pt_sc_cohens_kappa = np.mean(pt_sc_cross_cohens_kappas)  # noqa
+    mean_pt_lp_cohens_kappa = np.mean(pt_lp_cross_cohens_kappas)  # noqa
+    mean_scr_lp_cohens_kappa = np.mean(scr_lp_cross_cohens_kappas)  # noqa
 
     pt_iou = [calculate_error_iou(out1, out2) for out1, out2 in pretrained_combis]
     sc_iou = [calculate_error_iou(out1, out2) for out1, out2 in scratch_combis]
-    cross_iou = [calculate_error_iou(out1, out2) for out1, out2 in cross_combis]
+    lp_iou = [calculate_error_iou(out1, out2) for out1, out2 in lp_combis]
 
-    mean_pt_iou = np.mean(pt_iou)
-    mean_sc_iou = np.mean(sc_iou)
-    mean_cr_iou = np.mean(cross_iou)
+    mean_pt_iou = np.mean(pt_iou)  # noqa
+    mean_sc_iou = np.mean(sc_iou)  # noqa
+    mean_lp_iou = np.mean(lp_iou)  # noqa
 
     pt_error_inc = [calculate_error_inconsitency(out1, out2) for out1, out2 in pretrained_combis]
     sc_error_inc = [calculate_error_inconsitency(out1, out2) for out1, out2 in scratch_combis]
-    cr_error_inc = [calculate_error_inconsitency(out1, out2) for out1, out2 in cross_combis]
+    lp_error_inc = [calculate_error_inconsitency(out1, out2) for out1, out2 in lp_combis]
 
-    mean_pt_error_inc = np.mean(pt_error_inc)
-    mean_sc_error_inc = np.mean(sc_error_inc)
-    mean_cr_error_inc = np.mean(cr_error_inc)
+    mean_pt_error_inc = np.mean(pt_error_inc)  # noqa
+    mean_sc_error_inc = np.mean(sc_error_inc)  # noqa
+    mean_lp_error_inc = np.mean(lp_error_inc)  # noqa
 
     return 0
 
