@@ -8,10 +8,11 @@ from rep_trans.util import data_structs as ds
 from rep_trans.util import default_parser_args as dpa
 from rep_trans.util import file_io
 from rep_trans.util import name_conventions as nc
-from rep_trans.util.default_params import get_default_arch_params, get_default_parameters
+from rep_trans.util.default_params import get_default_arch_params
+from rep_trans.util.default_params import get_default_parameters
 from rep_trans.util.status_check import is_calibrated
 from scripts.post_train_additions.utils import should_process_a_file
-from rep_trans.util import status_check as sc
+
 
 def main():
     parser = argparse.ArgumentParser(description="Specify model hyperparams.")
@@ -43,10 +44,10 @@ def main():
 
         kedp = ke_data_path / dir_name
         kecp = ke_ckpt_path / dir_name
-        
+
         if not is_calibrated(kedp):
-        
-        
+            pass
+
         if not should_process_a_file(kedp):
             continue
 
@@ -89,9 +90,13 @@ def main():
             batch_size=p.batch_size,
             group_id=group_id,
         )
-        
+
         all_training_infos: list[ds.BasicTrainingInfo]
         all_training_infos = [first_model] + prev_training_infos
+
+        # ToDo: Evaluate Robustness of the ensemble (calibrated and uncalibrated)
+        #   1. Load all the models
+        #   2. Extract the
 
         ensemble_module = EnsembleEvaluationLightningModule(all_training_infos, architecture_name, dataset_name)
         trainer = EvalTrainer(model=ensemble_module, params=p, arch_params=arch_params)
