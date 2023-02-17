@@ -2,36 +2,33 @@ from __future__ import annotations
 
 import pytorch_lightning as pl
 import torch
-from torch import nn
-from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
-
+from rep_trans.metrics.ke_metrics import multi_output_metrics
+from rep_trans.metrics.ke_metrics import single_output_metrics
 from rep_trans.util import data_structs as ds
 from rep_trans.util.data_structs import BasicTrainingInfo
 from rep_trans.util.find_architectures import get_base_arch
-from rep_trans.metrics.ke_metrics import multi_output_metrics, single_output_metrics
+from torch import nn
+from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 
 
 class EnsembleEvaluationLightningModule(pl.LightningModule):
-    def __init__(
-        self,
-        infos: list[BasicTrainingInfo],
-        arch_name: str,
-        dataset_name: str
-    ):
+    def __init__(self, infos: list[BasicTrainingInfo], arch_name: str, dataset_name: str):
         super().__init__()
         architectures = [get_base_arch(ds.BaseArchitecture(info.architecture)) for info in infos]
-        loaded_architectures = [arch.load_state_dict(info.path_ckpt) for arch, info in zip(architectures, infos)]
+        loaded_architectures = [
+            arch.load_state_dict(torch.load(info.path_ckpt)) for arch, info in zip(architectures, infos)
+        ]
 
         self.infos = infos
-        self.dataset_name =  dataset_name
+        self.dataset_name = dataset_name
         self.arch_name = arch_name
         self.models = nn.ModuleList(loaded_architectures)
-        
+
         # For the final validation epoch we want to aggregate all activation maps and approximations
         # to calculate the metrics in a less noisy manner.
         self.outputs: torch.Tensor | None = None
         self.gts: torch.Tensor | None = None
-        
+
         self.max_data_points = 3e8
         self.all_metrics: dict = {}
 
@@ -58,8 +55,8 @@ class EnsembleEvaluationLightningModule(pl.LightningModule):
                     old_outputs=self.outputs[:i],
                     groundtruth=self.gts,
                     dataset=ds.Dataset(self.dataset_name),
-                    architecture=ds.BaseArchitecture(self.arch_name))
-                
+                    architecture=ds.BaseArchitecture(self.arch_name),
+                )
 
     def save_validation_values(
         self,
@@ -85,4 +82,3 @@ class EnsembleEvaluationLightningModule(pl.LightningModule):
         im, gt = batch
         outputs = torch.stack(self(im), dim=0)
         self.save_validation_values(groundtruths=gt, outputs=outputs)
-        
