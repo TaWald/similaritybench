@@ -22,7 +22,7 @@ def read_file(file):
     return content
 
 
-requirements = resolve_requirements(os.path.join(os.path.dirname(__file__), "requirements.txt"))
+requirements: list[str] = resolve_requirements(os.path.join(os.path.dirname(__file__), "requirements.txt"))
 readme = read_file(os.path.join(os.path.dirname(__file__), "README.md"))
 
 setup(
@@ -34,12 +34,9 @@ setup(
     long_description=readme,
     long_description_content_type="text/markdown",
     install_requires=requirements,
-    # tests_require=["coverage"],
+    tests_require=["coverage"],
     python_requires=">=3.10",
     author="Division of Medical Image Computing, German Cancer Research Center",
     maintainer_email="tassilo.wald@dkfz-heidelberg.de",
-    entry_points={
-        "console_scripts": [
-        ]
-    },
+    entry_points={"console_scripts": []},
 )
