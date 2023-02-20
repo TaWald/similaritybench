@@ -19,8 +19,9 @@ that are supposed to make the models more dissimilar at some intermediate layer.
 By doing so one enforces that the layer exhibits low levels of e.g. Correlation at some intermediate layer,
 which does not necessarily mean it stands in conflict with the task performance as it might be at the very output.
 
-> Previous related work that tried to work on logits/probabilities had issues that e.g. trying to learn low correlation in logits
-> can lead to bad performance and hence is not really helpful.
+> Previous related work that tried to work on logits/probabilities had issues!
+> E.g. trying to learn low correlation in logits lead to bad performance
+> and hence is not really feasible or helpful.
 
 -----------
 
