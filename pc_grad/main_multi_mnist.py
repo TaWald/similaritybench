@@ -1,15 +1,10 @@
-import pdb
-
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
 from data.multi_mnist import MultiMNIST
 from loss_weight import UncertainLossWeighter
 from net.lenet import MultiLeNetO
 from net.lenet import MultiLeNetR
-from pcgrad import PCGrad
 from torchvision import transforms
 
 # from utils import create_logger

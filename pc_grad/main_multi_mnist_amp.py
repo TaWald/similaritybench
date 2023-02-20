@@ -1,11 +1,7 @@
-import apex
 import numpy as np
 import torch
 import torch.nn.functional as F
 from data.multi_mnist import MultiMNIST
-from gradvac_amp import GradVacAMP
-from learning_rates import AnnealingLR
-from loss_weight import UncertainLossWeighter
 from net.lenet import MultiLeNetO
 from net.lenet import MultiLeNetR
 from pcgrad_amp import PCGradAMP

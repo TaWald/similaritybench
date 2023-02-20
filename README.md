@@ -1,3 +1,5 @@
+[![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)
+
 ## Representation Transfer
 
 This repo contains the codebase that was used to train models conditioned on pre-existing other models.
