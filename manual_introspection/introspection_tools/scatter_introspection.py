@@ -1,9 +1,7 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import plotly.express as px
-import plotly.figure_factory as ff
 import plotly.graph_objs as go
 from manual_introspection.introspection_tools.histogram_introspection import create_dataframe
 from manual_introspection.utils.activation_results import ActivationResult

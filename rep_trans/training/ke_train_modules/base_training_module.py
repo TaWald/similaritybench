@@ -8,7 +8,6 @@ import pytorch_lightning as pl
 import torch
 from rep_trans.arch.abstract_acti_extr import AbsActiExtrArch
 from rep_trans.util import data_structs
-from rep_trans.util import name_conventions as nc
 from rep_trans.util.data_structs import BasicTrainingInfo
 from rep_trans.util.file_io import save_json
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
