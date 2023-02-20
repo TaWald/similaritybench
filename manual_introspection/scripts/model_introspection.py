@@ -198,7 +198,7 @@ def get_adversarial_examples_paths(
                             }
                         )
                 else:
-                    warn(f"Path does not exists for {name.format(layer, sl, dl, dlw)}")
+                    warn(f"Path does not exists for {name.format(layer, adv_weight, grs_weight)}")
     return examples
 
 
