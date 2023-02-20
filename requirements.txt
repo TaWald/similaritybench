@@ -21,7 +21,7 @@ imageio>=2.9.0
 PyYaml>=5.4.1
 pyDeprecate
 medmnist
--e git+git@git.dkfz.de/mic/personal/group2/tassilow/augmented_cifar10.git@d0fa8373a45dcf533feec658fc612a46c2e7a844#egg=augmented_cifar
+-e git@git.dkfz.de/mic/personal/group2/tassilow/augmented_cifar10.git@d0fa8373a45dcf533feec658fc612a46c2e7a844#egg=augmented_cifar
 
 numpy
 chardet
