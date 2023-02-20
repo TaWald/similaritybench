@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 from medmnist.info import DEFAULT_ROOT
-from medmnist.info import HOMEPAGE
 from medmnist.info import INFO
 from PIL import Image
 from torch.utils.data import Dataset
@@ -75,16 +74,9 @@ class MedMNIST(Dataset):
         return "\n".join(lines)
 
     def download(self):
-        try:
-            from torchvision.datasets.utils import download_url
+        from torchvision.datasets.utils import download_url
 
-            download_url(
-                url=self.info["url"], root=self.root, filename="{}.npz".format(self.flag), md5=self.info["MD5"]
-            )
-        except:
-            raise RuntimeError(
-                "Something went wrong when downloading! " + "Go to the homepage to download manually. " + HOMEPAGE
-            )
+        download_url(url=self.info["url"], root=self.root, filename="{}.npz".format(self.flag), md5=self.info["MD5"])
 
 
 class MedMNIST2D(MedMNIST):
