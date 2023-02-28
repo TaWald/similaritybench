@@ -27,4 +27,4 @@ repos:
     rev: v2.6.0
     hooks:
     -   id: reorder-python-imports
-        args: [--application-directories=.rep_trans, --py36-plus]
+        args: [--application-directories=.ke, --py36-plus]
