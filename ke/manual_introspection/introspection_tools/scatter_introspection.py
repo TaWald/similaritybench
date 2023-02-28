@@ -3,8 +3,8 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
-from manual_introspection.introspection_tools.histogram_introspection import create_dataframe
-from manual_introspection.utils.activation_results import ActivationResult
+from ke.manual_introspection.introspection_tools.histogram_introspection import create_dataframe
+from ke.manual_introspection.utils.activation_results import ActivationResult
 
 
 def all_layer_scatterplot_histogram(moi_with_errors: list[ActivationResult], title: str, output_path: Path):

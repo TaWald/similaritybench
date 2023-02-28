@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.figure_factory as ff
-from manual_introspection.utils.activation_results import ActivationResult
+from ke.manual_introspection.utils.activation_results import ActivationResult
 
 
 def create_dataframe_from_np_arrays(results: dict[str : np.ndarray], meta_info: dict = None) -> pd.DataFrame:
