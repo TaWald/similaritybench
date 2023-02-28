@@ -10,16 +10,16 @@ import plotly.express as px
 import torch.utils.data
 from manual_introspection.introspection_tools.histogram_introspection import create_dataframe_from_np_arrays
 from plotly import graph_objects as go
-from rep_trans.arch.abstract_acti_extr import AbsActiExtrArch
-from rep_trans.arch.arch_loading import load_kemodule_model
-from rep_trans.arch.arch_loading import load_model
-from rep_trans.arch.ke_architectures.feature_approximation_gradient_reversal import (
+from ke.arch.abstract_acti_extr import AbsActiExtrArch
+from ke.arch.arch_loading import load_kemodule_model
+from ke.arch.arch_loading import load_model
+from ke.arch.ke_architectures.feature_approximation_gradient_reversal import (
     FAGradientReversalArch,
 )
-from rep_trans.data.base_datamodule import BaseDataModule
-from rep_trans.util import data_structs as ds
-from rep_trans.util.file_io import load_datamodule
-from rep_trans.util.status_check import model_is_finished
+from ke.data.base_datamodule import BaseDataModule
+from ke.util import data_structs as ds
+from ke.util.file_io import load_datamodule
+from ke.util.status_check import model_is_finished
 from torch.utils.data import DataLoader
 
 

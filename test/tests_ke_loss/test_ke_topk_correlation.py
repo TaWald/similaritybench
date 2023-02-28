@@ -4,7 +4,7 @@ from typing import Sequence
 
 import numpy as np
 import torch
-from rep_trans.losses.utils import topk_correlation
+from ke.losses.utils import topk_correlation
 from torchmetrics.functional import pearson_corrcoef
 
 

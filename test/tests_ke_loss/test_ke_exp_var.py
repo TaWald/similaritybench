@@ -5,7 +5,7 @@ from typing import Sequence
 import numpy as np
 import torch as t
 import torch.nn.functional as F
-from rep_trans.losses.utils import celu_explained_variance
+from ke.losses.utils import celu_explained_variance
 from torchmetrics.functional import explained_variance
 
 

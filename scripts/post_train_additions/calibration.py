@@ -2,17 +2,17 @@ import argparse
 import sys
 from pathlib import Path
 
-from rep_trans.arch.arch_loading import load_model_from_info_file
-from rep_trans.training.ke_train_modules.CalibrationModule import Calibrator
-from rep_trans.util import data_structs as ds
-from rep_trans.util import default_parser_args as dpa
-from rep_trans.util import file_io
-from rep_trans.util import name_conventions as nc
-from rep_trans.util.default_params import get_default_parameters
-from rep_trans.util.file_io import load_datamodule_from_info
-from rep_trans.util.file_io import save_json
-from rep_trans.util.gpu_cluster_worker_nodes import get_workers_for_current_node
-from rep_trans.util.status_check import is_calibrated
+from ke.arch.arch_loading import load_model_from_info_file
+from ke.training.ke_train_modules.CalibrationModule import Calibrator
+from ke.util import data_structs as ds
+from ke.util import default_parser_args as dpa
+from ke.util import file_io
+from ke.util import name_conventions as nc
+from ke.util.default_params import get_default_parameters
+from ke.util.file_io import load_datamodule_from_info
+from ke.util.file_io import save_json
+from ke.util.gpu_cluster_worker_nodes import get_workers_for_current_node
+from ke.util.status_check import is_calibrated
 from scripts.post_train_additions.utils import clean_up_after_processing
 from scripts.post_train_additions.utils import should_process_a_file
 

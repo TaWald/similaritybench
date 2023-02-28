@@ -4,28 +4,28 @@ from copy import deepcopy
 from pathlib import Path
 
 import torch
-from rep_trans.arch.ke_architectures.adversarial_lense_new_model_training_arch import (
+from ke.arch.ke_architectures.adversarial_lense_new_model_training_arch import (
     AdversarialLenseNewModelTrainingArch,
 )
-from rep_trans.arch.ke_architectures.adversarial_lense_training_arch import AdversarialLenseTrainingArch
-from rep_trans.arch.lense_architecture import UNetLense
-from rep_trans.losses.ke_lense_output_loss import KELenseOutputTrainLoss
-from rep_trans.losses.static_lense_losses.negative_cross_entropy import NegativeCrossEntropyLenseLoss
-from rep_trans.training.ke_train_modules.AdversarialLenseLightningModule import AdversarialLenseLightningModule
-from rep_trans.training.ke_train_modules.AdversarialLenseModelTrainingLightningModule import (
+from ke.arch.ke_architectures.adversarial_lense_training_arch import AdversarialLenseTrainingArch
+from ke.arch.lense_architecture import UNetLense
+from ke.losses.ke_lense_output_loss import KELenseOutputTrainLoss
+from ke.losses.static_lense_losses.negative_cross_entropy import NegativeCrossEntropyLenseLoss
+from ke.training.ke_train_modules.AdversarialLenseLightningModule import AdversarialLenseLightningModule
+from ke.training.ke_train_modules.AdversarialLenseModelTrainingLightningModule import (
     AdversarialLenseModelTrainingLightningModule,
 )
-from rep_trans.training.ke_train_modules.utils import get_first_model_base_trainer
-from rep_trans.training.trainers.base_trainer import BaseTrainer
-from rep_trans.training.trainers.lense_trainer import LenseTrainer
-from rep_trans.util import data_structs as ds
-from rep_trans.util import default_parser_args as dpa
-from rep_trans.util import file_io
-from rep_trans.util import find_datamodules as fd
-from rep_trans.util import name_conventions as nc
-from rep_trans.util.data_structs import ArchitectureInfo
-from rep_trans.util.default_params import get_default_arch_params
-from rep_trans.util.default_params import get_default_parameters
+from ke.training.ke_train_modules.utils import get_first_model_base_trainer
+from ke.training.trainers.base_trainer import BaseTrainer
+from ke.training.trainers.lense_trainer import LenseTrainer
+from ke.util import data_structs as ds
+from ke.util import default_parser_args as dpa
+from ke.util import file_io
+from ke.util import find_datamodules as fd
+from ke.util import name_conventions as nc
+from ke.util.data_structs import ArchitectureInfo
+from ke.util.default_params import get_default_arch_params
+from ke.util.default_params import get_default_parameters
 from torch import nn
 
 

@@ -1,0 +1,20 @@
+[project]
+name = "ke"
+version = "0.0"
+authors = [{ name = "Tassilo Wald", email = "tassilo.wald@dkfz-heidelberg.de"}]
+description= """Framework for developing diverse Ensembles through regularizations of different kinds"""
+
+dynamic = ["dependencies"]
+
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: GNU GENERAL PUBLIC LICENSE",
+]
+
+[project.urls]
+"Homepage" = "https://git.dkfz.de/mic/personal/group2/tassilow/knowledge_extension"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}

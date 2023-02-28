@@ -5,7 +5,7 @@ from typing import Sequence
 
 import numpy as np
 import torch as t
-from rep_trans.losses.utils import centered_kernel_alignment
+from ke.losses.utils import centered_kernel_alignment
 
 
 def create_random_tensor(shape: Sequence) -> t.Tensor:

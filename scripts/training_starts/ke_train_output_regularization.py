@@ -2,21 +2,21 @@ import argparse
 import sys
 from pathlib import Path
 
-from rep_trans.arch.ke_architectures.output_regularization import OutputRegularizerArch
-from rep_trans.losses.ke_output_loss import KEOutputTrainLoss
-from rep_trans.training.ke_train_modules.KEOutputTrainingModule import KEOutputLightningModule
-from rep_trans.training.ke_train_modules.KEOutputTrainingModule import KEOutputPCGrad
-from rep_trans.training.ke_train_modules.utils import get_first_model_base_trainer
-from rep_trans.training.trainers.base_trainer import BaseTrainer
-from rep_trans.util import data_structs as ds
-from rep_trans.util import default_parser_args as dpa
-from rep_trans.util import file_io
-from rep_trans.util import find_datamodules as fd
-from rep_trans.util import name_conventions as nc
-from rep_trans.util.data_structs import ArchitectureInfo
-from rep_trans.util.default_params import get_default_arch_params
-from rep_trans.util.default_params import get_default_parameters
-from rep_trans.util.find_ke_loss import find_output_ke_loss
+from ke.arch.ke_architectures.output_regularization import OutputRegularizerArch
+from ke.losses.ke_output_loss import KEOutputTrainLoss
+from ke.training.ke_train_modules.KEOutputTrainingModule import KEOutputLightningModule
+from ke.training.ke_train_modules.KEOutputTrainingModule import KEOutputPCGrad
+from ke.training.ke_train_modules.utils import get_first_model_base_trainer
+from ke.training.trainers.base_trainer import BaseTrainer
+from ke.util import data_structs as ds
+from ke.util import default_parser_args as dpa
+from ke.util import file_io
+from ke.util import find_datamodules as fd
+from ke.util import name_conventions as nc
+from ke.util.data_structs import ArchitectureInfo
+from ke.util.default_params import get_default_arch_params
+from ke.util.default_params import get_default_parameters
+from ke.util.find_ke_loss import find_output_ke_loss
 
 
 def main():

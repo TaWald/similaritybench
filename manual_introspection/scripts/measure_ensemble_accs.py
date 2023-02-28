@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pandas as pd
 import seaborn as sns
+from ke.metrics.ke_metrics import look_up_baseline_cohens_kappa
+from ke.util import data_structs as ds
+from ke.util import file_io as io
+from ke.util import name_conventions as nc
+from ke.util.file_io import load_json
 from matplotlib import pyplot as plt
-from rep_trans.metrics.ke_metrics import look_up_baseline_cohens_kappa
-from rep_trans.util import data_structs as ds
-from rep_trans.util import file_io as io
-from rep_trans.util import name_conventions as nc
-from rep_trans.util.file_io import load_json
 
 
 def get_models_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[tuple[Path, dict]]:

@@ -2,15 +2,15 @@ import argparse
 import sys
 from pathlib import Path
 
-from rep_trans.training.ke_train_modules.EnsembleEvaluationLightningModule import EnsembleEvaluationLightningModule
-from rep_trans.training.trainers.eval_trainer import EvalTrainer
-from rep_trans.util import data_structs as ds
-from rep_trans.util import default_parser_args as dpa
-from rep_trans.util import file_io
-from rep_trans.util import name_conventions as nc
-from rep_trans.util.default_params import get_default_arch_params
-from rep_trans.util.default_params import get_default_parameters
-from rep_trans.util.status_check import is_calibrated
+from ke.training.ke_train_modules.EnsembleEvaluationLightningModule import EnsembleEvaluationLightningModule
+from ke.training.trainers.eval_trainer import EvalTrainer
+from ke.util import data_structs as ds
+from ke.util import default_parser_args as dpa
+from ke.util import file_io
+from ke.util import name_conventions as nc
+from ke.util.default_params import get_default_arch_params
+from ke.util.default_params import get_default_parameters
+from ke.util.status_check import is_calibrated
 from scripts.post_train_additions.utils import should_process_a_file
 
 

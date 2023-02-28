@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from rep_trans.arch.abstract_acti_extr import AbsActiExtrArch
-from rep_trans.data.base_datamodule import BaseDataModule
-from rep_trans.deprecated_files.prediction_evaluation import binary_cohens_kappa
-from rep_trans.deprecated_files.prediction_evaluation import error_inconsistency
-from rep_trans.util import file_io as io
-from rep_trans.util import name_conventions as nc
+from ke.arch.abstract_acti_extr import AbsActiExtrArch
+from ke.data.base_datamodule import BaseDataModule
+from ke.deprecated_files.prediction_evaluation import binary_cohens_kappa
+from ke.deprecated_files.prediction_evaluation import error_inconsistency
+from ke.util import file_io as io
+from ke.util import name_conventions as nc
 
 
 @dataclass

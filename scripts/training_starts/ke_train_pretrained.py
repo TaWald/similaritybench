@@ -2,18 +2,18 @@ import argparse
 import sys
 from pathlib import Path
 
-from rep_trans.arch.ke_architectures.single_model import SingleModel
-from rep_trans.losses.dummy_loss import DummyLoss
-from rep_trans.training.ke_train_modules.single_lightning_module import WarmStartSingleLightningModule
-from rep_trans.training.trainers.base_trainer import BaseTrainer
-from rep_trans.util import data_structs as ds
-from rep_trans.util import default_parser_args as dpa
-from rep_trans.util import file_io
-from rep_trans.util import find_datamodules as fd
-from rep_trans.util import name_conventions as nc
-from rep_trans.util.default_params import get_default_arch_params
-from rep_trans.util.default_params import get_default_parameters
-from rep_trans.util.find_architectures import get_tv_arch
+from ke.arch.ke_architectures.single_model import SingleModel
+from ke.losses.dummy_loss import DummyLoss
+from ke.training.ke_train_modules.single_lightning_module import WarmStartSingleLightningModule
+from ke.training.trainers.base_trainer import BaseTrainer
+from ke.util import data_structs as ds
+from ke.util import default_parser_args as dpa
+from ke.util import file_io
+from ke.util import find_datamodules as fd
+from ke.util import name_conventions as nc
+from ke.util.default_params import get_default_arch_params
+from ke.util.default_params import get_default_parameters
+from ke.util.find_architectures import get_tv_arch
 
 
 def main():

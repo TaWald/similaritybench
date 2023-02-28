@@ -7,16 +7,16 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
-from rep_trans.arch.abstract_acti_extr import AbsActiExtrArch
-from rep_trans.losses.utils import centered_kernel_alignment
-from rep_trans.util import data_structs as ds
-from rep_trans.util import file_io as io
-from rep_trans.util import find_architectures
-from rep_trans.util import find_datamodules
-from rep_trans.util import name_conventions as nc
-from rep_trans.util.file_io import load_json
-from rep_trans.util.file_io import save_json
-from rep_trans.util.file_io import strip_state_dict_of_keys
+from ke.arch.abstract_acti_extr import AbsActiExtrArch
+from ke.losses.utils import centered_kernel_alignment
+from ke.util import data_structs as ds
+from ke.util import file_io as io
+from ke.util import find_architectures
+from ke.util import find_datamodules
+from ke.util import name_conventions as nc
+from ke.util.file_io import load_json
+from ke.util.file_io import save_json
+from ke.util.file_io import strip_state_dict_of_keys
 from tqdm import tqdm
 
 

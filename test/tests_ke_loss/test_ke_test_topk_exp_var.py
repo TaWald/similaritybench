@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch as t
 import torch.nn.functional as F
-from rep_trans.losses.utils import topk_celu_explained_variance
+from ke.losses.utils import topk_celu_explained_variance
 
 
 def create_random_tensor(shape: Sequence) -> t.Tensor:

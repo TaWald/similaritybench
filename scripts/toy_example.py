@@ -4,9 +4,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from ke.comp.cca_core import get_cca_similarity
+from ke.comp.cca_pw import compute_pwcca
 from matplotlib import pyplot as plt
-from rep_trans.comp.cca_core import get_cca_similarity
-from rep_trans.comp.cca_pw import compute_pwcca
 from scipy.stats import ortho_group
 from sklearn import cross_decomposition
 

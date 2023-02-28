@@ -5,11 +5,11 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn.functional as F
-from rep_trans.losses.output_losses.adaptive_diversity_promoting_regularization import ensemble_entropy
-from rep_trans.losses.output_losses.adaptive_diversity_promoting_regularization import (
+from ke.losses.output_losses.adaptive_diversity_promoting_regularization import ensemble_entropy
+from ke.losses.output_losses.adaptive_diversity_promoting_regularization import (
     filter_true_class_from_predictions,
 )
-from rep_trans.losses.output_losses.adaptive_diversity_promoting_regularization import nlog_ensemble_diversity
+from ke.losses.output_losses.adaptive_diversity_promoting_regularization import nlog_ensemble_diversity
 
 
 def read_single_sample_file():

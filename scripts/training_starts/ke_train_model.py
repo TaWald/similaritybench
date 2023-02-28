@@ -2,23 +2,23 @@ import argparse
 import sys
 from pathlib import Path
 
-from rep_trans.arch.ke_architectures.feature_approximation import FAArch
-from rep_trans.losses.ke_loss import KETrainLoss
-from rep_trans.training.ke_train_modules.IntermediateRepresentationLightningModule import (
+from ke.arch.ke_architectures.feature_approximation import FAArch
+from ke.losses.ke_loss import KETrainLoss
+from ke.training.ke_train_modules.IntermediateRepresentationLightningModule import (
     IntermediateRepresentationLightningModule,
 )
-from rep_trans.training.ke_train_modules.utils import get_first_model_base_trainer
-from rep_trans.training.trainers.base_trainer import BaseTrainer
-from rep_trans.util import data_structs as ds
-from rep_trans.util import default_parser_args as dpa
-from rep_trans.util import file_io
-from rep_trans.util import find_architectures as fa
-from rep_trans.util import find_datamodules as fd
-from rep_trans.util import name_conventions as nc
-from rep_trans.util.data_structs import ArchitectureInfo
-from rep_trans.util.default_params import get_default_arch_params
-from rep_trans.util.default_params import get_default_parameters
-from rep_trans.util.find_ke_loss import find_ke_loss
+from ke.training.ke_train_modules.utils import get_first_model_base_trainer
+from ke.training.trainers.base_trainer import BaseTrainer
+from ke.util import data_structs as ds
+from ke.util import default_parser_args as dpa
+from ke.util import file_io
+from ke.util import find_architectures as fa
+from ke.util import find_datamodules as fd
+from ke.util import name_conventions as nc
+from ke.util.data_structs import ArchitectureInfo
+from ke.util.default_params import get_default_arch_params
+from ke.util.default_params import get_default_parameters
+from ke.util.find_ke_loss import find_ke_loss
 
 
 def main():

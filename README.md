@@ -26,7 +26,7 @@ which does not necessarily mean it stands in conflict with the task performance 
 The following approaches are investigated:
 
 #### Knowledge Extension
-![Knowledge Extension](rep_trans/readme_images/knowledge_extension.png)
+![Knowledge Extension](ke/readme_images/knowledge_extension.png)
 
 Knowledge Extension is the original idea that regularizes representations at some intermediate layer
 by creating an adversarial setting of an old model that tries to approximate the newly learned representations of the
