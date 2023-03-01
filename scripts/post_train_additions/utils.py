@@ -42,7 +42,7 @@ def clean_up_after_processing(directory: Path):
     return
 
 
-def should_process_a_file(dir_path: Path) -> bool:
+def should_process_a_dir(dir_path: Path) -> bool:
     """
     Indicator if the current directory should be processed by the current process.
 

@@ -44,20 +44,23 @@ class KENameEncoder:
         """
 
         values = str(dirname).split("__")
-        (
-            exp_description,
-            dataset,
-            architecture,
-            group_id,
-            hook_positions,
-            tdepth,
-            kwidth,
-            sim_l,
-            dis_l,
-            aggregate,
-            softmax_metrics,
-            epochs_before_regularization,
-        ) = values
+        try:
+            (
+                exp_description,
+                dataset,
+                architecture,
+                group_id,
+                hook_positions,
+                tdepth,
+                kwidth,
+                sim_l,
+                dis_l,
+                aggregate,
+                softmax_metrics,
+                epochs_before_regularization,
+            ) = values
+        except ValueError as e:
+            raise ValueError(f"{dirname} seems not to be up to current knowledge_extension naming standards.") from e
         group_id_i: int = int(group_id.split("_")[-1])
         joined_hooks: str = hook_positions.split("_")[-1]
         hooks: list[int] = [int(a) for a in joined_hooks.split("-")]

@@ -11,7 +11,7 @@ from ke.util import name_conventions as nc
 from ke.util.default_params import get_default_arch_params
 from ke.util.default_params import get_default_parameters
 from ke.util.status_check import is_calibrated
-from scripts.post_train_additions.utils import should_process_a_file
+from scripts.post_train_additions.utils import should_process_a_dir
 
 
 def main():
@@ -48,7 +48,7 @@ def main():
         if not is_calibrated(kedp):
             pass
 
-        if not should_process_a_file(kedp):
+        if not should_process_a_dir(kedp):
             continue
 
         decoded = encoder.decode(dir_name)

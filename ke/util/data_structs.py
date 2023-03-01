@@ -74,9 +74,7 @@ class TransferLayersInfo:
 
 
 @dataclass(frozen=True)
-class BasicTrainingInfo:
-    experiment_name: str
-    experiment_description: str
+class FirstModelInfo:
     dir_name: str
     model_id: int  # 0 Indicates it has not been regularized.
     group_id: int
@@ -92,6 +90,7 @@ class BasicTrainingInfo:
     # Basic paths
     path_data_root: Path
     path_ckpt_root: Path
+
     path_ckpt: Path = field(init=False)
     path_activations: Path = field(init=False)
     path_predictions_train: Path = field(init=False)
@@ -124,6 +123,12 @@ class BasicTrainingInfo:
         object.__setattr__(self, "path_calib_json", self.path_data_root / nc.CALIB_TMPLT)
         object.__setattr__(self, "path_train_log", self.path_data_root / nc.LOG_DIR)
         object.__setattr__(self, "path_train_info_json", self.path_data_root / nc.KE_INFO_FILE)
+
+
+@dataclass(frozen=True)
+class BasicTrainingInfo(FirstModelInfo):
+    experiment_name: str
+    experiment_description: str
 
 
 @dataclass(frozen=True)

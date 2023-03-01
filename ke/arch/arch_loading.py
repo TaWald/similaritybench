@@ -101,7 +101,7 @@ def load_model(source_data_path: Path, source_ckpt_path: Path) -> AbsActiExtrArc
     return architecture_inst
 
 
-def load_model_from_info_file(model_info: ds.BasicTrainingInfo, load_ckpt: bool) -> AbsActiExtrArch:
+def load_model_from_info_file(model_info: ds.FirstModelInfo, load_ckpt: bool) -> AbsActiExtrArch:
     """Loads model from a BasicTrainingInfo file.
     :param model_info: Model configuration file to load from.
     :param load_ckpt: Flag if the ckpt should be loaded as well.

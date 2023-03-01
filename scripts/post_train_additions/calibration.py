@@ -14,10 +14,10 @@ from ke.util.file_io import save_json
 from ke.util.gpu_cluster_worker_nodes import get_workers_for_current_node
 from ke.util.status_check import is_calibrated
 from scripts.post_train_additions.utils import clean_up_after_processing
-from scripts.post_train_additions.utils import should_process_a_file
+from scripts.post_train_additions.utils import should_process_a_dir
 
 
-def calibrate_model(model_info: ds.BasicTrainingInfo) -> None:
+def calibrate_model(model_info: ds.FirstModelInfo) -> None:
     """
     Calibrates a model based on the info file given.
     :param model_info: Model info parametrization file.
@@ -54,19 +54,6 @@ def main():
     args = parser.parse_args()
     ke_dirname = args.ke_dir_name
 
-    if ke_dirname == nc.KNOWLEDGE_EXTENSION_DIRNAME:
-        encoder = nc.KENameEncoder
-    elif ke_dirname == nc.KE_OUTPUT_REGULARIZATION_DIRNAME:
-        encoder = nc.KEOutputNameEncoder
-    elif ke_dirname == nc.KE_ADVERSARIAL_LENSE_DIRNAME:
-        encoder = nc.KEAdversarialLenseOutputNameEncoder
-    elif ke_dirname == nc.KNOWLEDGE_ADVERSARIAL_DIRNAME:
-        encoder = nc.KEAdversarialNameEncoder
-    elif ke_dirname == nc.KNOWLEDGE_UNUSEABLE_DIRNAME:
-        encoder = nc.KEUnusableDownstreamNameEncoder
-    else:
-        raise NotImplementedError
-
     base_data_path = Path(file_io.get_experiments_data_root_path())
     base_ckpt_path = Path(file_io.get_experiments_checkpoints_root_path())
 
@@ -76,52 +63,44 @@ def main():
     for res in ke_data_path.iterdir():
         dir_name = res.name
 
+        all_training_infos: list[ds.FirstModelInfo] = []
         kedp = ke_data_path / dir_name
         kecp = ke_ckpt_path / dir_name
 
-        decoded = encoder.decode(dir_name)
-        exp_name = decoded[0]
-        dataset_name = decoded[1]
-        architecture_name = decoded[2]
-        prev_training_infos: list[ds.BasicTrainingInfo]
-        if ke_dirname == nc.KNOWLEDGE_EXTENSION_DIRNAME:
-            group_id = decoded[6]
-            prev_training_infos = file_io.get_trained_ke_models(kedp, kecp)
-        elif ke_dirname == nc.KE_OUTPUT_REGULARIZATION_DIRNAME:
-            group_id = decoded[3]
-            prev_training_infos = file_io.get_trained_keo_models(kedp, kecp)
-        elif ke_dirname == nc.KE_ADVERSARIAL_LENSE_DIRNAME:
-            group_id = decoded[3]
-            prev_training_infos = file_io.get_trained_adversarial_lense_models(kedp, kecp)
-        elif ke_dirname == nc.KNOWLEDGE_ADVERSARIAL_DIRNAME:
-            group_id = decoded[6]
-            prev_training_infos = file_io.get_trained_ke_adv_models(kedp, kecp)
-        elif ke_dirname == nc.KNOWLEDGE_UNUSEABLE_DIRNAME:
-            group_id = decoded[6]
-            prev_training_infos = file_io.get_trained_ke_unuseable_models(kedp, kecp)
+        if dir_name.startswith(nc.KE_FIRST_MODEL_DIR):
+            _, dataset_name, architecture_name = dir_name.split("__")
+            p: ds.Params = get_default_parameters(architecture_name, ds.Dataset(dataset_name))
+            for sub_dir in res.iterdir():
+                group_id = int(sub_dir.name.split("_")[-1])
+                all_training_infos.append(
+                    file_io.get_first_model(
+                        ke_data_path=ke_data_path,
+                        ke_ckpt_path=ke_ckpt_path,
+                        architecture=architecture_name,
+                        dataset=dataset_name,
+                        learning_rate=p.learning_rate,
+                        split=p.split,
+                        weight_decay=p.weight_decay,
+                        batch_size=p.batch_size,
+                        group_id=group_id,
+                    )
+                )
         else:
-            raise NotImplementedError
+            if ke_dirname == nc.KNOWLEDGE_EXTENSION_DIRNAME:
+                all_training_infos = file_io.get_trained_ke_models(kedp, kecp)
+            elif ke_dirname == nc.KE_OUTPUT_REGULARIZATION_DIRNAME:
+                all_training_infos = file_io.get_trained_keo_models(kedp, kecp)
+            elif ke_dirname == nc.KE_ADVERSARIAL_LENSE_DIRNAME:
+                all_training_infos = file_io.get_trained_adversarial_lense_models(kedp, kecp)
+            elif ke_dirname == nc.KNOWLEDGE_ADVERSARIAL_DIRNAME:
+                all_training_infos = file_io.get_trained_ke_adv_models(kedp, kecp)
+            elif ke_dirname == nc.KNOWLEDGE_UNUSEABLE_DIRNAME:
+                all_training_infos = file_io.get_trained_ke_unuseable_models(kedp, kecp)
+            else:
+                raise NotImplementedError
 
-        # Do the baseline model creation if it not already exists!
-        p: ds.Params = get_default_parameters(architecture_name, ds.Dataset(dataset_name))
-
-        first_model = file_io.get_first_model(
-            experiment_description=exp_name,
-            ke_data_path=ke_data_path,
-            ke_ckpt_path=ke_ckpt_path,
-            architecture=architecture_name,
-            dataset=dataset_name,
-            learning_rate=p.learning_rate,
-            split=p.split,
-            weight_decay=p.weight_decay,
-            batch_size=p.batch_size,
-            group_id=group_id,
-        )
-
-        all_training_infos: list[ds.BasicTrainingInfo]
-        all_training_infos = [first_model] + prev_training_infos
-
-        if not should_process_a_file(res):
+            # Do the baseline model creation if it not already exists!
+        if not should_process_a_dir(res):
             continue
 
         for train_info in all_training_infos:

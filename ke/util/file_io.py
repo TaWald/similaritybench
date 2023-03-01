@@ -168,7 +168,6 @@ def strip_state_dict_of_keys(state_dict: dict) -> OrderedDict:
 
 
 def get_first_model(
-    experiment_description: str,
     ke_data_path: str | Path,
     ke_ckpt_path: str | Path,
     architecture: str,
@@ -178,7 +177,7 @@ def get_first_model(
     weight_decay: float,
     batch_size: int,
     group_id: int,
-) -> ds.BasicTrainingInfo:
+) -> ds.FirstModelInfo:
     """Return the checkpoint of the group id if it already exists!"""
     edp: Path = (
         Path(ke_data_path)
@@ -191,9 +190,7 @@ def get_first_model(
         / nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id)
     )
 
-    first_model = ds.BasicTrainingInfo(
-        experiment_description=experiment_description,
-        experiment_name=experiment_description,
+    first_model = ds.FirstModelInfo(
         dir_name=nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id),
         architecture=architecture,
         dataset=dataset,
@@ -342,7 +339,7 @@ def load_datamodule(source_path) -> BaseDataModule:
     return get_datamodule(dataset)
 
 
-def load_datamodule_from_info(model_info: ds.BasicTrainingInfo) -> BaseDataModule:
+def load_datamodule_from_info(model_info: ds.FirstModelInfo) -> BaseDataModule:
     """
     Returns an instance of the datamodule that was used in training of the trained model from the path.
     """
