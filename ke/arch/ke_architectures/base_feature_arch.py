@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from abc import ABC
 from abc import abstractmethod
 
 from ke.arch import abstract_acti_extr
 from torch import nn
 
 
-class BaseFeatureArch(nn.Module, ABC):
+class BaseFeatureArch(nn.Module):
     """
     This class is supposed to be a wrapper around old architectures,
         which provide features of an intermediate layer. Also
@@ -25,5 +24,5 @@ class BaseFeatureArch(nn.Module, ABC):
 
     def state_dict(self, *args, **kwargs):
         raise NotImplementedError(
-            "This mustn't be implemented to make sure" + " saving is called directly on the new architecture."
+            "This mustn't be implemented to make sure saving is called directly on the new architecture."
         )
