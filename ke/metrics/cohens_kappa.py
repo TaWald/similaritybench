@@ -5,8 +5,8 @@ import torch
 def binary_cohens_kappa(preds_a: torch.Tensor, preds_b: torch.Tensor, gt: torch.Tensor) -> torch.Tensor:
     """Calculates the error consistency between the model a and model b
 
-    :param preds_a:
-    :param preds_b:
+    :param preds_a:  Values of the predicted class e.g. CIFAR10: [0 ... 9]
+    :param preds_b: Values of the predicted class e.g. CIFAR10: [0 ... 9]
     :param gt:  NOT One-HOT! Instead pass argmax of the one hots!
     :return:
     """
