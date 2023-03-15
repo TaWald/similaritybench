@@ -91,7 +91,6 @@ def main():
 
     # Do the baseline model creation if it not already exists!
     first_model = file_io.get_first_model(
-        experiment_description=exp_name,
         ke_data_path=ke_data_path,
         ke_ckpt_path=ke_ckpt_path,
         architecture=args.architecture,

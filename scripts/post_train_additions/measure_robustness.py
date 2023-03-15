@@ -52,7 +52,6 @@ def main():
             continue
 
         decoded = encoder.decode(dir_name)
-        exp_name = decoded[0]
         dataset_name = decoded[1]
         architecture_name = decoded[2]
         prev_training_infos: list[ds.BasicTrainingInfo]
@@ -79,7 +78,6 @@ def main():
         arch_params = get_default_arch_params(ds.Dataset(dataset_name))
 
         first_model = file_io.get_first_model(
-            experiment_description=exp_name,
             ke_data_path=ke_data_path,
             ke_ckpt_path=ke_ckpt_path,
             architecture=architecture_name,
@@ -91,7 +89,7 @@ def main():
             group_id=group_id,
         )
 
-        all_training_infos: list[ds.BasicTrainingInfo]
+        all_training_infos: list[ds.FirstModelInfo]
         all_training_infos = [first_model] + prev_training_infos
 
         # ToDo: Evaluate Robustness of the ensemble (calibrated and uncalibrated)

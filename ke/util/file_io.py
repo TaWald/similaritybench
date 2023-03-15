@@ -207,7 +207,7 @@ def get_first_model(
     return first_model
 
 
-def first_model_trained(first_model: ds.BasicTrainingInfo) -> bool:
+def first_model_trained(first_model: ds.FirstModelInfo) -> bool:
     """Return true if the info file and checkpoint exists."""
 
     return first_model.path_train_info_json.exists() and first_model.path_ckpt.exists()
