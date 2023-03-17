@@ -17,6 +17,7 @@ from ke.losses.utils import euclidean_distance_csim
 from ke.metrics.aurc import aurc
 from ke.metrics.cohens_kappa import binary_cohens_kappa
 from ke.metrics.error_ratios import error_ratios
+from ke.metrics.relative_ensemble_performance import relative_ensemble_performance
 from ke.util import data_structs as ds
 from numpy import genfromtxt
 from torch.nn import functional as F
@@ -60,6 +61,7 @@ class MultiOutMetrics(SingleOutMetrics):
     ensemble_accuracy: float
     ensemble_max_softmax_aurc: float
     ensemble_mutual_info_aurc: float
+    rel_ensemble_performance: float
     ensemble_ece: float
     cohens_kappa: float
     error_ratio: float
@@ -155,7 +157,10 @@ def multi_output_metrics(
         new_prob = F.softmax(new_output, dim=-1)
         new_y_hat_class_id = t.argmax(new_prob, dim=-1)
 
-        ensemble_probs = t.mean(t.concat([old_probs, new_prob[None, ...]], dim=0), dim=0)
+        joint_probablities = t.concat([old_probs, new_prob[None, ...]], dim=0)
+        joint_yhats = t.concat([old_y_hat_class_ids, new_y_hat_class_id[None, ...]], dim=0)
+
+        ensemble_probs = t.mean(joint_probablities, dim=0)
         ensemble_y_hat = t.argmax(ensemble_probs, dim=1)
 
         # ---- New model accuracy
@@ -178,6 +183,9 @@ def multi_output_metrics(
         # ---- Ensemble Accuracy
         ensemble_acc = t.mean(ensemble_y_hat == groundtruth, dtype=t.float)
         ensemble_acc = float(ensemble_acc.detach().cpu())
+
+        # ---- Relative Ensemble Performance
+        rel_ens_performance = relative_ensemble_performance(joint_yhats, ensemble_y_hat, groundtruth)
 
         # ---- Old mean accuracy
         old_acc = t.mean(t.stack([t.mean(tmp_y == groundtruth, dtype=t.float) for tmp_y in old_y_hat_class_ids]))
@@ -204,6 +212,7 @@ def multi_output_metrics(
         ensemble_ece=ensemble_ece,
         ensemble_max_softmax_aurc=ensemble_ms_aurc,
         ensemble_mutual_info_aurc=ensemble_mi_aurc,
+        rel_ensemble_performance=rel_ens_performance,
         error_ratio=mean_error_ratio,
         cohens_kappa=cohens_kappa,
         relative_cohens_kappa=relative_cohens_kappa,
