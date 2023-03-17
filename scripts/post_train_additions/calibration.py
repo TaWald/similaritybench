@@ -17,6 +17,7 @@ from ke.util.gpu_cluster_worker_nodes import get_workers_for_current_node
 from ke.util.status_check import is_calibrated
 from scripts.post_train_additions.utils import clean_up_after_processing
 from scripts.post_train_additions.utils import should_process_a_dir
+from tqdm import tqdm
 
 
 def calibrate_model(model_info: ds.FirstModelInfo) -> None:
@@ -70,6 +71,7 @@ def main():
     paths = list(sorted(ke_data_path.iterdir()))
 
     for res in paths:
+
         dir_name = res.name
 
         all_training_infos: list[ds.FirstModelInfo] = []
@@ -112,7 +114,8 @@ def main():
         if not should_process_a_dir(res):
             continue
 
-        for train_info in all_training_infos:
+        print(f"Calibrating {res}")
+        for train_info in tqdm(all_training_infos):
             calibrate_model(train_info)
         clean_up_after_processing(res)
     return
