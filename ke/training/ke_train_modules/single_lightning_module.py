@@ -33,7 +33,7 @@ class SingleLightningModule(BaseLightningModule):
             skip_n_epochs=skip_n_epochs,
             log=log,
         )
-        self.automatic_optimization = False
+        self.automatic_optimization = True
         self.net: SingleModel = network
         self.loss = loss
 
