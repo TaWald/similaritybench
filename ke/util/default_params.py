@@ -36,7 +36,7 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset) -> ds.Pa
             split=0,
             dataset=dataset.value,
         )
-    elif dataset == ds.Dataset.IMAGENET:
+    elif dataset in [ds.Dataset.IMAGENET, ds.Dataset.IMAGENET100]:
         """Hyperparams taken from
          https://github.com/tensorflow/tpu/tree/master/models/official/resnet
          /resnet_rs/configs
@@ -109,8 +109,8 @@ def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
         input_resolution = (32, 32)
         early_downsampling = False
         global_average_pooling = 4
-    elif dataset == ds.Dataset.IMAGENET:
-        output_classes = 1000
+    elif dataset in [ds.Dataset.IMAGENET, ds.Dataset.IMAGENET100]:
+        output_classes = 1000 if dataset == ds.Dataset.IMAGENET else 100
         in_ch = 3
         input_resolution = (160, 160)
         early_downsampling = True

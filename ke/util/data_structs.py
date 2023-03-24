@@ -20,6 +20,7 @@ class Dataset(Enum):
     CIFAR100 = "CIFAR100"
     SPLITCIFAR100 = "SplitCIFAR100"
     IMAGENET = "ImageNet"
+    IMAGENET100 = "ImageNet100"
     DermaMNIST = "DermaMNIST"
 
 

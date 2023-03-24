@@ -1,6 +1,7 @@
 from ke.data.base_datamodule import BaseDataModule
 from ke.data.cifar100_dm import CIFAR100DataModule
 from ke.data.cifar10_dm import CIFAR10DataModule
+from ke.data.imagenet100_dm import Imagenet100DataModule
 from ke.data.imagenet_dm import ImagenetDataModule
 from ke.data.medmnist_dm import DermaMNISTDataModule
 from ke.util import data_structs as ds
@@ -14,6 +15,8 @@ def get_datamodule(dataset: ds.Dataset) -> BaseDataModule:
         return CIFAR100DataModule()
     elif dataset == ds.Dataset.IMAGENET:
         return ImagenetDataModule()
+    elif dataset == ds.Dataset.IMAGENET100:
+        return Imagenet100DataModule()
     elif dataset == ds.Dataset.DermaMNIST:
         return DermaMNISTDataModule()
     elif dataset == ds.Dataset.SPLITCIFAR100:
