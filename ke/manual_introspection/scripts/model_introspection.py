@@ -17,7 +17,7 @@ from ke.arch.ke_architectures.feature_approximation_gradient_reversal import (
 from ke.data.base_datamodule import BaseDataModule
 from ke.manual_introspection.introspection_tools.histogram_introspection import create_dataframe_from_np_arrays
 from ke.util import data_structs as ds
-from ke.util.file_io import load_datamodule
+from ke.util.load_own_objects import load_datamodule
 from ke.util.status_check import model_is_finished
 from plotly import graph_objects as go
 from torch.utils.data import DataLoader

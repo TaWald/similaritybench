@@ -13,10 +13,8 @@ from typing import Iterable
 from warnings import warn
 
 import numpy as np
-from ke.data.base_datamodule import BaseDataModule
 from ke.util import data_structs as ds
 from ke.util import name_conventions as nc
-from ke.util.find_datamodules import get_datamodule
 from ke.util.name_conventions import KEAdversarialLenseOutputNameEncoder
 from ke.util.name_conventions import KEAdversarialNameEncoder
 from ke.util.name_conventions import KENameEncoder
@@ -328,24 +326,6 @@ def get_trained_adversarial_lense_models(
                     raise k
                 all_models.append(trained_KE_model)
         return all_models
-
-
-def load_datamodule(source_path) -> BaseDataModule:
-    """
-    Returns an instance of the datamodule that was used in training of the trained model from the path.
-    """
-    oj = load_json(source_path / nc.OUTPUT_TMPLT)
-    dataset = ds.Dataset(oj["dataset"])
-    return get_datamodule(dataset)
-
-
-def load_datamodule_from_info(model_info: ds.FirstModelInfo) -> BaseDataModule:
-    """
-    Returns an instance of the datamodule that was used in training of the trained model from the path.
-    """
-    oj = load_json(model_info.path_output_json)
-    dataset = ds.Dataset(oj["dataset"])
-    return get_datamodule(dataset)
 
 
 def get_trained_ke_models(exp_data_dir: str | Path, exp_ckpt_dir: str | Path) -> list[ds.KETrainingInfo]:
