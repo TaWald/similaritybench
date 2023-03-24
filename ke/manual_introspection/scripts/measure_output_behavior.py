@@ -7,10 +7,11 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import torch
 from ke.arch.abstract_acti_extr import AbsActiExtrArch
 from ke.data.base_datamodule import BaseDataModule
-from ke.deprecated_files.prediction_evaluation import binary_cohens_kappa
-from ke.deprecated_files.prediction_evaluation import error_inconsistency
+from ke.metrics.cohens_kappa import binary_cohens_kappa
+from ke.metrics.error_inconsitency import error_inconsistency
 from ke.util import file_io as io
 from ke.util import name_conventions as nc
 
@@ -41,24 +42,31 @@ def calculate_cohens_kappa(out1: Output, out2: Output) -> float:
     pred1 = np.argmax(out1.prediction, axis=-1)
     pred2 = np.argmax(out2.prediction, axis=-1)
     gt = np.argmax(out1.groundtruth, axis=-1)
-    cohens_kappa = binary_cohens_kappa(pred1, pred2, gt)
+    cohens_kappa = float(
+        binary_cohens_kappa(torch.from_numpy(pred1), torch.from_numpy(pred2), torch.from_numpy(gt)).numpy()
+    )
     return cohens_kappa
 
 
-def calculate_error_inconsitency(out1: Output, out2: Output) -> float:
+def calculate_error_inconsistency(out1: Output, out2: Output) -> float:
     pred1 = np.argmax(out1.prediction, axis=-1)
     pred2 = np.argmax(out2.prediction, axis=-1)
     gt = np.argmax(out1.groundtruth, axis=-1)
-    cohens_kappa = error_inconsistency(pred1, pred2, gt)
-    return cohens_kappa
+    er_in = (
+        error_inconsistency(torch.from_numpy(pred1), torch.from_numpy(pred2), torch.from_numpy(gt))
+        .detach()
+        .cpu()
+        .numpy()
+    )
+    return er_in
 
 
 def calculate_error_iou(out1: Output, out2: Output) -> float:
     pred1 = np.argmax(out1.prediction, axis=-1)
     pred2 = np.argmax(out2.prediction, axis=-1)
     gt = np.argmax(out1.groundtruth, axis=-1)
-    union = np.sum(np.logical_or((pred1 != gt), (pred2 != gt), dtype=int), dtype=float)
-    intersect = np.sum(np.logical_and((pred1 != gt), (pred2 != gt), dtype=int), dtype=float)
+    union = np.sum(np.logical_or((pred1 != gt), (pred2 != gt)), dtype=float)
+    intersect = np.sum(np.logical_and((pred1 != gt), (pred2 != gt)), dtype=float)
     return intersect / union
 
 
@@ -126,9 +134,9 @@ def main():
     mean_sc_iou = np.mean(sc_iou)  # noqa
     mean_lp_iou = np.mean(lp_iou)  # noqa
 
-    pt_error_inc = [calculate_error_inconsitency(out1, out2) for out1, out2 in pretrained_combis]
-    sc_error_inc = [calculate_error_inconsitency(out1, out2) for out1, out2 in scratch_combis]
-    lp_error_inc = [calculate_error_inconsitency(out1, out2) for out1, out2 in lp_combis]
+    pt_error_inc = [calculate_error_inconsistency(out1, out2) for out1, out2 in pretrained_combis]
+    sc_error_inc = [calculate_error_inconsistency(out1, out2) for out1, out2 in scratch_combis]
+    lp_error_inc = [calculate_error_inconsistency(out1, out2) for out1, out2 in lp_combis]
 
     mean_pt_error_inc = np.mean(pt_error_inc)  # noqa
     mean_sc_error_inc = np.mean(sc_error_inc)  # noqa
