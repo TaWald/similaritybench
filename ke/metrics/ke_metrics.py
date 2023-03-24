@@ -65,7 +65,7 @@ class MultiOutMetrics(SingleOutMetrics):
     ensemble_ece: float
     cohens_kappa: float
     error_ratio: float
-    relative_cohens_kappa: float
+    # relative_cohens_kappa: float
 
 
 @dataclass
@@ -148,7 +148,7 @@ def multi_output_metrics(
 
     with t.no_grad():
         # Calculation of probabilties and predicted classes.
-        all_logits = t.concat([old_outputs[None, ...], new_output], dim=0)
+        all_logits = t.concat([old_outputs, new_output[None, ...]], dim=0)
 
         # Only existing model stuff
         old_probs = F.softmax(old_outputs, dim=-1)
@@ -202,8 +202,8 @@ def multi_output_metrics(
         cohens_kappa = float(t.mean(t.stack(cohens_kappas)).detach().cpu())
 
         # ---- Relative Cohens Kappa
-        baseline_cc = look_up_baseline_cohens_kappa(single_metrics.accuracy, dataset, architecture)
-        relative_cohens_kappa = cohens_kappa - baseline_cc
+        # baseline_cc = look_up_baseline_cohens_kappa(single_metrics.accuracy, dataset, architecture)
+        # relative_cohens_kappa = cohens_kappa - baseline_cc
 
     return MultiOutMetrics(
         **asdict(single_metrics),
@@ -215,7 +215,7 @@ def multi_output_metrics(
         rel_ensemble_performance=rel_ens_performance,
         error_ratio=mean_error_ratio,
         cohens_kappa=cohens_kappa,
-        relative_cohens_kappa=relative_cohens_kappa,
+        # relative_cohens_kappa=relative_cohens_kappa,
     )
 
 
