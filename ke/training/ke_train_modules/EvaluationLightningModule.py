@@ -1,28 +1,31 @@
 from __future__ import annotations
 
+from dataclasses import asdict
+
 import pytorch_lightning as pl
 import torch
-from ke.metrics.ke_metrics import multi_output_metrics
+from ke.arch.arch_loading import load_model_from_info_file
 from ke.metrics.ke_metrics import single_output_metrics
-from ke.util import data_structs as ds
-from ke.util.data_structs import BasicTrainingInfo
-from ke.util.find_architectures import get_base_arch
+from ke.util.data_structs import FirstModelInfo
 from torch import nn
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 
 
-class EnsembleEvaluationLightningModule(pl.LightningModule):
-    def __init__(self, infos: list[BasicTrainingInfo], arch_name: str, dataset_name: str):
+class EvaluationLightningModule(pl.LightningModule):
+    """
+    Evaluation class that can evaluate one or multiple models at once.
+    It does multiple forward passes through the single models which increases GPU util and decreases CPU load.
+    Results can then be extracted from the dict containing model id and the metric dict.
+    """
+
+    def __init__(self, infos: list[FirstModelInfo], arch_name: str, dataset_name: str):
         super().__init__()
-        architectures = [get_base_arch(ds.BaseArchitecture(info.architecture)) for info in infos]
-        loaded_architectures = [
-            arch.load_state_dict(torch.load(info.path_ckpt)) for arch, info in zip(architectures, infos)
-        ]
+        architectures = [load_model_from_info_file(info, load_ckpt=True) for info in infos]
 
         self.infos = infos
         self.dataset_name = dataset_name
         self.arch_name = arch_name
-        self.models = nn.ModuleList(loaded_architectures)
+        self.models = nn.ModuleList(architectures)
 
         # For the final validation epoch we want to aggregate all activation maps and approximations
         # to calculate the metrics in a less noisy manner.
@@ -30,7 +33,7 @@ class EnsembleEvaluationLightningModule(pl.LightningModule):
         self.gts: torch.Tensor | None = None
 
         self.max_data_points = 3e8
-        self.all_metrics: dict = {}
+        self.all_metrics: dict[int, dict] = {}
 
     def forward(self, x):
         return [m(x) for m in self.models]
@@ -47,16 +50,7 @@ class EnsembleEvaluationLightningModule(pl.LightningModule):
 
     def on_validation_end(self) -> None:
         for i in range(self.outputs.shape[0]):
-            if i == 0:
-                self.all_metrics[0] = single_output_metrics(new_output=self.outputs[i], groundtruth=self.gts)
-            else:
-                self.all_metrics[i] = multi_output_metrics(
-                    new_output=self.outputs[i],
-                    old_outputs=self.outputs[:i],
-                    groundtruth=self.gts,
-                    dataset=ds.Dataset(self.dataset_name),
-                    architecture=ds.BaseArchitecture(self.arch_name),
-                )
+            self.all_metrics[i] = asdict(single_output_metrics(new_output=self.outputs[i], groundtruth=self.gts))
 
     def save_validation_values(
         self,
@@ -76,7 +70,7 @@ class EnsembleEvaluationLightningModule(pl.LightningModule):
             if self.outputs is None:
                 self.outputs = detached_output
             else:
-                self.outputs = torch.cat([self.outputs, detached_output], dim=0)
+                self.outputs = torch.cat([self.outputs, detached_output], dim=1)
 
     def validation_step(self, batch, batch_idx):
         im, gt = batch
