@@ -77,8 +77,6 @@ class Imagenet100DataModule(BaseDataModule):
 
     def test_dataloader(self, transform: ds.Augmentation, **kwargs) -> DataLoader:
         dataset = ImageNet100Dataset(
-            root=self.dataset_path,
-            split="test",
-            transform=self.get_transforms(transform),
+            root=self.dataset_path, split="test", transform=self.get_transforms(transform), kfold_split=0
         )
         return DataLoader(dataset=dataset, **kwargs)
