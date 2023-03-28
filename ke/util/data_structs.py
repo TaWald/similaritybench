@@ -130,6 +130,9 @@ class FirstModelInfo:
     def is_trained(self) -> bool:
         return self.path_output_json.exists()
 
+    def is_calibrated(self) -> bool:
+        return self.path_calib_json.exists()
+
     def has_checkpoint(self):
         return self.path_ckpt.exists()
 

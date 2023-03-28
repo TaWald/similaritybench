@@ -14,7 +14,6 @@ from ke.util.file_io import output_json_has_nans
 from ke.util.file_io import save_json
 from ke.util.gpu_cluster_worker_nodes import get_workers_for_current_node
 from ke.util.load_own_objects import load_datamodule_from_info
-from ke.util.status_check import is_calibrated
 from scripts.post_train_additions.utils import clean_up_after_processing
 from scripts.post_train_additions.utils import should_process_a_dir
 from tqdm import tqdm
@@ -26,9 +25,9 @@ def calibrate_model(model_info: ds.FirstModelInfo) -> None:
     :param model_info: Model info parametrization file.
     """
 
-    if is_calibrated(model_info.path_data_root):
+    if model_info.is_calibrated():
         return
-    else:
+    elif model_info.is_trained():
         output_json = load_json(model_info.path_output_json)
         if output_json_has_nans(output_json):
             return
