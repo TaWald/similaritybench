@@ -128,16 +128,32 @@ class FirstModelInfo:
         object.__setattr__(self, "path_train_info_json", self.path_data_root / nc.KE_INFO_FILE)
 
     def is_trained(self) -> bool:
+        """Checks whether model has been trained by testing if output_json exists."""
         return self.path_output_json.exists()
 
     def is_calibrated(self) -> bool:
+        """Checks whether model has been calibrated by testing if calib_json exists."""
         return self.path_calib_json.exists()
 
     def has_checkpoint(self):
+        """Checks whether model has a checkpoint."""
         return self.path_ckpt.exists()
 
     def measured_generalization(self):
+        """Checks whether generalization has been measured."""
         return self.path_generalization_json.exists()
+
+    def has_predictions(self) -> bool:
+        """
+        Returns true if model has prediction logits and groundtruths of the test set already.
+        """
+        preds = self.path_predictions_test
+        gts = self.path_groundtruths_test
+        return preds.exists() and gts.exists()
+
+    def model_is_finished(self) -> bool:
+        """Checks whether model has been trained and checkpoint exists."""
+        return self.is_trained() and self.has_checkpoint()
 
 
 @dataclass(frozen=True)
