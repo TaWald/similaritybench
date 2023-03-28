@@ -57,8 +57,8 @@ class EvalTrainer:
     def measure_performance(self):
         """
         Measures the generalization of the model by evaluating it on an augmented version of the test set.
-
         """
+
         if self.model_infos[0].dataset == "CIFAR10":
             dataloaders = CIFAR10DataModule().test_dataloader(ds.Augmentation.VAL)
         elif self.model_infos[0].dataset == "CIFAR100":
