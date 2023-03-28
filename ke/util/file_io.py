@@ -211,6 +211,27 @@ def first_model_trained(first_model: ds.FirstModelInfo) -> bool:
     return first_model.path_train_info_json.exists() and first_model.path_ckpt.exists()
 
 
+def get_corresponding_first_model(model_info: ds.FirstModelInfo):
+    """Return the corresponding first model info."""
+    first_model_dir_name = nc.KE_FIRST_MODEL_DIR.format(model_info.dataset, model_info.architecture)
+    dir_name = nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(model_info.group_id)
+    first_data_path = model_info.path_data_root.parent / first_model_dir_name / dir_name
+    first_ckpt_path = model_info.path_ckpt_root.parent / first_model_dir_name / dir_name
+    return ds.FirstModelInfo(
+        dir_name=nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(model_info.group_id),
+        architecture=model_info.architecture,
+        dataset=model_info.dataset,
+        learning_rate=model_info.learning_rate,
+        split=model_info.split,
+        weight_decay=model_info.weight_decay,
+        batch_size=model_info.batch_size,
+        path_data_root=first_data_path,
+        path_ckpt_root=first_ckpt_path,
+        group_id=model_info.group_id,
+        model_id=0,
+    )
+
+
 def get_trained_keo_models(exp_data_dir: str | Path, exp_ckpt_dir: str | Path) -> list[ds.KEOutputTrainingInfo]:
     edp: Path = Path(exp_data_dir)
     ecp: Path = Path(exp_ckpt_dir)
