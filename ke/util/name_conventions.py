@@ -483,6 +483,8 @@ KE_ADVERSARIAL_LENSE_DIRNAME = "knowledge_extension_adversarial_lense"
 KE_OUTPUT_REGULARIZATION_DIRNAME = "knowledge_extension_output_reg"
 PRETRAINED_TEST_DIRNAME = "test_pretraining"
 KE_SUB_DIRNAME = "knowledge_extension_subtraction"
+SINGLE_RESULTS_FILE = "single_results.json"
+ENSEMBLE_RESULTS_FILE = "ensemble_results.json"
 
 KE_LENSE_CKPT_NAME = "lense_checkpoint.ckpt"
 KE_INFO_FILE = "info.json"
