@@ -101,6 +101,7 @@ class FirstModelInfo:
     path_output_json: Path = field(init=False)
     path_last_metrics_json: Path = field(init=False)
     path_calib_json: Path = field(init=False)
+    path_generalization_json: Path = field(init=False)
     path_train_log: Path = field(init=False)
     path_train_info_json: Path = field(init=False)
 
@@ -122,8 +123,18 @@ class FirstModelInfo:
         object.__setattr__(self, "path_output_json", self.path_data_root / nc.OUTPUT_TMPLT)
         object.__setattr__(self, "path_last_metrics_json", self.path_data_root / nc.LAST_METRICS_TMPLT)
         object.__setattr__(self, "path_calib_json", self.path_data_root / nc.CALIB_TMPLT)
+        object.__setattr__(self, "path_generalization_json", self.path_data_root / nc.GENERALIZATION_TMPLT)
         object.__setattr__(self, "path_train_log", self.path_data_root / nc.LOG_DIR)
         object.__setattr__(self, "path_train_info_json", self.path_data_root / nc.KE_INFO_FILE)
+
+    def is_trained(self) -> bool:
+        return self.path_output_json.exists()
+
+    def has_checkpoint(self):
+        return self.path_ckpt.exists()
+
+    def measured_generalization(self):
+        return self.path_generalization_json.exists()
 
 
 @dataclass(frozen=True)
