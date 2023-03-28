@@ -16,8 +16,6 @@ from ke.metrics.ke_metrics import representation_metrics
 from ke.training.ke_train_modules.base_training_module import BaseLightningModule
 from ke.util import data_structs
 from ke.util import name_conventions as nc
-from ke.util.data_structs import BaseArchitecture
-from ke.util.data_structs import Dataset
 from ke.util.data_structs import KEAdversarialTrainingInfo
 from ke.util.data_structs import KESubTrainingInfo
 from ke.util.data_structs import KETrainingInfo
@@ -130,11 +128,7 @@ class IntermediateRepresentationLightningModule(BaseLightningModule):
                 calc_cos=True,
             )
             out_metrics = multi_output_metrics(
-                self.new_y_out,
-                self.old_y_outs,
-                self.gts,
-                Dataset(self.params.dataset),
-                BaseArchitecture(self.params.architecture_name),
+                self.new_y_out, self.old_y_outs, self.gts, self.params.dataset, self.params.architecture_name
             )
             self.final_metrics = asdict(rep_metrics) | asdict(out_metrics)  # Join dicts
 

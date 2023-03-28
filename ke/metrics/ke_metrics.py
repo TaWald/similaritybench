@@ -26,13 +26,17 @@ from torchmetrics.functional import calibration_error
 
 
 @cache
-def get_csv_lookup(dataset: ds.Dataset, architecture: ds.BaseArchitecture) -> np.ndarray:
+def get_csv_lookup(dataset: ds.Dataset | str, architecture: ds.BaseArchitecture) -> np.ndarray:
+    if isinstance(dataset, str):
+        dataset = ds.Dataset(dataset)
+    if isinstance(architecture, str):
+        architecture = ds.BaseArchitecture(architecture)
     if dataset == ds.Dataset.CIFAR10 and architecture == ds.BaseArchitecture.RESNET34:
         lookup_csv = pathlib.Path(__file__).parent / "cifar10_cohens_kappa_lookup.csv"
         csv_lookup = genfromtxt(lookup_csv, delimiter=",", skip_header=1, usecols=[1, 2, 3, 4])
         return csv_lookup
     else:
-        raise NotImplementedError
+        raise ValueError
 
 
 @cache
@@ -42,7 +46,7 @@ def look_up_baseline_cohens_kappa(accuracy: float, dataset: ds.Dataset, arch: ds
         row_id = np.argmin(np.abs(cohens_kappa_csv[:, 0] - accuracy))
         cohens_kappa = cohens_kappa_csv[row_id, 1]
         return cohens_kappa
-    except NotImplementedError:
+    except ValueError:
         return np.NAN
 
 
@@ -65,7 +69,8 @@ class MultiOutMetrics(SingleOutMetrics):
     ensemble_ece: float
     cohens_kappa: float
     error_ratio: float
-    # relative_cohens_kappa: float
+    n_models: int
+    relative_cohens_kappa: float
 
 
 @dataclass
@@ -138,8 +143,8 @@ def multi_output_metrics(
     new_output: t.Tensor,
     old_outputs: t.Tensor,
     groundtruth: t.Tensor,
-    dataset=ds.Dataset.CIFAR10,
-    architecture=ds.BaseArchitecture.RESNET34,
+    dataset: ds.Dataset | str,
+    architecture: ds.Dataset | str,
 ) -> MultiOutMetrics:
     """
     Calculates a variety of metrics that are based on multiple output predictions being present.
@@ -158,6 +163,7 @@ def multi_output_metrics(
         new_y_hat_class_id = t.argmax(new_prob, dim=-1)
 
         joint_probablities = t.concat([old_probs, new_prob[None, ...]], dim=0)
+        n_models = joint_probablities.shape[0]
         joint_yhats = t.concat([old_y_hat_class_ids, new_y_hat_class_id[None, ...]], dim=0)
 
         ensemble_probs = t.mean(joint_probablities, dim=0)
@@ -199,11 +205,12 @@ def multi_output_metrics(
 
         # ---- Cohens Kappa
         cohens_kappas = [binary_cohens_kappa(new_y_hat_class_id, y, groundtruth) for y in old_y_hat_class_ids]
+        cohens_kappa_to_unregularized = cohens_kappas[0]
         cohens_kappa = float(t.mean(t.stack(cohens_kappas)).detach().cpu())
 
         # ---- Relative Cohens Kappa
-        # baseline_cc = look_up_baseline_cohens_kappa(single_metrics.accuracy, dataset, architecture)
-        # relative_cohens_kappa = cohens_kappa - baseline_cc
+        baseline_cc = look_up_baseline_cohens_kappa(single_metrics.accuracy, dataset, architecture)
+        relative_cohens_kappa = cohens_kappa_to_unregularized - baseline_cc
 
     return MultiOutMetrics(
         **asdict(single_metrics),
@@ -215,7 +222,8 @@ def multi_output_metrics(
         rel_ensemble_performance=rel_ens_performance,
         error_ratio=mean_error_ratio,
         cohens_kappa=cohens_kappa,
-        # relative_cohens_kappa=relative_cohens_kappa,
+        n_models=n_models,
+        relative_cohens_kappa=relative_cohens_kappa,
     )
 
 

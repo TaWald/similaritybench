@@ -5,6 +5,7 @@ from dataclasses import asdict
 import pytorch_lightning as pl
 import torch
 from ke.arch.arch_loading import load_model_from_info_file
+from ke.metrics.ke_metrics import multi_output_metrics
 from ke.metrics.ke_metrics import single_output_metrics
 from ke.util.data_structs import FirstModelInfo
 from torch import nn
@@ -33,7 +34,8 @@ class EvaluationLightningModule(pl.LightningModule):
         self.gts: torch.Tensor | None = None
 
         self.max_data_points = 3e8
-        self.all_metrics: dict[int, dict] = {}
+        self.all_single_metrics: dict[int, dict] = {}
+        self.all_ensemble_metrics: dict[int, dict] = {}
 
     def forward(self, x):
         return [m(x) for m in self.models]
@@ -50,7 +52,19 @@ class EvaluationLightningModule(pl.LightningModule):
 
     def on_validation_end(self) -> None:
         for i in range(self.outputs.shape[0]):
-            self.all_metrics[i] = asdict(single_output_metrics(new_output=self.outputs[i], groundtruth=self.gts))
+            self.all_single_metrics[i] = asdict(
+                single_output_metrics(new_output=self.outputs[i], groundtruth=self.gts)
+            )
+            if i > 0:
+                self.all_ensemble_metrics[i] = asdict(
+                    multi_output_metrics(
+                        new_output=self.outputs[i],
+                        old_outputs=self.outputs[:i],
+                        groundtruth=self.gts,
+                        dataset=self.dataset_name,
+                        architecture=self.arch_name,
+                    )
+                )
 
     def save_validation_values(
         self,

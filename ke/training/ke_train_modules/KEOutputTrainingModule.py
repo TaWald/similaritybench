@@ -9,8 +9,6 @@ from ke.losses.ke_output_loss import KEOutputTrainLoss
 from ke.metrics.ke_metrics import multi_output_metrics
 from ke.training.ke_train_modules.base_training_module import BaseLightningModule
 from ke.util import data_structs
-from ke.util.data_structs import BaseArchitecture
-from ke.util.data_structs import Dataset
 from ke.util.data_structs import KEOutputTrainingInfo
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 
@@ -100,11 +98,7 @@ class KEOutputLightningModule(BaseLightningModule):
         self.save_checkpoint()
         loss_dict = self.loss.on_epoch_end(outputs)
         out_metrics = multi_output_metrics(
-            self.new_y_out,
-            self.old_y_outs,
-            self.gts,
-            Dataset(self.params.dataset),
-            BaseArchitecture(self.params.architecture_name),
+            self.new_y_out, self.old_y_outs, self.gts, self.params.dataset, self.params.architecture_name
         )
         self.final_metrics = asdict(out_metrics)
 

@@ -103,8 +103,8 @@ class KEAdversarialLenseOutputLightningModule(BaseLightningModule):
             new_output=self.newly_trained_y_out,
             old_outputs=torch.stack(self.already_trained_y_outs, dim=0),
             groundtruth=self.gts,
-            dataset=ds.Dataset(self.params.dataset),
-            architecture=ds.BaseArchitecture(self.params.architecture_name),
+            dataset=self.params.dataset,
+            architecture=self.params.architecture_name,
         )
         self.final_metrics = {k: float(v) for k, v in asdict(tensor_metrics).items()}
 
