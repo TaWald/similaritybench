@@ -7,8 +7,7 @@ from pathlib import Path
 import pytorch_lightning as pl
 import torch
 from ke.arch.abstract_acti_extr import AbsActiExtrArch
-from ke.util import data_structs
-from ke.util.data_structs import BasicTrainingInfo
+from ke.util import data_structs as ds
 from ke.util.file_io import save_json
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -17,9 +16,9 @@ from torch.utils.tensorboard.writer import SummaryWriter
 class BaseLightningModule(pl.LightningModule, ABC):
     def __init__(
         self,
-        model_info: BasicTrainingInfo,
+        model_info: ds.FirstModelInfo,
         save_checkpoints: bool,
-        params: data_structs.Params,
+        params: ds.Params,
         hparams: dict,
         skip_n_epochs: int | None = None,
         log: bool = True,
@@ -27,7 +26,7 @@ class BaseLightningModule(pl.LightningModule, ABC):
         **kwargs,
     ):
         super().__init__()
-        self.mode_info: BasicTrainingInfo = model_info
+        self.mode_info: ds.FirstModelInfo = model_info
         self.params = params
         self.ke_hparams = hparams
         self.do_log = log

@@ -8,7 +8,7 @@ from ke.arch.ke_architectures.single_model import SingleModel
 from ke.losses.dummy_loss import DummyLoss
 from ke.metrics.ke_metrics import single_output_metrics
 from ke.training.ke_train_modules.base_training_module import BaseLightningModule
-from ke.util import data_structs
+from ke.util import data_structs as ds
 from ke.util.data_structs import BasicTrainingInfo
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 
@@ -16,10 +16,10 @@ from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 class SingleLightningModule(BaseLightningModule):
     def __init__(
         self,
-        model_info: BasicTrainingInfo,
+        model_info: ds.FirstModelInfo,
         network: SingleModel,
         save_checkpoints: bool,
-        params: data_structs.Params,
+        params: ds.Params,
         hparams: dict,
         loss: DummyLoss,
         skip_n_epochs: int | None = None,
@@ -120,7 +120,7 @@ class WarmStartSingleLightningModule(SingleLightningModule):
         model_info: BasicTrainingInfo,
         network: SingleModel,
         save_checkpoints: bool,
-        params: data_structs.Params,
+        params: ds.Params,
         hparams: dict,
         loss: DummyLoss,
         skip_n_epochs: int | None = None,

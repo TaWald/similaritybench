@@ -6,17 +6,16 @@ from ke.util import data_structs as ds
 from ke.util import find_datamodules as fd
 from ke.util.data_structs import ArchitectureInfo
 from ke.util.data_structs import BaseArchitecture
-from ke.util.data_structs import BasicTrainingInfo
 from ke.util.data_structs import Dataset
 from ke.util.find_architectures import get_base_arch
 
 
 def get_first_model_base_trainer(
-    first_model_info: BasicTrainingInfo,
+    first_model_info: ds.FirstModelInfo,
     arch_params: dict,
     hparams: dict,
     dataset: Dataset,
-    base_info: ds.BasicTrainingInfo,
+    base_info: ds.FirstModelInfo,
     params: ds.Params,
 ) -> BaseTrainer:
     datamodule = fd.get_datamodule(dataset=dataset)

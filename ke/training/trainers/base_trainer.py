@@ -23,7 +23,7 @@ class BaseTrainer:
         model: BaseLightningModule,
         datamodule: BaseDataModule,
         params: ds.Params,
-        basic_training_info: ds.BasicTrainingInfo,
+        basic_training_info: ds.FirstModelInfo,
         arch_params: dict,
     ):
         self.model: BaseLightningModule = model
