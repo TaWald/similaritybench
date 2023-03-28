@@ -60,3 +60,22 @@ def should_process_a_dir(dir_path: Path) -> bool:
         return True
     else:
         return False
+
+
+# ToDo: Make nicer exclusivity file locking here.
+class ParallelAwareness(object):
+    """
+    Class to handle parallel processing of directories.
+    """
+
+    def __init__(self, dir_path: Path):
+        self.dir_path = dir_path
+
+    def __enter__(self):
+        self.should_process = should_process_a_dir(self.dir_path)
+        return self.should_process
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.should_process:
+            clean_up_after_processing(self.dir_path)
+        return
