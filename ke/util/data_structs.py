@@ -76,6 +76,11 @@ class TransferLayersInfo:
 
 @dataclass(frozen=True)
 class FirstModelInfo:
+    """
+    Most important ModelInfo class. This contains all the parameters,
+    paths and other information needed to load a model and access its results.
+    """
+
     dir_name: str
     model_id: int  # 0 Indicates it has not been regularized.
     group_id: int
@@ -92,6 +97,10 @@ class FirstModelInfo:
     path_data_root: Path
     path_ckpt_root: Path
 
+    path_sequence_dir_path: Path = field(init=False)
+    sequence_single_result_json: Path = field(init=False)
+    sequence_ensemble_result_json: Path = field(init=False)
+
     path_ckpt: Path = field(init=False)
     path_activations: Path = field(init=False)
     path_predictions_train: Path = field(init=False)
@@ -106,26 +115,31 @@ class FirstModelInfo:
     path_train_info_json: Path = field(init=False)
 
     def __post_init__(self):
+        object.__setattr__(self, "path_sequence_dir_path", self.path_ckpt_root.parent)
+        object.__setattr__(self, "sequence_single_result_json", self.path_sequence_dir_path / nc.SINGLE_RESULTS_FILE)
+        object.__setattr__(
+            self, "sequence_ensemble_result_json", self.path_sequence_dir_path / nc.ENSEMBLE_RESULTS_FILE
+        )
         object.__setattr__(self, "path_ckpt", self.path_ckpt_root / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME)
         object.__setattr__(self, "path_activations", self.path_data_root / nc.ACTI_DIR_NAME)
         object.__setattr__(
-            self, "path_predictions_train", self.path_data_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_PD_TMPLT
+            self, "path_predictions_train", self.path_ckpt_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_PD_TMPLT
         )
         object.__setattr__(
-            self, "path_predictions_test", self.path_data_root / nc.ACTI_DIR_NAME / nc.MODEL_TEST_PD_TMPLT
+            self, "path_predictions_test", self.path_ckpt_root / nc.ACTI_DIR_NAME / nc.MODEL_TEST_PD_TMPLT
         )
         object.__setattr__(
-            self, "path_groundtruths_train", self.path_data_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_GT_TMPLT
+            self, "path_groundtruths_train", self.path_ckpt_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_GT_TMPLT
         )
         object.__setattr__(
-            self, "path_groundtruths_test", self.path_data_root / nc.ACTI_DIR_NAME / nc.MODEL_TEST_GT_TMPLT
+            self, "path_groundtruths_test", self.path_ckpt_root / nc.ACTI_DIR_NAME / nc.MODEL_TEST_GT_TMPLT
         )
-        object.__setattr__(self, "path_output_json", self.path_data_root / nc.OUTPUT_TMPLT)
-        object.__setattr__(self, "path_last_metrics_json", self.path_data_root / nc.LAST_METRICS_TMPLT)
-        object.__setattr__(self, "path_calib_json", self.path_data_root / nc.CALIB_TMPLT)
-        object.__setattr__(self, "path_generalization_json", self.path_data_root / nc.GENERALIZATION_TMPLT)
-        object.__setattr__(self, "path_train_log", self.path_data_root / nc.LOG_DIR)
-        object.__setattr__(self, "path_train_info_json", self.path_data_root / nc.KE_INFO_FILE)
+        object.__setattr__(self, "path_output_json", self.path_ckpt_root / nc.OUTPUT_TMPLT)
+        object.__setattr__(self, "path_last_metrics_json", self.path_ckpt_root / nc.LAST_METRICS_TMPLT)
+        object.__setattr__(self, "path_calib_json", self.path_ckpt_root / nc.CALIB_TMPLT)
+        object.__setattr__(self, "path_generalization_json", self.path_ckpt_root / nc.GENERALIZATION_TMPLT)
+        object.__setattr__(self, "path_train_log", self.path_ckpt_root / nc.LOG_DIR)
+        object.__setattr__(self, "path_train_info_json", self.path_ckpt_root / nc.KE_INFO_FILE)
 
     def is_trained(self) -> bool:
         """Checks whether model has been trained by testing if output_json exists."""
@@ -198,7 +212,7 @@ class KEAdversarialLenseOutputTrainingInfo(BasicTrainingInfo):
 
     def __post_init__(self):
         super().__post_init__()
-        object.__setattr__(self, "path_lense_examples", self.path_data_root / nc.LENSE_EXAMPLE_DIR_NAME)
+        object.__setattr__(self, "path_lense_examples", self.path_ckpt_root / nc.LENSE_EXAMPLE_DIR_NAME)
         object.__setattr__(
             self, "path_lense_checkpoint", self.path_ckpt_root / nc.CKPT_DIR_NAME / nc.KE_LENSE_CKPT_NAME
         )
