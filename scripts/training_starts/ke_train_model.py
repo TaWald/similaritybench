@@ -19,9 +19,11 @@ from ke.util.data_structs import ArchitectureInfo
 from ke.util.default_params import get_default_arch_params
 from ke.util.default_params import get_default_parameters
 from ke.util.find_ke_loss import find_ke_loss
+from scripts.post_train_additions.calibration import calibrate_model
 
 
 def main():
+    # --------------- Parsing
     parser = argparse.ArgumentParser(description="Specify model hyperparams.")
     dpa.ke_default_parser_arguments(parser)
     args = parser.parse_args()
@@ -72,6 +74,7 @@ def main():
     if dis_loss_weight == 0.0:
         dis_loss = "None"
 
+    # Create the directory name that will get used for experiment.
     exp_name = nc.KENameEncoder.encode(
         experiment_description=experiment_description,
         dataset=dataset.value,
@@ -90,6 +93,7 @@ def main():
         epochs_before_regularization=epochs_before_regularization,
     )
 
+    # Create paths
     base_data_path = Path(file_io.get_experiments_data_root_path())
     base_ckpt_path = Path(file_io.get_experiments_checkpoints_root_path())
 
@@ -130,7 +134,7 @@ def main():
 
     arch_params = get_default_arch_params(dataset)
 
-    if not file_io.first_model_trained(first_model):
+    if not first_model.model_is_finished():
         trainer = get_first_model_base_trainer(
             first_model_info=first_model,
             arch_params=arch_params,
@@ -139,6 +143,12 @@ def main():
             base_info=first_model,
             params=p,
         )
+        trainer.train()
+        trainer.save_outputs("test")
+        calibrate_model(first_model)
+        trainer.measure_generalization()
+        if not no_activations:
+            trainer.save_activations()
 
     else:
         n_trained_models: int = len(file_io.get_trained_ke_models(ke_data_root_dir, ke_ckpt_root_dir))
@@ -155,7 +165,7 @@ def main():
             tbt_model_data_dir = ke_data_root_dir / new_model
             tbt_model_ckpt_dir = ke_ckpt_root_dir / new_model
 
-            training_info = ds.KETrainingInfo(
+            training_info: ds.FirstModelInfo = ds.KETrainingInfo(
                 experiment_name=exp_name,
                 experiment_description=experiment_description,
                 dir_name=new_model,
@@ -225,11 +235,12 @@ def main():
                 basic_training_info=training_info,
                 arch_params=arch_params,
             )
-    trainer.train()
-    trainer.save_outputs("test")
-    trainer.measure_generalization()
-    if not no_activations:
-        trainer.save_activations()
+            trainer.train()
+            trainer.save_outputs("test")
+            calibrate_model(training_info)
+            trainer.measure_generalization()
+            if not no_activations:
+                trainer.save_activations()
 
     return
 
