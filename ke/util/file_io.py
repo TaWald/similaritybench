@@ -168,34 +168,29 @@ def strip_state_dict_of_keys(state_dict: dict) -> OrderedDict:
 def get_first_model(
     ke_data_path: str | Path,
     ke_ckpt_path: str | Path,
-    architecture: str,
-    dataset: str,
-    learning_rate: float,
-    split: int,
-    weight_decay: float,
-    batch_size: int,
+    params: ds.Params,
     group_id: int,
 ) -> ds.FirstModelInfo:
     """Return the checkpoint of the group id if it already exists!"""
     edp: Path = (
         Path(ke_data_path)
-        / nc.KE_FIRST_MODEL_DIR.format(dataset, architecture)
+        / nc.KE_FIRST_MODEL_DIR.format(params.dataset, params.architecture_name)
         / nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id)
     )
     ecp: Path = (
         Path(ke_ckpt_path)
-        / nc.KE_FIRST_MODEL_DIR.format(dataset, architecture)
+        / nc.KE_FIRST_MODEL_DIR.format(params.dataset, params.architecture_name)
         / nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id)
     )
 
     first_model = ds.FirstModelInfo(
         dir_name=nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id),
-        architecture=architecture,
-        dataset=dataset,
-        learning_rate=learning_rate,
-        split=split,
-        weight_decay=weight_decay,
-        batch_size=batch_size,
+        architecture=params.architecture_name,
+        dataset=params.dataset,
+        learning_rate=params.learning_rate,
+        split=params.split,
+        weight_decay=params.weight_decay,
+        batch_size=params.batch_size,
         path_data_root=edp,
         path_ckpt_root=ecp,
         group_id=group_id,

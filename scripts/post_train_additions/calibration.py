@@ -86,12 +86,7 @@ def main():
                     file_io.get_first_model(
                         ke_data_path=ke_data_path,
                         ke_ckpt_path=ke_ckpt_path,
-                        architecture=architecture_name,
-                        dataset=dataset_name,
-                        learning_rate=p.learning_rate,
-                        split=p.split,
-                        weight_decay=p.weight_decay,
-                        batch_size=p.batch_size,
+                        params=p,
                         group_id=group_id,
                     )
                 )
