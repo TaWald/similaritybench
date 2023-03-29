@@ -4,6 +4,7 @@ import os
 from abc import abstractmethod
 from dataclasses import asdict
 from pathlib import Path
+from warnings import warn
 
 import torch
 from augmented_cifar.scripts.get_dataloaders import get_augmented_cifar100_test_dataloader
@@ -166,7 +167,8 @@ class BaseTrainer:
         elif self.params.dataset == "CIFAR100":
             dataloaders = get_augmented_cifar100_test_dataloader(self.dataset_path, self.test_kwargs)
         else:
-            raise ValueError(f"Trying to measure generalization of unknown dataset! Got {self.params.dataset}")
+            warn(f"Trying to measure generalization of unknown dataset! Got {self.params.dataset}")
+            return
 
         all_results = {}
         for dl in dataloaders:
