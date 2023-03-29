@@ -14,11 +14,8 @@ from ke.losses.ke_sub_loss import KESubTrainLoss
 from ke.metrics.ke_metrics import multi_output_metrics
 from ke.metrics.ke_metrics import representation_metrics
 from ke.training.ke_train_modules.base_training_module import BaseLightningModule
-from ke.util import data_structs
+from ke.util import data_structs as ds
 from ke.util import name_conventions as nc
-from ke.util.data_structs import KEAdversarialTrainingInfo
-from ke.util.data_structs import KESubTrainingInfo
-from ke.util.data_structs import KETrainingInfo
 from ke.util.file_io import save_json
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 
@@ -26,10 +23,10 @@ from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 class IntermediateRepresentationLightningModule(BaseLightningModule):
     def __init__(
         self,
-        model_info: KETrainingInfo | KESubTrainingInfo | KEAdversarialTrainingInfo,
+        model_info: ds.FirstModelInfo,
         network: FAGradientReversalArch | FAArch | FASubtractionArch,
         save_checkpoints: bool,
-        params: data_structs.Params,
+        params: ds.Params,
         hparams: dict,
         loss: KETrainLoss | KESubTrainLoss | KEAdversarialTrainLoss,
         skip_n_epochs: int | None = None,
