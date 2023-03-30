@@ -210,8 +210,8 @@ def get_corresponding_first_model(model_info: ds.FirstModelInfo):
     """Return the corresponding first model info."""
     first_model_dir_name = nc.KE_FIRST_MODEL_DIR.format(model_info.dataset, model_info.architecture)
     dir_name = nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(model_info.group_id)
-    first_data_path = model_info.path_data_root.parent / first_model_dir_name / dir_name
-    first_ckpt_path = model_info.path_ckpt_root.parent / first_model_dir_name / dir_name
+    first_data_path = model_info.path_data_root.parent.parent / first_model_dir_name / dir_name
+    first_ckpt_path = model_info.path_ckpt_root.parent.parent / first_model_dir_name / dir_name
     return ds.FirstModelInfo(
         dir_name=nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(model_info.group_id),
         architecture=model_info.architecture,
@@ -674,21 +674,6 @@ def load_json(filepath: str | Path) -> Any:
     with open(str(filepath)) as f:
         ret = json.load(f)
     return ret
-
-
-def output_json_has_nans(output_json: dict) -> bool:
-    """Checks the "val" and "test" dictionary for any nan values.
-    Should any be NaN no calibration should take place.
-    """
-    if "val" in output_json.keys():
-        for k, v in output_json["val"].items():
-            if bool(np.isnan(v)):
-                return True
-    if "test" in output_json.keys():
-        for k, v in output_json["test"].items():
-            if bool(np.isnan(v)):
-                return True
-    return False
 
 
 def save_npz(data: dict, filepath: str | Path) -> None:
