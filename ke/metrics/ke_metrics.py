@@ -139,7 +139,7 @@ def single_output_metrics(
     ece = float(ece.detach().cpu())
 
     ce = float(cross_entropy(new_output, groundtruth).detach().cpu())
-    max_softmax_confidence = (t.max(new_prob, dim=-1).values).to(t.float64)  # Softmax max probability
+    max_softmax_confidence = t.max(new_prob, dim=-1).values.to(t.float64)  # Softmax max probability
     residual = (new_y_hat_class_id == groundtruth).to(t.float64)
     mi_confidence = mutual_bald(new_output[None, ...])
 
