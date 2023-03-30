@@ -41,7 +41,7 @@ def calculate_error_ratios(all_y_hats: list[t.Tensor], groundtruth: t.Tensor) ->
             if i > j:
                 err_ratios[i][j] = err_ratios[j][i]
             else:
-                err_ratios[i][j] = error_ratios(all_y_hats[i], all_y_hats[j], groundtruth).cpu().numpy()
+                err_ratios[i][j] = error_ratios(all_y_hats[i], all_y_hats[j], groundtruth)
     ensemble_mean_ck = mean_upper_triangular(err_ratios)
     ck_of_new_model_to_existing: np.ndarray = err_ratios[-1, :-1]  # CK of new model to all other models
     mean_ck_new = float(np.mean(ck_of_new_model_to_existing))
