@@ -133,7 +133,9 @@ class FirstModelInfo:
             self, "sequence_ensemble_result_json", self.path_sequence_dir_path / nc.ENSEMBLE_RESULTS_FILE
         )
         object.__setattr__(
-            self, "sequence_calibrated_ensemble_result_json", self.path_sequence_dir_path / nc.ENSEMBLE_RESULTS_FILE
+            self,
+            "sequence_calibrated_ensemble_result_json",
+            self.path_sequence_dir_path / nc.CALIBRATED_ENSEMBLE_RESULTS_FILE,
         )
         object.__setattr__(self, "path_ckpt", self.path_ckpt_root / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME)
         object.__setattr__(self, "path_activations", self.path_data_root / nc.ACTI_DIR_NAME)
