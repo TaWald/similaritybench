@@ -485,6 +485,7 @@ PRETRAINED_TEST_DIRNAME = "test_pretraining"
 KE_SUB_DIRNAME = "knowledge_extension_subtraction"
 SINGLE_RESULTS_FILE = "single_results.json"
 ENSEMBLE_RESULTS_FILE = "ensemble_results.json"
+CALIBRATED_ENSEMBLE_RESULTS_FILE = "calibrated_ensemble_results.json"
 
 KE_LENSE_CKPT_NAME = "lense_checkpoint.ckpt"
 KE_INFO_FILE = "info.json"
@@ -518,8 +519,9 @@ MODEL_TEST_KEYVALS = "prediction_keyvals.json"
 # ----------------- Prediction ------------------
 GNRLZ_PD_TMPLT = "augmented_PD_{}_{}.npy"
 GNRLZ_GT_TMPLT = "augmented_GT_{}_{}.npy"
-GNRLZ_OUT_RESULTS = "augmented_results.json"
-
+ROBUST_SINGLE_RESULTS = "single_robustness_results.json"
+ROBUST_ENSEMBLE_RESULTS = "ensemble_robustness_results.json"
+ROBUST_CALIB_ENS_RESULTS = "calib_ensemble_robustness_results.json"
 
 # For the transfer setting: Includes layer indicator to know transfer creating preds
 

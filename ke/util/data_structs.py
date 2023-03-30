@@ -7,6 +7,8 @@ from enum import Enum
 from pathlib import Path
 
 from ke.util import name_conventions as nc
+from ke.util.file_io import load_json
+from ke.util.status_check import output_json_has_nans
 
 # Static Naming conventions for writing out files and finding the files again.
 
@@ -109,6 +111,7 @@ class FirstModelInfo:
     path_sequence_dir_path: Path = field(init=False)
     sequence_single_result_json: Path = field(init=False)
     sequence_ensemble_result_json: Path = field(init=False)
+    sequence_calibrated_ensemble_result_json: Path = field(init=False)
 
     path_ckpt: Path = field(init=False)
     path_activations: Path = field(init=False)
@@ -128,6 +131,9 @@ class FirstModelInfo:
         object.__setattr__(self, "sequence_single_result_json", self.path_sequence_dir_path / nc.SINGLE_RESULTS_FILE)
         object.__setattr__(
             self, "sequence_ensemble_result_json", self.path_sequence_dir_path / nc.ENSEMBLE_RESULTS_FILE
+        )
+        object.__setattr__(
+            self, "sequence_calibrated_ensemble_result_json", self.path_sequence_dir_path / nc.ENSEMBLE_RESULTS_FILE
         )
         object.__setattr__(self, "path_ckpt", self.path_ckpt_root / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME)
         object.__setattr__(self, "path_activations", self.path_data_root / nc.ACTI_DIR_NAME)
@@ -157,6 +163,16 @@ class FirstModelInfo:
     def is_calibrated(self) -> bool:
         """Checks whether model has been calibrated by testing if calib_json exists."""
         return self.path_calib_json.exists()
+
+    def model_converged(self) -> bool:
+        if self.is_trained():
+            output_json = load_json(self.path_output_json)
+            if output_json_has_nans(output_json) or (output_json["val"]["acc"] < 0.2):
+                return False
+            else:
+                return True
+        else:
+            return False
 
     def has_checkpoint(self):
         """Checks whether model has a checkpoint."""
