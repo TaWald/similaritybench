@@ -213,7 +213,7 @@ def multi_output_metrics(
         unbound_probs: list[t.Tensor] = t.unbind(joint_probablities, dim=0)
         unbound_yhats: list[t.Tensor] = t.unbind(joint_yhats, dim=0)
 
-        cks = calculate_cohens_kappas(unbound_probs, groundtruth)
+        cks = calculate_cohens_kappas(unbound_yhats, groundtruth)
         jsds = jensen_shannon_divergences(unbound_probs)
         err = calculate_error_ratios(unbound_yhats, groundtruth)
 
