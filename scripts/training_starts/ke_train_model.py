@@ -19,7 +19,7 @@ from ke.util.data_structs import ArchitectureInfo
 from ke.util.default_params import get_default_arch_params
 from ke.util.default_params import get_default_parameters
 from ke.util.find_ke_loss import find_ke_loss
-from scripts.post_train_additions.calibration import calibrate_model
+from scripts.post_train_additions.calibrate import calibrate_model
 
 
 def main():
@@ -238,7 +238,6 @@ def main():
             trainer.train()
             trainer.save_outputs("test")
             calibrate_model(training_info)
-            trainer.measure_generalization()
             if not no_activations:
                 trainer.save_activations()
 
