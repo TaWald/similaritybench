@@ -133,12 +133,10 @@ class FirstModelInfo:
     def __post_init__(self):
         object.__setattr__(self, "path_sequence_dir_path", self.path_ckpt_root.parent)
         object.__setattr__(self, "sequence_single_json", self.path_sequence_dir_path / nc.SINGLE_RESULTS_FILE)
-        object.__setattr__(
-            self, "sequence_ensemble_result_json", self.path_sequence_dir_path / nc.ENSEMBLE_RESULTS_FILE
-        )
+        object.__setattr__(self, "sequence_ensemble_json", self.path_sequence_dir_path / nc.ENSEMBLE_RESULTS_FILE)
         object.__setattr__(
             self,
-            "sequence_calibrated_ensemble_result_json",
+            "sequence_calibrated_ensemble_json",
             self.path_sequence_dir_path / nc.CALIBRATED_ENSEMBLE_RESULTS_FILE,
         )
         object.__setattr__(
