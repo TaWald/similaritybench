@@ -116,9 +116,9 @@ def calculate_cohens_kappas(predictions: list[t.Tensor], groundtruth: t.Tensor) 
     ck_of_new_model_to_first_model: float = float(cohens_kappas[0, -1])
 
     return ds.GroupMetrics(
-        all_to_all=cohens_kappas,
+        all_to_all=cohens_kappas.tolist(),
         all_to_all_mean=ensemble_mean_ck,
-        last_to_others=ck_of_new_model_to_existing,
+        last_to_others=ck_of_new_model_to_existing.tolist(),
         last_to_others_mean=mean_ck_new,
         last_to_first=ck_of_new_model_to_first_model,
     )
