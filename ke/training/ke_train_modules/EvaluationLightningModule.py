@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import asdict
 
 import pytorch_lightning as pl
@@ -8,6 +9,7 @@ from ke.arch.arch_loading import load_model_from_info_file
 from ke.metrics.ke_metrics import multi_output_metrics
 from ke.metrics.ke_metrics import single_output_metrics
 from ke.util.data_structs import FirstModelInfo
+from scripts.post_train_additions.calibrate import load_temperature_from_info
 from torch import nn
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 
@@ -27,6 +29,8 @@ class EvaluationLightningModule(pl.LightningModule):
         self.dataset_name = dataset_name
         self.arch_name = arch_name
         self.models = nn.ModuleList(architectures)
+        self._calibrated = False
+        self.calibration_temperatures: list[float] = [load_temperature_from_info(info) for info in infos]
 
         # For the final validation epoch we want to aggregate all activation maps and approximations
         # to calculate the metrics in a less noisy manner.
@@ -40,17 +44,34 @@ class EvaluationLightningModule(pl.LightningModule):
     def forward(self, x):
         return [m(x) for m in self.models]
 
+    @contextmanager
+    def calibration_mode(self):
+        self._calibrated = True
+        try:
+            yield
+        finally:
+            self._calibrated = False
+
     def on_validation_start(self) -> None:
         """
         Empty potential remaining results from before.
         """
+        self.all_single_metrics = {}
+        self.all_ensemble_metrics = {}
         self.outputs = None
         self.gts = None
 
     def get_outputs(self) -> dict[str, torch.Tensor]:
         return {"outputs": self.outputs.detach().cpu().numpy(), "groundtruths": self.gts.detach().cpu().numpy()}
 
+    def calibrate_outputs(self) -> None:
+        self.outputs = (
+            self.outputs / torch.tensor(self.calibration_temperatures, device=self.outputs.device)[:, None, None]
+        )
+
     def on_validation_end(self) -> None:
+        if self._calibrated:
+            self.calibrate_outputs()
         for i in range(self.outputs.shape[0]):
             self.all_single_metrics[i] = asdict(
                 single_output_metrics(new_output=self.outputs[i], groundtruth=self.gts)

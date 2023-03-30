@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from copy import deepcopy
 
 import numpy as np
 from augmented_cifar.scripts.get_dataloaders import get_augmented_cifar100_test_dataloader
@@ -11,19 +12,22 @@ from ke.util import file_io
 from ke.util import name_conventions as nc
 from ke.util.load_own_objects import load_datamodule_from_info
 from pytorch_lightning import Trainer
+from torch.utils.data import DataLoader
 
 
-def scalarize_robustness(all_robustness_tests: dict) -> dict:
+def scalarize_robustness(all_robustness_tests: dict, is_ensemble: bool) -> dict:
     """
     Creates a scalar measure of the robustness and the mean of all the values for each dimension.
 
     Thanks CoPilot ... Takes a dict of dicts of dicts and returns a dict of dicts with the mean of the innermost dict.
     :param all_robustness_tests: Dict of dicts of dicts. Outermost dict contains augmentation type,
      the innermost dict is parameter strength
+     :param is_ensemble: If the robustness is calculated for an ensemble or a single model.
     """
     means: dict[str, float] = {}
+    eval_key = "ensemble_accuracy" if is_ensemble else "accuracy"
     for k in sorted(all_robustness_tests.keys()):
-        means[k] = float(np.mean([res_dict["accuracy"] for res_dict in all_robustness_tests[k].values()]))
+        means[k] = float(np.mean([res_dict[eval_key] for res_dict in all_robustness_tests[k].values()]))
     all_mean_value = float(np.mean(list(means.values())))
     return {"mean_robustness": all_mean_value, "dimensionwise_mean": means}
 
@@ -35,6 +39,7 @@ class EvalTrainer:
         )
         self.model_infos = model_infos
         self.num_workers = 0  # get_workers_for_current_node()
+
         # Create them. Should not exist though or overwrite would happen!
 
         if "RAW_DATA" in os.environ:
@@ -51,16 +56,16 @@ class EvalTrainer:
             "pin_memory": True,
             "batch_size": 128,
             "num_workers": self.num_workers,
-            "persistent_workers": True,
+            "persistent_workers": False,
         }
 
-    def measure_performance(self, single: bool, ensemble: bool):
+    def _eval_performance(
+        self, dataloader: DataLoader, single: bool, ensemble: bool, also_calibrated: bool
+    ) -> dict[str, dict]:
         """
         Measures the generalization of the model by evaluating it on an augmented version of the test set.
         """
-
-        datamodule = load_datamodule_from_info(self.model_infos[0])
-        test_dataloader = datamodule.test_dataloader(ds.Augmentation.VAL)
+        test_dataloader = dataloader
 
         trainer = Trainer(
             enable_checkpointing=False,
@@ -77,14 +82,47 @@ class EvalTrainer:
         self.model.eval()
 
         trainer.validate(self.model, test_dataloader)
+        ret_dict: dict = {}
         if single:
-            single_metrics = self.model.all_single_metrics
-            file_io.save_json(single_metrics, self.model.infos[0].sequence_single_result_json)
+            single_metrics = deepcopy(self.model.all_single_metrics)
+            ret_dict["single"] = single_metrics
         if ensemble:
-            ensemble_metrics = self.model.all_ensemble_metrics
-            file_io.save_json(ensemble_metrics, self.model.infos[0].sequence_ensemble_result_json)
+            ensemble_metrics = deepcopy(self.model.all_ensemble_metrics)
+            ret_dict["ensemble"] = ensemble_metrics
+            if also_calibrated:
+                with self.model.calibration_mode():
+                    trainer.validate(self.model, test_dataloader)
+                    ret_dict["calibrated_ensemble"] = deepcopy(self.model.all_ensemble_metrics)
 
-    def measure_generalization(self):
+        return ret_dict
+
+    def measure_performance(self, single: bool, ensemble: bool, also_calibrated: bool) -> None:
+        """
+        Measures the performance of the model(s) on the test set. If Ensemble is passed it calcualtes
+        the performance of the various ensemble combinations that exist. (e.g. n = 2, 3, 4, 5, 6, 7, 8, 9, 10 Models)
+        If also_calibrated is passed it also calculates the performance of the ensemble with calibrated
+         members on the test set.
+
+        :param single: If true, the performance of the single models is calculated.
+        :param ensemble: If true, the performance of the ensembles is calculated.
+        :param also_calibrated: If true, the performance of the calibrated ensembles is calculated
+        (only if ensemble is true).
+        :return: None - Saves the results to a json
+        """
+        datamodule = load_datamodule_from_info(self.model_infos[0])
+        test_dataloader = datamodule.test_dataloader(ds.Augmentation.VAL, **self.test_kwargs)
+        perf = self._eval_performance(test_dataloader, single, ensemble, also_calibrated)
+        if single:
+            file_io.save_json(perf["single"], self.model.infos[0].sequence_single_result_json)
+        if ensemble:
+            file_io.save_json(perf["ensemble"], self.model.infos[0].sequence_ensemble_result_json)
+        if also_calibrated:
+            file_io.save_json(
+                perf["calibrated_ensemble"], self.model.infos[0].sequence_calibrated_ensemble_result_json
+            )
+        return
+
+    def measure_robustness(self, single: bool, ensemble: bool, also_calibrated: bool) -> None:
         """
         Measures the generalization of the model by evaluating it on an augmented version of the test set.
 
@@ -98,33 +136,54 @@ class EvalTrainer:
                 f"Trying to measure generalization of unknown dataset! Got {self.model_infos[0].dataset}"
             )
 
-        trainer = Trainer(
-            enable_checkpointing=False,
-            max_epochs=None,
-            accelerator="gpu",
-            devices=1,
-            precision=32,
-            default_root_dir=None,
-            enable_progress_bar=False,
-            logger=False,
-            profiler=None,
-        )
-        self.model.cuda()
-        self.model.eval()
-        self.model.clear_outputs = False
-
         n_models = len(self.model.models)
-        all_results = [{} for _ in range(n_models)]
+        all_results = {i: {} for i in range(n_models)}
+        all_ensemble_results = {i: {} for i in range(1, n_models)}
+        all_calibrated_ensemble_results = {i: {} for i in range(1, n_models)}
         for dl in dataloaders:
-            trainer.validate(self.model, dl.dataloader)
-            final_metrics = self.model.all_metrics
+            perf = self._eval_performance(dl.dataloader, True, True, True)
+            single_metrics = perf["single"]
+            ensemble_metrics = perf["ensemble"]
+            calibrated_ensemble_metrics = perf["calibrated_ensemble"]
+
             for i in range(n_models):
-                if dl.name in all_results[i].keys():
-                    all_results[i][dl.name].update({str(dl.value): final_metrics[i]})
-                else:
-                    all_results[i][dl.name] = {str(dl.value): final_metrics[i]}
+                if single:
+                    if dl.name in all_results[i].keys():
+                        all_results[i][dl.name].update({str(dl.value): single_metrics[i]})
+                    else:
+                        all_results[i][dl.name] = {str(dl.value): single_metrics[i]}
+                if i > 0:
+                    if ensemble:
+                        if dl.name in all_ensemble_results[i].keys():
+                            all_ensemble_results[i][dl.name].update({str(dl.value): ensemble_metrics[i]})
+                        else:
+                            all_ensemble_results[i][dl.name] = {str(dl.value): ensemble_metrics[i]}
+                    if also_calibrated:
+                        if dl.name in all_calibrated_ensemble_results[i].keys():
+                            all_calibrated_ensemble_results[i][dl.name].update(
+                                {str(dl.value): calibrated_ensemble_metrics[i]}
+                            )
+                        else:
+                            all_calibrated_ensemble_results[i][dl.name] = {
+                                str(dl.value): calibrated_ensemble_metrics[i]
+                            }
 
         for i in range(n_models):
-            robustness_result = scalarize_robustness(all_results[i])
-            robustness_result.update({"specific_values": all_results[i]})
-            file_io.save(robustness_result, self.model.infos[i].path_ckpt_root, nc.GNRLZ_OUT_RESULTS)
+            if single:
+                single_robustness_result = scalarize_robustness(all_results[i])
+                single_robustness_result.update({"specific_values": all_results[i]})
+                file_io.save(single_robustness_result, self.model.infos[i].path_ckpt_root, nc.ROBUST_SINGLE_RESULTS)
+            if ensemble:
+                ensemble_robustness_result = scalarize_robustness(all_ensemble_results[i])
+                ensemble_robustness_result.update({"specific_values": all_ensemble_results[i]})
+                file_io.save(
+                    ensemble_robustness_result, self.model.infos[i].path_ckpt_root, nc.ROBUST_ENSEMBLE_RESULTS
+                )
+            if also_calibrated:
+                calibrated_ensemble_robustness_result = scalarize_robustness(all_calibrated_ensemble_results[i])
+                calibrated_ensemble_robustness_result.update({"specific_values": all_calibrated_ensemble_results[i]})
+                file_io.save(
+                    calibrated_ensemble_robustness_result,
+                    self.model.infos[i].path_ckpt_root,
+                    nc.ROBUST_CALIB_ENS_RESULTS,
+                )
