@@ -109,9 +109,13 @@ class FirstModelInfo:
     path_ckpt_root: Path
 
     path_sequence_dir_path: Path = field(init=False)
-    sequence_single_result_json: Path = field(init=False)
-    sequence_ensemble_result_json: Path = field(init=False)
-    sequence_calibrated_ensemble_result_json: Path = field(init=False)
+    sequence_single_json: Path = field(init=False)
+    sequence_ensemble_json: Path = field(init=False)
+    sequence_calibrated_ensemble_json: Path = field(init=False)
+
+    robust_sequence_single_json: Path = field(init=False)
+    robust_sequence_ensemble_json: Path = field(init=False)
+    robust_calib_sequence_ensemble_json: Path = field(init=False)
 
     path_ckpt: Path = field(init=False)
     path_activations: Path = field(init=False)
@@ -128,7 +132,7 @@ class FirstModelInfo:
 
     def __post_init__(self):
         object.__setattr__(self, "path_sequence_dir_path", self.path_ckpt_root.parent)
-        object.__setattr__(self, "sequence_single_result_json", self.path_sequence_dir_path / nc.SINGLE_RESULTS_FILE)
+        object.__setattr__(self, "sequence_single_json", self.path_sequence_dir_path / nc.SINGLE_RESULTS_FILE)
         object.__setattr__(
             self, "sequence_ensemble_result_json", self.path_sequence_dir_path / nc.ENSEMBLE_RESULTS_FILE
         )
@@ -137,6 +141,18 @@ class FirstModelInfo:
             "sequence_calibrated_ensemble_result_json",
             self.path_sequence_dir_path / nc.CALIBRATED_ENSEMBLE_RESULTS_FILE,
         )
+        object.__setattr__(
+            self, "robust_sequence_single_json", self.path_sequence_dir_path / nc.ROBUST_SINGLE_RESULTS
+        )
+        object.__setattr__(
+            self, "robust_sequence_ensemble_json", self.path_sequence_dir_path / nc.ROBUST_ENSEMBLE_RESULTS
+        )
+        object.__setattr__(
+            self,
+            "robust_calib_sequence_ensemble_json",
+            self.path_sequence_dir_path / nc.ROBUST_CALIB_ENS_RESULTS,
+        )
+
         object.__setattr__(self, "path_ckpt", self.path_ckpt_root / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME)
         object.__setattr__(self, "path_activations", self.path_data_root / nc.ACTI_DIR_NAME)
         object.__setattr__(

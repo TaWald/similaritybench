@@ -9,7 +9,6 @@ from augmented_cifar.scripts.get_dataloaders import get_augmented_cifar10_test_d
 from ke.training.ke_train_modules.EvaluationLightningModule import EvaluationLightningModule
 from ke.util import data_structs as ds
 from ke.util import file_io
-from ke.util import name_conventions as nc
 from ke.util.load_own_objects import load_datamodule_from_info
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
@@ -109,17 +108,15 @@ class EvalTrainer:
         (only if ensemble is true).
         :return: None - Saves the results to a json
         """
-        datamodule = load_datamodule_from_info(self.model_infos[0])
+        datamodule = load_datamodule_from_info(self.model_infos[-1])
         test_dataloader = datamodule.test_dataloader(ds.Augmentation.VAL, **self.test_kwargs)
         perf = self._eval_performance(test_dataloader, single, ensemble, also_calibrated)
         if single:
-            file_io.save_json(perf["single"], self.model.infos[0].sequence_single_result_json)
+            file_io.save_json(perf["single"], self.model.infos[-1].sequence_single_json)
         if ensemble:
-            file_io.save_json(perf["ensemble"], self.model.infos[0].sequence_ensemble_result_json)
+            file_io.save_json(perf["ensemble"], self.model.infos[-1].sequence_ensemble_json)
         if also_calibrated:
-            file_io.save_json(
-                perf["calibrated_ensemble"], self.model.infos[0].sequence_calibrated_ensemble_result_json
-            )
+            file_io.save_json(perf["calibrated_ensemble"], self.model.infos[-1].sequence_calibrated_ensemble_json)
         return
 
     def measure_robustness(self, single: bool, ensemble: bool, also_calibrated: bool) -> None:
@@ -170,20 +167,23 @@ class EvalTrainer:
 
         for i in range(n_models):
             if single:
-                single_robustness_result = scalarize_robustness(all_results[i])
-                single_robustness_result.update({"specific_values": all_results[i]})
-                file_io.save(single_robustness_result, self.model.infos[i].path_ckpt_root, nc.ROBUST_SINGLE_RESULTS)
-            if ensemble:
-                ensemble_robustness_result = scalarize_robustness(all_ensemble_results[i])
-                ensemble_robustness_result.update({"specific_values": all_ensemble_results[i]})
-                file_io.save(
-                    ensemble_robustness_result, self.model.infos[i].path_ckpt_root, nc.ROBUST_ENSEMBLE_RESULTS
-                )
-            if also_calibrated:
-                calibrated_ensemble_robustness_result = scalarize_robustness(all_calibrated_ensemble_results[i])
-                calibrated_ensemble_robustness_result.update({"specific_values": all_calibrated_ensemble_results[i]})
-                file_io.save(
-                    calibrated_ensemble_robustness_result,
-                    self.model.infos[i].path_ckpt_root,
-                    nc.ROBUST_CALIB_ENS_RESULTS,
-                )
+                single_robustness_result = scalarize_robustness(all_results[i], is_ensemble=False)
+                all_results[i].update({"specific_values": single_robustness_result})
+            if i > 0:
+                if ensemble:
+                    ensemble_robustness_result = scalarize_robustness(all_ensemble_results[i], is_ensemble=True)
+                    all_ensemble_results[i].update({"specific_values": ensemble_robustness_result})
+                if also_calibrated:
+                    calibrated_ensemble_robustness_result = scalarize_robustness(
+                        all_calibrated_ensemble_results[i], is_ensemble=True
+                    )
+                    all_calibrated_ensemble_results[i].update(
+                        {"specific_values": calibrated_ensemble_robustness_result}
+                    )
+
+        if single:
+            file_io.save(all_results, self.model.infos[-1].robust_sequence_single_json)
+        if ensemble:
+            file_io.save(all_ensemble_results, self.model.infos[-1].robust_sequence_ensemble_json)
+        if also_calibrated:
+            file_io.save(all_calibrated_ensemble_results, self.model.infos[-1].robust_calib_sequence_ensemble_json)
