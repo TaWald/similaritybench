@@ -7,8 +7,6 @@ from ke.util import default_parser_args as dpa
 from ke.util import file_io
 from ke.util import name_conventions as nc
 from ke.util.file_io import get_corresponding_first_model
-from scripts.post_train_additions.utils import clean_up_after_processing
-from scripts.post_train_additions.utils import should_process_a_dir
 
 
 def evaluate_sequence(data_path: Path, ckpt_path: Path, ke_dirname: str):
@@ -46,14 +44,14 @@ def evaluate_sequence(data_path: Path, ckpt_path: Path, ke_dirname: str):
         print(f"Not all models are calibrated! Skipping dir: {dir_name}")
         return
 
-    if not should_process_a_dir(kedp):
-        return
+    # if not should_process_a_dir(kedp):
+    #     return
 
     # Do the baseline model creation if it not already exists!
     trainer = EvalTrainer(model_infos=all_training_infos)
     trainer.measure_performance(True, True, True)
     trainer.measure_robustness(True, True, True)
-    clean_up_after_processing(kedp)
+    # clean_up_after_processing(kedp)
 
 
 def main():
