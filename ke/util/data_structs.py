@@ -13,6 +13,15 @@ from ke.util import name_conventions as nc
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class GroupMetrics:
+    all_to_all: list[list[float]] | object
+    all_to_all_mean: float
+    last_to_others: list[float] | object
+    last_to_others_mean: float
+    last_to_first: float
+
+
 class Dataset(Enum):
     """Info which dataset should be used"""
 

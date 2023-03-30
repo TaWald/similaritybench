@@ -1,4 +1,10 @@
+from __future__ import annotations
+
+import ke.util.data_structs as ds
+import numpy as np
 import torch
+import torch as t
+from ke.metrics.utils import mean_upper_triangular
 
 
 def error_ratios(y_hats_1: torch.Tensor, y_hats_2: torch.Tensor, groundtruth: torch.Tensor) -> float:
@@ -19,3 +25,32 @@ def error_ratios(y_hats_1: torch.Tensor, y_hats_2: torch.Tensor, groundtruth: to
     error_ratio = float(n_both_wrong_different / n_both_wrong_same_way)
 
     return error_ratio
+
+
+def calculate_error_ratios(all_y_hats: list[t.Tensor], groundtruth: t.Tensor) -> ds.GroupMetrics:
+    """
+    Calculates the error ratios between all models. This leads to a NxN matrix.
+    Additionally provides error ratios for various combinations of models.
+
+    """
+    err_ratios: np.ndarray = np.eye(N=len(all_y_hats), M=len(all_y_hats))
+    for i in range(len(all_y_hats)):
+        for j in range(len(all_y_hats)):
+            if i == j:
+                continue
+            if i > j:
+                err_ratios[i][j] = err_ratios[j][i]
+            else:
+                err_ratios[i][j] = error_ratios(all_y_hats[i], all_y_hats[j], groundtruth).cpu().numpy()
+    ensemble_mean_ck = mean_upper_triangular(err_ratios)
+    ck_of_new_model_to_existing: np.ndarray = err_ratios[-1, :-1]  # CK of new model to all other models
+    mean_ck_new = float(np.mean(ck_of_new_model_to_existing))
+    ck_of_new_model_to_first_model: float = float(err_ratios[0, -1])
+
+    return ds.GroupMetrics(
+        all_to_all=err_ratios.tolist(),
+        all_to_all_mean=ensemble_mean_ck,
+        last_to_others=ck_of_new_model_to_existing.tolist(),
+        last_to_others_mean=mean_ck_new,
+        last_to_first=ck_of_new_model_to_first_model,
+    )

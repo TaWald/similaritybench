@@ -1,5 +1,10 @@
+from __future__ import annotations
+
 import numpy as np
 import torch
+import torch as t
+from ke.metrics.utils import mean_upper_triangular
+from ke.util import data_structs as ds
 
 
 def binary_cohens_kappa(preds_a: torch.Tensor, preds_b: torch.Tensor, gt: torch.Tensor) -> torch.Tensor:
@@ -88,3 +93,32 @@ def class_wise_cohens_kappa(predictions_a: np.ndarray, predictions_b: np.ndarray
         total_result.append(classwise_kappa)
 
     return float(np.mean(total_result))
+
+
+def calculate_cohens_kappas(predictions: list[t.Tensor], groundtruth: t.Tensor) -> ds.GroupMetrics:
+    """
+    Calculates the cohens kappa values between all models. This leads to a NxN matrix.
+    Additioanlly provides one with the mean CC of the ensemble, the list of cohens_kappas of the new model to the
+
+    """
+    cohens_kappas: np.ndarray = np.eye(N=len(predictions), M=len(predictions))
+    for i in range(len(predictions)):
+        for j in range(len(predictions)):
+            if i == j:
+                continue
+            if i > j:
+                cohens_kappas[i][j] = cohens_kappas[j][i]
+            else:
+                cohens_kappas[i][j] = binary_cohens_kappa(predictions[i], predictions[j], groundtruth).cpu().numpy()
+    ensemble_mean_ck = mean_upper_triangular(cohens_kappas)
+    ck_of_new_model_to_existing: np.ndarray = cohens_kappas[-1, :-1]  # CK of new model to all other models
+    mean_ck_new = float(np.mean(ck_of_new_model_to_existing))
+    ck_of_new_model_to_first_model: float = float(cohens_kappas[0, -1])
+
+    return ds.GroupMetrics(
+        all_to_all=cohens_kappas,
+        all_to_all_mean=ensemble_mean_ck,
+        last_to_others=ck_of_new_model_to_existing,
+        last_to_others_mean=mean_ck_new,
+        last_to_first=ck_of_new_model_to_first_model,
+    )

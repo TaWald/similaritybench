@@ -15,8 +15,9 @@ from ke.losses.utils import correlation
 from ke.losses.utils import cosine_similarity
 from ke.losses.utils import euclidean_distance_csim
 from ke.metrics.aurc import aurc
-from ke.metrics.cohens_kappa import binary_cohens_kappa
-from ke.metrics.error_ratios import error_ratios
+from ke.metrics.cohens_kappa import calculate_cohens_kappas
+from ke.metrics.error_ratios import calculate_error_ratios
+from ke.metrics.jensen_shannon_distance import jensen_shannon_divergences
 from ke.metrics.relative_ensemble_performance import relative_ensemble_performance
 from ke.util import data_structs as ds
 from numpy import genfromtxt
@@ -32,7 +33,11 @@ def get_csv_lookup(dataset: ds.Dataset | str, architecture: ds.BaseArchitecture)
     if isinstance(architecture, str):
         architecture = ds.BaseArchitecture(architecture)
     if dataset == ds.Dataset.CIFAR10 and architecture == ds.BaseArchitecture.RESNET34:
-        lookup_csv = pathlib.Path(__file__).parent / "cifar10_cohens_kappa_lookup.csv"
+        lookup_csv = (
+            pathlib.Path(__file__).parent.parent
+            / "training"
+            / f"{dataset.value}_{architecture.value}_cohens_kappa_lookup.csv"
+        )
         csv_lookup = genfromtxt(lookup_csv, delimiter=",", skip_header=1, usecols=[1, 2, 3, 4])
         return csv_lookup
     else:
@@ -62,15 +67,20 @@ class SingleOutMetrics:
 @dataclass
 class MultiOutMetrics(SingleOutMetrics):
     mean_old_acc: float
+
+    # Ensembled Metrics
     ensemble_accuracy: float
     ensemble_max_softmax_aurc: float
     ensemble_mutual_info_aurc: float
-    rel_ensemble_performance: float
-    ensemble_ece: float
-    cohens_kappa: float
-    error_ratio: float
-    n_models: int
+    rel_ensemble_performance: float  # Ensemble Acc / Mean Single Accs
+    ensemble_ece: float  # Ensemble estimate calibration error
+
+    # Cohens Kappa
+    cohens_kappa: ds.GroupMetrics
     relative_cohens_kappa: float
+    error_ratio: ds.GroupMetrics
+    jensen_shannon_div: ds.GroupMetrics
+    n_models: int
 
 
 @dataclass
@@ -191,26 +201,25 @@ def multi_output_metrics(
         ensemble_acc = float(ensemble_acc.detach().cpu())
 
         # ---- Relative Ensemble Performance
-        rel_ens_performance = relative_ensemble_performance(joint_yhats, ensemble_y_hat, groundtruth)
+        rel_ens_performance = float(relative_ensemble_performance(joint_yhats, ensemble_y_hat, groundtruth))
 
         # ---- Old mean accuracy
         old_acc = t.mean(t.stack([t.mean(tmp_y == groundtruth, dtype=t.float) for tmp_y in old_y_hat_class_ids]))
         mean_old_acc = float(old_acc.detach().cpu())
 
         # ---- Error ratio
-        all_error_ratios: list[float] = [
-            error_ratios(new_y_hat_class_id, old_pred_cls, groundtruth) for old_pred_cls in old_y_hat_class_ids
-        ]
-        mean_error_ratio = float(np.mean(all_error_ratios))
 
         # ---- Cohens Kappa
-        cohens_kappas = [binary_cohens_kappa(new_y_hat_class_id, y, groundtruth) for y in old_y_hat_class_ids]
-        cohens_kappa_to_unregularized = cohens_kappas[0]
-        cohens_kappa = float(t.mean(t.stack(cohens_kappas)).detach().cpu())
+        unbound_probs: list[t.Tensor] = t.unbind(joint_probablities, dim=0)
+        unbound_yhats: list[t.Tensor] = t.unbind(joint_yhats, dim=0)
+
+        cks = calculate_cohens_kappas(unbound_probs, groundtruth)
+        jsds = jensen_shannon_divergences(unbound_probs)
+        err = calculate_error_ratios(unbound_yhats, groundtruth)
 
         # ---- Relative Cohens Kappa
         baseline_cc = look_up_baseline_cohens_kappa(single_metrics.accuracy, dataset, architecture)
-        relative_cohens_kappa = cohens_kappa_to_unregularized - baseline_cc
+        relative_cohens_kappa = float(cks.last_to_first - baseline_cc)
 
     return MultiOutMetrics(
         **asdict(single_metrics),
@@ -220,10 +229,11 @@ def multi_output_metrics(
         ensemble_max_softmax_aurc=ensemble_ms_aurc,
         ensemble_mutual_info_aurc=ensemble_mi_aurc,
         rel_ensemble_performance=rel_ens_performance,
-        error_ratio=mean_error_ratio,
-        cohens_kappa=cohens_kappa,
-        n_models=n_models,
+        cohens_kappa=cks,
+        jensen_shannon_div=jsds,
+        error_ratio=err,
         relative_cohens_kappa=relative_cohens_kappa,
+        n_models=n_models,
     )
 
 
