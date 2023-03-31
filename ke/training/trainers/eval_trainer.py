@@ -110,6 +110,10 @@ class EvalTrainer:
         """
         datamodule = load_datamodule_from_info(self.model_infos[-1])
         test_dataloader = datamodule.test_dataloader(ds.Augmentation.VAL, **self.test_kwargs)
+
+        if self.model.infos[-1].sequence_performance_exists(single, ensemble, also_calibrated):
+            print("Performance already exists. Skipping")
+            return
         perf = self._eval_performance(test_dataloader, single, ensemble, also_calibrated)
         if single:
             file_io.save_json(perf["single"], self.model.infos[-1].sequence_single_json)
@@ -124,6 +128,10 @@ class EvalTrainer:
         Measures the generalization of the model by evaluating it on an augmented version of the test set.
 
         """
+        if self.model.infos[-1].robust_sequence_performance_exists(single, ensemble, also_calibrated):
+            print("Performance already exists. Skipping")
+            return
+
         if self.model_infos[0].dataset == "CIFAR10":
             dataloaders = get_augmented_cifar10_test_dataloader(self.dataset_path, self.test_kwargs)
         elif self.model_infos[0].dataset == "CIFAR100":
