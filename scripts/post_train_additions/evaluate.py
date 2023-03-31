@@ -6,8 +6,8 @@ from ke.training.trainers.eval_trainer import EvalTrainer
 from ke.util import default_parser_args as dpa
 from ke.util import file_io
 from ke.util import name_conventions as nc
+from ke.util.file_io import chunks
 from ke.util.file_io import get_corresponding_first_model
-from scripts.post_train_additions.utils import chunks
 
 
 def evaluate_sequence(data_path: Path, ckpt_path: Path, ke_dirname: str):

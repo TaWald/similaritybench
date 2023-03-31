@@ -10,12 +10,12 @@ from ke.util import default_parser_args as dpa
 from ke.util import file_io
 from ke.util import name_conventions as nc
 from ke.util.default_params import get_default_parameters
+from ke.util.file_io import chunks
 from ke.util.file_io import load_json
 from ke.util.file_io import save_json
 from ke.util.gpu_cluster_worker_nodes import get_workers_for_current_node
 from ke.util.load_own_objects import load_datamodule_from_info
 from ke.util.status_check import output_json_has_nans
-from scripts.post_train_additions.utils import chunks
 from tqdm import tqdm
 
 

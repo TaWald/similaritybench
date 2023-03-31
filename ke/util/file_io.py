@@ -642,6 +642,12 @@ def save_pickle(data: Any, filepath: str) -> None:
     return
 
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i : i + n]
+
+
 def load_pickle(filepath: str) -> Any:
     """Loads the pickled file from the filepath.
 
