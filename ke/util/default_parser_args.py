@@ -36,6 +36,13 @@ def dir_parser_arguments(parser: argparse.ArgumentParser):
         ],
         nargs="?",
     )
+    parser.add_argument(
+        "-n_parallel",
+        "--n_parallel",
+        type=int,
+        default=20,
+    )
+    parser.add_argument("-id", "--id", type=int, required=True)
 
 
 def ke_default_parser_arguments(parser: argparse.ArgumentParser):

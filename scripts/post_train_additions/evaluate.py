@@ -7,6 +7,7 @@ from ke.util import default_parser_args as dpa
 from ke.util import file_io
 from ke.util import name_conventions as nc
 from ke.util.file_io import get_corresponding_first_model
+from scripts.post_train_additions.utils import chunks
 
 
 def evaluate_sequence(data_path: Path, ckpt_path: Path, ke_dirname: str):
@@ -57,8 +58,11 @@ def evaluate_sequence(data_path: Path, ckpt_path: Path, ke_dirname: str):
 def main():
     parser = argparse.ArgumentParser(description="Specify model hyperparams.")
     dpa.dir_parser_arguments(parser)
+
     args = parser.parse_args()
     ke_dirname = args.ke_dir_name
+    n_parallel = args.n_parallel
+    idx = args.id
 
     base_data_path = Path(file_io.get_experiments_data_root_path())
     base_ckpt_path = Path(file_io.get_experiments_checkpoints_root_path())
@@ -66,7 +70,10 @@ def main():
     ke_data_path = base_data_path / ke_dirname
     ke_ckpt_path = base_ckpt_path / ke_dirname
 
-    for res in ke_data_path.iterdir():
+    paths = list(sorted(ke_data_path.iterdir()))
+    paths_to_eval = list(chunks(paths, n_parallel))[idx]
+
+    for res in paths_to_eval:
         dir_name = res.name
         kedp = ke_data_path / dir_name
         kecp = ke_ckpt_path / dir_name

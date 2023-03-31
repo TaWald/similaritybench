@@ -15,8 +15,7 @@ from ke.util.file_io import save_json
 from ke.util.gpu_cluster_worker_nodes import get_workers_for_current_node
 from ke.util.load_own_objects import load_datamodule_from_info
 from ke.util.status_check import output_json_has_nans
-from scripts.post_train_additions.utils import clean_up_after_processing
-from scripts.post_train_additions.utils import should_process_a_dir
+from scripts.post_train_additions.utils import chunks
 from tqdm import tqdm
 
 
@@ -68,6 +67,8 @@ def main():
     dpa.dir_parser_arguments(parser)
     args = parser.parse_args()
     ke_dirname = args.ke_dir_name
+    n_parallel = args.n_parallel
+    idx = args.id
 
     base_data_path = Path(file_io.get_experiments_data_root_path())
     base_ckpt_path = Path(file_io.get_experiments_checkpoints_root_path())
@@ -76,9 +77,9 @@ def main():
     ke_ckpt_path = base_ckpt_path / ke_dirname
 
     paths = list(sorted(ke_data_path.iterdir()))
+    paths_to_eval = list(chunks(paths, n_parallel))[idx]
 
-    for res in paths:
-
+    for res in paths_to_eval:
         dir_name = res.name
 
         all_training_infos: list[ds.FirstModelInfo] = []
@@ -117,13 +118,10 @@ def main():
             print(f"{res} is already calibrated.")
             continue
 
-        if not should_process_a_dir(res):
-            continue
-
         print(f"Calibrating {res}")
         for train_info in tqdm(all_training_infos):
             calibrate_model(train_info)
-        clean_up_after_processing(res)
+
     return
 
 

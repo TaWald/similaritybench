@@ -172,6 +172,30 @@ class FirstModelInfo:
         object.__setattr__(self, "path_train_log", self.path_ckpt_root / nc.LOG_DIR)
         object.__setattr__(self, "path_train_info_json", self.path_ckpt_root / nc.KE_INFO_FILE)
 
+    def sequence_performance_exists(self, single: bool, ensemble: bool, calibrated: bool):
+        single_exists = True
+        ensemble_exists = True
+        calibrated_exists = True
+        if single:
+            single_exists = self.sequence_single_json.exists()
+        if ensemble:
+            ensemble_exists = self.sequence_ensemble_json.exists()
+        if calibrated:
+            calibrated_exists = self.sequence_calibrated_ensemble_json.exists()
+        return single_exists and ensemble_exists and calibrated_exists
+
+    def robust_sequence_performance_exists(self, single: bool, ensemble: bool, calibrated: bool):
+        single_exists = True
+        ensemble_exists = True
+        calibrated_exists = True
+        if single:
+            single_exists = self.robust_sequence_single_json.exists()
+        if ensemble:
+            ensemble_exists = self.robust_sequence_ensemble_json.exists()
+        if calibrated:
+            calibrated_exists = self.robust_calib_sequence_ensemble_json.exists()
+        return single_exists and ensemble_exists and calibrated_exists
+
     def is_trained(self) -> bool:
         """Checks whether model has been trained by testing if output_json exists."""
         return self.path_output_json.exists()

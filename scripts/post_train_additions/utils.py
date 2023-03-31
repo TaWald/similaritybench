@@ -62,6 +62,12 @@ def should_process_a_dir(dir_path: Path) -> bool:
         return False
 
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i : i + n]
+
+
 # ToDo: Make nicer exclusivity file locking here.
 class ParallelAwareness(object):
     """
