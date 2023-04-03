@@ -14,7 +14,7 @@ from ke.losses.utils import centered_kernel_alignment
 from ke.losses.utils import correlation
 from ke.losses.utils import cosine_similarity
 from ke.losses.utils import euclidean_distance_csim
-from ke.metrics.aurc import aurc
+from ke.metrics.aurc import parallel_aurc
 from ke.metrics.cohens_kappa import calculate_cohens_kappas
 from ke.metrics.error_ratios import calculate_error_ratios
 from ke.metrics.jensen_shannon_distance import jensen_shannon_divergences
@@ -140,13 +140,15 @@ def single_output_metrics(
 
     ce = float(cross_entropy(new_output, groundtruth).detach().cpu())
     max_softmax_confidence = t.max(new_prob, dim=-1).values.to(t.float64)  # Softmax max probability
-    residual = (new_y_hat_class_id == groundtruth).to(t.float64)
+    residual = (~(new_y_hat_class_id == groundtruth)).to(t.float64)
     mi_confidence = mutual_bald(new_output[None, ...])
 
-    aurc_sm = aurc(residual, max_softmax_confidence)
-    aurc_mi = aurc(residual, mi_confidence)
+    # aurc_sm = aurc(residual, max_softmax_confidence)
+    paurc_sm = parallel_aurc(residual, max_softmax_confidence)
+    paurc_mi = parallel_aurc(residual, mi_confidence)
+    # aurc_mi = aurc(residual, mi_confidence)
 
-    return SingleOutMetrics(accuracy=acc, ce=ce, ece=ece, max_softmax_aurc=aurc_sm, mutual_info_aurc=aurc_mi)
+    return SingleOutMetrics(accuracy=acc, ce=ce, ece=ece, max_softmax_aurc=paurc_sm, mutual_info_aurc=paurc_mi)
 
 
 def multi_output_metrics(
@@ -186,9 +188,9 @@ def multi_output_metrics(
         max_softmax_confidence = t.max(ensemble_probs.to(t.float64), dim=-1).values
         mi_confidence = mutual_bald(all_logits.to(t.float64))
 
-        residual = (ensemble_y_hat == groundtruth).to(t.float64)
-        ensemble_ms_aurc = aurc(residual, max_softmax_confidence)
-        ensemble_mi_aurc = aurc(residual, mi_confidence)
+        residual = (~(ensemble_y_hat == groundtruth)).to(t.float64)
+        ensemble_ms_aurc = parallel_aurc(residual, max_softmax_confidence)
+        ensemble_mi_aurc = parallel_aurc(residual, mi_confidence)
 
         # ----------- Ensemble Calibration: -----------
         ensemble_ece = calibration_error(

@@ -50,7 +50,7 @@ def evaluate_sequence(data_path: Path, ckpt_path: Path, ke_dirname: str):
 
     # Do the baseline model creation if it not already exists!
     trainer = EvalTrainer(model_infos=all_training_infos)
-    trainer.measure_performance(True, True, True)
+    # trainer.measure_performance(True, True, True)
     trainer.measure_robustness(True, True, True)
     # clean_up_after_processing(kedp)
 
@@ -71,7 +71,10 @@ def main():
     ke_ckpt_path = base_ckpt_path / ke_dirname
 
     paths = list(sorted(ke_data_path.iterdir()))
-    paths_to_eval = list(chunks(paths, n_parallel))[idx]
+    if n_parallel == 1:
+        paths_to_eval = paths
+    else:
+        paths_to_eval = list(chunks(paths, n_parallel))[idx]
 
     for res in paths_to_eval:
         dir_name = res.name

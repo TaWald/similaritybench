@@ -3,6 +3,23 @@ from __future__ import annotations
 import torch as t
 
 
+def avg_adjacent_elements(t: t.Tensor) -> t.Tensor:
+    t1 = t.narrow(0, 0, t.shape[0] - 1)
+    t2 = t.narrow(0, 1, t.shape[0] - 1)
+    return (t1 + t2) / 2
+
+
+def calculate_area_under_selective_risk(selective_risks: t.Tensor) -> t.Tensor:
+    return t.mean(avg_adjacent_elements(selective_risks))
+
+
+def parallel_aurc(residuals: t.Tensor, confidence: t.Tensor) -> float:
+    sorted_residuals = residuals[t.argsort(confidence, descending=True)]
+    selective_risk = t.cumsum(sorted_residuals, dim=0) / t.arange(1, len(residuals) + 1, device=residuals.device)
+    p_aurc = calculate_area_under_selective_risk(selective_risk)
+    return float(p_aurc)
+
+
 def aurc(residuals: t.Tensor, confidence: t.Tensor) -> float:
     """
     Calculate the Area-under-the-risc-coverage curve.
