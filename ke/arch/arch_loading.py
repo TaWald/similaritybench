@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Type
 
 import torch
 from ke.arch.abstract_acti_extr import AbsActiExtrArch
@@ -101,20 +102,43 @@ def load_model(source_data_path: Path, source_ckpt_path: Path) -> AbsActiExtrArc
     return architecture_inst
 
 
+def strip_state_dict_of_keys(state_dict: dict) -> dict:
+    """Removes the `net` value from the keys in the state_dict
+
+    Example: original contains: "net.features.0.weight"
+        current model expects: "features.0.weight"
+
+    :return:
+    """
+    new_dict = {}
+    for key, val in state_dict.items():
+        new_dict[".".join(key.split(".")[1:])] = val
+
+    return new_dict
+
+
 def load_model_from_info_file(model_info: ds.FirstModelInfo, load_ckpt: bool) -> AbsActiExtrArch:
     """Loads model from a BasicTrainingInfo file.
     :param model_info: Model configuration file to load from.
     :param load_ckpt: Flag if the ckpt should be loaded as well.
     """
-    arch = fa.get_base_arch(model_info.architecture)
+    arch: Type[AbsActiExtrArch] = fa.get_base_arch(model_info.architecture)
     oj = load_json(model_info.path_output_json)
-    arch_instance = arch(
+    arch_instance: AbsActiExtrArch = arch(
         n_cls=oj["n_cls"],
         in_ch=oj["in_ch"],
         input_resolution=oj["input_resolution"],
         early_downsampling=oj["early_downsampling"],
         global_average_pooling=oj["global_average_pooling"],
     )
+
     if load_ckpt:
-        arch_instance.load_state_dict(torch.load(model_info.path_ckpt))
+        try:
+            arch_instance.load_state_dict(torch.load(model_info.path_ckpt))
+        except RuntimeError:
+            try:
+                arch_instance.load_state_dict(strip_state_dict_of_keys(torch.load(model_info.path_ckpt)))
+            except RuntimeError as e1:
+                raise e1
+
     return arch_instance
