@@ -77,7 +77,7 @@ def main():
     ke_ckpt_path = base_ckpt_path / ke_dirname
 
     paths = list(sorted(ke_data_path.iterdir()))
-    paths_to_eval = list(chunks(paths, n_parallel))[idx]
+    paths_to_eval = list(chunks(paths, len(paths) // n_parallel))[idx]
 
     for res in paths_to_eval:
         dir_name = res.name

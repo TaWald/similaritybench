@@ -74,7 +74,7 @@ def main():
     if n_parallel == 1:
         paths_to_eval = paths
     else:
-        paths_to_eval = list(chunks(paths, n_parallel))[idx]
+        paths_to_eval = list(chunks(paths, len(paths) // n_parallel))[idx]
 
     for res in paths_to_eval:
         dir_name = res.name
