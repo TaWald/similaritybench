@@ -1,18 +1,30 @@
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from ke.util import name_conventions as nc
-from ke.util.file_io import load_json
 from ke.util.status_check import output_json_has_nans
 
 # Static Naming conventions for writing out files and finding the files again.
 
 logger = logging.getLogger(__name__)
+
+
+def load_json(filepath: str | Path) -> Any:
+    """Load the json again
+
+    :param filepath:
+    :return:
+    """
+    with open(str(filepath)) as f:
+        ret = json.load(f)
+    return ret
 
 
 @dataclass(frozen=True)

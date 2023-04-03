@@ -1,10 +1,24 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from typing import Any
+
 from ke.data.base_datamodule import BaseDataModule
 from ke.util import data_structs as ds
 from ke.util import name_conventions as nc
-from ke.util.file_io import load_json
 from ke.util.find_datamodules import get_datamodule
+
+
+def load_json(filepath: str | Path) -> Any:
+    """Load the json again
+
+    :param filepath:
+    :return:
+    """
+    with open(str(filepath)) as f:
+        ret = json.load(f)
+    return ret
 
 
 def load_datamodule(source_path) -> BaseDataModule:
