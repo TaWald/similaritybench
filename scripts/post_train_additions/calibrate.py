@@ -32,7 +32,7 @@ def calibrate_model(model_info: ds.FirstModelInfo) -> None:
     :param model_info: Model info parametrization file.
     """
 
-    if model_info.is_calibrated():
+    if model_info.is_calibrated() or (not model_info.model_converged()):
         return
     elif model_info.is_trained():
         output_json = load_json(model_info.path_output_json)
