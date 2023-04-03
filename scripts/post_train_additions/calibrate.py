@@ -2,7 +2,6 @@ import argparse
 import sys
 from pathlib import Path
 
-import numpy as np
 from ke.arch.arch_loading import load_model_from_info_file
 from ke.training.ke_train_modules.CalibrationModule import Calibrator
 from ke.util import data_structs as ds
@@ -17,13 +16,6 @@ from ke.util.gpu_cluster_worker_nodes import get_workers_for_current_node
 from ke.util.load_own_objects import load_datamodule_from_info
 from ke.util.status_check import output_json_has_nans
 from tqdm import tqdm
-
-
-def load_temperature_from_info(model_info: ds.FirstModelInfo):
-    if model_info.is_calibrated():
-        return load_json(model_info.path_calib_json)["val"]["temperature"]
-    else:
-        return np.NAN
 
 
 def calibrate_model(model_info: ds.FirstModelInfo) -> None:

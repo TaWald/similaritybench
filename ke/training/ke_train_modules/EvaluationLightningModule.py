@@ -9,7 +9,7 @@ from ke.arch.arch_loading import load_model_from_info_file
 from ke.metrics.ke_metrics import multi_output_metrics
 from ke.metrics.ke_metrics import single_output_metrics
 from ke.util.data_structs import FirstModelInfo
-from scripts.post_train_additions.calibrate import load_temperature_from_info
+from ke.util.load_own_objects import load_temperature_from_info
 from torch import nn
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 
