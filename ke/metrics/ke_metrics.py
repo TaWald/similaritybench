@@ -139,8 +139,8 @@ def single_output_metrics(
     ece = float(ece.detach().cpu())
 
     ce = float(cross_entropy(new_output, groundtruth).detach().cpu())
-    max_softmax_confidence = t.max(new_prob, dim=-1).values.to(t.float64)  # Softmax max probability
-    residual = (~(new_y_hat_class_id == groundtruth)).to(t.float64)
+    max_softmax_confidence = t.max(new_prob, dim=-1).values  # Softmax max probability
+    residual = ~(new_y_hat_class_id == groundtruth)
     mi_confidence = mutual_bald(new_output[None, ...])
 
     # aurc_sm = aurc(residual, max_softmax_confidence)
@@ -185,10 +185,10 @@ def multi_output_metrics(
         single_metrics = single_output_metrics(new_output, groundtruth)
 
         # ----------- Ensemble Uncertainty: -----------
-        max_softmax_confidence = t.max(ensemble_probs.to(t.float64), dim=-1).values
-        mi_confidence = mutual_bald(all_logits.to(t.float64))
+        max_softmax_confidence = t.max(ensemble_probs, dim=-1).values
+        mi_confidence = mutual_bald(all_logits)
 
-        residual = (~(ensemble_y_hat == groundtruth)).to(t.float64)
+        residual = (~(ensemble_y_hat == groundtruth)).float()
         ensemble_ms_aurc = parallel_aurc(residual, max_softmax_confidence)
         ensemble_mi_aurc = parallel_aurc(residual, mi_confidence)
 

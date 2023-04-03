@@ -40,13 +40,14 @@ class EvaluationLightningModule(pl.LightningModule):
         self.max_data_points = 3e8
         self.all_single_metrics: dict[int, dict] = {}
         self.all_ensemble_metrics: dict[int, dict] = {}
+        self.all_calib_ensemble_metrics: dict[int, dict] = {}
 
     def forward(self, x):
         return [m(x) for m in self.models]
 
     @contextmanager
-    def calibration_mode(self):
-        self._calibrated = True
+    def calibration_mode(self, is_calibrated):
+        self._calibrated = is_calibrated
         try:
             yield
         finally:
@@ -70,8 +71,6 @@ class EvaluationLightningModule(pl.LightningModule):
         )
 
     def on_validation_end(self) -> None:
-        if self._calibrated:
-            self.calibrate_outputs()
         for i in range(self.outputs.shape[0]):
             self.all_single_metrics[i] = asdict(
                 single_output_metrics(new_output=self.outputs[i], groundtruth=self.gts)
@@ -86,6 +85,19 @@ class EvaluationLightningModule(pl.LightningModule):
                         architecture=self.arch_name,
                     )
                 )
+        if self._calibrated:
+            self.calibrate_outputs()
+            for i in range(self.outputs.shape[0]):
+                if i > 0:
+                    self.all_calib_ensemble_metrics[i] = asdict(
+                        multi_output_metrics(
+                            new_output=self.outputs[i],
+                            old_outputs=self.outputs[:i],
+                            groundtruth=self.gts,
+                            dataset=self.dataset_name,
+                            architecture=self.arch_name,
+                        )
+                    )
 
     def save_validation_values(
         self,

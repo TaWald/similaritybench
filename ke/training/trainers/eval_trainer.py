@@ -9,6 +9,7 @@ from augmented_cifar.scripts.get_dataloaders import get_augmented_cifar10_test_d
 from ke.training.ke_train_modules.EvaluationLightningModule import EvaluationLightningModule
 from ke.util import data_structs as ds
 from ke.util import file_io
+from ke.util.gpu_cluster_worker_nodes import get_workers_for_current_node
 from ke.util.load_own_objects import load_datamodule_from_info
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
@@ -37,7 +38,7 @@ class EvalTrainer:
             model_infos, model_infos[0].architecture, model_infos[0].dataset
         )
         self.model_infos = model_infos
-        self.num_workers = 0  # get_workers_for_current_node()
+        self.num_workers = get_workers_for_current_node()
 
         # Create them. Should not exist though or overwrite would happen!
 
@@ -49,24 +50,29 @@ class EvalTrainer:
             raise EnvironmentError
 
         self.dataset_path = dataset_path
+        # 35s/it (batch_siye: 128, pin_memory: True, num_workers: get_workers_for_current_node())
+        # 34s/it (batch_size: 128, pin_memory: False, num_workers: 0)
+        # 35.74s/it (batch_size: 128, pin_memory: True, num_workers: 0)
+        # 38.57s/it (batch_size:1024, pin_memory: True, num_workers: 0)
+        # 39.91s /it (batch_size:1024, pin_memory: True, num_workers: 10)
+        # 38.82s/it (batch_size:1024, pin_memory: False, num_workers: 10)
+
+        # ~8.25s/it (batch_size: 128, pin_memory: False, num_workers: 0)
+        # ~8.7s/it (batch_size: 128, pin_memory: False, num_workers: num_workers)
+        # ~8.7s/it (batch_size: 128, pin_memory: False, num_workers: num_workers, persistent_workers: True)
+        # ~8.7s/it (batch_size: 128, pin_memory: True, num_workers: num_workers, persistent_workers: False)
+        # ~8.3s/it (batch_size: 128, pin_memory: True, num_workers: 0, persistent_workers: False)
+        # ~8.25s/it (batch_size: 128, pin_memory: False, num_workers: 0)
+
         self.test_kwargs = {
             "shuffle": False,
             "drop_last": False,
             "pin_memory": True,
             "batch_size": 128,
-            "num_workers": self.num_workers,
+            "num_workers": 0,
             "persistent_workers": False,
         }
-
-    def _eval_performance(
-        self, dataloader: DataLoader, single: bool, ensemble: bool, also_calibrated: bool
-    ) -> dict[str, dict]:
-        """
-        Measures the generalization of the model by evaluating it on an augmented version of the test set.
-        """
-        test_dataloader = dataloader
-
-        trainer = Trainer(
+        self.trainer = Trainer(
             enable_checkpointing=False,
             max_epochs=None,
             accelerator="gpu",
@@ -77,21 +83,22 @@ class EvalTrainer:
             logger=False,
             profiler=None,
         )
-        self.model.cuda()
-        self.model.eval()
 
-        trainer.validate(self.model, test_dataloader)
+    def _eval_performance(
+        self, dataloader: DataLoader, single: bool, ensemble: bool, also_calibrated: bool
+    ) -> dict[str, dict]:
+        """
+        Measures the generalization of the model by evaluating it on an augmented version of the test set.
+        """
+        with self.model.calibration_mode(also_calibrated):
+            self.trainer.validate(self.model, dataloader)
         ret_dict: dict = {}
         if single:
-            single_metrics = deepcopy(self.model.all_single_metrics)
-            ret_dict["single"] = single_metrics
+            ret_dict["single"] = deepcopy(self.model.all_single_metrics)
         if ensemble:
-            ensemble_metrics = deepcopy(self.model.all_ensemble_metrics)
-            ret_dict["ensemble"] = ensemble_metrics
-            if also_calibrated:
-                with self.model.calibration_mode():
-                    trainer.validate(self.model, test_dataloader)
-                    ret_dict["calibrated_ensemble"] = deepcopy(self.model.all_ensemble_metrics)
+            ret_dict["ensemble"] = deepcopy(self.model.all_ensemble_metrics)
+        if also_calibrated:
+            ret_dict["calibrated_ensemble"] = deepcopy(self.model.all_ensemble_metrics)
 
         return ret_dict
 
