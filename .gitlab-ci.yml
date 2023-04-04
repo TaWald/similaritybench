@@ -33,7 +33,7 @@ before_script:
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
-  - pip install -r requirements.txt
+  - pip install git+https://gitlab-ci-token:${CI_JOB_TOKEN}@git.dkfz.de/mic/personal/group2/tassilow/knowledge_extension.git ke
   - pip install pre-commit
   - pre-commit --version
   - pre-commit install
