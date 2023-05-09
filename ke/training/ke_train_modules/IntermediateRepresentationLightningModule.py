@@ -136,7 +136,7 @@ class IntermediateRepresentationLightningModule(BaseLightningModule):
                 "val/acc": out_metrics.accuracy,
                 "val/corr": rep_metrics.corr,
                 "val/celu_r2": rep_metrics.celu_r2,
-                "val/CoKa": out_metrics.cohens_kappa,
+                "val/CoKa": out_metrics.cohens_kappa.last_to_others_mean,
                 "val/rrCosSim": rep_metrics.rel_rep_cosine_similarity,
             }
             self.log_dict(prog_bar_log, prog_bar=True, logger=False)

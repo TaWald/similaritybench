@@ -4,6 +4,7 @@ from pathlib import Path
 
 from ke.arch.ke_architectures.feature_approximation import FAArch
 from ke.losses.ke_loss import KETrainLoss
+from ke.training.ke_train_modules.calibrate import calibrate_model
 from ke.training.ke_train_modules.IntermediateRepresentationLightningModule import (
     IntermediateRepresentationLightningModule,
 )
@@ -19,7 +20,6 @@ from ke.util.data_structs import ArchitectureInfo
 from ke.util.default_params import get_default_arch_params
 from ke.util.default_params import get_default_parameters
 from ke.util.find_ke_loss import find_ke_loss
-from scripts.post_train_additions.calibrate import calibrate_model
 
 
 def main():

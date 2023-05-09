@@ -6,6 +6,7 @@ from ke.arch.ke_architectures.feature_approximation_gradient_reversal import (
     FAGradientReversalArch,
 )
 from ke.losses.ke_adversarial_loss import KEAdversarialTrainLoss
+from ke.training.ke_train_modules.calibrate import calibrate_model
 from ke.training.ke_train_modules.IntermediateRepresentationLightningModule import (
     IntermediateRepresentationLightningModule,
 )
@@ -213,6 +214,7 @@ def main():
             )
     trainer.train()
     trainer.save_outputs("test")
+    calibrate_model(training_info)
     trainer.measure_generalization()
     if not no_activations:
         trainer.save_activations()

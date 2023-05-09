@@ -2,56 +2,14 @@ import argparse
 import sys
 from pathlib import Path
 
-from ke.arch.arch_loading import load_model_from_info_file
-from ke.training.ke_train_modules.CalibrationModule import Calibrator
+from ke.training.ke_train_modules.calibrate import calibrate_model
 from ke.util import data_structs as ds
 from ke.util import default_parser_args as dpa
 from ke.util import file_io
 from ke.util import name_conventions as nc
 from ke.util.default_params import get_default_parameters
 from ke.util.file_io import chunks
-from ke.util.file_io import load_json
-from ke.util.file_io import save_json
-from ke.util.gpu_cluster_worker_nodes import get_workers_for_current_node
-from ke.util.load_own_objects import load_datamodule_from_info
-from ke.util.status_check import output_json_has_nans
 from tqdm import tqdm
-
-
-def calibrate_model(model_info: ds.FirstModelInfo) -> None:
-    """
-    Calibrates a model based on the info file given.
-    :param model_info: Model info parametrization file.
-    """
-
-    if model_info.is_calibrated() or (not model_info.model_converged()):
-        return
-    elif model_info.is_trained():
-        output_json = load_json(model_info.path_output_json)
-        if output_json_has_nans(output_json):
-            return
-
-        val_dataloader_kwargs = {
-            "shuffle": False,
-            "drop_last": False,
-            "pin_memory": False,
-            "batch_size": 100,
-            "num_workers": get_workers_for_current_node(),
-            "persistent_workers": False,
-        }
-        model = load_model_from_info_file(model_info, load_ckpt=True)
-        dataloader = load_datamodule_from_info(model_info)
-
-        calib = Calibrator(model)
-        calib.calibrate(dataloader.val_dataloader(model_info.split, ds.Augmentation.VAL, **val_dataloader_kwargs))
-        validation_calib = calib.calculate_calibration_effect(
-            dataloader.val_dataloader(model_info.split, ds.Augmentation.VAL, **val_dataloader_kwargs)
-        )
-        test_calib = calib.calculate_calibration_effect(
-            dataloader.test_dataloader(ds.Augmentation.VAL, **val_dataloader_kwargs)
-        )
-        calibration_results = {"val": validation_calib, "test": test_calib}
-        save_json(calibration_results, model_info.path_calib_json)
 
 
 def main():
