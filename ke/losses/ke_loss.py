@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import torch
-import torchmetrics as tm
 from ke.losses.representation_similarity_losses.ke_abs_loss import AbstractRepresentationLoss
 from torch import nn
 
@@ -26,7 +25,6 @@ class KETrainLoss(nn.Module):
         n_classes: int = 10,
     ):
         super(KETrainLoss, self).__init__()
-        self.acc = tm.Accuracy()
         self.softmax = nn.Softmax(dim=1)
         self.similar_loss: AbstractRepresentationLoss = similar_loss
         self.dissimilar_loss: AbstractRepresentationLoss = dissimilar_loss
