@@ -45,10 +45,9 @@ def cosine_similarity(apxs: list[t.Tensor]) -> list[list[t.Tensor]]:
         apxs_cos = []
         for a in apx:
             batch_vectorized_a = t.reshape(a, [a.shape[0], -1])
-            bva_0 = t.unsqueeze(batch_vectorized_a, 0)
-            bva_1 = t.unsqueeze(batch_vectorized_a, 1)
+            normed_a = batch_vectorized_a / t.norm(batch_vectorized_a, p="fro", dim=1, keepdim=True)
+            apx_cos_sim = normed_a @ normed_a.T
             # normed_a = batch_vectorized_a / t.norm(batch_vectorized_a, p="fro", dim=1, keepdim=True)
-            apx_cos_sim = t.cosine_similarity(bva_0, bva_1, dim=2)
             apxs_cos.append(apx_cos_sim)
         cs.append(apxs_cos)
     return cs
