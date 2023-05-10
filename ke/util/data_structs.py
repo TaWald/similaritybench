@@ -219,7 +219,7 @@ class FirstModelInfo:
     def model_converged(self) -> bool:
         if self.is_trained():
             output_json = load_json(self.path_output_json)
-            if output_json_has_nans(output_json) or (output_json["val"]["acc"] < 0.2):
+            if output_json_has_nans(output_json) or (output_json["val"]["accuracy"] < 0.2):
                 return False
             else:
                 return True
