@@ -84,7 +84,14 @@ class BaseLightningModule(pl.LightningModule, ABC):
             else:
                 sm_wr = self.tb_logger_val
             for key, val in tensorboard_dict.items():
-                sm_wr.add_scalar(key, scalar_value=val, global_step=self.global_step)
+                if isinstance(val, dict):
+                    for k, v in val.items():
+                        if isinstance(v, (dict, list)):
+                            continue
+                        else:
+                            sm_wr.add_scalar(key + "/" + k, scalar_value=v, global_step=self.global_step)
+                else:
+                    sm_wr.add_scalar(key, scalar_value=val, global_step=self.global_step)
 
     @abstractmethod
     def save_checkpoint(self):
