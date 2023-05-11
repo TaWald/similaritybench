@@ -75,6 +75,64 @@ class BaseTrainer:
             "persistent_workers": True,
         }
 
+    def post_train_eval(self):
+        """
+        Function if potentially a model finished training but did not write output.json or info.json accordingly.
+        Intended to only do the final eval with the given model and save it.
+        """
+        trainer = Trainer(
+            enable_checkpointing=False,
+            max_epochs=self.params.num_epochs,
+            accelerator="gpu",
+            devices=1,
+            precision=16,
+            default_root_dir=str(self.basic_training_info.path_data_root),
+            enable_progress_bar=self.prog_bar,
+            logger=False,
+            profiler=None,
+        )
+
+        # Points to final checkpoint.
+        self.model.load_latest_checkpoint()
+
+        self.model.cuda()
+        self.model.eval()
+        self.model.final_validation = True
+        trainer.validate(
+            self.model,
+            dataloaders=self.datamodule.val_dataloader(
+                self.params.split, transform=ds.Augmentation.VAL, **self.val_kwargs
+            ),
+        )
+        val_metrics = self.model.final_metrics
+        trainer.test(self.model, dataloaders=self.datamodule.test_dataloader(ds.Augmentation.VAL, **self.val_kwargs))
+        test_metrics = self.model.final_metrics
+        output = {
+            "val": val_metrics,
+            "test": test_metrics,
+            **vars(self.params),
+            **self.arch_params,
+        }
+
+        file_io.save(
+            output,
+            path=self.training_info.path_ckpt_root,
+            filename=nc.OUTPUT_TMPLT,
+        )
+        file_io.save(
+            output,
+            path=self.training_info.path_data_root,
+            filename=nc.OUTPUT_TMPLT,
+        )
+
+        tbt_ke_dict = {}
+        for k, v in asdict(self.training_info).items():
+            if isinstance(v, Path):
+                tbt_ke_dict[k] = str(v)
+            else:
+                tbt_ke_dict[k] = v
+        file_io.save_json(tbt_ke_dict, self.training_info.path_train_info_json)
+
     def train(self):
         """Trains a model and keeps it as attribute self.model
          After finishing training saves checkpoint and a short Hyperparameter summary
