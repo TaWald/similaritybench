@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from abc import ABC
 from abc import abstractmethod
+from copy import deepcopy
+from dataclasses import asdict
 from pathlib import Path
 
 import pytorch_lightning as pl
@@ -65,12 +67,22 @@ class BaseLightningModule(pl.LightningModule, ABC):
         """
         Writes the last validation metrics and closes summary writers.
         """
-        serializable_log = {k: float(v) for k, v in self.final_metrics.items()}
+        serializable_metrics = deepcopy(self.final_metrics)
+        for key, val in self.final_metrics.items():
+            if isinstance(val, dict):
+                for k, v in val.items():
+                    if isinstance(v, (dict, list)):
+                        continue
+                    else:
+                        serializable_metrics[key + "/" + k] = float(v)
+            else:
+                serializable_metrics[key] = val
+
         # Create the final metrics instead here!
         if self.do_log:
-            self.tb_logger_tr.add_hparams(self.ke_hparams, serializable_log)
-            self.tb_logger_val.add_hparams(self.ke_hparams, serializable_log)
-            save_json(serializable_log, self.mode_info.path_last_metrics_json)
+            self.tb_logger_tr.add_hparams(self.ke_hparams, asdict(self.params))
+            self.tb_logger_val.add_hparams(self.ke_hparams, asdict(self.params))
+            save_json(self.final_metrics, self.mode_info.path_last_metrics_json)
             self.tb_logger_tr.close()
             self.tb_logger_val.close()
 
