@@ -1,5 +1,6 @@
 import itertools
-import sys
+from dataclasses import asdict
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ import seaborn as sns
 import torch
 from ke.arch.abstract_acti_extr import AbsActiExtrArch
 from ke.losses.utils import centered_kernel_alignment
+from ke.metrics.ke_metrics import multi_output_metrics
 from ke.util import data_structs as ds
 from ke.util import file_io as io
 from ke.util import find_architectures
@@ -27,6 +29,22 @@ from tqdm import tqdm
 #   3. Extract the activations (at the layers)
 #   4. Pass through comparators
 #   5. Save values for layers
+
+
+@dataclass
+class ModelToModelComparison:
+    g_id_a: int | None
+    g_id_b: int | None
+    m_id_a: int | None
+    m_id_b: int | None
+    layerwise_cka: dict[int, float]
+    accuracy_orig: float
+    accuracy_reg: float
+    cohens_kappa: float
+    jensen_shannon_div: float
+    ensemble_acc: float
+
+    cka_off_diagonal: list[list[float]] | None = None
 
 
 def compare_models(model_a: Path, model_b: Path, hparams: dict) -> dict[int, float]:
@@ -102,10 +120,177 @@ def compare_models(model_a: Path, model_b: Path, hparams: dict) -> dict[int, flo
         # ]
         # del split_actis_a, split_actis_b
         cka = centered_kernel_alignment([actis_a], [actis_b])[0][0]
-
         layerwise_cka[cnt] = float(cka)
 
     return layerwise_cka
+
+
+def unbiased_hsic(K: torch.Tensor, L: torch.Tensor):
+    """Calculates the unbiased HSIC estimate between two variables X and Y.
+    Shape of the input should be (batch_size, batch_size (already calced)
+
+    implementation of HSIC_1 from https://arxiv.org/pdf/2010.15327.pdf (Eq 3)
+    """
+
+    batch_size = K.shape[0]
+
+    # Center the activations
+    K.fill_diagonal_(0)
+    L.fill_diagonal_(0)
+
+    ones = torch.ones((batch_size, 1), device=K.device, dtype=K.dtype)
+
+    first = torch.trace(K @ L)
+    second = (ones.T @ K @ ones @ ones.T @ L @ ones) / ((batch_size - 1) * (batch_size - 2))
+    third = (ones.T @ K @ L @ ones) * (2 / (batch_size - 2))
+    factor = 1 / (batch_size * (batch_size - 3))
+
+    hsic = factor * (first + second - third)
+
+    return torch.squeeze(hsic)
+
+
+@dataclass
+class BatchCKAResult:
+    lk: float
+    ll: float
+    kk: float
+
+
+def _consolidate_cka_batch_results(batch_results: list[BatchCKAResult]):
+    lk = np.mean([br.lk for br in batch_results])
+    kk = np.mean([br.kk for br in batch_results])
+    ll = np.mean([br.ll for br in batch_results])
+
+    cka = lk / (np.sqrt(kk * ll))
+
+    return cka
+
+
+@staticmethod
+def _batch_cka(K: torch.Tensor, L: torch.Tensor) -> BatchCKAResult:
+    """Compares the activations of both networks and outputs.
+    Expects the activations to be in format: B x p with p being the number of neurons."""
+
+    K = K.cuda()
+    L = L.cuda()
+
+    kl = unbiased_hsic(K, L).cpu()
+    kk = unbiased_hsic(K, K).cpu()
+    ll = unbiased_hsic(L, L).cpu()
+
+    return BatchCKAResult(kl, kk, ll)
+
+
+def reshape(acti: torch.Tensor):
+    acti = torch.flatten(acti, start_dim=1)
+    return acti
+
+
+def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> ModelToModelComparison:
+    arch_a: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))()
+    arch_b: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))()
+
+    ckpt_a: dict = torch.load(str(model_a))
+    ckpt_b: dict = torch.load(str(model_b))
+    try:
+        arch_a.load_state_dict(ckpt_a)
+    except RuntimeError as _:  # noqa
+        stripped_a = strip_state_dict_of_keys(ckpt_a)
+        try:
+            arch_a.load_state_dict(stripped_a)
+        except RuntimeError as e:
+            raise e
+
+    try:
+        arch_b.load_state_dict(ckpt_b)
+    except RuntimeError as _:  # noqa
+        stripped_b = strip_state_dict_of_keys(ckpt_b)
+        try:
+            arch_b.load_state_dict(stripped_b)
+        except RuntimeError as e:
+            raise e
+
+    datamodule = find_datamodules.get_datamodule(ds.Dataset(hparams["dataset"]))
+    val_dataloader = datamodule.val_dataloader(
+        0,
+        transform=ds.Augmentation.VAL,
+        **{
+            "shuffle": False,
+            "drop_last": False,
+            "pin_memory": True,
+            "batch_size": 128,
+            "num_workers": 0,
+            "persistent_workers": False,
+        },
+    )
+
+    arch_a = arch_a.cuda()
+    arch_b = arch_b.cuda()
+
+    gt = []
+    logit_a = []
+    logit_b = []
+
+    all_handles_a = []
+    all_handles_b = []
+
+    all_activations_a = {n.name: [0] for n in arch_a.hooks}
+    all_activations_b = {n.name: [0] for n in arch_b.hooks}
+
+    batch_cka_results = {n.name: [] for n in arch_a.hooks}
+
+    # Register hooks
+    for cnt, h in enumerate(arch_a.hooks):
+        all_handles_a.append(arch_a.register_parallel_rep_hooks(h, all_activations_a[h.name]))
+    for cnt, h in enumerate(arch_b.hooks):
+        all_handles_b.append(arch_b.register_parallel_rep_hooks(h, all_activations_b[h.name]))
+    with torch.no_grad():
+        for batch in val_dataloader:
+            x, y = batch
+            x = x.cuda()
+            gt.append(y.detach().cpu().numpy())
+            logit_a.append(arch_a(x).detach().cpu().numpy())
+            logit_b.append(arch_b(x).detach().cpu().numpy())
+
+            for (ka, va), (kb, vb) in zip(all_activations_a.items(), all_activations_b.items()):
+                reshaped_a = reshape(all_activations_a[ka][0])
+                K = reshaped_a @ reshaped_a.T
+                all_activations_a[ka][0] = 0
+                reshaped_b = reshape(all_activations_b[ka][0])
+                L = reshaped_b @ reshaped_b.T
+                all_activations_b[ka][0] = 0
+                batch_cka_res = _batch_cka(K, L)
+                batch_cka_results[ka].append(batch_cka_res)
+
+    [h.remove() for h in all_handles_a]
+    [h.remove() for h in all_handles_b]
+
+    layerwise_cka = {}
+    for cnt, (k, v) in enumerate(batch_cka_results.items()):
+        layerwise_cka[cnt] = float(_consolidate_cka_batch_results(v))
+
+    gt = torch.from_numpy(np.concatenate(gt, axis=0))
+    logit_a = torch.from_numpy(np.concatenate(logit_a, axis=0))[None, ...]  # Expand first dim. (is expected
+    logit_b = torch.from_numpy(np.concatenate(logit_b, axis=0))
+
+    metrics = multi_output_metrics(logit_b, logit_a, gt, "CIFAR10", "ResNet34")
+
+    res = ModelToModelComparison(
+        g_id_a=None,
+        g_id_b=None,
+        m_id_a=None,
+        m_id_b=None,
+        layerwise_cka=layerwise_cka,
+        accuracy_orig=metrics.mean_old_acc,
+        accuracy_reg=metrics.accuracy,
+        cohens_kappa=metrics.cohens_kappa.all_to_all_mean,
+        jensen_shannon_div=metrics.jensen_shannon_div.all_to_all_mean,
+        ensemble_acc=metrics.ensemble_accuracy,
+        cka_off_diagonal=None,
+    )
+
+    return res
 
 
 def get_models_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[tuple[Path, dict]]:
@@ -186,11 +371,12 @@ def get_models_with_ids_from_dir_and_first_model(
             )
             model_paths[0] = base_path
         for single_model_dir in mp.iterdir():
-            model_id = int(single_model_dir.name.split("_")[-1])
-            if model_id not in model_ids:
-                continue
-            else:
-                model_paths[model_id] = single_model_dir
+            if single_model_dir.name.startswith("model"):
+                model_id = int(single_model_dir.name.split("_")[-1])
+                if model_id not in model_ids:
+                    continue
+                else:
+                    model_paths[model_id] = single_model_dir
         all_models_of_ensemble.append(model_paths)
     return all_models_of_ensemble
 
@@ -331,6 +517,7 @@ layer_9_tdepth_5_expvar1 = {
     "epochs_before_regularization": 0,
 }
 
+
 layer_9_tdepth_7_expvar1 = {
     "dataset": "CIFAR10",
     "architecture": "ResNet34",
@@ -341,6 +528,119 @@ layer_9_tdepth_7_expvar1 = {
     "sim_loss_weight": 1.00,
     "dis_loss": "ExpVar",
     "dis_loss_weight": 1.00,
+    "ce_loss_weight": 1.00,
+    "aggregate_reps": True,
+    "softmax": True,
+    "epochs_before_regularization": 0,
+}
+
+
+layer_9_tdepth_9_expvar_1 = {
+    "dataset": "CIFAR10",
+    "architecture": "ResNet34",
+    "hooks": [9],
+    "trans_depth": 9,
+    "kernel_width": 1,
+    "sim_loss": "ExpVar",
+    "sim_loss_weight": 1.00,
+    "dis_loss": "ExpVar",
+    "dis_loss_weight": 1.00,
+    "ce_loss_weight": 1.00,
+    "aggregate_reps": True,
+    "softmax": True,
+    "epochs_before_regularization": 0,
+}
+
+layer_9_tdepth_9_expvar_2 = {
+    "dataset": "CIFAR10",
+    "architecture": "ResNet34",
+    "hooks": [9],
+    "trans_depth": 9,
+    "kernel_width": 1,
+    "sim_loss": "ExpVar",
+    "sim_loss_weight": 1.00,
+    "dis_loss": "ExpVar",
+    "dis_loss_weight": 2.00,
+    "ce_loss_weight": 1.00,
+    "aggregate_reps": True,
+    "softmax": True,
+    "epochs_before_regularization": 0,
+}
+
+layer_9_tdepth_9_expvar_4 = {
+    "dataset": "CIFAR10",
+    "architecture": "ResNet34",
+    "hooks": [9],
+    "trans_depth": 9,
+    "kernel_width": 1,
+    "sim_loss": "ExpVar",
+    "sim_loss_weight": 1.00,
+    "dis_loss": "ExpVar",
+    "dis_loss_weight": 4.00,
+    "ce_loss_weight": 1.00,
+    "aggregate_reps": True,
+    "softmax": True,
+    "epochs_before_regularization": 0,
+}
+
+layer_9_tdepth_9_expvar_6 = {
+    "dataset": "CIFAR10",
+    "architecture": "ResNet34",
+    "hooks": [9],
+    "trans_depth": 9,
+    "kernel_width": 1,
+    "sim_loss": "ExpVar",
+    "sim_loss_weight": 1.00,
+    "dis_loss": "ExpVar",
+    "dis_loss_weight": 6.00,
+    "ce_loss_weight": 1.00,
+    "aggregate_reps": True,
+    "softmax": True,
+    "epochs_before_regularization": 0,
+}
+
+layer_9_tdepth_9_expvar_8 = {
+    "dataset": "CIFAR10",
+    "architecture": "ResNet34",
+    "hooks": [9],
+    "trans_depth": 9,
+    "kernel_width": 1,
+    "sim_loss": "ExpVar",
+    "sim_loss_weight": 1.00,
+    "dis_loss": "ExpVar",
+    "dis_loss_weight": 8.00,
+    "ce_loss_weight": 1.00,
+    "aggregate_reps": True,
+    "softmax": True,
+    "epochs_before_regularization": 0,
+}
+
+layer_9_tdepth_9_expvar_10 = {
+    "dataset": "CIFAR10",
+    "architecture": "ResNet34",
+    "hooks": [9],
+    "trans_depth": 9,
+    "kernel_width": 1,
+    "sim_loss": "ExpVar",
+    "sim_loss_weight": 1.00,
+    "dis_loss": "ExpVar",
+    "dis_loss_weight": 10.00,
+    "ce_loss_weight": 1.00,
+    "aggregate_reps": True,
+    "softmax": True,
+    "epochs_before_regularization": 0,
+}
+
+layer_9_tdepth_9_expvar_12 = {
+    "dataset": "CIFAR10",
+    "architecture": "ResNet34",
+    "hooks": [9],
+    "trans_depth": 9,
+    "kernel_width": 1,
+    "sim_loss": "ExpVar",
+    "sim_loss_weight": 1.00,
+    "dis_loss": "ExpVar",
+    "dis_loss_weight": 12.00,
     "ce_loss_weight": 1.00,
     "aggregate_reps": True,
     "softmax": True,
@@ -381,25 +681,6 @@ layer_15_regularization = {
 }
 
 
-def create_json_of_hparams(hparams_dict: dict, output_name: str):
-    baseline_results_path = Path(
-        "/home/tassilowald/Code/FeatureComparisonV2/manual_introspection/representation_comp_results"
-    )
-    ckpt_results = Path("/mnt/cluster-checkpoint/results/knowledge_extension")
-    models = get_models_of_ke_ensembles(ckpt_results, hparams_dict)
-    model_paths: list[dict[int, Path]] = get_models_with_ids_from_dir_and_first_model(models, [0, 1])
-    model_ckpt_paths: list[dict[int, Path]] = [get_ckpts_from_paths(mp) for mp in model_paths]
-
-    layer_results: list[dict[int, float]] = []
-    for model in tqdm(model_ckpt_paths[:2]):
-        combis = itertools.combinations(model.values(), r=2)
-        for a, b in combis:
-            res = compare_models(model_a=a, model_b=b, hparams=hparams_dict)
-            layer_results.append(res)
-    save_json(layer_results, baseline_results_path / f"{output_name}.json")
-    return
-
-
 def add_description(results: list[dict], description: str) -> list[dict]:
     all_results = []
     for res in results:
@@ -408,13 +689,31 @@ def add_description(results: list[dict], description: str) -> list[dict]:
     return all_results
 
 
-def main():
-    wanted_hparams_one = layer_9_tdepth_7_expvar1
-    wanted_hparams_name: str = "layer_9_tdepth_7_ExpVar_1"
-    if wanted_hparams_one is not None:
-        create_json_of_hparams(wanted_hparams_one, wanted_hparams_name)
-        sys.exit()
+def create_comparisons():
+    hparams_dict: dict = layer_9_tdepth_9_expvar_1
+    wanted_hparams_name: str = "layer_9_tdepth_9_ExpVar_1"
 
+    baseline_results_path = Path(
+        "/home/tassilowald/Code/FeatureComparisonV2/manual_introspection/representation_comp_results"
+    )
+    ckpt_results = Path("/mnt/cluster-checkpoint-all/t006d/results/knowledge_extension_cifars")
+
+    models = get_models_of_ke_ensembles(ckpt_results, hparams_dict)
+
+    model_paths: list[dict[int, Path]] = get_models_with_ids_from_dir_and_first_model(models, [0, 1])
+    model_ckpt_paths: list[dict[int, Path]] = [get_ckpts_from_paths(mp) for mp in model_paths]
+
+    layer_results: list[ModelToModelComparison] = []
+    for model in tqdm(model_ckpt_paths):
+        combis = itertools.combinations(model.values(), r=2)
+        for a, b in combis:
+            res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
+            layer_results.append(res)
+    save_json([asdict(lr) for lr in layer_results], baseline_results_path / f"{wanted_hparams_name}.json")
+    return
+
+
+def create_multi_layer_plot():
     baseline_results_path = Path(
         "/home/tassilowald/Code/FeatureComparisonV2/manual_introspection/representation_comp_results"
     )
@@ -438,9 +737,102 @@ def main():
     results = pd.concat(
         [baseline_pd, reg_9_pd, reg_7to11_pd, reg_5to13_pd, reg_3to15_pd, reg_all_pd], ignore_index=True
     )
-    sns.lineplot(data=results, x="layer", y="cka", hue="regularization")
-    plt.savefig(output_plots / "all_layer_regularization_effect.png")
+    sns.set_theme(style="darkgrid")
+    ax: plt.Axes
+    _, ax = plt.subplots()
+    colors = ["#fd7f6f", "#7eb0d5", "#b2e061", "#bd7ebe", "#ffb55a", "#ffee65"]
+    ax.axhline(y=-0.01, xmin=8.5 / 16, xmax=9.5 / 16, color="#7eb0d5", linewidth=2)
+    ax.axhline(y=-0.02, xmin=7 / 16, xmax=11 / 16, color="#b2e061", linewidth=2)
+    ax.axhline(y=-0.03, xmin=5 / 16, xmax=13 / 16, color="#bd7ebe", linewidth=2)
+    ax.axhline(y=-0.04, xmin=3 / 16, xmax=15 / 16, color="#ffb55a", linewidth=2)
+    ax.axhline(y=-0.05, xmin=0 / 16, xmax=16 / 16, color="#ffee65", linewidth=2)
+    ax.set_xlim(0, 16)
+    # cmap = sns.color_palette(colors)
+    sns.lineplot(data=results, x="layer", y="cka", hue="regularization", palette=colors, ax=ax)
+    plt.savefig(output_plots / "all_layer_regularization_effect.png", dpi=600)
     print("What what")
+
+
+def create_single_layer_depth_plot():
+    baseline_results_path = Path(
+        "/home/tassilowald/Code/FeatureComparisonV2/manual_introspection/representation_comp_results"
+    )
+
+    output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/layerwise_effects_of_regularization")
+
+    baseline_values = load_json(baseline_results_path / "baselines.json")
+    layer_0_td_1 = load_json(baseline_results_path / "layer_9_tdepth_1_ExpVar_1.json")
+    layer_0_td_3 = load_json(baseline_results_path / "layer_9_tdepth_3_ExpVar_1.json")
+    layer_0_td_5 = load_json(baseline_results_path / "layer_9_tdepth_5_ExpVar_1.json")
+    layer_0_td_7 = load_json(baseline_results_path / "layer_9_tdepth_7_ExpVar_1.json")
+    layer_0_td_9 = load_json(baseline_results_path / "layer_9_tdepth_9_ExpVar_1.json")
+
+    baseline_pd = pd.DataFrame(add_description(baseline_values, "unregularized"))
+    layer_0_td_1_pd = pd.DataFrame(add_description(layer_0_td_1, "Layer 9 Depth 1"))
+    layer_0_td_3_pd = pd.DataFrame(add_description(layer_0_td_3, "Layer 9 Depth 3"))
+    layer_0_td_5_pd = pd.DataFrame(add_description(layer_0_td_5, "Layer 9 Depth 5"))
+    layer_0_td_7_pd = pd.DataFrame(add_description(layer_0_td_7, "Layer 9 Depth 7"))
+    layer_0_td_9_pd = pd.DataFrame(add_description(layer_0_td_9, "Layer 9 Depth 9"))
+
+    results = pd.concat(
+        [baseline_pd, layer_0_td_1_pd, layer_0_td_3_pd, layer_0_td_5_pd, layer_0_td_7_pd, layer_0_td_9_pd],
+        ignore_index=True,
+    )
+    sns.set_theme(style="darkgrid")
+    ax: plt.Axes
+    _, ax = plt.subplots()
+    ax.axhline(y=-0.01, xmin=8.5 / 16, xmax=9.5 / 16, color="k", linewidth=2)
+    ax.set_xlim(0, 16)
+    cmap = sns.color_palette("viridis")
+    sns.lineplot(data=results, x="layer", y="cka", hue="regularization", palette=cmap, ax=ax)
+    plt.savefig(output_plots / "layer_9_increasing_transfer_depth.png", dpi=600)
+    print("What what")
+
+
+def create_single_layer_increasing_weight_plot():
+    baseline_results_path = Path(
+        "/home/tassilowald/Code/FeatureComparisonV2/manual_introspection/representation_comp_results"
+    )
+
+    output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/layerwise_effects_of_regularization")
+
+    baseline_values = load_json(baseline_results_path / "baselines.json")
+    layer_0_td_1 = load_json(baseline_results_path / "layer_9_tdepth_1_ExpVar_1.json")
+    layer_0_td_3 = load_json(baseline_results_path / "layer_9_tdepth_3_ExpVar_1.json")
+    layer_0_td_5 = load_json(baseline_results_path / "layer_9_tdepth_5_ExpVar_1.json")
+    layer_0_td_7 = load_json(baseline_results_path / "layer_9_tdepth_7_ExpVar_1.json")
+    layer_0_td_9 = load_json(baseline_results_path / "layer_9_tdepth_9_ExpVar_1.json")
+
+    baseline_pd = pd.DataFrame(add_description(baseline_values, "unregularized"))
+    layer_0_td_1_pd = pd.DataFrame(add_description(layer_0_td_1, "Layer 9 Depth 1"))
+    layer_0_td_3_pd = pd.DataFrame(add_description(layer_0_td_3, "Layer 9 Depth 3"))
+    layer_0_td_5_pd = pd.DataFrame(add_description(layer_0_td_5, "Layer 9 Depth 5"))
+    layer_0_td_7_pd = pd.DataFrame(add_description(layer_0_td_7, "Layer 9 Depth 7"))
+    layer_0_td_9_pd = pd.DataFrame(add_description(layer_0_td_9, "Layer 9 Depth 9"))
+
+    results = pd.concat(
+        [baseline_pd, layer_0_td_1_pd, layer_0_td_3_pd, layer_0_td_5_pd, layer_0_td_7_pd, layer_0_td_9_pd],
+        ignore_index=True,
+    )
+    sns.set_theme(style="darkgrid")
+    ax: plt.Axes
+    _, ax = plt.subplots()
+    ax.axhline(y=-0.01, xmin=8.5 / 16, xmax=9.5 / 16, color="k", linewidth=2)
+    ax.set_xlim(0, 16)
+    cmap = sns.color_palette("viridis")
+    sns.lineplot(data=results, x="layer", y="cka", hue="regularization", palette=cmap, ax=ax)
+    plt.savefig(output_plots / "layer_9_increasing_transfer_depth.png", dpi=600)
+    print("What what")
+
+
+# ToDo: Create Single Layer depth 9 but moving single layer across architecture.
+
+
+def main():
+
+    create_comparisons()
+    # create_multi_layer_plot()
+    # create_single_layer_depth_plot()
 
 
 if __name__ == "__main__":
