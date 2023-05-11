@@ -23,7 +23,6 @@ from ke.util import data_structs as ds
 from numpy import genfromtxt
 from torch.nn import functional as F
 from torch.nn.functional import cross_entropy
-from torchmetrics.functional import calibration_error
 
 
 @cache
@@ -131,12 +130,13 @@ def single_output_metrics(
     :param groundtruth: Class int values (not one-hot)  [NSamples]
     """
 
-    num_classes = new_output.shape[-1]
+    # num_classes = new_output.shape[-1]
     new_prob = F.softmax(new_output, dim=-1)
     new_y_hat_class_id = t.argmax(new_prob, dim=-1)
     acc: float = float(t.mean(new_y_hat_class_id == groundtruth, dtype=t.float).detach().cpu())
-    ece = calibration_error(new_prob, groundtruth, task="multiclass", n_bins=15, num_classes=num_classes)
-    ece = float(ece.detach().cpu())
+    # ToDo: fix
+    # ece = calibration_error(new_prob, groundtruth, task="multiclass", n_bins=15, num_classes=num_classes)
+    # ece = float(ece.detach().cpu())
 
     ce = float(cross_entropy(new_output, groundtruth).detach().cpu())
     max_softmax_confidence = t.max(new_prob, dim=-1).values  # Softmax max probability
@@ -148,7 +148,7 @@ def single_output_metrics(
     paurc_mi = parallel_aurc(residual, mi_confidence)
     # aurc_mi = aurc(residual, mi_confidence)
 
-    return SingleOutMetrics(accuracy=acc, ce=ce, ece=ece, max_softmax_aurc=paurc_sm, mutual_info_aurc=paurc_mi)
+    return SingleOutMetrics(accuracy=acc, ce=ce, ece=np.nan, max_softmax_aurc=paurc_sm, mutual_info_aurc=paurc_mi)
 
 
 def multi_output_metrics(
@@ -156,12 +156,12 @@ def multi_output_metrics(
     old_outputs: t.Tensor,
     groundtruth: t.Tensor,
     dataset: ds.Dataset | str,
-    architecture: ds.Dataset | str,
+    architecture: ds.BaseArchitecture | str,
 ) -> MultiOutMetrics:
     """
     Calculates a variety of metrics that are based on multiple output predictions being present.
     """
-    num_classes = new_output.shape[-1]
+    # num_classes = new_output.shape[-1]
 
     with t.no_grad():
         # Calculation of probabilties and predicted classes.
@@ -193,10 +193,12 @@ def multi_output_metrics(
         ensemble_mi_aurc = parallel_aurc(residual, mi_confidence)
 
         # ----------- Ensemble Calibration: -----------
-        ensemble_ece = calibration_error(
-            ensemble_probs, groundtruth, task="multiclass", n_bins=15, num_classes=num_classes
-        )
-        ensemble_ece = float(ensemble_ece.detach().cpu())
+        # ToDo: Fix
+        # ensemble_ece = float(np.nan)
+        # ensemble_ece = calibration_error(
+        #     ensemble_probs, groundtruth, task="multiclass", n_bins=15, num_classes=num_classes
+        # )
+        ensemble_ece = float(np.nan)
 
         # ---- Ensemble Accuracy
         ensemble_acc = t.mean(ensemble_y_hat == groundtruth, dtype=t.float)
