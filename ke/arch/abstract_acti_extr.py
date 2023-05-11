@@ -6,6 +6,7 @@ from typing import Sequence
 from typing import Union
 
 import numpy as np
+import torch
 from ke.util.data_structs import BaseArchitecture
 from ke.util.data_structs import Hook
 from torch import nn
@@ -59,6 +60,14 @@ class AbsActiExtrArch(nn.Module):
         )
         self.activations = []
         return None
+
+    def register_parallel_rep_hooks(self, hook: Hook, save_container: list):
+        self.slice_shift = 0
+        desired_module = self.get_wanted_module(hook)
+        handle = desired_module.register_forward_hook(
+            self.get_layer_output_parallel(save_container, wanted_spatial=int(0))
+        )
+        return handle
 
     @abstractmethod
     def get_wanted_module(self, hook: Hook | Sequence[str]) -> nn.Module:
@@ -163,5 +172,35 @@ class AbsActiExtrArch(nn.Module):
                 if self.slice_shift - 1 >= wanted_spatial:
                     self.slice_shift = 0
             self.activations.append(flat_output)
+
+        return hook
+
+    def get_layer_output_parallel(
+        self,
+        container: list,
+        wanted_spatial: int = 0,
+    ):
+        def hook(model, inp, output):
+            """
+            Attaches a forward hook that takes the output of a layer,
+            checks how high the spatial extent is and only saves as many values
+            of the representations as passed in wrapper `wanted_spatial`.
+
+            ATTENTION: This procedure removes location information, making intra-layer comparisons
+            based off pooling or something like it impossible!
+            """
+            # self.activations.append(output.detach().cpu().numpy())
+            output_shape = output.shape  # Batch x Channel x Width x Height?
+            wh_pixel = output_shape[2] * output_shape[3]
+            flat_output = torch.reshape(output, [output_shape[0], output_shape[1], -1])
+            if wanted_spatial < wh_pixel and wanted_spatial != 0:  # Undersample
+                ids = np.sort(
+                    np.floor((np.linspace(0, wh_pixel, wanted_spatial, endpoint=False) + self.slice_shift) % wh_pixel)
+                ).astype(int)
+                flat_output = flat_output[:, :, ids]
+                self.slice_shift = self.slice_shift + 1
+                if self.slice_shift - 1 >= wanted_spatial:
+                    self.slice_shift = 0
+            container[0] = flat_output
 
         return hook
