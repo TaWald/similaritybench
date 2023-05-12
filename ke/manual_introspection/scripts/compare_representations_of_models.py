@@ -30,9 +30,7 @@ from tqdm import tqdm
 #   5. Save values for layers
 
 
-baseline_results_path = Path(
-    "/home/tassilowald/Code/FeatureCompV3/ke/manual_introspection/representation_comp_results"
-)
+json_results_path = Path(__file__.parent.parent / "difference_between_two_models")
 output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/layerwise_effects_of_regularization")
 ckpt_results = Path("/mnt/cluster-checkpoint-all/t006d/results/knowledge_extension_cifars")
 
@@ -434,12 +432,12 @@ def flatten_result(res: dict, hue_key: str = "Dis. Weight") -> list[dict]:
 def plot_layer_9_tdepth_9_expvar_DIFF():
     all_res = []
     v: ModelToModelComparison
-    res = load_json(baseline_results_path / "baselines.json")
+    res = load_json(json_results_path / "baselines.json")
     baseline = [{"whole_cka": r["layerwise_cka"], "Dis. Weight": int(0.0)} for r in res]
     inter_res = [flatten_result(b, "Dis. Weight") for b in baseline]
     all_res.extend(itertools.chain.from_iterable(inter_res))
     for name, hparam in grm.layer_9_tdepth_9_expvar_DIFF.items():
-        res = load_json(baseline_results_path / f"{name}.json")
+        res = load_json(json_results_path / f"{name}.json")
         res_json = [{"whole_cka": r["layerwise_cka"], "Dis. Weight": int(hparam["dis_loss_weight"])} for r in res]
         inter_res = [flatten_result(r, "Dis. Weight") for r in res_json]
         all_res.extend(itertools.chain.from_iterable(inter_res))
@@ -460,13 +458,13 @@ def plot_layer_9_tdepth_9_expvar_DIFF():
 def plot_layer_DIFF_tdepth_1_expvar_1():
     all_res = []
 
-    res = load_json(baseline_results_path / "baselines.json")
+    res = load_json(json_results_path / "baselines.json")
     baseline = [{"whole_cka": r["layerwise_cka"], "Regularization Layer": "None"} for r in res]
     inter_res = [flatten_result(b, "Regularization Layer") for b in baseline]
     all_res.extend(itertools.chain.from_iterable(inter_res))
 
     for name, hparam in grm.layer_DIFF_tdepth_1_expvar_1.items():
-        res = load_json(baseline_results_path / f"{name}.json")
+        res = load_json(json_results_path / f"{name}.json")
         res_json = [{"whole_cka": r["layerwise_cka"], "Regularization Layer": int(hparam["hooks"][0])} for r in res]
         inter_res = [flatten_result(r, "Regularization Layer") for r in res_json]
         all_res.extend(itertools.chain.from_iterable(inter_res))
@@ -492,7 +490,7 @@ def plot_layer_DIFF_tdepth_1_expvar_1():
 def plot_layer_SPARSEDIFF_tdepth_1_expvar_1():
     all_res = []
 
-    res = load_json(baseline_results_path / "baselines.json")
+    res = load_json(json_results_path / "baselines.json")
     baseline = [{"whole_cka": r["layerwise_cka"], "Regularization Layer": "None"} for r in res]
     inter_res = [flatten_result(b, "Regularization Layer") for b in baseline]
     all_res.extend(itertools.chain.from_iterable(inter_res))
@@ -503,7 +501,7 @@ def plot_layer_SPARSEDIFF_tdepth_1_expvar_1():
     ) in (
         grm.layer_SPARSEDIFF_tdepth_1_expvar_1.items()
     ):  # comps_single_diff_layer_same_depth_same_dis_loss_strengths_sparse.items():
-        res = load_json(baseline_results_path / f"{name}.json")
+        res = load_json(json_results_path / f"{name}.json")
         res_json = [{"whole_cka": r["layerwise_cka"], "Regularization Layer": int(hparam["hooks"][0])} for r in res]
         inter_res = [flatten_result(r, "Regularization Layer") for r in res_json]
         all_res.extend(itertools.chain.from_iterable(inter_res))
@@ -529,12 +527,12 @@ def plot_layer_SPARSEDIFF_tdepth_1_expvar_1():
 def plot_layer_9_tdepth_9_lincka_DIFF():
     all_res = []
     v: ModelToModelComparison
-    res = load_json(baseline_results_path / "baselines.json")
+    res = load_json(json_results_path / "baselines.json")
     baseline = [{"whole_cka": r["layerwise_cka"], "Dis. Weight": int(0.0)} for r in res]
     inter_res = [flatten_result(b, "Dis. Weight") for b in baseline]
     all_res.extend(itertools.chain.from_iterable(inter_res))
     for name, hparam in grm.layer_9_tdepth_9_lincka_DIFF.items():
-        res = load_json(baseline_results_path / f"{name}.json")
+        res = load_json(json_results_path / f"{name}.json")
         res_json = [{"whole_cka": r["layerwise_cka"], "Dis. Weight": int(hparam["dis_loss_weight"])} for r in res]
         inter_res = [flatten_result(r, "Dis. Weight") for r in res_json]
         all_res.extend(itertools.chain.from_iterable(inter_res))
@@ -554,12 +552,12 @@ def plot_layer_9_tdepth_9_lincka_DIFF():
 
 def create_multi_layer_plot():
 
-    baseline_values = load_json(baseline_results_path / "baselines.json")
-    reg_9 = load_json(baseline_results_path / "layer_9_tdepth_9_ExpVar_1.json")
-    reg_7to11 = load_json(baseline_results_path / "layer_7to11_ExpVar_1,00.json")
-    reg_5to13 = load_json(baseline_results_path / "layer_5to13_ExpVar_1,00.json")
-    reg_3to15 = load_json(baseline_results_path / "cifar_10_resnet34_hooks_3_to_15.json")
-    reg_all = load_json(baseline_results_path / "cifar_10_resnet34_hooks_all_dis_loss_1,00.json")
+    baseline_values = load_json(json_results_path / "baselines.json")
+    reg_9 = load_json(json_results_path / "layer_9_tdepth_9_ExpVar_1.json")
+    reg_7to11 = load_json(json_results_path / "layer_7to11_ExpVar_1,00.json")
+    reg_5to13 = load_json(json_results_path / "layer_5to13_ExpVar_1,00.json")
+    reg_3to15 = load_json(json_results_path / "cifar_10_resnet34_hooks_3_to_15.json")
+    reg_all = load_json(json_results_path / "cifar_10_resnet34_hooks_all_dis_loss_1,00.json")
 
     baseline_pd = pd.DataFrame(add_description(baseline_values, "unregularized"))
     reg_9_pd = pd.DataFrame(add_description(reg_9, "regularized_9"))
@@ -668,7 +666,7 @@ def create_comparisons(hparam: dict, overwrite=False):
         model_paths: list[dict[int, Path]] = get_models_with_ids_from_dir_and_first_model(models, [0, 1])
         model_ckpt_paths: list[dict[int, Path]] = [get_ckpts_from_paths(mp) for mp in model_paths]
 
-        this_output_file = baseline_results_path / f"{wanted_hparams_name}.json"
+        this_output_file = json_results_path / f"{wanted_hparams_name}.json"
         if (not overwrite) and this_output_file.exists():
             continue
 
@@ -680,7 +678,7 @@ def create_comparisons(hparam: dict, overwrite=False):
                 layer_results.append(res)
         save_json(
             [{**asdict(lr), **hparams_dict} for lr in layer_results],
-            baseline_results_path / f"{wanted_hparams_name}.json",
+            json_results_path / f"{wanted_hparams_name}.json",
         )
     return
 
