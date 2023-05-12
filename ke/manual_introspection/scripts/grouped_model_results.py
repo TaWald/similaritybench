@@ -108,6 +108,21 @@ layer_9_tdepth_DIFF_expvar_1 = {
     for i in [1, 3, 5, 7, 9]
 }
 
+layer_9_tdepth_1_expvar_1 = {
+    "layer_9_tdepth_1_ExpVar_1": {
+        "dataset": "CIFAR10",
+        "architecture": "ResNet34",
+        "hooks": [9],
+        "trans_depth": 1,
+        "kernel_width": 1,
+        "sim_loss": "ExpVar",
+        "sim_loss_weight": 1.00,
+        "dis_loss": "ExpVar",
+        "ce_loss_weight": 1.00,
+        "dis_loss_weight": 1.00,
+    }
+}
+
 layer_MULTI_tdepth_9_expvar_1 = {
     f"layer_{min(h)}to{max(h)}_tdepth_9_ExpVar_1": {
         "dataset": "CIFAR10",
