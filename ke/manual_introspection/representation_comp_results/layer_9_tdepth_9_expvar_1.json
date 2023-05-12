@@ -363,8 +363,11 @@
         "sim_loss": "ExpVar",
         "sim_loss_weight": 1.0,
         "dis_loss": "ExpVar",
+        "dis_loss_weight": 1.0,
         "ce_loss_weight": 1.0,
-        "dis_loss_weight": 1.0
+        "aggregate_reps": true,
+        "softmax": true,
+        "epochs_before_regularization": 0
     },
     {
         "g_id_a": null,
@@ -730,8 +733,11 @@
         "sim_loss": "ExpVar",
         "sim_loss_weight": 1.0,
         "dis_loss": "ExpVar",
+        "dis_loss_weight": 1.0,
         "ce_loss_weight": 1.0,
-        "dis_loss_weight": 1.0
+        "aggregate_reps": true,
+        "softmax": true,
+        "epochs_before_regularization": 0
     },
     {
         "g_id_a": null,
@@ -1097,8 +1103,11 @@
         "sim_loss": "ExpVar",
         "sim_loss_weight": 1.0,
         "dis_loss": "ExpVar",
+        "dis_loss_weight": 1.0,
         "ce_loss_weight": 1.0,
-        "dis_loss_weight": 1.0
+        "aggregate_reps": true,
+        "softmax": true,
+        "epochs_before_regularization": 0
     },
     {
         "g_id_a": null,
@@ -1464,8 +1473,11 @@
         "sim_loss": "ExpVar",
         "sim_loss_weight": 1.0,
         "dis_loss": "ExpVar",
+        "dis_loss_weight": 1.0,
         "ce_loss_weight": 1.0,
-        "dis_loss_weight": 1.0
+        "aggregate_reps": true,
+        "softmax": true,
+        "epochs_before_regularization": 0
     },
     {
         "g_id_a": null,
@@ -1831,8 +1843,11 @@
         "sim_loss": "ExpVar",
         "sim_loss_weight": 1.0,
         "dis_loss": "ExpVar",
+        "dis_loss_weight": 1.0,
         "ce_loss_weight": 1.0,
-        "dis_loss_weight": 1.0
+        "aggregate_reps": true,
+        "softmax": true,
+        "epochs_before_regularization": 0
     },
     {
         "g_id_a": null,
@@ -2198,8 +2213,11 @@
         "sim_loss": "ExpVar",
         "sim_loss_weight": 1.0,
         "dis_loss": "ExpVar",
+        "dis_loss_weight": 1.0,
         "ce_loss_weight": 1.0,
-        "dis_loss_weight": 1.0
+        "aggregate_reps": true,
+        "softmax": true,
+        "epochs_before_regularization": 0
     },
     {
         "g_id_a": null,
@@ -2565,8 +2583,11 @@
         "sim_loss": "ExpVar",
         "sim_loss_weight": 1.0,
         "dis_loss": "ExpVar",
+        "dis_loss_weight": 1.0,
         "ce_loss_weight": 1.0,
-        "dis_loss_weight": 1.0
+        "aggregate_reps": true,
+        "softmax": true,
+        "epochs_before_regularization": 0
     },
     {
         "g_id_a": null,
@@ -2932,8 +2953,11 @@
         "sim_loss": "ExpVar",
         "sim_loss_weight": 1.0,
         "dis_loss": "ExpVar",
+        "dis_loss_weight": 1.0,
         "ce_loss_weight": 1.0,
-        "dis_loss_weight": 1.0
+        "aggregate_reps": true,
+        "softmax": true,
+        "epochs_before_regularization": 0
     },
     {
         "g_id_a": null,
@@ -3299,8 +3323,11 @@
         "sim_loss": "ExpVar",
         "sim_loss_weight": 1.0,
         "dis_loss": "ExpVar",
+        "dis_loss_weight": 1.0,
         "ce_loss_weight": 1.0,
-        "dis_loss_weight": 1.0
+        "aggregate_reps": true,
+        "softmax": true,
+        "epochs_before_regularization": 0
     },
     {
         "g_id_a": null,
@@ -3666,7 +3693,10 @@
         "sim_loss": "ExpVar",
         "sim_loss_weight": 1.0,
         "dis_loss": "ExpVar",
+        "dis_loss_weight": 1.0,
         "ce_loss_weight": 1.0,
-        "dis_loss_weight": 1.0
+        "aggregate_reps": true,
+        "softmax": true,
+        "epochs_before_regularization": 0
     }
 ]
