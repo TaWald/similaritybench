@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import itertools
-from dataclasses import asdict
+from dataclasses import asdict, field
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -314,7 +316,7 @@ def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> Mode
     return res
 
 
-def get_models_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[tuple[Path, dict]]:
+def get_matching_model_dirs_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[tuple[Path, dict]]:
     matching_dirs: list[tuple[Path, dict]] = []
     ke_src_paths = list(ke_src_path.iterdir())
     for ke_p in ke_src_paths:
@@ -369,48 +371,59 @@ def get_models_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[
             matching_dirs.append((ke_p, decoded_params))
     return matching_dirs
 
+@dataclass
+class SeedResult:
+    hparams: dict
+    models: dict[int, Path] = field(init=False)
+    checkpoints: dict[int, Path] = field(init=False)
 
 def get_models_with_ids_from_dir_and_first_model(
     model_paths: list[tuple[Path, dict]], model_ids: list[int]
-) -> list[dict[int, Path]]:
+) -> list[SeedResult]:
     """
-    Extracts models
+    Extracts all models from the path.
+    If model_ids list contains the 0 it also grabs the first unregularized models. ([0,...]).
+    besides that saves all models of all group_ids in the
+
+    Returns a list of all model_ids (different group_ids) with path to ckpt source.
 
     """
-    all_models_of_ensemble: list[dict[int, Path]] = []
+    all_models_of_ensemble: list[SeedResult] = []
 
     for mp, hparams in model_paths:
         group_id = hparams["group_id_i"]
         dataset = hparams["dataset"]
         architecture = hparams["architecture"]
-        model_paths: dict[int, Path] = {}
+        tmp_model_paths: SeedResult = SeedResult(hparams=hparams)
+        tmp_model_paths.checkpoints = {}
+        tmp_model_paths.models = {}
         if 0 in model_ids:
             base_path = (
                 mp.parent
                 / nc.KE_FIRST_MODEL_DIR.format(dataset, architecture)
                 / nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id)
             )
-            model_paths[0] = base_path
+            tmp_model_paths.models[0] = base_path
         for single_model_dir in mp.iterdir():
             if single_model_dir.name.startswith("model"):
                 model_id = int(single_model_dir.name.split("_")[-1])
                 if model_id not in model_ids:
                     continue
                 else:
-                    model_paths[model_id] = single_model_dir
-        all_models_of_ensemble.append(model_paths)
+                    tmp_model_paths.models[model_id] = single_model_dir
+        all_models_of_ensemble.append(tmp_model_paths)
     return all_models_of_ensemble
 
 
-def get_ckpts_from_paths(paths: dict[int, Path]):
+def get_ckpts_from_paths(seed_result: SeedResult) -> SeedResult:
     """
     Returns the checkpoints of the paths.
     """
 
-    ckpt_paths = {}
-    for k, p in paths.items():
-        ckpt_paths[k] = p / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME
-    return ckpt_paths
+    seed_result.checkpoints = {}
+    for k, p in seed_result.models.items():
+        seed_result.checkpoints[k] = p / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME
+    return seed_result
 
 
 def add_description(results: list[dict], description: str) -> list[dict]:
@@ -593,10 +606,10 @@ def create_single_layer_depth_plot():
     output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/layerwise_effects_of_regularization")
 
     baseline_values = load_json(baseline_results_path / "baselines.json")
-    layer_0_td_1 = load_json(baseline_results_path / "layer_9_tdepth_1_ExpVar_1.json")
-    layer_0_td_3 = load_json(baseline_results_path / "layer_9_tdepth_3_ExpVar_1.json")
-    layer_0_td_5 = load_json(baseline_results_path / "layer_9_tdepth_5_ExpVar_1.json")
-    layer_0_td_7 = load_json(baseline_results_path / "layer_9_tdepth_7_ExpVar_1.json")
+    layer_0_td_1 = load_json(baseline_results_path / "layer_9_tdepth_1_expvar_1.json")
+    layer_0_td_3 = load_json(baseline_results_path / "layer_9_tdepth_3_expvar_1.json")
+    layer_0_td_5 = load_json(baseline_results_path / "layer_9_tdepth_5_expvar_1.json")
+    layer_0_td_7 = load_json(baseline_results_path / "layer_9_tdepth_7_expvar_1.json")
     layer_0_td_9 = load_json(baseline_results_path / "layer_9_tdepth_9_ExpVar_1.json")
 
     baseline_pd = pd.DataFrame(add_description(baseline_values, "unregularized"))
@@ -629,10 +642,10 @@ def create_single_layer_increasing_weight_plot():
     output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/layerwise_effects_of_regularization")
 
     baseline_values = load_json(baseline_results_path / "baselines.json")
-    layer_0_td_1 = load_json(baseline_results_path / "layer_9_tdepth_1_ExpVar_1.json")
-    layer_0_td_3 = load_json(baseline_results_path / "layer_9_tdepth_3_ExpVar_1.json")
-    layer_0_td_5 = load_json(baseline_results_path / "layer_9_tdepth_5_ExpVar_1.json")
-    layer_0_td_7 = load_json(baseline_results_path / "layer_9_tdepth_7_ExpVar_1.json")
+    layer_0_td_1 = load_json(baseline_results_path / "layer_9_tdepth_1_expvar_1.json")
+    layer_0_td_3 = load_json(baseline_results_path / "layer_9_tdepth_3_expvar_1.json")
+    layer_0_td_5 = load_json(baseline_results_path / "layer_9_tdepth_5_expvar_1.json")
+    layer_0_td_7 = load_json(baseline_results_path / "layer_9_tdepth_7_expvar_1.json")
     layer_0_td_9 = load_json(baseline_results_path / "layer_9_tdepth_9_ExpVar_1.json")
 
     baseline_pd = pd.DataFrame(add_description(baseline_values, "unregularized"))
@@ -658,21 +671,22 @@ def create_single_layer_increasing_weight_plot():
 
 
 # ToDo: Create Single Layer depth 9 but moving single layer across architecture.
-def create_comparisons(hparam: dict, overwrite=False):
+def create_same_seed_comparisons(hparam: dict, overwrite=False):
     for wanted_hparams_name, hparams_dict in hparam.items():
 
-        models = get_models_of_ke_ensembles(ckpt_results, hparams_dict)
+        models = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
 
-        model_paths: list[dict[int, Path]] = get_models_with_ids_from_dir_and_first_model(models, [0, 1])
-        model_ckpt_paths: list[dict[int, Path]] = [get_ckpts_from_paths(mp) for mp in model_paths]
+        model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1])
+        model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
 
         this_output_file = json_results_path / f"{wanted_hparams_name}.json"
         if (not overwrite) and this_output_file.exists():
             continue
 
         layer_results: list[ModelToModelComparison] = []
-        for model in tqdm(model_ckpt_paths[:20]):
-            combis = itertools.combinations(model.values(), r=2)
+        seed_result: SeedResult
+        for seed_result in tqdm(model_ckpt_paths[:20]):
+            combis = itertools.combinations(seed_result.checkpoints.values(), r=2)
             for a, b in combis:
                 res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 layer_results.append(res)
@@ -684,8 +698,7 @@ def create_comparisons(hparam: dict, overwrite=False):
 
 
 def main():
-    pass
-    create_comparisons(grm.layer_DIFF_tdepth_9_expvar_1)
+    create_same_seed_comparisons(grm.layer_DIFF_tdepth_9_expvar_1)
     # create_single_diff_layer_single_depth_single_dis_loss_weight_plot_sparse()
 
     # create_single_diff_layer_single_depth_single_dis_loss_weight_plot
