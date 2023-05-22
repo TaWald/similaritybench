@@ -18,7 +18,7 @@ from ke.util.file_io import save_json
 from IPython import embed
 
 cur_file_path: Path = Path(__file__)
-json_results_path = cur_file_path.parent.parent / "difference_between_two_models"
+json_results_path = cur_file_path.parent.parent / "plots"
 
 
 def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite=False):
@@ -138,4 +138,5 @@ def create_comps_between_single_5_consecutive_models(hparam: dict, overwrite=Fal
 
 if __name__ == "__main__":
     create_comps_between_regularized_unregularized_by_id(grm.layer_9_tdepth_1_expvar_1)
+    # ToDo: Find a run that had more than 5 models in it.
     create_comps_between_single_5_consecutive_models(grm.layer_9_tdepth_1_expvar_1)
