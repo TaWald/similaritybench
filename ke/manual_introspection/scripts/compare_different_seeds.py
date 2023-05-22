@@ -58,7 +58,7 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
         else:
             layer_results: list[ModelToModelComparison] = []
 
-            for a, b in cross_seed_unregularized_paths[:20]:
+            for a, b in tqdm(cross_seed_unregularized_paths[:20]):
                 res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 layer_results.append(res)
             save_json(
