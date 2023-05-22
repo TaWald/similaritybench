@@ -32,7 +32,7 @@ from tqdm import tqdm
 #   5. Save values for layers
 
 
-json_results_path = Path(__file__.parent.parent / "difference_between_two_models")
+json_results_path = Path(__file__).parent.parent / "difference_between_two_models"
 output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/layerwise_effects_of_regularization")
 ckpt_results = Path("/mnt/cluster-checkpoint-all/t006d/results/knowledge_extension_cifars")
 
