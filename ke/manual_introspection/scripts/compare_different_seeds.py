@@ -16,7 +16,8 @@ from ke.manual_introspection.scripts.compare_representations_of_models import (
 )
 from ke.util.file_io import save_json
 
-json_results_path = Path(__file__.parent.parent / "difference_between_two_models")
+cur_file_path: Path = Path(__file__)
+json_results_path = cur_file_path.parent.parent / "difference_between_two_models"
 
 
 def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite=False):
