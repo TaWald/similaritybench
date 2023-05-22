@@ -57,7 +57,6 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
             pass
         else:
             layer_results: list[ModelToModelComparison] = []
-
             for a, b in tqdm(cross_seed_unregularized_paths[:20]):
                 res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 layer_results.append(res)
@@ -70,10 +69,9 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
             pass
         else:
             layer_results: list[ModelToModelComparison] = []
-            for combis in tqdm(in_seed_regularized_unregularized[:20]):
-                for a, b in combis:
-                    res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
-                    layer_results.append(res)
+            for a, b in tqdm(in_seed_regularized_unregularized):
+                res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
+                layer_results.append(res)
             save_json(
                 [{**asdict(lr), **hparams_dict} for lr in layer_results],
                 in_seed_non_reg_to_reg,
@@ -83,10 +81,9 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
             pass
         else:
             layer_results: list[ModelToModelComparison] = []
-            for combis in tqdm(cross_seed_unregularized_regularized_paths):
-                for a, b in combis:
-                    res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
-                    layer_results.append(res)
+            for a, b in tqdm(cross_seed_unregularized_regularized_paths):
+                res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
+                layer_results.append(res)
             save_json(
                 [{**asdict(lr), **hparams_dict} for lr in layer_results],
                 cross_seed_reg_2_non_reg,
@@ -96,10 +93,9 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
             pass
         else:
             layer_results: list[ModelToModelComparison] = []
-            for combis in tqdm(cross_seed_regularized_paths[:20]):
-                for a, b in combis:
-                    res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
-                    layer_results.append(res)
+            for a,b  in tqdm(cross_seed_regularized_paths):
+                res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
+                layer_results.append(res)
             save_json(
                 [{**asdict(lr), **hparams_dict} for lr in layer_results],
                 reg_to_reg_comp,
