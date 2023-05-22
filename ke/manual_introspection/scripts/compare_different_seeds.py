@@ -57,13 +57,10 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
             pass
         else:
             layer_results: list[ModelToModelComparison] = []
-            embed()
-            for combis in cross_seed_unregularized_paths[:20]:
-                print(combis)
-                embed()
-                for a, b in combis:
-                    res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
-                    layer_results.append(res)
+
+            for a, b in cross_seed_unregularized_paths[:20]:
+                res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
+                layer_results.append(res)
             save_json(
                 [{**asdict(lr), **hparams_dict} for lr in layer_results],
                 non_reg_2_non_reg,
