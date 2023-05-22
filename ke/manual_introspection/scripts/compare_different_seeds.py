@@ -15,6 +15,7 @@ from ke.manual_introspection.scripts.compare_representations_of_models import (
     get_models_with_ids_from_dir_and_first_model,
 )
 from ke.util.file_io import save_json
+from IPython import embed
 
 cur_file_path: Path = Path(__file__)
 json_results_path = cur_file_path.parent.parent / "difference_between_two_models"
@@ -56,6 +57,7 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
             pass
         else:
             layer_results: list[ModelToModelComparison] = []
+            embed()
             for combis in tqdm(cross_seed_unregularized_paths[:20]):
                 for a, b in combis:
                     res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
