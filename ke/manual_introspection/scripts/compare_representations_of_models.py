@@ -32,7 +32,7 @@ from tqdm import tqdm
 #   5. Save values for layers
 
 
-json_results_path = Path(__file__).parent.parent / "difference_between_two_models"
+json_results_path = Path(__file__).parent.parent / "plots"
 output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/layerwise_effects_of_regularization")
 ckpt_results = Path("/mnt/cluster-checkpoint-all/t006d/results/knowledge_extension_cifars")
 
@@ -167,9 +167,9 @@ class BatchCKAResult:
 
 
 def _consolidate_cka_batch_results(batch_results: list[BatchCKAResult]):
-    lk = np.mean([br.lk for br in batch_results])
-    kk = np.mean([br.kk for br in batch_results])
-    ll = np.mean([br.ll for br in batch_results])
+    lk = np.nanmean([br.lk for br in batch_results])
+    kk = np.nanmean([br.kk for br in batch_results])
+    ll = np.nanmean([br.ll for br in batch_results])
 
     cka = lk / (np.sqrt(kk * ll))
 
