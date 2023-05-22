@@ -32,8 +32,8 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
         model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
         other_ckpt_paths = deepcopy(model_ckpt_paths)
 
-        cross_seed_unregularized_paths = list(itertools.combinations([mcp.checkpoints[0] for mcp in model_ckpt_paths], r=2))
-        cross_seed_regularized_paths = list(itertools.combinations([mcp.checkpoints[1] for mcp in model_ckpt_paths], r=2))
+        cross_seed_unregularized_paths: list[tuple[Path, Path]] = list(itertools.combinations([mcp.checkpoints[0] for mcp in model_ckpt_paths], r=2))
+        cross_seed_regularized_paths: list[tuple[Path, Path]] = list(itertools.combinations([mcp.checkpoints[1] for mcp in model_ckpt_paths], r=2))
 
         cross_seed_unregularized_regularized_paths = []
         for mcp in model_ckpt_paths:
@@ -58,7 +58,9 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
         else:
             layer_results: list[ModelToModelComparison] = []
             embed()
-            for combis in tqdm(cross_seed_unregularized_paths[:20]):
+            for combis in cross_seed_unregularized_paths[:20]:
+                print(combis)
+                embed()
                 for a, b in combis:
                     res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                     layer_results.append(res)
