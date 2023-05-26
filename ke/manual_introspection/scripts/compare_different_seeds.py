@@ -18,8 +18,7 @@ from ke.util.file_io import save_json
 from IPython import embed
 
 cur_file_path: Path = Path(__file__)
-json_results_path = cur_file_path.parent.parent / "plots"
-
+json_results_path = cur_file_path.parent.parent / "representation_comp_results"
 
 def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite=False):
     for wanted_hparams_name, hparams_dict in hparam.items():
