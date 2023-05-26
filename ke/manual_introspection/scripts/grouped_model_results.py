@@ -140,6 +140,21 @@ layer_MULTI_tdepth_9_expvar_1 = {
 }
 
 
+exp_var_5_models_layer_8 = {
+    "exp_var_5_models": {
+        "dataset": "CIFAR10",
+        "architecture": "ResNet34",
+        "hooks": 8,
+        "trans_depth": 9,
+        "kernel_width": 3,
+        "sim_loss": "ExpVar",
+        "sim_loss_weight": 1.00,
+        "dis_loss": "ExpVar",
+        "ce_loss_weight": 1.00,
+        "dis_loss_weight": 1.00,
+    }
+}
+
 
 baseline_cifar100 = {
     "baseline_cifar_100": {
