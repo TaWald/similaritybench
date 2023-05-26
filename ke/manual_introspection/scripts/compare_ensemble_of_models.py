@@ -121,7 +121,7 @@ def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
         if (not overwrite) and this_output_file.exists():
             continue
 
-        ensemble_layer_results: list[list[list[ModelToModelComparison]]] =[[[] for _ in range(5)] for __ in range(5)]
+        ensemble_layer_results: list[ModelToModelComparison] =[]
 
         seed_result: SeedResult
         for seed_result in tqdm(model_ckpt_paths[:20]):
@@ -132,9 +132,9 @@ def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
                 res.m_id_b = b
                 res.g_id_a = SeedResult.hparams["group_id_i"]
                 res.g_id_b = SeedResult.hparams["group_id_i"]
-                ensemble_layer_results[a][b].append(res)
+                ensemble_layer_results.append(res)
         save_json(
-            [{**asdict(lr), **hparams_dict} for lr in layer_results],
+            [{**asdict(lr), **hparams_dict} for lr in ensemble_layer_results],
             json_results_path / f"{wanted_hparams_name}.json",
         )
     return
