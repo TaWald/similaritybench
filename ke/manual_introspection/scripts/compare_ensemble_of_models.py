@@ -132,8 +132,8 @@ def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
                 res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 res.m_id_a = a
                 res.m_id_b = b
-                res.g_id_a = hparams_dict["group_id_i"]
-                res.g_id_b = hparams_dict["group_id_i"]
+                res.g_id_a = seed_result.hparams["group_id_i"]
+                res.g_id_b = seed_result.hparams["group_id_i"]
                 ensemble_layer_results.append(res)
         save_json(
             [{**asdict(lr), **hparams_dict} for lr in ensemble_layer_results],
