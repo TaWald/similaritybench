@@ -127,11 +127,11 @@ def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
         seed_result: SeedResult
         print(model_ckpt_paths)
         for seed_result in tqdm(model_ckpt_paths[:20]):
-            combis = itertools.combinations_with_replacement(seed_result.checkpoints.values(), r=2)
+            combis = itertools.combinations_with_replacement(seed_result.checkpoints.keys(), r=2)
             for a, b in combis:
-                res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
-                res.m_id_a = a
-                res.m_id_b = b
+                res = compare_models_parallel(model_a=seed_result.checkpoints[a], model_b=seed_result.checkpoints[b], hparams=hparams_dict)
+                res.m_id_a = int(a)
+                res.m_id_b = int(b)
                 res.g_id_a = seed_result.hparams["group_id_i"]
                 res.g_id_b = seed_result.hparams["group_id_i"]
                 ensemble_layer_results.append(res)
