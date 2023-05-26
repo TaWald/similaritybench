@@ -144,7 +144,7 @@ exp_var_5_models_layer_8 = {
     "exp_var_5_models": {
         "dataset": "CIFAR10",
         "architecture": "ResNet34",
-        "hooks": 8,
+        "hooks": [8],
         "trans_depth": 9,
         "kernel_width": 3,
         "sim_loss": "ExpVar",
