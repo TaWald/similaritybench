@@ -111,7 +111,7 @@ def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
 
         model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1, 2, 3, 4])
 
-
+        print(f"Found following model paths: {model_paths}")
 
         model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
         n_models_eq_5: list[bool] = [len(mp.checkpoints.values()) == 5 for mp in model_paths]
