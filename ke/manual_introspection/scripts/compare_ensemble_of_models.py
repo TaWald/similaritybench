@@ -109,6 +109,7 @@ def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
 
         models = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
 
+        print(f"Found  following matching models: {models}")
         model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1, 2, 3, 4])
 
         print(f"Found following model paths: {model_paths}")
