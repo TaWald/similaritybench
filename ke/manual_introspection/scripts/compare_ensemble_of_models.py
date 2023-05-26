@@ -124,6 +124,7 @@ def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
         ensemble_layer_results: list[ModelToModelComparison] =[]
 
         seed_result: SeedResult
+        print(model_ckpt_paths)
         for seed_result in tqdm(model_ckpt_paths[:20]):
             combis = itertools.combinations_with_replacement(seed_result.checkpoints.values(), r=2)
             for a, b in combis:
