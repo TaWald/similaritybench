@@ -157,7 +157,7 @@ exp_var_5_models_layer_8 = {
 
 
 lin_cka_var_5_models_layer_8 = {
-    "exp_var_5_models": {
+    "lin_cka_5_models": {
         "dataset": "CIFAR10",
         "architecture": "ResNet34",
         "hooks": [8],
@@ -172,7 +172,7 @@ lin_cka_var_5_models_layer_8 = {
 }
 
 l2corr_var_5_models_layer_8 = {
-    "exp_var_5_models": {
+    "l2corr_5_models": {
         "dataset": "CIFAR10",
         "architecture": "ResNet34",
         "hooks": [8],
