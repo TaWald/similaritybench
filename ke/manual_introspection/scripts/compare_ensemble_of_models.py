@@ -142,4 +142,4 @@ def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
     return
 
 if __name__ == "__main__":
-    create_same_seed_ensemble_comparisons(grm.exp_var_5_models_layer_8, overwrite=True)
+    create_same_seed_ensemble_comparisons(grm.lin_cka_var_5_models_layer_8, overwrite=True)
