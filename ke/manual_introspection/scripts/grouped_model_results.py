@@ -156,6 +156,38 @@ exp_var_5_models_layer_8 = {
 }
 
 
+lin_cka_var_5_models_layer_8 = {
+    "exp_var_5_models": {
+        "dataset": "CIFAR10",
+        "architecture": "ResNet34",
+        "hooks": [8],
+        "trans_depth": 9,
+        "kernel_width": 3,
+        "sim_loss": "LinCKA",
+        "sim_loss_weight": 1.00,
+        "dis_loss": "LinCKA",
+        "ce_loss_weight": 1.00,
+        "dis_loss_weight": 1.00,
+    }
+}
+
+l2corr_var_5_models_layer_8 = {
+    "exp_var_5_models": {
+        "dataset": "CIFAR10",
+        "architecture": "ResNet34",
+        "hooks": [8],
+        "trans_depth": 9,
+        "kernel_width": 3,
+        "sim_loss": "L2Corr",
+        "sim_loss_weight": 1.00,
+        "dis_loss": "L2Corr",
+        "ce_loss_weight": 1.00,
+        "dis_loss_weight": 1.00,
+    }
+}
+
+
+
 baseline_cifar100 = {
     "baseline_cifar_100": {
         'dataset': "CIFAR100",
