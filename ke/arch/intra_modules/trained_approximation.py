@@ -70,3 +70,24 @@ class TrainedApproximation(AbstractTrainedApproximation):
                 x = self.relu(x)
             approximations.append(out_conv(x) + rebias)
         return approximations
+
+
+class NotAligned(nn.Module):
+    def __init__(self):
+        """
+        Empty module that concats the sources along channel dimension for Sub-Space metrics.
+        """
+        super().__init__()
+        # convs contains the number of convolutions for each parent architecture.
+        #   This means we finish one approximation and continue to the next.
+
+    def forward(self, sources: list[torch.Tensor]) -> list[torch.Tensor]:
+        """
+        Debiases (learnable), linearly combines to same channel dimension as target
+        and rebiases (learnable) the representations.
+        :param sources: Sources contain the outputs of the already trained models.
+        They are aggregated along the channel dimension, effectively leading to a single representation
+
+        """
+
+        return sources
