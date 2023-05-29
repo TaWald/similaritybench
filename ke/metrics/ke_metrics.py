@@ -258,9 +258,11 @@ def representation_metrics(
         if calc_r2:
             celu_r2 = celu_explained_variance(new_intermediate_reps, old_intermediate_reps)
             metrics.celu_r2 = float(t.mean(t.stack([t.mean(cev) for cev in celu_r2])).detach().cpu())
-        if calc_corr:
-            corr, _ = correlation(new_intermediate_reps, old_intermediate_reps)
-            metrics.corr = float(t.mean(t.stack([t.mean(t.abs(c)) for c in corr])).detach().cpu())
+        # BOOKMARK: Temporarily removed due to memory issues
+        # if calc_corr:
+        #     corr, _ = correlation(new_intermediate_reps, old_intermediate_reps)
+        #     metrics.corr = float(t.mean(t.stack([t.mean(t.abs(c)) for c in corr])).detach().cpu())
+        metrics.corr = float(np.nan)
         if calc_cka:
             cka = centered_kernel_alignment(new_intermediate_reps, old_intermediate_reps)
             metrics.cka = float(t.mean(t.stack([t.stack(c) for c in cka])).detach().cpu())
