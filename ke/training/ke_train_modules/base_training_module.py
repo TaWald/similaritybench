@@ -80,8 +80,10 @@ class BaseLightningModule(pl.LightningModule, ABC):
 
         # Create the final metrics instead here!
         if self.do_log:
-            self.tb_logger_tr.add_hparams(self.ke_hparams, asdict(self.params))
-            self.tb_logger_val.add_hparams(self.ke_hparams, asdict(self.params))
+            # ToDo: ModuleNotFoundError: No module named 'caffe2'
+            #  Encountering this annoying error at end of training. To be fixed after deadline
+            # self.tb_logger_tr.add_hparams(self.ke_hparams, asdict(self.params))
+            # self.tb_logger_val.add_hparams(self.ke_hparams, asdict(self.params))
             save_json(self.final_metrics, self.mode_info.path_last_metrics_json)
             self.tb_logger_tr.close()
             self.tb_logger_val.close()
