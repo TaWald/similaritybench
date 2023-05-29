@@ -105,7 +105,7 @@ class KEOutputLightningModule(BaseLightningModule):
         loss_dict.update({f"metrics/{k}": v for k, v in self.final_metrics.items()})
         prog_bar_log = {
             "val/acc": out_metrics.accuracy,
-            "val/CoKa": out_metrics.cohens_kappa,
+            "val/CoKa": out_metrics.cohens_kappa.all_to_all_mean,
         }
         self.log_dict(prog_bar_log, prog_bar=True, logger=False)
         self.log_message(loss_dict, is_train=False)
