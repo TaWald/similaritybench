@@ -4,10 +4,7 @@ __pycache__/
 *.egg
 docs
 augmented_dataset
-scripts/job_submission_template.py
 /scripts/update_old_formats/
-/scripts/job_submission_template.py
 /scripts/ke_training.sh
-/scripts/ke_submission_template.py
 /scripts/create_hyperparameters.py
 /build
