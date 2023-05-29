@@ -119,11 +119,16 @@ def plot_positions_jsons():
     plt.close()
 
 
-def plot_cka_sim(json_name: str):
+def load_json_from_scrips_file(json_name: str) -> tuple[dict, Path]:
     cur_file = Path(__file__)
     path_to_comp_results = cur_file.parent.parent / "representation_comp_results" / json_name
-    path_out = cur_file.parent.parent / "plots" / json_name
     res = load_json(str(path_to_comp_results))
+    path_out = cur_file.parent.parent / "plots" / json_name
+    return res, path_out
+
+
+def plot_cka_sim(json_name: str):
+    res, path_out = load_json_from_scrips_file(json_name)
 
     all_values = np.stack([np.array(r['cka_off_diagonal']) for r in res])
     all_mean_values = np.nanmean(all_values, axis=0)
