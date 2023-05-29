@@ -16,7 +16,6 @@ if __name__ == "__main__":
         ]:
         plot_cka_sim(name)
 
-    all_
     for name in [
         'layer_9_tdepth_1_expvar_1.json',
         'layer_9_tdepth_3_expvar_1.json',

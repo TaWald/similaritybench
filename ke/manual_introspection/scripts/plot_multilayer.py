@@ -1,4 +1,3 @@
-from argparse import ArgumentParser
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -43,8 +42,6 @@ def plot_mutli_layer_jsons():
     fig, axes = plt.subplots(1, cols, layout="constrained")
     fig.set_size_inches(cols * 3, 3)
     cur_file = Path(__file__)
-    # ToDo: Find out how one can create an colorbar outside of a subplot axes, so it doesn't get scaled down.
-    #   Also share the y-Axis for some plots?
 
     last = len(all_plot_infos) - 1
     for cnt, plot_info in enumerate(all_plot_infos):
@@ -121,11 +118,16 @@ def plot_positions_jsons():
     plt.close()
 
 
-def plot_cka_sim(json_name: str):
+def load_json_from_scrips_file(json_name: str) -> tuple[dict, Path]:
     cur_file = Path(__file__)
     path_to_comp_results = cur_file.parent.parent / "representation_comp_results" / json_name
-    path_out = cur_file.parent.parent / "plots" / json_name
     res = load_json(str(path_to_comp_results))
+    path_out = cur_file.parent.parent / "plots" / json_name
+    return res, path_out
+
+
+def plot_cka_sim(json_name: str):
+    res, path_out = load_json_from_scrips_file(json_name)
 
     all_values = np.stack([np.array(r['cka_off_diagonal']) for r in res])
     all_mean_values = np.nanmean(all_values, axis=0)
