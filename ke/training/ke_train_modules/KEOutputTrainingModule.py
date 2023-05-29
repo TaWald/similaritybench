@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict
 
 import torch
-from grad_pg.pcgrad_amp import PCGradAMP
+from gradpg.pcgrad_amp import PCGradAMP
 from ke.arch.ke_architectures.output_regularization import OutputRegularizerArch
 from ke.losses.ke_output_loss import KEOutputTrainLoss
 from ke.metrics.ke_metrics import multi_output_metrics
