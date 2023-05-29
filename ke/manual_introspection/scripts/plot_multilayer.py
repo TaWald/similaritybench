@@ -43,8 +43,6 @@ def plot_mutli_layer_jsons():
     fig, axes = plt.subplots(1, cols, layout="constrained")
     fig.set_size_inches(cols * 3, 3)
     cur_file = Path(__file__)
-    # ToDo: Find out how one can create an colorbar outside of a subplot axes, so it doesn't get scaled down.
-    #   Also share the y-Axis for some plots?
 
     last = len(all_plot_infos) - 1
     for cnt, plot_info in enumerate(all_plot_infos):
