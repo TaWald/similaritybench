@@ -1,15 +1,11 @@
-
+# Done: Started ResNet34 at layer 3, 8, 13; ExpVar 1,0;
 cnt = 0
 for arch in ["ResNet34"]:  # , "ResNet101"]:
-    trans_pos = [[3], [8], [13]]   # <-- ToDo: Choose appropriate position?
+    trans_pos = [[3], [8], [13]]  # <- Maybe Todo: Choose single position?
     group_id = [0, 1, 2, 3, 4]
     for tp in trans_pos:
         for gid in group_id:  # , 6]:
-            for sim_dis_loss in [
-                ("ExpVar", "ExpVar"),
-                ("LinCKA", 'LinCKA'),
-                ("L2Corr", "L2Corr")
-            ]:
+            for sim_dis_loss in [("ExpVar", "ExpVar"), ("LinCKA", "LinCKA")]:  # <-- ToDo: Choose metric of choice
                 sim_loss = sim_dis_loss[0]
                 dis_loss = sim_dis_loss[1]
                 dis_loss_weight = [1.00]  # [0.1, 0.5, 1.0, 2.0, 4.0, 8.0] #
@@ -17,11 +13,11 @@ for arch in ["ResNet34"]:  # , "ResNet101"]:
                 sim_loss_weight = 1.0
                 for dl in dis_loss_weight:  # [01.0]
                     epochs_before_regularization = -1
-                    exp_name = "SCIS23"
+                    exp_name = "SCIS23_N_Ensembles"
                     dataset = "CIFAR10"
-                    tr_n_models = 2
+                    tr_n_models = 5
                     tk = 1
-                    if sim_loss != 'LinCKA':
+                    if sim_loss == "LinCKA":
                         td = 0
                     else:
                         td = 1

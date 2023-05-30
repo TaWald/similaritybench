@@ -1,25 +1,23 @@
-
+# Done: ResNet34 - (Early, Middle, Late); (ExpVar, LinCKA, L2Corr); (soft - 0.25, equal - 1.0, high - 4.0)
 cnt = 0
 for arch in ["ResNet34"]:  # , "ResNet101"]:
-    trans_pos = [[3], [8], [13]]  # <- Maybe Todo: Choose single position?
+    trans_pos = [[3], [8], [13]]  # <-- ToDo: Choose appropriate position?
     group_id = [0, 1, 2, 3, 4]
     for tp in trans_pos:
         for gid in group_id:  # , 6]:
-            for sim_dis_loss in [
-                ("ExpVar", "ExpVar"),  # <-- ToDo: Choose metric of choice
-            ]:
+            for sim_dis_loss in [("ExpVar", "ExpVar"), ("LinCKA", "LinCKA"), ("L2Corr", "L2Corr")]:
                 sim_loss = sim_dis_loss[0]
                 dis_loss = sim_dis_loss[1]
-                dis_loss_weight = [1.00]  # [0.1, 0.5, 1.0, 2.0, 4.0, 8.0] #
+                dis_loss_weight = [0.25, 1.00, 4.0]  # [0.1, 0.5, 1.0, 2.0, 4.0, 8.0] #
                 ce_loss_weight = 1.00
                 sim_loss_weight = 1.0
                 for dl in dis_loss_weight:  # [01.0]
                     epochs_before_regularization = -1
-                    exp_name = "SCIS23"
+                    exp_name = "SCIS23_metric_experiments"
                     dataset = "CIFAR10"
-                    tr_n_models = 5
+                    tr_n_models = 2
                     tk = 1
-                    if sim_loss != 'LinCKA':
+                    if sim_loss == "LinCKA":
                         td = 0
                     else:
                         td = 1
