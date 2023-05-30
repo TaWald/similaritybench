@@ -69,6 +69,12 @@ class AbsActiExtrArch(nn.Module):
         )
         return handle
 
+    def register_parallel_batch_cka_hooks(self, hook: Hook, save_container: list):
+        self.slice_shift = 0
+        desired_module = self.get_wanted_module(hook)
+        handle = desired_module.register_forward_hook(self.get_layer_cka_dissim_matrix_parallel(save_container))
+        return handle
+
     @abstractmethod
     def get_wanted_module(self, hook: Hook | Sequence[str]) -> nn.Module:
         """Registers the next hook in the list of all hooks.
@@ -202,5 +208,23 @@ class AbsActiExtrArch(nn.Module):
                 if self.slice_shift - 1 >= wanted_spatial:
                     self.slice_shift = 0
             container[0] = flat_output
+
+        return hook
+
+    def get_layer_cka_dissim_matrix_parallel(self, container: list):
+        def hook(model, inp, output):
+            """
+            Attaches a forward hook that takes the output of a layer,
+            checks how high the spatial extent is and only saves as many values
+            of the representations as passed in wrapper `wanted_spatial`.
+
+            ATTENTION: This procedure removes location information, making intra-layer comparisons
+            based off pooling or something like it impossible!
+            """
+            # self.activations.append(output.detach().cpu().numpy())
+            output_shape = output.shape  # Batch x Channel x Width x Height?
+            flat_output = torch.reshape(output, [output_shape[0], -1])  # Batch x (Channel x Width x Height)
+            flat_output = flat_output.to(torch.float64)
+            container[0] = flat_output @ flat_output.T
 
         return hook
