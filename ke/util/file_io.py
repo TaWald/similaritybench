@@ -357,7 +357,7 @@ def get_trained_ke_models(exp_data_dir: str | Path, exp_ckpt_dir: str | Path) ->
         return []
     else:
         all_models = []
-        for m in edp.iterdir():
+        for m in ecp.iterdir():
             model_name = m.name
             if re.match(nc.MODEL_NAME_RE, model_name):
                 model_id = int(model_name.split("_")[-1])
