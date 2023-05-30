@@ -28,12 +28,16 @@ def assert_shapes_match(values_a: list[t.Tensor], values_b: list[t.Tensor]):
 
 
 def celu_explained_variance(true: list[t.Tensor], approximations: list[t.Tensor]) -> list[t.Tensor]:
+    """Can't be used when LinCKA is the metric, as no alignment is created and Channel dimensions do not match!"""
     all_cevs: list[t.Tensor] = []
     assert_shapes_match(true, approximations)
     for tr, apxs in zip(true, approximations):
-        mean_error = t.sum((tr - t.mean(tr, dim=(1, 3, 4), keepdim=True)) ** 2, dim=(1, 3, 4))
-        cev = F.celu(1.0 - ((t.sum((tr - apxs) ** 2, dim=(1, 3, 4))) / (mean_error + 1e-4)), inplace=True)
-        all_cevs.append(cev)
+        if tr.shape[2] != apxs.shape[2]:
+            all_cevs.append(torch.tensor([torch.nan], device=tr.device, dtype=tr.dtype))
+        else:
+            mean_error = t.sum((tr - t.mean(tr, dim=(1, 3, 4), keepdim=True)) ** 2, dim=(1, 3, 4))
+            cev = F.celu(1.0 - ((t.sum((tr - apxs) ** 2, dim=(1, 3, 4))) / (mean_error + 1e-4)), inplace=True)
+            all_cevs.append(cev)
     t.cuda.empty_cache()
     return all_cevs
 
