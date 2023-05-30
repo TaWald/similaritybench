@@ -3,20 +3,18 @@ from copy import deepcopy
 from dataclasses import asdict
 from pathlib import Path
 
-import numpy as np
-from tqdm import tqdm
-
 from ke.manual_introspection.scripts import grouped_model_results as grm
-from ke.manual_introspection.scripts.compare_representations_of_models import ModelToModelComparison
-from ke.manual_introspection.scripts.compare_representations_of_models import ckpt_results, SeedResult
+from ke.manual_introspection.scripts.compare_representations_of_models import ckpt_results
 from ke.manual_introspection.scripts.compare_representations_of_models import compare_models_parallel
 from ke.manual_introspection.scripts.compare_representations_of_models import get_ckpts_from_paths
 from ke.manual_introspection.scripts.compare_representations_of_models import get_matching_model_dirs_of_ke_ensembles
 from ke.manual_introspection.scripts.compare_representations_of_models import (
     get_models_with_ids_from_dir_and_first_model,
 )
+from ke.manual_introspection.scripts.compare_representations_of_models import ModelToModelComparison
+from ke.manual_introspection.scripts.compare_representations_of_models import SeedResult
 from ke.util.file_io import save_json
-from IPython import embed
+from tqdm import tqdm
 
 cur_file_path: Path = Path(__file__)
 json_results_path = cur_file_path.parent.parent / "representation_comp_results"
@@ -33,13 +31,17 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
         model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
         other_ckpt_paths = deepcopy(model_ckpt_paths)
 
-        cross_seed_unregularized_paths: list[tuple[Path, Path]] = list(itertools.combinations([mcp.checkpoints[0] for mcp in model_ckpt_paths], r=2))
-        cross_seed_regularized_paths: list[tuple[Path, Path]] = list(itertools.combinations([mcp.checkpoints[1] for mcp in model_ckpt_paths], r=2))
+        cross_seed_unregularized_paths: list[tuple[Path, Path]] = list(
+            itertools.combinations([mcp.checkpoints[0] for mcp in model_ckpt_paths], r=2)
+        )
+        cross_seed_regularized_paths: list[tuple[Path, Path]] = list(
+            itertools.combinations([mcp.checkpoints[1] for mcp in model_ckpt_paths], r=2)
+        )
 
         cross_seed_unregularized_regularized_paths = []
         for mcp in model_ckpt_paths:
             for ocp in other_ckpt_paths:
-                if mcp.hparams['group_id_i'] == ocp.hparams['group_id_i']:
+                if mcp.hparams["group_id_i"] == ocp.hparams["group_id_i"]:
                     continue
                 else:
                     cross_seed_unregularized_regularized_paths.append((mcp.checkpoints[0], ocp.checkpoints[1]))
@@ -94,7 +96,7 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
             pass
         else:
             layer_results: list[ModelToModelComparison] = []
-            for a,b  in tqdm(cross_seed_regularized_paths):
+            for a, b in tqdm(cross_seed_regularized_paths):
                 res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 layer_results.append(res)
             save_json(
@@ -104,16 +106,12 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
 
     return
 
+
 def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
     for wanted_hparams_name, hparams_dict in hparam.items():
 
         models = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
-
-        print(f"Found  following matching models: {models}")
         model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1, 2, 3, 4])
-
-        print(f"Found following model paths: {model_paths}")
-
         model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
         n_models_eq_5: list[bool] = [len(mp.checkpoints.values()) == 5 for mp in model_paths]
         assert all(n_models_eq_5), f"Some models did not contain 5 models. {model_paths}"
@@ -122,14 +120,15 @@ def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
         if (not overwrite) and this_output_file.exists():
             continue
 
-        ensemble_layer_results: list[ModelToModelComparison] =[]
+        ensemble_layer_results: list[ModelToModelComparison] = []
 
         seed_result: SeedResult
-        print(model_ckpt_paths)
         for seed_result in tqdm(model_ckpt_paths[:20]):
             combis = itertools.combinations_with_replacement(seed_result.checkpoints.keys(), r=2)
-            for a, b in combis:
-                res = compare_models_parallel(model_a=seed_result.checkpoints[a], model_b=seed_result.checkpoints[b], hparams=hparams_dict)
+            for a, b in tqdm(list(combis)):
+                res = compare_models_parallel(
+                    model_a=seed_result.checkpoints[a], model_b=seed_result.checkpoints[b], hparams=hparams_dict
+                )
                 res.m_id_a = int(a)
                 res.m_id_b = int(b)
                 res.g_id_a = seed_result.hparams["group_id_i"]
@@ -141,5 +140,6 @@ def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
         )
     return
 
+
 if __name__ == "__main__":
-    create_same_seed_ensemble_comparisons(grm.lin_cka_var_5_models_layer_8, overwrite=True)
+    create_same_seed_ensemble_comparisons(grm.exp_var_5_models_layer_8, overwrite=True)
