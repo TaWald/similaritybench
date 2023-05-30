@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC
 from abc import abstractmethod
 from copy import deepcopy
-from dataclasses import asdict
 from pathlib import Path
 
 import pytorch_lightning as pl
