@@ -228,13 +228,13 @@ def get_corresponding_first_model(model_info: ds.FirstModelInfo):
 
 
 def get_trained_keo_models(exp_data_dir: str | Path, exp_ckpt_dir: str | Path) -> list[ds.KEOutputTrainingInfo]:
-    edp: Path = Path(exp_data_dir)
+    # edp: Path = Path(exp_data_dir)
     ecp: Path = Path(exp_ckpt_dir)
-    if not all_paths_exists(edp, ecp):
+    if not all_paths_exists(ecp):
         return []
     else:
         all_models = []
-        for m in edp.iterdir():
+        for m in ecp.iterdir():
             model_name = m.name
             if re.match(nc.MODEL_NAME_RE, model_name):
                 model_id = int(model_name.split("_")[-1])
@@ -276,12 +276,12 @@ def get_trained_keo_models(exp_data_dir: str | Path, exp_ckpt_dir: str | Path) -
                         crossentropy_loss_weight=info["crossentropy_loss_weight"],
                         dissimilarity_loss_weight=info["dissimilarity_loss_weight"],
                         # Relevant paths
-                        path_data_root=edp / model_name,
+                        path_data_root=ecp / model_name,
                         path_ckpt_root=ecp / model_name,
                         pc_grad=pc_grad,
                     )
                 except KeyError as k:
-                    warn(f"Unexpected key in dict {edp / model_name / nc.KE_INFO_FILE}")
+                    warn(f"Unexpected key in dict {ecp / model_name / nc.KE_INFO_FILE}")
                     raise k
                 all_models.append(trained_KE_model)
         return all_models
@@ -351,9 +351,9 @@ def get_trained_ke_models(exp_data_dir: str | Path, exp_ckpt_dir: str | Path) ->
      Finished models are determined by the existence of the checkpoint and the output.json file being present.
     """
 
-    edp: Path = Path(exp_data_dir)
+    # edp: Path = Path(exp_data_dir)
     ecp: Path = Path(exp_ckpt_dir)
-    if not all_paths_exists(edp, ecp):
+    if not all_paths_exists(ecp):
         return []
     else:
         all_models = []
@@ -410,11 +410,11 @@ def get_trained_ke_models(exp_data_dir: str | Path, exp_ckpt_dir: str | Path) ->
                         dissimilarity_loss_weight=dis_loss_weight,
                         similarity_loss_weight=sim_loss_weight,
                         # Relevant paths
-                        path_data_root=edp / model_name,
+                        path_data_root=ecp / model_name,
                         path_ckpt_root=ecp / model_name,
                     )
                 except KeyError as k:
-                    warn(f"Unexpected key in dict {edp / model_name / nc.KE_INFO_FILE}")
+                    warn(f"Unexpected key in dict {ecp / model_name / nc.KE_INFO_FILE}")
                     raise k
                 all_models.append(trained_KE_model)
         return all_models
