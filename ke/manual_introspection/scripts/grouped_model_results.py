@@ -141,7 +141,7 @@ layer_MULTI_tdepth_9_expvar_1 = {
 
 
 exp_var_5_models_layer_8 = {
-    "exp_var_5_models": {
+    "exp_var_5_models_layer_8": {
         "dataset": "CIFAR10",
         "architecture": "ResNet34",
         "hooks": [8],
@@ -187,18 +187,16 @@ l2corr_var_5_models_layer_8 = {
 }
 
 
-
 baseline_cifar100 = {
     "baseline_cifar_100": {
-        'dataset': "CIFAR100",
-        'architecture': 'ResNet18',
+        "dataset": "CIFAR100",
+        "architecture": "ResNet18",
         # 'kernel_width': 1.,
         # 'trans_depth': 1,
-        'dis_loss': "None"
     }
 }
 
-baseline_unregularized = {
+baseline_cifar10 = {
     "baseline_cifar_10": {
         "dataset": "CIFAR10",
         "architecture": "ResNet34",
@@ -207,7 +205,23 @@ baseline_unregularized = {
         #  "kernel_width": 1,
         # "sim_loss": "ExpVar",
         # "sim_loss_weight": "1.00",
-        "dis_loss": "None",
+        #  "dis_loss_weight": "1.00",
+        #  "ce_loss_weight": "1.00",
+        #  "aggregate_reps": True,
+        #  "softmax": True,
+        #  "epochs_before_regularization": 0,
+    }
+}
+
+baseline_imagenet100 = {
+    "baseline_ImageNet100": {
+        "dataset": "ImageNet100",
+        "architecture": "ResNet34",
+        #  "hooks": "15",
+        #  "trans_depth": 9,  Can be 1,3,5,7,9
+        #  "kernel_width": 1,
+        # "sim_loss": "ExpVar",
+        # "sim_loss_weight": "1.00",
         #  "dis_loss_weight": "1.00",
         #  "ce_loss_weight": "1.00",
         #  "aggregate_reps": True,
