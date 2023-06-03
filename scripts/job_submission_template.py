@@ -50,26 +50,33 @@ if do_calib:
 
 if do_baseline_training:
     # Dissimilarity training layerwise
-    for arch in ["ResNet18", "ResNet101"]:
+    for arch in ["ResNet18"]: # , "ResNet101"]:
         if arch == "ResNet18":
-            trans_pos = [[6]] #[[2], [4], [6], [8]] #
+            trans_pos = [[4]] #[[2], [4], [6], [8]] #
             group_id = [0, 1, 2, 3, 4]
         elif arch == "ResNet101":
-            continue
-            trans_pos = [[3]]#, [7], [30], [33]]
+            trans_pos = [[16]]#, [7], [30], [33]]
             group_id = [0, 1, 2]
+        elif arch == "ResNet34":
+            trans_pos = [[9]]
+            group_id = [0, 1, 2, 3, 4]
+        elif arch == "VGG19":
+            trans_pos = [[9]]
+            group_id = [0, 1, 2, 3, 4]
         else:
             raise NotImplementedError(f"Unexpected architecture {arch}!")
         for tp in trans_pos:
             for gid in group_id:  # , 6]:
                 for sim_dis_loss in [
-                    ("L2Corr", "L2Corr"),
+                    ("ExpVar", "ExpVar"),
+                    # ("LinCKA", "LinCKA"),
                 ]:
                     sim_loss = sim_dis_loss[0]
-                    dis_loss_weight = [0.] # [0.1, 0.5, 1.0, 2.0, 4.0, 8.0] #
+                    dis_loss = sim_dis_loss[1]
+                    dis_loss_weight = [1.00] # [0.1, 0.5, 1.0, 2.0, 4.0, 8.0] #
                     for dl in dis_loss_weight:  #  [01.0]
                         epochs_before_regularization = -1
-                        exp_name = "test_post_refactoring"
+                        exp_name = "SCIS23"
                         dataset = "ImageNet100"
                         tr_n_models = 2
                         tk = 1
@@ -83,7 +90,7 @@ if do_baseline_training:
                             + f""" ~/Code/knowledge_extension/scripts/training_starts/ke_train_model.py"""
                             + f""" -exp {exp_name} -d {dataset} -a {arch} -ar 1 -td {td}"""
                             + f""" -tp {reg_pos} -tk {tk} --sim_loss {sim_loss} --ce_loss_weight {ce_loss_weight}"""
-                            + f""" --dis_loss L2Corr --dis_loss_weight {dl}"""
+                            + f""" --dis_loss {dis_loss} --dis_loss_weight {dl}"""
                             + f""" -sm 0 -tr_n_models {tr_n_models} -gid {gid} -na 1 --sim_loss_weight {sim_loss_weight}"""
                             + f""" --epochs_before_regularization {epochs_before_regularization}"""
                             + f""" --save_approximation_layers 1"""
