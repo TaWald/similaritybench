@@ -23,6 +23,7 @@ class CIFAR10DataModule(BaseDataModule):
     datamodule_id = ds.Dataset.CIFAR10
     n_train = 50000
     n_test = 10000
+    n_classes = 10
 
     # If I remove split from init call:
     #   I will have to make the Subclasses of the Cifar10BaseMergingModule
