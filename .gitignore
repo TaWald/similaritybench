@@ -9,3 +9,6 @@ augmented_dataset
 /scripts/create_hyperparameters.py
 /build
 /.pytest_cache/
+*.pdf
+*.svg
+*.png
