@@ -8,3 +8,6 @@ augmented_dataset
 /scripts/ke_training.sh
 /scripts/create_hyperparameters.py
 /build
+.DS_Store
+ke/.DS_Store
+ke/manual_introspection/.DS_Store
