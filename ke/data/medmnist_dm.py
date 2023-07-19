@@ -24,6 +24,7 @@ class DermaMNISTDataModule(BaseDataModule):
     n_train = 89996
     n_val = 10004
     n_test = 7180
+    n_classes = 7
 
     # If I remove split from init call:
     #   I will have to make the Subclasses of the Cifar10BaseMergingModule
