@@ -3,7 +3,7 @@ from ke.manual_introspection.scripts import grouped_model_results as grm
 
 
 def main():
-    create_same_seed_comparisons(grm.layer_DIFF_tdepth_1_expvar_1, True)
+    create_same_seed_comparisons(grm.different_metrics_scis23, False)
 
 
 if __name__ == "__main__":

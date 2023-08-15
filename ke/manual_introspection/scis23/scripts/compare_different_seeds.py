@@ -3,14 +3,16 @@ from copy import deepcopy
 from dataclasses import asdict
 from pathlib import Path
 
-from ke.manual_introspection.scripts import grouped_model_results as grm
-from ke.manual_introspection.scripts.compare_representations_of_models import ckpt_results
-from ke.manual_introspection.scripts.compare_representations_of_models import compare_models_parallel
-from ke.manual_introspection.scripts.compare_representations_of_models import get_ckpts_from_paths
-from ke.manual_introspection.scripts.compare_representations_of_models import get_matching_model_dirs_of_ke_ensembles
-from ke.manual_introspection.scripts.compare_representations_of_models import (
+from ke.manual_introspection.scis23.scis23_compare_representations_of_models import ckpt_results
+from ke.manual_introspection.scis23.scis23_compare_representations_of_models import compare_models_parallel
+from ke.manual_introspection.scis23.scis23_compare_representations_of_models import get_ckpts_from_paths
+from ke.manual_introspection.scis23.scis23_compare_representations_of_models import (
+    get_matching_model_dirs_of_ke_ensembles,
+)
+from ke.manual_introspection.scis23.scis23_compare_representations_of_models import (
     get_models_with_ids_from_dir_and_first_model,
 )
+from ke.manual_introspection.scripts import grouped_model_results as grm
 from ke.manual_introspection.scripts.compare_representations_of_models import ModelToModelComparison
 from ke.manual_introspection.scripts.compare_representations_of_models import SeedResult
 from ke.util.file_io import save_json
@@ -105,39 +107,34 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
     return
 
 
-def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
+def create_comps_between_single_5_consecutive_models(hparam: dict, overwrite=False):
     for wanted_hparams_name, hparams_dict in hparam.items():
+        # Contains path to folder and hparams of directory
+        model_dirs: list[tuple[Path, dict]] = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
 
-        models = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
-        model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1, 2, 3, 4])
-        model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
-        n_models_eq_5: list[bool] = [len(mp.checkpoints.values()) == 5 for mp in model_paths]
-        assert all(n_models_eq_5), f"Some models did not contain 5 models. {model_paths}"
+        n_models = 5
 
-        this_output_file = json_results_path / f"{wanted_hparams_name}.json"
-        if (not overwrite) and this_output_file.exists():
-            continue
-
-        ensemble_layer_results: list[ModelToModelComparison] = []
-
-        seed_result: SeedResult
-        for seed_result in tqdm(model_ckpt_paths[:20]):
-            combis = itertools.combinations_with_replacement(seed_result.checkpoints.keys(), r=2)
-            for a, b in tqdm(list(combis)):
-                res = compare_models_parallel(
-                    model_a=seed_result.checkpoints[a], model_b=seed_result.checkpoints[b], hparams=hparams_dict
-                )
-                res.m_id_a = int(a)
-                res.m_id_b = int(b)
-                res.g_id_a = seed_result.hparams["group_id_i"]
-                res.g_id_b = seed_result.hparams["group_id_i"]
-                ensemble_layer_results.append(res)
-        save_json(
-            [{**asdict(lr), **hparams_dict} for lr in ensemble_layer_results],
-            json_results_path / f"{wanted_hparams_name}.json",
+        model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(
+            model_dirs, list(range(n_models))
         )
+        model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
+
+        first_seed_with_5_models: SeedResult = [mcp for mcp in model_ckpt_paths if len(mcp.checkpoints) > n_models][0]
+
+        json_results = {"hparams": first_seed_with_5_models.hparams, "results": []}
+        for i in range(n_models):
+            for j in range(n_models):
+                res = compare_models_parallel(
+                    model_a=first_seed_with_5_models.checkpoints[i],
+                    model_b=first_seed_with_5_models.checkpoints[j],
+                    hparams=first_seed_with_5_models.hparams,
+                )
+                json_results["results"].append({"id_x": i, "id_y": j, "values": asdict(res)})
+        out_vals = json_results_path / f"cka_between_5_consecutive_models__{wanted_hparams_name}.json"
+        save_json(json_results, out_vals)
     return
 
 
 if __name__ == "__main__":
-    create_same_seed_ensemble_comparisons(grm.lincka_ensemble_layer_IN100_DIFF, overwrite=True)
+    create_comps_between_regularized_unregularized_by_id(grm.layer_8_tdepth_1_expvar_1, True)
+    # create_comps_between_single_5_consecutive_models(grm.layer_9_tdepth_1_expvar_1)

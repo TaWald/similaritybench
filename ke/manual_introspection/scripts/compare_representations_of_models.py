@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import itertools
-from dataclasses import asdict, field
+from dataclasses import asdict
 from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
+from warnings import warn
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,18 +25,9 @@ from ke.util.file_io import save_json
 from ke.util.file_io import strip_state_dict_of_keys
 from tqdm import tqdm
 
-# ToDo:
-#   1. Load two models of different regularization types
-#       a. Load models of the same ensemble
-#   2. Register the same hook for both
-#   3. Extract the activations (at the layers)
-#   4. Pass through comparators
-#   5. Save values for layers
-
-
-json_results_path = Path(__file__).parent.parent / "plots"
-output_plots = Path("/home/tassilowald/Data/Results/knolwedge_extension_pics/layerwise_effects_of_regularization")
-ckpt_results = Path("/mnt/cluster-checkpoint-all/t006d/results/knowledge_extension_cifars")
+json_results_path = Path(__file__).parent / "representation_comp_results"
+output_plots = Path("/home/tassilowald/Data/Results/ke_cifars")
+ckpt_results = Path("/mnt/cluster-data/results/knowledge_extension_cifars")
 
 
 @dataclass
@@ -255,9 +248,9 @@ def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> Mode
 
     # Register hooks
     for cnt, h in enumerate(arch_a.hooks):
-        all_handles_a.append(arch_a.register_parallel_rep_hooks(h, all_activations_a[h.name]))
+        all_handles_a.append(arch_a.register_parallel_batch_cka_hooks(h, all_activations_a[h.name]))
     for cnt, h in enumerate(arch_b.hooks):
-        all_handles_b.append(arch_b.register_parallel_rep_hooks(h, all_activations_b[h.name]))
+        all_handles_b.append(arch_b.register_parallel_batch_cka_hooks(h, all_activations_b[h.name]))
     with torch.no_grad():
         for batch in val_dataloader:
             x, y = batch
@@ -270,11 +263,9 @@ def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> Mode
             all_L = {}
 
             for (ka, va), (kb, vb) in zip(all_activations_a.items(), all_activations_b.items()):
-                reshaped_a = reshape(all_activations_a[ka][0])
-                all_K[ka] = reshaped_a @ reshaped_a.T
+                all_K[ka] = all_activations_a[ka][0]
                 all_activations_a[ka][0] = 0
-                reshaped_b = reshape(all_activations_b[ka][0])
-                all_L[kb] = reshaped_b @ reshaped_b.T
+                all_L[kb] = all_activations_b[ka][0]
                 all_activations_b[ka][0] = 0
 
             for ka, K in all_K.items():
@@ -371,11 +362,13 @@ def get_matching_model_dirs_of_ke_ensembles(ke_src_path: Path, wanted_hparams: d
             matching_dirs.append((ke_p, decoded_params))
     return matching_dirs
 
+
 @dataclass
 class SeedResult:
     hparams: dict
     models: dict[int, Path] = field(init=False)
     checkpoints: dict[int, Path] = field(init=False)
+
 
 def get_models_with_ids_from_dir_and_first_model(
     model_paths: list[tuple[Path, dict]], model_ids: list[int]
@@ -670,7 +663,29 @@ def create_single_layer_increasing_weight_plot():
     print("What what")
 
 
-# ToDo: Create Single Layer depth 9 but moving single layer across architecture.
+def create_baseline_comparisons(hparam: dict, overwrite=False):
+    for wanted_hparams_name, hparams_dict in hparam.items():
+        this_output_file = json_results_path / f"{wanted_hparams_name}.json"
+        if (not overwrite) and this_output_file.exists():
+            continue
+
+        models = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
+        model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1])
+        model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
+
+        layer_results: list[ModelToModelComparison] = []
+        all_ckpts = list(set([str(mcp.checkpoints[0]) for mcp in model_ckpt_paths]))  # only first models
+
+        seed_result: SeedResult
+        for ckpt_a, ckpt_b in tqdm(list(itertools.combinations(all_ckpts, 2))):
+            res = compare_models_parallel(ckpt_a, ckpt_b, hparams=hparams_dict)
+            layer_results.append(res)
+        save_json(
+            [{**asdict(lr), **hparams_dict} for lr in layer_results],
+            json_results_path / f"{wanted_hparams_name}.json",
+        )
+
+
 def create_same_seed_comparisons(hparam: dict, overwrite=False):
     for wanted_hparams_name, hparams_dict in hparam.items():
 
@@ -690,10 +705,13 @@ def create_same_seed_comparisons(hparam: dict, overwrite=False):
             for a, b in combis:
                 res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 layer_results.append(res)
-        save_json(
-            [{**asdict(lr), **hparams_dict} for lr in layer_results],
-            json_results_path / f"{wanted_hparams_name}.json",
-        )
+        if len(layer_results) == 0:
+            warn("Nothing to save. skipping file creation!")
+        else:
+            save_json(
+                [{**asdict(lr), **hparams_dict} for lr in layer_results],
+                json_results_path / f"{wanted_hparams_name}.json",
+            )
     return
 
 

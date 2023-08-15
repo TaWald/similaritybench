@@ -6,6 +6,7 @@ def main():
     create_baseline_comparisons(grm.baseline_cifar10)
     create_baseline_comparisons(grm.baseline_cifar100)  # Needs a comparison model to grab the baselines
     create_baseline_comparisons(grm.baseline_imagenet100)  # Needs a comparison model to create baselines
+    create_baseline_comparisons(grm.baseline_imagenet1k)
 
 
 if __name__ == "__main__":
