@@ -14,6 +14,9 @@ import seaborn as sns
 import torch
 from ke.arch.abstract_acti_extr import AbsActiExtrArch
 from ke.manual_introspection.scripts import grouped_model_results as grm
+from ke.metrics.cohens_kappa import calculate_cohens_kappas
+from ke.metrics.error_ratios import calculate_error_ratios
+from ke.metrics.jensen_shannon_distance import jensen_shannon_divergences
 from ke.metrics.ke_metrics import multi_output_metrics
 from ke.util import data_structs as ds
 from ke.util import file_io as io
@@ -23,16 +26,8 @@ from ke.util import name_conventions as nc
 from ke.util.file_io import load_json
 from ke.util.file_io import save_json
 from ke.util.file_io import strip_state_dict_of_keys
+from torch.nn import functional as F
 from tqdm import tqdm
-
-# ToDo:
-#   1. Load two models of different regularization types
-#       a. Load models of the same ensemble
-#   2. Register the same hook for both
-#   3. Extract the activations (at the layers)
-#   4. Pass through comparators
-#   5. Save values for layers
-
 
 json_results_path = Path(__file__).parent / "representation_comp_results"
 output_plots = Path("/home/tassilowald/Data/Results/SCIS23_Plots")
@@ -55,85 +50,18 @@ class ModelToModelComparison:
     cka_off_diagonal: list[list[float]] | None = None
 
 
-"""
-def compare_models(model_a: Path, model_b: Path, hparams: dict) -> dict[int, float]:
-    arch_a: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))()
-    arch_b: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))()
-
-    ckpt_a: dict = torch.load(str(model_a))
-    ckpt_b: dict = torch.load(str(model_b))
-    try:
-        arch_a.load_state_dict(ckpt_a)
-    except RuntimeError as _:  # noqa
-        stripped_a = strip_state_dict_of_keys(ckpt_a)
-        try:
-            arch_a.load_state_dict(stripped_a)
-        except RuntimeError as e:
-            raise e
-
-    try:
-        arch_b.load_state_dict(ckpt_b)
-    except RuntimeError as _:  # noqa
-        stripped_b = strip_state_dict_of_keys(ckpt_b)
-        try:
-            arch_b.load_state_dict(stripped_b)
-        except RuntimeError as e:
-            raise e
-
-    datamodule = find_datamodules.get_datamodule(ds.Dataset(hparams["dataset"]))
-    val_dataloader = datamodule.val_dataloader(
-        0,
-        transform=ds.Augmentation.VAL,
-        **{
-            "shuffle": False,
-            "drop_last": False,
-            "pin_memory": True,
-            "batch_size": 128,
-            "num_workers": 0,
-            "persistent_workers": False,
-        },
-    )
-
-    layerwise_cka: dict[int, float] = {}
-    arch_a = arch_a.cuda()
-    arch_b = arch_b.cuda()
-    for cnt, h in enumerate(arch_a.hooks):
-        arch_a.register_rep_hook(h)
-        arch_b.register_rep_hook(h)
-
-        for batch in val_dataloader:
-            x, _ = batch
-            x = x.cuda()
-            arch_a(x)
-            arch_b(x)
-            # if h.resolution == (32, 32):
-            #     if len(arch_a.activations) * arch_a.activations[0].shape[0] > 5000:
-            #         break
-
-        arch_a.remove_forward_hook()
-        arch_b.remove_forward_hook()
-
-        actis_a = torch.from_numpy((np.concatenate(arch_a.activations, axis=0))[None, ...])
-        actis_b = torch.from_numpy((np.concatenate(arch_b.activations, axis=0))[None, ...])
-
-        del arch_a.activations, arch_b.activations
-        # # cka = centered_kernel_alignment([actis_a], [actis_b])[0][0]
-        #
-        # split_actis_a = [torch.from_numpy(nd) for nd in np.split(actis_a, 100, axis=1)]
-        # del actis_a
-        # split_actis_b = [torch.from_numpy(nd) for nd in np.split(actis_b, 100, axis=1)]
-        # del actis_b
-        # partial_ckas = [
-        #     centered_kernel_alignment([partial_a], [partial_b])
-        #     for partial_a, partial_b in zip(split_actis_a, split_actis_b)
-        # ]
-        # del split_actis_a, split_actis_b
-        cka = centered_kernel_alignment([actis_a], [actis_b])[0][0]
-        layerwise_cka[cnt] = float(cka)
-
-    return layerwise_cka
-
-"""
+@dataclass
+class OutputEnsembleResults:
+    n_models: int
+    new_model_accuracy: float
+    mean_single_accuracy: float
+    ensemble_accuracy: float
+    relative_ensemble_performance: float
+    cohens_kappa: float
+    jensen_shannon_div: float
+    error_ratio: float
+    regularization_metric: str = field(init=False)
+    regularization_position: int = field(init=False)
 
 
 def unbiased_hsic(K: torch.Tensor, L: torch.Tensor):
@@ -157,7 +85,6 @@ def unbiased_hsic(K: torch.Tensor, L: torch.Tensor):
     factor = 1 / (batch_size * (batch_size - 3))
 
     hsic = factor * (first + second - third)
-
     return torch.squeeze(hsic)
 
 
@@ -166,12 +93,14 @@ class BatchCKAResult:
     lk: float
     ll: float
     kk: float
+    negative: bool
 
 
 def _consolidate_cka_batch_results(batch_results: list[BatchCKAResult]):
-    lk = np.nanmean([br.lk for br in batch_results])
-    kk = np.nanmean([br.kk for br in batch_results])
-    ll = np.nanmean([br.ll for br in batch_results])
+    non_neg_results = [br for br in batch_results if not br.negative]
+    lk = np.mean([br.lk for br in non_neg_results])
+    kk = np.mean([br.kk for br in non_neg_results])
+    ll = np.mean([br.ll for br in non_neg_results])
 
     cka = lk / (np.sqrt(kk * ll))
 
@@ -185,11 +114,14 @@ def _batch_cka(K: torch.Tensor, L: torch.Tensor) -> BatchCKAResult:
     K = K.cuda()
     L = L.cuda()
 
-    kl = unbiased_hsic(K, L).cpu()
-    kk = unbiased_hsic(K, K).cpu()
-    ll = unbiased_hsic(L, L).cpu()
+    kl = float(unbiased_hsic(K, L).cpu().numpy())
+    kk = float(unbiased_hsic(K, K).cpu().numpy())
+    ll = float(unbiased_hsic(L, L).cpu().numpy())
 
-    return BatchCKAResult(kl, kk, ll)
+    if kl < 0 or kk < 0 or ll < 0:
+        return BatchCKAResult(kl, kk, ll, True)
+    else:
+        return BatchCKAResult(kl, kk, ll, False)
 
 
 def reshape(acti: torch.Tensor):
@@ -198,8 +130,12 @@ def reshape(acti: torch.Tensor):
 
 
 def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> ModelToModelComparison:
-    arch_a: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))()
-    arch_b: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))()
+    arch_a: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))(
+        n_cls=10 if hparams["dataset"] == "CIFAR10" else 100
+    )
+    arch_b: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))(
+        n_cls=10 if hparams["dataset"] == "CIFAR10" else 100
+    )
 
     ckpt_a: dict = torch.load(str(model_a))
     ckpt_b: dict = torch.load(str(model_b))
@@ -229,7 +165,7 @@ def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> Mode
             "shuffle": False,
             "drop_last": False,
             "pin_memory": True,
-            "batch_size": 128,
+            "batch_size": 250,
             "num_workers": 0,
             "persistent_workers": False,
         },
@@ -257,9 +193,9 @@ def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> Mode
 
     # Register hooks
     for cnt, h in enumerate(arch_a.hooks):
-        all_handles_a.append(arch_a.register_parallel_rep_hooks(h, all_activations_a[h.name]))
+        all_handles_a.append(arch_a.register_parallel_batch_cka_hooks(h, all_activations_a[h.name]))
     for cnt, h in enumerate(arch_b.hooks):
-        all_handles_b.append(arch_b.register_parallel_rep_hooks(h, all_activations_b[h.name]))
+        all_handles_b.append(arch_b.register_parallel_batch_cka_hooks(h, all_activations_b[h.name]))
     with torch.no_grad():
         for batch in val_dataloader:
             x, y = batch
@@ -272,11 +208,9 @@ def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> Mode
             all_L = {}
 
             for (ka, va), (kb, vb) in zip(all_activations_a.items(), all_activations_b.items()):
-                reshaped_a = reshape(all_activations_a[ka][0])
-                all_K[ka] = reshaped_a @ reshaped_a.T
+                all_K[ka] = all_activations_a[ka][0]
                 all_activations_a[ka][0] = 0
-                reshaped_b = reshape(all_activations_b[ka][0])
-                all_L[kb] = reshaped_b @ reshaped_b.T
+                all_L[kb] = all_activations_b[ka][0]
                 all_activations_b[ka][0] = 0
 
             for ka, K in all_K.items():
@@ -318,13 +252,124 @@ def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> Mode
     return res
 
 
+def final_multi_output_metrics(
+    outputs: list[np.ndarray],
+    groundtruth: np.ndarray,
+) -> OutputEnsembleResults:
+    """
+    Calculates a variety of metrics that are based on multiple output predictions being present.
+    """
+    # num_classes = new_output.shape[-1]
+
+    last_models_outputs = torch.from_numpy(outputs[-1])
+    last_models_probs = F.softmax(last_models_outputs, dim=-1)
+    last_models_y_hat = torch.argmax(last_models_probs, dim=-1)
+
+    # ---- New model accuracy
+    last_models_accuracy = float(torch.mean(last_models_y_hat == groundtruth, dtype=torch.float).cpu())
+
+    all_logits = torch.from_numpy(np.stack(outputs, axis=0))  # N_Models x N_Batches x N_Classes
+    all_probs = F.softmax(all_logits, dim=-1)  # N_Models x N_Batches x N_Classes
+    all_y_hats = torch.argmax(all_probs, dim=-1)  # N_Models x N_Batches
+    # Only existing model stuff
+
+    ensemble_probs = torch.mean(all_probs, dim=0)
+    ensemble_y_hat = torch.argmax(ensemble_probs, dim=1)
+
+    # ---- New model accuracy
+    all_models_accuracies = torch.mean(all_y_hats == (groundtruth[None, ...]), dtype=torch.float, dim=1)
+    mean_single_model_accuracy = float(torch.mean(all_models_accuracies).detach().cpu().numpy())
+
+    # ---- Ensemble Accuracy
+    ensemble_acc = torch.mean(ensemble_y_hat == groundtruth, dtype=torch.float)
+    ensemble_acc = float(ensemble_acc.detach().cpu())
+
+    # ---- Relative Ensemble Performance
+    rel_ens_performance = float(ensemble_acc / mean_single_model_accuracy)
+
+    # ---- Cohens Kappa
+    unbound_probs: list[torch.Tensor] = torch.unbind(all_probs, dim=0)
+    unbound_yhats: list[torch.Tensor] = torch.unbind(all_y_hats, dim=0)
+
+    cks = calculate_cohens_kappas(unbound_yhats, groundtruth).all_to_all_mean
+
+    jsds = jensen_shannon_divergences(unbound_probs).all_to_all_mean
+    err = calculate_error_ratios(unbound_yhats, groundtruth).all_to_all_mean
+
+    return OutputEnsembleResults(
+        n_models=len(outputs),
+        new_model_accuracy=last_models_accuracy,
+        ensemble_accuracy=ensemble_acc,
+        mean_single_accuracy=mean_single_model_accuracy,
+        relative_ensemble_performance=rel_ens_performance,
+        cohens_kappa=cks,
+        jensen_shannon_div=jsds,
+        error_ratio=err,
+    )
+
+
+def compare_models_functional(models: list[Path], hparams: dict) -> list[OutputEnsembleResults]:
+    archs = [find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))() for _ in models]
+    for arch, model in zip(archs, models):
+        ckpt: dict = torch.load(str(model))
+        try:
+            arch.load_state_dict(ckpt)
+        except RuntimeError as _:  # noqa
+            try:
+                stripped = strip_state_dict_of_keys(ckpt)
+                arch.load_state_dict(stripped)
+            except RuntimeError as e:
+                raise e
+
+    datamodule = find_datamodules.get_datamodule(ds.Dataset(hparams["dataset"]))
+    val_dataloader = datamodule.val_dataloader(
+        0,
+        transform=ds.Augmentation.VAL,
+        **{
+            "shuffle": False,
+            "drop_last": False,
+            "pin_memory": True,
+            "batch_size": 250,
+            "num_workers": 0,
+            "persistent_workers": False,
+        },
+    )
+
+    archs = [arch.cuda() for arch in archs]
+
+    gt = []
+    logits = [[] for _ in archs]
+
+    # create 2d array of combinations of all_activations_a and all_activations_b
+    with torch.no_grad():
+        for batch in val_dataloader:
+            x, y = batch
+            x = x.cuda()
+            gt.append(y.detach().cpu().numpy())
+            for cnt, arch in enumerate(archs):
+                logits[cnt].append(arch(x).detach().cpu().numpy())
+
+    gt = torch.from_numpy(np.concatenate(gt, axis=0))
+    stacked_logits = [np.concatenate(logit, axis=0) for logit in logits]
+
+    result = []
+    for i in range(2, len(archs) + 1):
+        result.append(final_multi_output_metrics(stacked_logits[:i], gt))
+
+    for r in result:
+        r.regularization_metric = hparams["dis_loss"] if hparams["dis_loss"] in hparams.keys() else "None"
+        r.regularization_position = hparams["hooks"][0]
+
+    return result
+
+
 def get_matching_model_dirs_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[tuple[Path, dict]]:
     matching_dirs: list[tuple[Path, dict]] = []
     ke_src_paths = list(ke_src_path.iterdir())
     for ke_p in ke_src_paths:
         if ke_p.name.startswith("FIRST"):
             continue
-        decodes = io.KENameEncoder.decode(ke_p)
+        decodes = io.KENameEncoder.decode(ke_p.name)
         (
             exp_description,
             dataset,
@@ -726,16 +771,131 @@ def create_same_seed_comparisons(hparam: dict, overwrite=False):
     return
 
 
-def main():
-    create_same_seed_comparisons(grm.layer_DIFF_tdepth_9_expvar_1)
-    # create_single_diff_layer_single_depth_single_dis_loss_weight_plot_sparse()
+def create_same_seed_functional_ensemble_comparison_first_two(hparam: dict, overwrite=False):
+    for wanted_hparams_name, hparams_dict in hparam.items():
+        models = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
 
-    # create_single_diff_layer_single_depth_single_dis_loss_weight_plot
-    # create_single_layer_multi_dis_loss_weight_plot_lincka()
-    # create_single_layer_multi_dis_loss_weight_plot()
-    # create_multi_layer_plot()
-    # create_single_layer_depth_plot()
+        model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1])
+        model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
+
+        existing_ckpts: list[SeedResult] = []
+        for mcp in model_ckpt_paths:
+            ckpt_paths = mcp.checkpoints.values()
+            all_exist = (all([ckpt_path.exists() for ckpt_path in ckpt_paths])) and (len(ckpt_paths) >= 2)
+            if all_exist:
+                new_model = SeedResult(mcp.hparams)
+                new_model.checkpoints = {0: mcp.checkpoints[0], 1: mcp.checkpoints[1]}
+                new_model.models = {0: mcp.models[0], 1: mcp.models[1]}
+                # new_model.checkpoints = {0: mcp.checkpoints[0], 1: mcp.checkpoints[1]}
+                # new_model.models = {0: mcp.models[0], 1: mcp.models[1]}
+                existing_ckpts.append(new_model)
+
+        this_output_file = json_results_path / f"functional_{wanted_hparams_name}.json"
+        if this_output_file.exists():
+            existing_json = load_json(this_output_file)
+            if len(existing_json) == (4 * len(model_ckpt_paths)):
+                print("Skipping existing file")
+                continue
+
+        layer_results: list[OutputEnsembleResults] = []
+        seed_result: SeedResult
+        for seed_result in tqdm(existing_ckpts[:20]):
+            layer_results.extend(
+                compare_models_functional(list(seed_result.checkpoints.values()), hparams=hparams_dict)
+            )
+        if len(layer_results) == 0:
+            warn("Nothing to save. skipping file creation!")
+        else:
+            save_json(
+                [{**asdict(lr), **hparams_dict} for lr in layer_results],
+                json_results_path / f"functional_{wanted_hparams_name}.json",
+            )
+    return
 
 
-if __name__ == "__main__":
-    main()
+def create_same_seed_functional_ensemble_comparison(hparam: dict, overwrite=False):
+    for wanted_hparams_name, hparams_dict in hparam.items():
+        models = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
+
+        model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1, 2, 3, 4])
+        model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
+
+        existing_ckpts: list[SeedResult] = []
+        for mcp in model_ckpt_paths:
+            ckpt_paths = mcp.checkpoints.values()
+            all_exist = (all([ckpt_path.exists() for ckpt_path in ckpt_paths])) and (len(ckpt_paths) == 5)
+            if all_exist:
+                existing_ckpts.append(mcp)
+
+        this_output_file = json_results_path / f"functional_{wanted_hparams_name}.json"
+        if this_output_file.exists():
+            existing_json = load_json(this_output_file)
+            if len(existing_json) == (4 * len(model_ckpt_paths)):
+                print("Skipping existing file")
+                continue
+
+        layer_results: list[OutputEnsembleResults] = []
+        seed_result: SeedResult
+        for seed_result in tqdm(existing_ckpts[:20]):
+            layer_results.extend(
+                compare_models_functional(list(seed_result.checkpoints.values()), hparams=hparams_dict)
+            )
+        if len(layer_results) == 0:
+            warn("Nothing to save. skipping file creation!")
+        else:
+            save_json(
+                [{**asdict(lr), **hparams_dict} for lr in layer_results],
+                json_results_path / f"functional_{wanted_hparams_name}.json",
+            )
+    return
+
+
+def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
+    for wanted_hparams_name, hparams_dict in hparam.items():
+        print(f"{wanted_hparams_name}.json")
+
+        models = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
+        model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1, 2, 3, 4])
+        model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
+
+        existing_ckpts: list[SeedResult] = []
+        for mcp in model_ckpt_paths:
+            ckpt_paths = mcp.checkpoints.values()
+            all_exist = (all([ckpt_path.exists() for ckpt_path in ckpt_paths])) and (len(ckpt_paths) == 5)
+            if all_exist:
+                existing_ckpts.append(mcp)
+
+        this_output_file = json_results_path / f"{wanted_hparams_name}.json"
+        if (not overwrite) and this_output_file.exists():
+            continue
+
+        ensemble_layer_results: list[ModelToModelComparison] = []
+
+        seed_result: SeedResult
+        for seed_result in tqdm(existing_ckpts[:20]):
+            combis = list(itertools.combinations_with_replacement(seed_result.checkpoints.keys(), r=2))
+            for a, b in tqdm(combis):
+                res = compare_models_parallel(
+                    model_a=seed_result.checkpoints[a], model_b=seed_result.checkpoints[b], hparams=hparams_dict
+                )
+                res.m_id_a = int(a)
+                res.m_id_b = int(b)
+                res.g_id_a = seed_result.hparams["group_id_i"]
+                res.g_id_b = seed_result.hparams["group_id_i"]
+                ensemble_layer_results.append(res)
+                if res.accuracy_reg < 0.8:
+                    print(f"bad accuracy: {res.accuracy_reg}")
+                    bad_group_id = seed_result.hparams["group_id_i"]
+                    # remove bad group id from list
+                    tmp_res = []
+                    for cnt, res in enumerate(ensemble_layer_results):
+                        if res.g_id_b != bad_group_id:
+                            tmp_res.append(res)
+                    ensemble_layer_results = tmp_res
+                    break
+
+        save_json(
+            [{**asdict(lr), **hparams_dict} for lr in ensemble_layer_results],
+            json_results_path / f"{wanted_hparams_name}.json",
+        )
+    return
