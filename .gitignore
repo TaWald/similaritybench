@@ -12,3 +12,6 @@ augmented_dataset
 *.pdf
 *.svg
 *.png
+*.__pycache__
+*.json
+*.tex
