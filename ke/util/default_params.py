@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ke.util import data_structs as ds
 
 
