@@ -16,6 +16,7 @@ from torchvision import transforms as trans
 
 class ImagenetDataModule(BaseDataModule):
     datamodule_id = ds.Dataset.IMAGENET
+    n_classes = 1000
 
     # If I remove split from init call:
     #   I will have to make the Subclasses of the Cifar10BaseMergingModule override

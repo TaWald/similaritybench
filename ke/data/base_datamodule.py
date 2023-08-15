@@ -12,6 +12,7 @@ class BaseDataModule(ABC):
     datamodule_id: ds.Dataset
     n_train: int
     n_test: int
+    n_classes: int
 
     def __init__(self):
         # The normal base data module structure is as follows:

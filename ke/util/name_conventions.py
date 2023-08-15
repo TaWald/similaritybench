@@ -586,6 +586,8 @@ APPROX_CKPT_INFO_NAME = "approx_layer_info_{}.json"
 CKPT_NAME_TMPLT = "epoch_{}.ckpt"
 CKPT_NAME_RE = r"^epoch_\d+.ckpt$"
 
+lin_probe_ckpt_name = "lin_probe__{}.ckpt"
+
 OUTPUT_TMPLT = "output.json"
 LENSE_TMPLT = "lense_output.json"
 LAST_METRICS_TMPLT = "last_metrics.json"

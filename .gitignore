@@ -15,3 +15,6 @@ augmented_dataset
 *.__pycache__
 *.json
 *.tex
+.*\.DS_Store.*
+ke/.DS_Store
+ke/manual_introspection/plots/all_layers_modded.svg
