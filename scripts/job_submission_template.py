@@ -52,11 +52,11 @@ if do_baseline_training:
     # Dissimilarity training layerwise
     for arch in ["ResNet18", "ResNet101"]:
         if arch == "ResNet18":
-            trans_pos = [[6]] #[[2], [4], [6], [8]] #
+            trans_pos = [[6]]  # [[2], [4], [6], [8]] #
             group_id = [0, 1, 2, 3, 4]
         elif arch == "ResNet101":
             continue
-            trans_pos = [[3]]#, [7], [30], [33]]
+            trans_pos = [[3]]  # , [7], [30], [33]]
             group_id = [0, 1, 2]
         else:
             raise NotImplementedError(f"Unexpected architecture {arch}!")
@@ -66,28 +66,28 @@ if do_baseline_training:
                     ("L2Corr", "L2Corr"),
                 ]:
                     sim_loss = sim_dis_loss[0]
-                    dis_loss_weight = [0.] # [0.1, 0.5, 1.0, 2.0, 4.0, 8.0] #
-                    for dl in dis_loss_weight:  #  [01.0]
+                    dis_loss_weight = [0.0]  # [0.1, 0.5, 1.0, 2.0, 4.0, 8.0] #
+                    for dl in dis_loss_weight:  # [01.0]
                         epochs_before_regularization = -1
                         exp_name = "test_post_refactoring"
                         dataset = "ImageNet100"
                         tr_n_models = 2
                         tk = 1
-                        for td in [1]: # trans_depth = 1
+                        for td in [1]:  # trans_depth = 1
                             reg_pos = " ".join([str(t) for t in tp])
                             print(
-                            f"""bsub -L /bin/bash -R "select[hname!='e230-dgx1-1']" """
-                            + f""" -R "select[hname!='e230-dgxa100-4']" -R "tensorcore" """
-                            + f"""-gpu num=1:j_exclusive=yes:mode=exclusive_process:gmem=14.5G -q gpu"""
-                            + f""" ./ke_training.sh"""
-                            + f""" ~/Code/knowledge_extension/scripts/training_starts/ke_train_model.py"""
-                            + f""" -exp {exp_name} -d {dataset} -a {arch} -ar 1 -td {td}"""
-                            + f""" -tp {reg_pos} -tk {tk} --sim_loss {sim_loss} --ce_loss_weight {ce_loss_weight}"""
-                            + f""" --dis_loss L2Corr --dis_loss_weight {dl}"""
-                            + f""" -sm 0 -tr_n_models {tr_n_models} -gid {gid} -na 1 --sim_loss_weight {sim_loss_weight}"""
-                            + f""" --epochs_before_regularization {epochs_before_regularization}"""
-                            + f""" --save_approximation_layers 1"""
-                        )
+                                f"""bsub -L /bin/bash -R "select[hname!='e230-dgx1-1']" """
+                                + f""" -R "select[hname!='e230-dgxa100-4']" -R "tensorcore" """
+                                + f"""-gpu num=1:j_exclusive=yes:mode=exclusive_process:gmem=14.5G -q gpu"""
+                                + f""" ./ke_training.sh"""
+                                + f""" ~/Code/knowledge_extension/scripts/training_starts/ke_train_model.py"""
+                                + f""" -exp {exp_name} -d {dataset} -a {arch} -ar 1 -td {td}"""
+                                + f""" -tp {reg_pos} -tk {tk} --sim_loss {sim_loss} --ce_loss_weight {ce_loss_weight}"""
+                                + f""" --dis_loss L2Corr --dis_loss_weight {dl}"""
+                                + f""" -sm 0 -tr_n_models {tr_n_models} -gid {gid} -na 1 --sim_loss_weight {sim_loss_weight}"""
+                                + f""" --epochs_before_regularization {epochs_before_regularization}"""
+                                + f""" --save_approximation_layers 1"""
+                            )
                             cnt += 1
                             if cnt % 4 == 0:
                                 print("\n")
@@ -142,12 +142,12 @@ Adaptive diversity promotion:
         "1.00-0.25",
         "2.00-0.50"
     ]
-    
+
 EnsembleEntropyMaximization
 [0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
 
 FocalCosineSimProbability
-[ 
+[
     "0.25-0.50",
     "0.25-1.00",
     "0.25-2.00",
@@ -341,16 +341,3 @@ if False:
                         cnt += 1
                         if cnt % 4 == 0:
                             print("\n")
-
-#### Eval trained models
-if False:
-    print()
-    for cnt, ppct in enumerate(unstructured_prune_pct if pt == unstructured_pt else structured_prune_pct):
-        if cnt % 5 == 0:
-            print()
-        print(
-            f"""bsub -gpu num=1:j_exclusive=yes:mode=exclusive_process:gmem=11.G -q gpu-lowprio /home/t006d/feature_comp_v2.sh /home/t006d/Code/FeatureComparisonV2/scripts/eval_trained_models.py -exp exp_nips_22 -d CIFAR10 -pt {pt} -a {arch} -p_pct {str(ppct)}"""
-        )
-    print(
-        f"""bsub -gpu num=1:j_exclusive=yes:mode=exclusive_process:gmem=11.G -q gpu-lowprio /home/t006d/feature_comp_v2.sh /home/t006d/Code/FeatureComparisonV2/scripts/eval_trained_models.py -exp exp_nips_22 -d CIFAR10 -a {arch}"""
-    )
