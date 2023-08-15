@@ -1,7 +1,7 @@
 # Done: ResNet34 - (Early, Middle, Late); (ExpVar, LinCKA, L2Corr); (soft - 0.25, equal - 1.0, high - 4.0)
 cnt = 0
 for arch in ["ResNet34"]:  # , "ResNet101"]:
-    trans_pos = [[3], [8], [13]]  # <-- ToDo: Choose appropriate position?
+    trans_pos = [[1], [3], [8], [13]]  # <-- ToDo: Choose appropriate position?
     group_id = [0, 1, 2, 3, 4]
     for tp in trans_pos:
         for gid in group_id:  # , 6]:
@@ -22,13 +22,18 @@ for arch in ["ResNet34"]:  # , "ResNet101"]:
                     else:
                         td = 1
 
+                    if arch == "ResNet101":
+                        min_gmem = "14.5"
+                    else:
+                        min_gmem = "10.5"
+
                     reg_pos = " ".join([str(t) for t in tp])
                     print(
-                        f"""bsub -L /bin/bash -R "select[hname!='e230-dgx1-1']" """
-                        + f""" -R "select[hname!='e230-dgxa100-4']" -R "tensorcore" """
-                        + f"""-gpu num=1:j_exclusive=yes:mode=exclusive_process:gmem=14.5G -q gpu"""
-                        + f""" ./ke_training.sh"""
-                        + f""" ~/Code/knowledge_extension/scripts/training_starts/ke_train_model.py"""
+                        """bsub -L /bin/bash -R "select[hname!='e230-dgx1-1']" """
+                        + """ -R "select[hname!='e230-dgxa100-4']" -R "tensorcore" """
+                        + """-gpu num=1:j_exclusive=yes:mode=exclusive_process:gmem={min_gmem}G -q gpu"""
+                        + """ ./ke_training.sh"""
+                        + """ ~/Code/knowledge_extension/scripts/training_starts/ke_train_model.py"""
                         + f""" -exp {exp_name} -d {dataset} -a {arch} -ar 1 -td {td}"""
                         + f""" -tp {reg_pos} -tk {tk} --sim_loss {sim_loss} --ce_loss_weight {ce_loss_weight}"""
                         + f""" --dis_loss {dis_loss} --dis_loss_weight {dl}"""

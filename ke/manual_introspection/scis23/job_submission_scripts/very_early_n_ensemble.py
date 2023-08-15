@@ -1,11 +1,15 @@
 # Done: Started ResNet34 at layer 3, 8, 13; ExpVar 1,0;
 cnt = 0
 for arch in ["ResNet34"]:  # , "ResNet101"]:
-    trans_pos = [[1], [3], [8], [13]]  # <- Maybe Todo: Choose single position?
+    trans_pos = [[1]]  # <- Maybe Todo: Choose single position?
     group_id = [0, 1, 2, 3, 4]
     for tp in trans_pos:
         for gid in group_id:  # , 6]:
-            for sim_dis_loss in [("ExpVar", "ExpVar"), ("LinCKA", "LinCKA")]:  # <-- ToDo: Choose metric of choice
+            for sim_dis_loss in [
+                ("LinCKA", "LinCKA"),
+                ("L2Corr", "L2Corr"),
+                ("ExpVar", "ExpVar"),
+            ]:  # <-- ToDo: Choose metric of choice
                 sim_loss = sim_dis_loss[0]
                 dis_loss = sim_dis_loss[1]
                 dis_loss_weight = [1.00]  # [0.1, 0.5, 1.0, 2.0, 4.0, 8.0] #
