@@ -8,7 +8,6 @@ augmented_dataset
 /scripts/ke_training.sh
 /scripts/create_hyperparameters.py
 /build
-
 /.pytest_cache/
 *.pdf
 *.svg
