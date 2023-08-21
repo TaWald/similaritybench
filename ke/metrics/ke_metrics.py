@@ -11,7 +11,6 @@ import numpy as np
 import torch as t
 from ke.losses.utils import celu_explained_variance
 from ke.losses.utils import centered_kernel_alignment
-from ke.losses.utils import correlation
 from ke.losses.utils import cosine_similarity
 from ke.losses.utils import euclidean_distance_csim
 from ke.metrics.aurc import parallel_aurc
