@@ -159,6 +159,8 @@ class FAArch(BaseFeatureArch):
         # Enable transfer parameters
         for p in self.all_transfer_modules.parameters():
             p.requires_grad = True
+        for p in self.linear_layer.parameters():
+            p.requires_grad = True
 
     def get_state_dict(self) -> dict:
         return self.new_arch.state_dict()
@@ -184,7 +186,6 @@ class FAArch(BaseFeatureArch):
 
         current: list[torch.Tensor] = [x for _ in range(len(self.all_partial_old_models_t[0]))]
         cur_true: torch.Tensor = x
-        current_partials: nn.ModuleList
 
         for cur_partial_source, cur_transfer, cur_partial_tbt in zip(
             self.all_partial_old_models_t[:-1], self.all_transfer_modules, self.all_partial_new_modules[:-1]
