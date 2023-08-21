@@ -21,7 +21,6 @@ imageio>=2.9.0
 PyYaml>=5.4.1
 pyDeprecate
 medmnist
-augmented_cifar @ git+https://git.dkfz.de/mic/personal/group2/tassilow/augmented_cifar10.git
 gradpg @ git+https://github.com/TaWald/Pytorch-PCGrad-GradVac-AMP-GradAccum-Packaged.git@master
 numpy
 chardet
