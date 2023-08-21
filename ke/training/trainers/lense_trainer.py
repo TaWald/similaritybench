@@ -6,8 +6,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from augmented_cifar.scripts.get_dataloaders import get_augmented_cifar100_test_dataloader
-from augmented_cifar.scripts.get_dataloaders import get_augmented_cifar10_test_dataloader
 from ke.training.ke_train_modules.AdversarialLenseLightningModule import AdversarialLenseLightningModule
 from ke.training.trainers.base_trainer import BaseTrainer
 from ke.util import data_structs as ds
@@ -104,48 +102,6 @@ class LenseTrainer(BaseTrainer):
             else:
                 tbt_ke_dict[k] = v
         file_io.save(tbt_ke_dict, self.training_info.path_data_root, filename=nc.LENSE_INFO)
-
-    def measure_generalization(self):
-        trainer = Trainer(
-            enable_checkpointing=False,
-            max_epochs=None,
-            accelerator="gpu",
-            devices=1,
-            precision=32,
-            default_root_dir=None,
-            enable_progress_bar=False,
-            logger=False,
-            profiler=None,
-        )
-        self.model.load_latest_checkpoint()
-        self.model.cuda()
-        self.model.eval()
-        self.model.clear_outputs = False
-
-        if self.params.dataset == "CIFAR10":
-            dataloaders = get_augmented_cifar10_test_dataloader(self.dataset_path, self.test_kwargs)
-        elif self.params.dataset == "CIFAR100":
-            dataloaders = get_augmented_cifar100_test_dataloader(self.dataset_path, self.test_kwargs)
-        else:
-            raise ValueError(f"Trying to measure generalization of unknown dataset! Got {self.params.dataset}")
-
-        all_results = {}
-        for dl in dataloaders:
-            trainer.validate(self.model, dl.dataloader)
-            out = self.model.get_outputs()
-            final_metrics = self.model.final_metrics
-            if dl.name in all_results.keys():
-                all_results[dl.name].update({str(dl.value): final_metrics})
-            else:
-                all_results[dl.name] = {str(dl.value): final_metrics}
-            file_io.save(
-                out["outputs"], self.training_info.path_activations, nc.GNRLZ_PD_TMPLT.format(dl.name, dl.value)
-            )
-            file_io.save(
-                out["groundtruths"], self.training_info.path_activations, nc.GNRLZ_GT_TMPLT.format(dl.name, dl.value)
-            )
-        file_io.save(all_results, self.training_info.path_ckpt_root, nc.GNRLZ_OUT_RESULTS)
-        self.model.clear_outputs = True
 
     def save_outputs(self, mode: str):
         assert mode in ["test", "val"], f"Expected only 'test' or 'val' as mode. Got: {mode}"

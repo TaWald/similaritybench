@@ -51,7 +51,6 @@ def evaluate_sequence(data_path: Path, ckpt_path: Path, ke_dirname: str):
     # Do the baseline model creation if it not already exists!
     trainer = EvalTrainer(model_infos=all_training_infos)
     trainer.measure_performance(True, True, True)
-    trainer.measure_robustness(True, True, True)
     # clean_up_after_processing(kedp)
 
 
