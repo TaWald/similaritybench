@@ -1,11 +1,9 @@
 import torch
-from torch import nn
-from torch.nn import functional as F
-import pytorch_lightning as pl
-
 from ke.arch import abstract_acti_extr
 from ke.util import data_structs as ds
 from ke.util.find_datamodules import get_datamodule
+from torch import nn
+from torch.nn import functional as F
 
 
 def get_flat_layer_output(container: list, post_pool_size: int = 1):
@@ -24,6 +22,7 @@ def get_flat_layer_output(container: list, post_pool_size: int = 1):
         flat_output = torch.reshape(reduced_output, (reduced_output.shape[0], -1))  # B x C * (postpool**2)
 
         container.append(flat_output)
+
     return hook
 
 
@@ -44,8 +43,6 @@ class LinearProbeTrainer(nn.Module):
         self.handles = []
         self.linear_probes: dict[str, nn.Module] = {}
 
-
-
     def register_hooks(self):
         h: ds.Hook
         for h in self.module.hooks:
@@ -64,7 +61,7 @@ class LinearProbeTrainer(nn.Module):
         """
 
         for h in hooks_of_interest:
-            self.linear_probes[h.name] = (nn.Linear(in_features=h.n_channels, out_features=self.out_cls))
+            self.linear_probes[h.name] = nn.Linear(in_features=h.n_channels, out_features=self.out_cls)
 
     def grab_activations(self) -> dict[str, torch.Tensor]:
         """
@@ -79,14 +76,12 @@ class LinearProbeTrainer(nn.Module):
                 activations[k] = torch.stack(v, dim=0)
         return activations
 
-
     def fit_all_layers(self):
-
-        for
+        pass
 
     @staticmethod
     def fit_intermediate_layer(activations: dict, linear_probes: dict[str, nn.Module], gt: torch.Tensor):
-        """ Trains the linear probe using the LBFGS optimizer """
+        """Trains the linear probe using the LBFGS optimizer"""
         for name in activations.keys():
             acti = activations[name]
             lin_probe = linear_probes[name]
@@ -105,4 +100,3 @@ class LinearProbeTrainer(nn.Module):
             # Initialize the L-BFGS optimizer
 
             optim.step(closure)
-
