@@ -13,7 +13,6 @@ def average_multiple_metrics(res: list[dict]):
     for lw in loss_weights:
         for m in metrics:
             for l in layers:
-
                 filtered_res = [r for r in res if r["Metric"] == m and r["Layer"] == l and r["Loss Weight"] == lw]
                 if len(filtered_res) == 0:
                     continue

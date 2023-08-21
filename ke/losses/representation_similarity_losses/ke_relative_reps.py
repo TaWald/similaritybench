@@ -8,7 +8,6 @@ class EuclideanRelativeRepresentationLoss(AbstractRepresentationLoss):
     def forward(
         self, tbt_inter: list[torch.Tensor], approx_inter: list[torch.Tensor], make_dissimilar: bool
     ) -> torch.Tensor:
-
         if make_dissimilar:
             cos_sim_tr = cosine_similarity(tbt_inter)
             with torch.no_grad():

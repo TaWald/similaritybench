@@ -143,7 +143,7 @@ class KEUnusableDownstreamNameEncoder:
         tdepth_i: int = int(tdepth.split("_")[-1])
         kwidth_i: int = int(kwidth.split("_")[-1])
         trans_stuff: list = trans_l.split("_")
-        trans_loss_weight, grs, ce_loss_weight, = (
+        (trans_loss_weight, grs, ce_loss_weight,) = (
             trans_stuff[1],
             float(trans_stuff[2]),
             float(trans_stuff[3]),

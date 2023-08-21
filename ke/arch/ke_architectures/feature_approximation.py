@@ -7,7 +7,8 @@ from ke.arch.abstract_acti_extr import AbsActiExtrArch
 from ke.arch.arch_utils import create_module
 from ke.arch.arch_utils import serialize_architecture_info
 from ke.arch.intra_modules.trained_adversarial_approximation import TrainedAdversarialApproximation
-from ke.arch.intra_modules.trained_approximation import TrainedApproximation, NotAligned
+from ke.arch.intra_modules.trained_approximation import NotAligned
+from ke.arch.intra_modules.trained_approximation import TrainedApproximation
 from ke.arch.ke_architectures.base_feature_arch import BaseFeatureArch
 from ke.util.data_structs import ArchitectureInfo
 from ke.util.data_structs import BaseArchitecture
@@ -77,9 +78,9 @@ class FAArch(BaseFeatureArch):
                 )
         self.all_partial_new_modules.append(create_module(self.new_arch, None, new_model_info.hooks[-1], None))
 
-        self.all_transfer_modules: nn.ModuleList[TrainedApproximation|NotAligned]
+        self.all_transfer_modules: nn.ModuleList[TrainedApproximation | NotAligned]
         if transfer_depth == 0:
-            self.all_transfer_modules = nn.ModuleList([ NotAligned() for _ in all_n_tbt_channels ])
+            self.all_transfer_modules = nn.ModuleList([NotAligned() for _ in all_n_tbt_channels])
         else:
             self.all_transfer_modules = nn.ModuleList(
                 [

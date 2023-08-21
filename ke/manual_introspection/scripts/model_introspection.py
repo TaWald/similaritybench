@@ -203,7 +203,6 @@ def get_adversarial_examples_paths(
 
 
 def get_error_df(ke_module, dataloader, n_samples: int, meta_info: dict) -> pd.DataFrame:
-
     try_realign = False
     if meta_info["sim_loss"] in ["L2Corr"]:
         try_realign = True

@@ -613,7 +613,6 @@ def plot_layer_9_tdepth_9_lincka_DIFF():
 
 
 def create_multi_layer_plot():
-
     baseline_values = load_json(json_results_path / "baselines.json")
     reg_9 = load_json(json_results_path / "layer_9_tdepth_9_ExpVar_1.json")
     reg_7to11 = load_json(json_results_path / "layer_7to11_ExpVar_1,00.json")
@@ -744,7 +743,6 @@ def create_baseline_comparisons(hparam: dict, overwrite=False):
 
 def create_same_seed_comparisons(hparam: dict, overwrite=False):
     for wanted_hparams_name, hparams_dict in hparam.items():
-
         models = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
 
         model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1])

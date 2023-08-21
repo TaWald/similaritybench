@@ -183,7 +183,6 @@ class AbsVGG(AbsActiExtrArch, ABC):
 
 
 class VGG16(AbsVGG):
-
     architecture_id = BaseArchitecture.VGG16
 
     def __init__(

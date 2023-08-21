@@ -30,7 +30,6 @@ class KELenseOutputTrainLoss(nn.Module):
         groundtruth: torch.Tensor,
         aug_predictions: list[torch.Tensor],
     ) -> dict:
-
         reco_loss = self.reco_loss.forward(original_image, reconstructed_image) * self.lense_reco_weight
         adv_loss = self.adv_loss.forward(aug_predictions, groundtruth)
 

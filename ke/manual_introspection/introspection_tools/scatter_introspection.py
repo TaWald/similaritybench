@@ -8,7 +8,6 @@ from ke.manual_introspection.utils.activation_results import ActivationResult
 
 
 def all_layer_scatterplot_histogram(moi_with_errors: list[ActivationResult], title: str, output_path: Path):
-
     ref_df = create_dataframe(moi_with_errors, "original")
 
     ref_df["layer"] = ref_df["layer"].astype("category")
@@ -21,7 +20,6 @@ def all_layer_scatterplot_histogram(moi_with_errors: list[ActivationResult], tit
 
 
 def true_approximation_scatterplot(error_df: pd.DataFrame, title: str, output_path: Path):
-
     error_df["layer"] = error_df["layer"].astype("category")
 
     fig: go.Figure
@@ -39,7 +37,6 @@ def true_approximation_scatterplot(error_df: pd.DataFrame, title: str, output_pa
 
 
 def scatterplot(error_df: pd.DataFrame, title: str, output_path: Path):
-
     error_df["layer"] = error_df["layer"].astype("category")
 
     fig: go.Figure

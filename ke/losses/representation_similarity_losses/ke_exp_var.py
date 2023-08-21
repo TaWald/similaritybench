@@ -13,7 +13,6 @@ class ExpVarLoss(AbstractRepresentationLoss):
     def forward(
         self, tbt_inter: list[torch.Tensor], approx_inter: list[torch.Tensor], make_dissimilar: bool
     ) -> torch.Tensor:
-
         # 1 When similar -inf when shitty
         # 1 when similar -alpha when shitty (after celu)
         celu_loss = celu_explained_variance(tbt_inter, approx_inter)

@@ -132,7 +132,6 @@ def load(path: str | Path, filename: str | None = None, mmap=None) -> Any:
     if not os.path.exists(p):
         raise ValueError(f"Given path does not exists: {p}")
     else:
-
         if extension == ".npz":
             return load_npz(p)
         elif extension == ".json":

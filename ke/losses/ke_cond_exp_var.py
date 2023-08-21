@@ -19,7 +19,6 @@ class CondExpVarLoss(KEAbstractConditionalLoss):
         gt: torch.Tensor,
         make_dissimilar: bool,
     ) -> torch.Tensor:
-
         # 1 When similar -inf when shitty
         # 1 when similar -alpha when shitty (after celu)
 

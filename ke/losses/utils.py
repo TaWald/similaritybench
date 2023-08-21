@@ -94,7 +94,6 @@ def dot_product_csim(cosine_values: list[tuple[t.Tensor, list[t.Tensor]]]):
 def topk_celu_explained_variance(
     true: list[t.Tensor], approximations: list[t.Tensor], k: int = 1000
 ) -> list[list[t.Tensor]]:
-
     r2s: list[list[t.Tensor]] = []
     assert_shapes_match(true, approximations)
     for trs, apxs in zip(true, approximations):

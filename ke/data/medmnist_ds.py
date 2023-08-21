@@ -8,7 +8,6 @@ from torch.utils.data import Dataset
 
 
 class MedMNIST(Dataset):
-
     flag: str = ""
 
     def __init__(self, split, transform=None, target_transform=None, download=False, as_rgb=False, root=DEFAULT_ROOT):
@@ -101,7 +100,6 @@ class MedMNIST2D(MedMNIST):
         return img, target
 
     def save(self, folder, postfix="png", write_csv=True):
-
         from medmnist.utils import save2d
 
         save2d(

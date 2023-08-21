@@ -50,7 +50,6 @@ def interactive_histogram(aor: np.ndarray, aoi: np.ndarray):
 
 
 def all_layer_interactive_histogram(aor: list[ActivationResult], aoi: list[ActivationResult]):
-
     ref_df = create_dataframe(aor, "reference")
     aoi_df = create_dataframe(aoi, "interest")
 
@@ -64,7 +63,6 @@ def all_layer_interactive_histogram(aor: list[ActivationResult], aoi: list[Activ
 def histogram(
     result_df: pd.DataFrame, filter_values: dict[str : list[str | int | float]] | None, output_path: str, title: str
 ):
-
     tmp_df = result_df
     if filter_values is not None:
         for k, v in filter_values:

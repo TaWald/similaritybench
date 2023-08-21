@@ -107,7 +107,6 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
 
 def create_same_seed_ensemble_comparisons(hparam: dict, overwrite=False):
     for wanted_hparams_name, hparams_dict in hparam.items():
-
         models = get_matching_model_dirs_of_ke_ensembles(ckpt_results, hparams_dict)
         model_paths: list[SeedResult] = get_models_with_ids_from_dir_and_first_model(models, [0, 1, 2, 3, 4])
         model_ckpt_paths: list[SeedResult] = [get_ckpts_from_paths(mp) for mp in model_paths]
