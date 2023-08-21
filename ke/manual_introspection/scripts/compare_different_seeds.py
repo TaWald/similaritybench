@@ -48,8 +48,6 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
 
         in_seed_regularized_unregularized = [(mcp.checkpoints[0], mcp.checkpoints[1]) for mcp in model_ckpt_paths]
 
-        hparams = model_ckpt_paths[0].hparams
-
         non_reg_2_non_reg = json_results_path / f"non_reg_2_non_reg__{wanted_hparams_name}.json"
         in_seed_non_reg_to_reg = json_results_path / f"in_seed_non_reg_to_reg__{wanted_hparams_name}.json"
         cross_seed_reg_2_non_reg = json_results_path / f"cross_seed_reg_2_non_reg__{wanted_hparams_name}.json"
