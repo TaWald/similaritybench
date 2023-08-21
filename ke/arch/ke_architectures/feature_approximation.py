@@ -108,6 +108,35 @@ class FAArch(BaseFeatureArch):
         self.linear_layer: nn.Module = self.new_arch.get_linear_layer(self.new_arch)
         # Disregard the gradients of the source models
         self.set_trainable_gradients()
+        self.sanity_check_splitting()
+
+    def sanity_check_splitting(self):
+        """Checks if the splitting of the models was correct"""
+
+        self.assure_outputs_are_identical()
+        self.assure_trainable_parameters_are_identical()
+
+    def assure_outputs_are_identical(self):
+        """Test if output of original new_arch and split one are the same."""
+        pseudo_input = torch.rand(1, 3, 160, 160, device=self.device)
+        with torch.no_grad():
+            pseudo_output = self.simple_forward(pseudo_input)
+            original_pseudo_output = self.new_arch(pseudo_input)
+            assert torch.isclose(
+                pseudo_output, original_pseudo_output
+            ).all(), "Splitting went wrong. Expected identical outputs, but got different ones."
+
+    def assure_trainable_parameters_are_identical(self):
+        """Assures the trainable parameters of"""
+        # Original
+        original_n_params = sum(p.numel() for p in self.new_arch.parameters() if p.requires_grad)
+        # Split parts
+        partial_n_params = sum(p.numel() for p in self.all_partial_new_modules.parameters() if p.requires_grad)
+        linear_n_params = sum(p.numel() for p in self.linear_layer.parameters() if p.requires_grad)
+        all_split_n_params = partial_n_params + linear_n_params
+        assert (
+            original_n_params == all_split_n_params
+        ), "Splitting went wrong. Expected identical number of trainable parameters"
 
     def train(self, mode: bool = True):
         """
@@ -167,6 +196,12 @@ class FAArch(BaseFeatureArch):
 
     def get_approx_state_dict(self) -> list[tuple[dict, dict]]:
         return [(inf, mod.state_dict()) for inf, mod in zip(self.transfer_module_infos, self.all_transfer_modules)]
+
+    def simple_forward(self, x) -> torch.Tensor:
+        """Does a simple forward of the partialed new model. Should be identical to self.new_model(x)"""
+        for partial in self.all_partial_new_modules:
+            x = partial(x)
+        return self.linear_layer(x)
 
     def forward(self, x) -> tuple[list[torch.Tensor], list[torch.Tensor], torch.Tensor, torch.Tensor]:
         """
