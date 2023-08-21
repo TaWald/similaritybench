@@ -476,7 +476,7 @@ class KEAdversarialLenseOutputNameEncoder:
         )
 
 
-KNOWLEDGE_EXTENSION_DIRNAME = "knowledge_extension_scis"
+KNOWLEDGE_EXTENSION_DIRNAME = "knowledge_extension_iclr24"
 # KNOWLEDGE_EXTENSION_DIRNAME = "knowledge_extension"
 KNOWLEDGE_UNUSEABLE_DIRNAME = "knowledge_extension_unusable_downstream"
 KNOWLEDGE_ADVERSARIAL_DIRNAME = "knowledge_adversarial_extension"
