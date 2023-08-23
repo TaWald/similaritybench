@@ -15,8 +15,6 @@ from ke.metrics.ke_metrics import multi_output_metrics
 from ke.metrics.ke_metrics import representation_metrics
 from ke.training.ke_train_modules.base_training_module import BaseLightningModule
 from ke.util import data_structs as ds
-from ke.util import name_conventions as nc
-from ke.util.file_io import save_json
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 
 
@@ -46,6 +44,13 @@ class IntermediateRepresentationLightningModule(BaseLightningModule):
         self.save_approx: bool = save_approx
 
     def save_checkpoint(self):
+        state_dict = self.net.get_new_model_state_dict()
+        if self.current_epoch == (self.params.num_epochs - 1):
+            torch.save(state_dict, self.checkpoint_path)
+        else:
+            debug_checkpoint_path = self.checkpoint_path.parent / f"{self.current_epoch}.ckpt"
+            torch.save(state_dict, debug_checkpoint_path)
+        """
         if self.current_epoch == 0:
             return
         if self.save_checkpoints:
@@ -61,6 +66,7 @@ class IntermediateRepresentationLightningModule(BaseLightningModule):
                         torch.save(asd[1], ckpt)
             # torch.save(transfer_dict, self.checkpoint_path.parent / "transfer_layer.ckpt")
         return
+        """
 
     def load_latest_checkpoint(self):
         """Loads the latest checkpoint (only of the to be trained architecture)"""

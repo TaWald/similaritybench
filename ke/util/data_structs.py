@@ -39,6 +39,7 @@ class GroupMetrics:
 class Dataset(Enum):
     """Info which dataset should be used"""
 
+    TEST = "TEST"
     CIFAR10 = "CIFAR10"
     CIFAR100 = "CIFAR100"
     SPLITCIFAR100 = "SplitCIFAR100"
