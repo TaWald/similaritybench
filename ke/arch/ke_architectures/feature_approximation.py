@@ -257,29 +257,27 @@ class FAArch(BaseFeatureArch):
 
         current: list[torch.Tensor] = [x for _ in range(len(self.all_partial_old_models_t[0]))]
         cur_true: torch.Tensor = x
-        with torch.no_grad():
-            for cur_partial_source, cur_transfer, cur_partial_tbt in zip(
-                self.all_partial_old_models_t[:-1], self.all_transfer_modules, self.partial_new_modules[:-1]
-            ):
-                with torch.no_grad():
-                    current = [cp.forward(cur) for cur, cp in zip(current, cur_partial_source)]
-                    tmp_current = current
-                    if self.aggregate_old_reps:
-                        tmp_current = [torch.concat(current, dim=1)]
-                approx: torch.Tensor = torch.stack(
-                    cur_transfer(tmp_current), dim=0
-                )  # N_Existing_Models x Batch x Ch ...
-                cur_true = cur_partial_tbt(cur_true)
-                list_true_inter.append(torch.unsqueeze(cur_true, dim=0))  # 1 x Batch x ... !
-                list_approx_inter.append(approx)
-            cur_true = self.partial_new_modules[-1](cur_true)
-            approx_logits = [pa(c) for c, pa in zip(current, self.all_partial_old_models_t[-1])]
 
-            out = self.linear_layer(cur_true)
+        for cur_partial_source, cur_transfer, cur_partial_tbt in zip(
+            self.all_partial_old_models_t[:-1], self.all_transfer_modules, self.partial_new_modules[:-1]
+        ):
             with torch.no_grad():
-                approx_outs = torch.stack(
-                    [lins(app_logit) for app_logit, lins in zip(approx_logits, self.all_partial_old_models_linears)],
-                    dim=0,
-                )
+                current = [cp.forward(cur) for cur, cp in zip(current, cur_partial_source)]
+                tmp_current = current
+                if self.aggregate_old_reps:
+                    tmp_current = [torch.concat(current, dim=1)]
+            approx: torch.Tensor = torch.stack(cur_transfer(tmp_current), dim=0)  # N_Existing_Models x Batch x Ch ...
+            cur_true = cur_partial_tbt(cur_true)
+            list_true_inter.append(torch.unsqueeze(cur_true, dim=0))  # 1 x Batch x ... !
+            list_approx_inter.append(approx)
+        cur_true = self.partial_new_modules[-1](cur_true)
+        approx_logits = [pa(c) for c, pa in zip(current, self.all_partial_old_models_t[-1])]
+
+        out = self.linear_layer(cur_true)
+        with torch.no_grad():
+            approx_outs = torch.stack(
+                [lins(app_logit) for app_logit, lins in zip(approx_logits, self.all_partial_old_models_linears)],
+                dim=0,
+            )
 
         return list_approx_inter, list_true_inter, approx_outs, out
