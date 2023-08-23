@@ -3,12 +3,14 @@ import sys
 from pathlib import Path
 
 from ke.arch.ke_architectures.feature_approximation import FAArch
+from ke.arch.ke_architectures.single_model import SingleModel
+from ke.losses.dummy_loss import DummyLoss
 from ke.losses.ke_loss import KETrainLoss
 from ke.training.ke_train_modules.calibrate import calibrate_model
 from ke.training.ke_train_modules.IntermediateRepresentationLightningModule import (
     IntermediateRepresentationLightningModule,
 )
-from ke.training.ke_train_modules.utils import get_first_model_base_trainer
+from ke.training.ke_train_modules.single_lightning_module import SingleLightningModule
 from ke.training.trainers.base_trainer import BaseTrainer
 from ke.util import data_structs as ds
 from ke.util import default_parser_args as dpa
@@ -104,7 +106,7 @@ def main():
     ke_ckpt_root_dir = ke_ckpt_path / exp_name
 
     # Do the baseline model creation if it not already exists!
-    first_model = file_io.get_first_model(
+    first_model_info = file_io.get_first_model(
         ke_data_path=ke_data_path,
         ke_ckpt_path=ke_ckpt_path,
         params=p,
@@ -134,112 +136,104 @@ def main():
 
     arch_params = get_default_arch_params(dataset)
 
-    if not first_model.model_is_finished():
-        trainer = get_first_model_base_trainer(
-            first_model_info=first_model,
-            arch_params=arch_params,
-            hparams=hparams,
-            dataset=dataset,
-            base_info=first_model,
-            params=p,
-        )
-        trainer.train()
-        trainer.save_outputs("test")
-        calibrate_model(first_model)
-        trainer.measure_generalization()
-        if not no_activations:
-            trainer.save_activations()
+    if not first_model_info.model_is_finished():
+        tbt_arch_info = ArchitectureInfo(first_model_info.architecture, arch_params, first_model_info.path_ckpt, None)
+        module = fa.get_base_arch(ds.BaseArchitecture(tbt_arch_info.arch_type_str))(**arch_params)
+        arch = SingleModel(module)
 
+        loss = DummyLoss(ce_weight=1.0)
+        lightning_mod = SingleLightningModule(first_model_info, arch, True, p, hparams, loss, None, True)
+        hparams.update({"model_id": 0, "is_regularized": False})
+        training_info = first_model_info
     else:
         n_trained_models: int = len(file_io.get_trained_ke_models(ke_data_root_dir, ke_ckpt_root_dir))
         if (n_trained_models + 1) >= train_till_n_models:
             return
-        else:
-            hparams.update({"model_id": n_trained_models + 1, "is_regularized": True})
-            prev_training_infos: list[ds.KETrainingInfo] = file_io.get_trained_ke_models(
-                ke_data_root_dir, ke_ckpt_root_dir
-            )
-            model_id = len(prev_training_infos) + 1
-            new_model = nc.MODEL_NAME_TMPLT.format(model_id)
 
-            tbt_model_data_dir = ke_data_root_dir / new_model
-            tbt_model_ckpt_dir = ke_ckpt_root_dir / new_model
+        hparams.update({"model_id": n_trained_models + 1, "is_regularized": True})
+        prev_training_infos: list[ds.KETrainingInfo] = file_io.get_trained_ke_models(
+            ke_data_root_dir, ke_ckpt_root_dir
+        )
+        model_id = len(prev_training_infos) + 1
+        new_model = nc.MODEL_NAME_TMPLT.format(model_id)
 
-            training_info: ds.FirstModelInfo = ds.KETrainingInfo(
-                experiment_name=exp_name,
-                experiment_description=experiment_description,
-                dir_name=new_model,
-                model_id=model_id,
-                group_id=group_id,
-                architecture=str(architecture.value),
-                dataset=str(dataset.value),
-                aggregate_source_reps=aggregate_reps,
-                softmax_metrics=bool(softmax_mets),
-                similarity_loss=sim_loss,
-                similarity_loss_weight=sim_loss_weight,
-                dissimilarity_loss=dis_loss,
-                crossentropy_loss_weight=ce_weight,
-                dissimilarity_loss_weight=dis_loss_weight,
-                epochs_before_regularization=epochs_before_regularization,
-                learning_rate=p.learning_rate,
-                split=p.split,
-                weight_decay=p.weight_decay,
-                batch_size=p.batch_size,
-                trans_hooks=transfer_positions,
-                trans_depth=trans_depth,
-                trans_kernel=trans_kernel,
-                path_data_root=tbt_model_data_dir,
-                path_ckpt_root=tbt_model_ckpt_dir,
-            )
+        tbt_model_data_dir = ke_data_root_dir / new_model
+        tbt_model_ckpt_dir = ke_ckpt_root_dir / new_model
 
-            all_src_arch_infos = [
-                ArchitectureInfo(first_model.architecture, arch_params, first_model.path_ckpt, tbt_hook)
-            ]
-            for pti in prev_training_infos:
-                all_src_arch_infos.append(ArchitectureInfo(pti.architecture, arch_params, pti.path_ckpt, tbt_hook))
-            tbt_arch_info = ArchitectureInfo(
-                training_info.architecture, arch_params, training_info.path_ckpt, tbt_hook
-            )
-            module = FAArch(
-                old_model_info=all_src_arch_infos,
-                new_model_info=tbt_arch_info,
-                aggregate_old_reps=aggregate_reps,
-                transfer_depth=trans_depth,
-                transfer_kernel_width=trans_kernel,
-            )
-            loss = KETrainLoss(
-                similar_loss=sim_l,
-                dissimilar_loss=dis_l,
-                ce_weight=ce_weight,
-                dissim_weight=dis_loss_weight,
-                sim_weight=sim_loss_weight,
-                regularization_epoch_start=epochs_before_regularization,
-                n_classes=arch_params["n_cls"],
-            )
-            kelm = IntermediateRepresentationLightningModule(
-                model_info=training_info,
-                network=module,
-                save_checkpoints=True,
-                params=p,
-                hparams=hparams,
-                loss=loss,
-                skip_n_epochs=None,
-                log=True,
-                save_approx=args.save_approximation_layers,
-            )
-            datamodule = fd.get_datamodule(dataset=dataset)
-            trainer = BaseTrainer(
-                model=kelm,
-                datamodule=datamodule,
-                params=p,
-                basic_training_info=training_info,
-                arch_params=arch_params,
-            )
-            trainer.train()
-            trainer.save_outputs("test")
-            calibrate_model(training_info)
-            if not no_activations:
-                trainer.save_activations()
+        training_info: ds.FirstModelInfo = ds.KETrainingInfo(
+            experiment_name=exp_name,
+            experiment_description=experiment_description,
+            dir_name=new_model,
+            model_id=model_id,
+            group_id=group_id,
+            architecture=str(architecture.value),
+            dataset=str(dataset.value),
+            aggregate_source_reps=aggregate_reps,
+            softmax_metrics=bool(softmax_mets),
+            similarity_loss=sim_loss,
+            similarity_loss_weight=sim_loss_weight,
+            dissimilarity_loss=dis_loss,
+            crossentropy_loss_weight=ce_weight,
+            dissimilarity_loss_weight=dis_loss_weight,
+            epochs_before_regularization=epochs_before_regularization,
+            learning_rate=p.learning_rate,
+            split=p.split,
+            weight_decay=p.weight_decay,
+            batch_size=p.batch_size,
+            trans_hooks=transfer_positions,
+            trans_depth=trans_depth,
+            trans_kernel=trans_kernel,
+            path_data_root=tbt_model_data_dir,
+            path_ckpt_root=tbt_model_ckpt_dir,
+        )
+
+        all_src_arch_infos = [
+            ArchitectureInfo(first_model_info.architecture, arch_params, first_model_info.path_ckpt, tbt_hook)
+        ]
+        for pti in prev_training_infos:
+            all_src_arch_infos.append(ArchitectureInfo(pti.architecture, arch_params, pti.path_ckpt, tbt_hook))
+        tbt_arch_info = ArchitectureInfo(training_info.architecture, arch_params, training_info.path_ckpt, tbt_hook)
+        module = FAArch(
+            old_model_info=all_src_arch_infos,
+            new_model_info=tbt_arch_info,
+            aggregate_old_reps=aggregate_reps,
+            transfer_depth=trans_depth,
+            transfer_kernel_width=trans_kernel,
+        )
+        loss = KETrainLoss(
+            similar_loss=sim_l,
+            dissimilar_loss=dis_l,
+            ce_weight=ce_weight,
+            dissim_weight=dis_loss_weight,
+            sim_weight=sim_loss_weight,
+            regularization_epoch_start=epochs_before_regularization,
+            n_classes=arch_params["n_cls"],
+        )
+        lightning_mod = IntermediateRepresentationLightningModule(
+            model_info=training_info,
+            network=module,
+            save_checkpoints=True,
+            params=p,
+            hparams=hparams,
+            loss=loss,
+            skip_n_epochs=None,
+            log=True,
+            save_approx=args.save_approximation_layers,
+        )
+
+    datamodule = fd.get_datamodule(dataset=dataset)
+    trainer = BaseTrainer(
+        model=lightning_mod,
+        datamodule=datamodule,
+        params=p,
+        basic_training_info=training_info,
+        arch_params=arch_params,
+    )
+    trainer.train()
+    trainer.save_outputs("test")
+    calibrate_model(training_info)
+    if not no_activations:
+        trainer.save_activations()
 
     return
 
