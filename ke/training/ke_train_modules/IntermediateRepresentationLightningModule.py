@@ -108,14 +108,15 @@ class IntermediateRepresentationLightningModule(BaseLightningModule):
                 new_y_hat=new_out,
                 transferred_y_hats=None,
             )
-            return self.loss.forward(
-                label=y,
-                new_out=new_out,
-                new_inter=new_inter,
-                old_inters=old_inters,
-                epoch_num=self.current_epoch,
-                global_step=self.global_step,
-            )
+            return self.loss.forward(label=y, tbt_out=new_out)
+            # return self.loss.forward(
+            #     label=y,
+            #     new_out=new_out,
+            #     new_inter=new_inter,
+            #     old_inters=old_inters,
+            #     epoch_num=self.current_epoch,
+            #     global_step=self.global_step,
+            # )
 
     def validation_epoch_end(self, outputs):
         with torch.no_grad():
