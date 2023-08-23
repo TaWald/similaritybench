@@ -281,6 +281,5 @@ class FAArch(BaseFeatureArch):
                     [lins(app_logit) for app_logit, lins in zip(approx_logits, self.all_partial_old_models_linears)],
                     dim=0,
                 )
-        out = self.new_arch(x)
 
         return list_approx_inter, list_true_inter, approx_outs, out

@@ -215,7 +215,7 @@ def main():
             save_checkpoints=True,
             params=p,
             hparams=hparams,
-            loss=loss,
+            loss=DummyLoss(),
             skip_n_epochs=None,
             log=True,
             save_approx=args.save_approximation_layers,

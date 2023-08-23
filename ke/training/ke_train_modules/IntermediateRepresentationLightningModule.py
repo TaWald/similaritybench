@@ -76,14 +76,15 @@ class IntermediateRepresentationLightningModule(BaseLightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         old_inters, new_inter, old_outs, new_out = self(x)
-        ke_fwd = self.loss.forward(
-            label=y,
-            new_out=new_out,
-            new_inter=new_inter,
-            old_inters=old_inters,
-            epoch_num=self.current_epoch,
-            global_step=self.global_step,
-        )
+        ke_fwd = self.loss.forward(label=y, tbt_out=new_out)
+        # ke_fwd = self.loss.forward(
+        #     label=y,
+        #     new_out=new_out,
+        #     new_inter=new_inter,
+        #     old_inters=old_inters,
+        #     epoch_num=self.current_epoch,
+        #     global_step=self.global_step,
+        # )
         return ke_fwd
 
     def training_epoch_end(self, outputs: list[dict]):
