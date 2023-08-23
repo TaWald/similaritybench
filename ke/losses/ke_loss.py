@@ -25,7 +25,6 @@ class KETrainLoss(nn.Module):
         n_classes: int = 10,
     ):
         super(KETrainLoss, self).__init__()
-        self.softmax = nn.Softmax(dim=1)
         self.similar_loss: AbstractRepresentationLoss = similar_loss
         self.dissimilar_loss: AbstractRepresentationLoss = dissimilar_loss
 
