@@ -32,7 +32,7 @@ class FASubtractionArch(FAArch):
         current_partials: nn.ModuleList
 
         for cur_partial_source, cur_transfer, cur_partial_tbt in zip(
-            self.all_partial_old_models_t[:-1], self.all_transfer_modules, self.all_partial_new_modules[:-1]
+            self.all_partial_old_models_t[:-1], self.all_transfer_modules, self.partial_new_modules[:-1]
         ):
             with torch.no_grad():
                 current = [cp.forward(cur) for cur, cp in zip(current, cur_partial_source)]
@@ -43,7 +43,7 @@ class FASubtractionArch(FAArch):
             list_true_inter.append(torch.unsqueeze(cur_true, dim=0))  # 1 x Batch x Ch
             list_approx_inter.append(torch.unsqueeze(approx, dim=0))
             cur_true = cur_true - approx  # THIS IS THE CRUCIAL PART HERE! Removal of approximated features!
-        cur_true = self.all_partial_new_modules[-1](cur_true)
+        cur_true = self.partial_new_modules[-1](cur_true)
         approx_logits = [pa(c) for c, pa in zip(current, self.all_partial_old_models_t[-1])]
 
         out = self.linear_layer(cur_true)
