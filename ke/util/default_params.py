@@ -7,7 +7,7 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset) -> ds.Pa
     if dataset == ds.Dataset.CIFAR10:
         params = ds.Params(
             architecture_name=architecture_name,
-            num_epochs=250,  # 250,
+            num_epochs=10,  # 250,
             save_last_checkpoint=True,
             batch_size=128,
             label_smoothing=False,
@@ -105,7 +105,7 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset) -> ds.Pa
 def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
     if isinstance(dataset, str):
         dataset = ds.Dataset(dataset)
-    if dataset == ds.Dataset.CIFAR10:
+    if dataset in [ds.Dataset.CIFAR10, ds.Dataset.TEST]:
         output_classes = 10
         in_ch = 3
         input_resolution = (32, 32)

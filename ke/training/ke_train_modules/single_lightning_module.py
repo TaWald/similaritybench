@@ -40,7 +40,13 @@ class SingleLightningModule(BaseLightningModule):
     def save_checkpoint(self):
         state_dict = self.net.get_new_model_state_dict()
         self.checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(state_dict, self.checkpoint_path)
+
+        if self.current_epoch == (self.params.num_epochs - 1):
+            torch.save(state_dict, self.checkpoint_path)
+        else:
+            debug_checkpoint_path = self.checkpoint_path.parent / f"{self.current_epoch}.ckpt"
+            torch.save(state_dict, debug_checkpoint_path)
+        # torch.save(state_dict, self.checkpoint_path)
         return
 
     def load_latest_checkpoint(self):
