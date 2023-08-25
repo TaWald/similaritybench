@@ -33,7 +33,7 @@ class SingleLightningModule(BaseLightningModule):
             skip_n_epochs=skip_n_epochs,
             log=log,
         )
-        self.automatic_optimization = True
+
         self.net: SingleModel = network
         self.loss = loss
 
@@ -41,12 +41,8 @@ class SingleLightningModule(BaseLightningModule):
         state_dict = self.net.get_new_model_state_dict()
         self.checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
 
-        if self.current_epoch == (self.params.num_epochs - 1):
+        if self.current_epoch <= (self.params.num_epochs - 1):
             torch.save(state_dict, self.checkpoint_path)
-        else:
-            debug_checkpoint_path = self.checkpoint_path.parent / f"{self.current_epoch}.ckpt"
-            torch.save(state_dict, debug_checkpoint_path)
-        # torch.save(state_dict, self.checkpoint_path)
         return
 
     def load_latest_checkpoint(self):
@@ -57,16 +53,17 @@ class SingleLightningModule(BaseLightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        dy_fwd = self.loss.forward(label=y, tbt_out=y_hat)
+        dy_fwd = self.loss.forward(label=y, new_out=y_hat)
         return dy_fwd
 
     def training_epoch_end(self, outputs: list[dict]):
         # Scheduler steps are done automatically! (No step is needed)
-        loss_values = self.loss.on_epoch_end(outputs)
-        prog_bar_log = {"tr/loss": loss_values["loss/total"]}
+        with torch.no_grad():
+            loss_values = self.loss.on_epoch_end(outputs)
+            prog_bar_log = {"tr/loss": loss_values["loss/total"]}
 
-        self.log_dict(prog_bar_log, prog_bar=True, logger=False)
-        self.log_message(loss_values, is_train=True)
+            self.log_dict(prog_bar_log, prog_bar=True, logger=False)
+            self.log_message(loss_values, is_train=True)
 
         return None
 
@@ -84,7 +81,7 @@ class SingleLightningModule(BaseLightningModule):
             )
             return self.loss.forward(
                 label=y,
-                tbt_out=y_hat,
+                new_out=y_hat,
             )
 
     def validation_epoch_end(self, outputs):
@@ -102,22 +99,6 @@ class SingleLightningModule(BaseLightningModule):
         self.log_dict(prog_bar_log, prog_bar=True, logger=False)
         self.log_message(loss_dict, is_train=False)
         return None
-
-    def configure_optimizers(self):
-        optim = torch.optim.SGD(
-            params=self.net.parameters(),
-            lr=self.params.learning_rate,
-            momentum=self.params.momentum,
-            weight_decay=self.params.weight_decay,
-            nesterov=self.params.nesterov,
-        )
-        if self.params.cosine_annealing:
-            total_epochs = self.params.num_epochs
-            # This is ugly AF, I know. But weigh rewinding with CosineLR is a pain.
-            #  Simulates normal # of epochs as previously to the scheduler.
-            #   Skips n epochs to adjust the LR to the value and have the slope be equal
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=total_epochs, eta_min=0)
-            return [optim], [scheduler]
 
 
 class WarmStartSingleLightningModule(SingleLightningModule):
@@ -151,7 +132,7 @@ class WarmStartSingleLightningModule(SingleLightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        dy_fwd = self.loss.forward(label=y, tbt_out=y_hat)
+        dy_fwd = self.loss.forward(label=y, new_out=y_hat)
         if self.warmup_pretrained:
             warmup_optim, hot_optim = self.optimizers()
             if self.current_epoch < 10:
