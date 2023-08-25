@@ -81,11 +81,14 @@ def create_transfer(
     return all_transfer_modules
 
 
-def create_single_partial_model(model_info: ArchitectureInfo) -> tuple[AbsActiExtrArch, nn.ModuleList, list[int]]:
+def create_single_partial_model(
+    model_info: ArchitectureInfo,
+) -> tuple[AbsActiExtrArch, nn.ModuleList, nn.Module, list[int]]:
     """"""
-    arch = create_model_instances([model_info])[0]
+    arch: AbsActiExtrArch = create_model_instances([model_info])[0]
     all_n_tbt_channels: list[int] = []
     all_partial_new_modules = nn.ModuleList()
+    linear_layer = arch.get_linear_layer(arch)
 
     for cnt, h in enumerate(model_info.hooks):
         all_n_tbt_channels.append(h.n_channels)
@@ -96,7 +99,7 @@ def create_single_partial_model(model_info: ArchitectureInfo) -> tuple[AbsActiEx
                 create_module(arch, None, model_info.hooks[cnt - 1], model_info.hooks[cnt])
             )
     all_partial_new_modules.append(create_module(arch, None, model_info.hooks[-1], None))
-    return arch, all_partial_new_modules, all_n_tbt_channels
+    return arch, all_partial_new_modules, linear_layer, all_n_tbt_channels
 
 
 class FAArch(BaseFeatureArch):
@@ -120,8 +123,10 @@ class FAArch(BaseFeatureArch):
         self.new_arch: AbsActiExtrArch
         self.partial_new_modules: nn.ModuleList
         all_new_channels: list[int]
-        self.new_arch, self.partial_new_modules, all_new_channels = create_single_partial_model(new_model_info)
-        self.linear_layer: nn.Module = self.new_arch.get_linear_layer(self.new_arch)
+
+        self.new_arch, self.partial_new_modules, self.linear_layer, all_new_channels = create_single_partial_model(
+            new_model_info
+        )
 
         # Create the old models & partial models.
         self.old_archs: nn.ModuleList[AbsActiExtrArch]
@@ -158,24 +163,25 @@ class FAArch(BaseFeatureArch):
             )
         ]
         # Disregard the gradients of the source models
-        self.set_trainable_gradients()
+        self.set_require_grad()
 
     def train(self, mode: bool = True):
         """
         Makes sure lightning doesn't put stuff to train mode which should remain static!
         """
-        self.training = mode
+        super(FAArch, self).train(mode)
+        # self.training = mode
 
-        self.new_arch.train()
-        self.partial_new_modules.train()
-        self.linear_layer.train()
-        self.all_transfer_modules.train()
+        # self.new_arch.train()
+        # self.partial_new_modules.train()
+        # self.linear_layer.train()
+        # self.all_transfer_modules.train()
 
         self.old_archs.eval()
         self.all_partial_old_models_t.eval()
         self.all_partial_old_models_linears.eval()
 
-    def get_new_model(self):
+    def get_new_model(self) -> AbsActiExtrArch:
         return self.new_arch
 
     def load_individual_state_dicts(
@@ -200,31 +206,27 @@ class FAArch(BaseFeatureArch):
                     src_ckpt_path = torch.load(src_ckpt_path)
                 src_arch.load_state_dict(torch.load(src_ckpt_path))
 
+    # This seems to be the issue? Adding multiple versions of trainable params?
     def get_trainable_parameters(self):
         all_params = []
-        for p in self.partial_new_modules.parameters():
-            all_params.append(p)
         for p in self.new_arch.parameters():
             all_params.append(p)
         # Enable transfer parameters
         for p in self.all_transfer_modules.parameters():
             all_params.append(p)
-        for p in self.linear_layer.parameters():
-            all_params.append(p)
+
         return all_params
 
-    def set_trainable_gradients(self):
+    def set_require_grad(self):
         """Set requires_grad of source models to false and of rest to True"""
         # Disable for source models
         for p in self.old_archs.parameters():
             p.requires_grad = False
         # Enable transfer params for target model to True
-        for p in self.partial_new_modules.parameters():
+        for p in self.new_arch.parameters():
             p.requires_grad = True
         # Enable transfer parameters
         for p in self.all_transfer_modules.parameters():
-            p.requires_grad = True
-        for p in self.linear_layer.parameters():
             p.requires_grad = True
 
     def get_state_dict(self) -> dict:
@@ -261,6 +263,7 @@ class FAArch(BaseFeatureArch):
         for cur_partial_source, cur_transfer, cur_partial_tbt in zip(
             self.all_partial_old_models_t[:-1], self.all_transfer_modules, self.partial_new_modules[:-1]
         ):
+            # torch.no_grad is unneccessary as old_arch has requires_grad=False
             with torch.no_grad():
                 current = [cp.forward(cur) for cur, cp in zip(current, cur_partial_source)]
                 tmp_current = current
