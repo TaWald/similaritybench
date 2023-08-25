@@ -100,7 +100,16 @@ class IntermediateRepresentationLightningModule(BaseLightningModule):
         x, y = batch  # ["data"], batch["label"]
 
         with torch.no_grad():
-            old_inters, new_inter, _, new_out = self(x)
+            old_inters, new_inter, old_outs, new_out = self(x)
+
+            self.save_validation_values(
+                old_intermediate_reps=old_inters,
+                new_intermediate_reps=new_inter,
+                groundtruths=y,
+                old_y_hats=old_outs,
+                new_y_hat=new_out,
+                transferred_y_hats=None,
+            )
 
             return self.loss.forward(
                 label=y,
