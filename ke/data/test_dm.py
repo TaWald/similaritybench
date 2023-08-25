@@ -17,8 +17,8 @@ from torch.utils.data import Dataset
 class TestDataset(Dataset):
     def __init__(self):
         torch.manual_seed(0)  # Make this data deterministic
-        self.data = torch.randn(200, 3, 32, 32)
-        self.targets = torch.randint(0, 10, (200,))
+        self.data = torch.randn(300, 3, 32, 32)
+        self.targets = torch.randint(0, 10, (300,))
 
     def __len__(self):
         return len(self.data)
@@ -29,8 +29,8 @@ class TestDataset(Dataset):
 
 class TestDataModule(BaseDataModule):
     datamodule_id = ds.Dataset.TEST
-    n_train = 200
-    n_test = 200
+    n_train = 300
+    n_test = 300
     n_classes = 10
 
     # If I remove split from init call:
