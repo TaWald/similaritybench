@@ -1,4 +1,5 @@
 import unittest
+from copy import deepcopy
 
 import numpy as np
 from ke.arch.ke_architectures.feature_approximation import FAArch
@@ -9,8 +10,6 @@ from ke.losses.representation_similarity_losses.ke_exp_var import ExpVarLoss
 from ke.test_helper.patched_base_trainer import get_patched_trainer
 from ke.test_helper.patched_lightning_module import getPatchedIntermediateRepresentationLightningModule
 from ke.test_helper.patched_lightning_module import getPatchedSingleLightningModule
-from ke.training.ke_train_modules import IntermediateRepresentationLightningModule
-from ke.training.ke_train_modules.single_lightning_module import SingleLightningModule
 from ke.training.trainers.base_trainer import BaseTrainer
 from ke.util import data_structs as ds
 from ke.util import find_architectures as fa
@@ -80,13 +79,13 @@ class TestTrainerBehaveIdenticallyWhenOnlyCELoss(unittest.TestCase):
         )
 
     def tearDown(self) -> None:
-        del self.faarch, self.patched_intermediate_lightning_module
+        del self.single_trainer, self.ilm_trainer
 
-    def get_single_trainers_arch_state_dict(self, single_trainer: SingleLightningModule):
+    def get_single_trainers_arch_state_dict(self, single_trainer: BaseTrainer):
         """Retrieves the AbsActiArch state dict from the SingleLightningModule"""
         return {k: v.numpy() for k, v in single_trainer.model.net.tbt_arch.state_dict().items()}
 
-    def get_inter_trainers_arch_state_dict(self, inter_trainer: IntermediateRepresentationLightningModule):
+    def get_inter_trainers_arch_state_dict(self, inter_trainer: BaseTrainer):
         """Retrieves the AbsActiArch state dict from the IntermediateRepresentationLightningModule"""
         return {k: v.numpy() for k, v in inter_trainer.model.net.new_arch.state_dict().items()}
 
@@ -101,22 +100,22 @@ class TestTrainerBehaveIdenticallyWhenOnlyCELoss(unittest.TestCase):
     def all_weights_changed(self, state_dict_a: dict, state_dict_b: dict):
         """Measure if every tensor changed at least a little bit."""
         for k, v in state_dict_a.items():
-            if np.all(np.equal(v.numpy(), state_dict_b[k].numpy())):
+            if np.all(np.equal(v, state_dict_b[k])):
                 return False
         return True
 
     def test_weights_change_the_same_way(self):
         """Does one epoch across the TestDataset and checks if all weights changed."""
-        t0_single_state_dict = self.get_single_trainers_arch_state_dict(self.single_trainer)
-        t0_inter_state_dict = self.get_inter_trainers_arch_state_dict(self.ilm_trainer)
+        t0_single_state_dict = deepcopy(self.get_single_trainers_arch_state_dict(self.single_trainer))
+        t0_inter_state_dict = deepcopy(self.get_inter_trainers_arch_state_dict(self.ilm_trainer))
         self.assertTrue(
             self.weights_are_identical(t0_single_state_dict, t0_inter_state_dict),
             msg=f"Weights at t0 are not identical between inter and single!",
         )
         # Train the single trainer
         self.single_trainer.train()
-        t1_single_state_dict = self.get_single_trainers_arch_state_dict(self.single_trainer)
-        t1_inter_state_dict = self.get_inter_trainers_arch_state_dict(self.ilm_trainer)
+        t1_single_state_dict = deepcopy(self.get_single_trainers_arch_state_dict(self.single_trainer))
+        t1_inter_state_dict = deepcopy(self.get_inter_trainers_arch_state_dict(self.ilm_trainer))
         self.assertTrue(
             self.weights_are_identical(t0_inter_state_dict, t1_inter_state_dict),
             msg=f"Weights at t0 and t1 are not identical of inter state dict despite not training!",
@@ -127,8 +126,8 @@ class TestTrainerBehaveIdenticallyWhenOnlyCELoss(unittest.TestCase):
         )
 
         self.ilm_trainer.train()
-        t2_single_state_dict = self.get_single_trainers_arch_state_dict(self.single_trainer)
-        t2_inter_state_dict = self.get_inter_trainers_arch_state_dict(self.ilm_trainer)
+        t2_single_state_dict = deepcopy(self.get_single_trainers_arch_state_dict(self.single_trainer))
+        t2_inter_state_dict = deepcopy(self.get_inter_trainers_arch_state_dict(self.ilm_trainer))
         self.assertTrue(
             self.all_weights_changed(t1_inter_state_dict, t2_inter_state_dict),
             msg=f"Weights at t1 and t2 are identical of inter state dict despite training!",

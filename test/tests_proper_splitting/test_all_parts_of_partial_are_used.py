@@ -14,12 +14,12 @@ from ke.util.default_params import get_default_arch_params
 from ke.util.default_params import get_default_parameters
 
 
-def was_called_hook(was_called: set, name: str) -> bool:
+def was_called_hook(was_called: dict, name: str) -> bool:
     def hook(*args):
         """
         Attaches a forward hook that sets `was_called` to true when it is hit.
         """
-        was_called.add(name)
+        was_called[name] = was_called[name] + 1
 
     return hook
 
@@ -86,7 +86,6 @@ class TestAllPartialsAreUsed_ResNet18(unittest.TestCase):
             dissim_weight=0,
             sim_weight=0,
             regularization_epoch_start=-1,
-            n_classes=10,
         )
 
         self.faa_pseudo_trainer = Pseudo_faa_trainer(self.faarch, p, faa_loss)
@@ -97,79 +96,64 @@ class TestAllPartialsAreUsed_ResNet18(unittest.TestCase):
         self.datamodule = fd.get_datamodule(dataset=dataset)
         # KE specific values.
 
-        self.were_called: set[str] = set()
+        self.were_called: dict = dict()
 
     def tearDown(self) -> None:
         del self.faarch, self.faa_pseudo_trainer, self.faa_optim, self.faa_scheduler
         del self.datamodule
 
-    def test_first_part_is_hit(self):
-        """
-        Assure all gradients are trainable.
-        """
+    def test_all_named_modules_are_hit_during_forward(self):
+        """Registers a forward_hook at all architecture, assuring they are hit during forward pass."""
+        named_modules = list(self.faa_pseudo_trainer.net.partial_new_modules[0].named_modules())
+        named_modules = named_modules + list(self.faa_pseudo_trainer.net.partial_new_modules[1].named_modules())
+        named_modules = named_modules + list(self.faa_pseudo_trainer.net.linear_layer.named_modules())
+        for name, module in named_modules:
+            self.were_called[name] = 0
+            module.register_forward_hook(was_called_hook(self.were_called, name))
 
-        first_relu_module = self.faa_pseudo_trainer.net.partial_new_modules[0].relu
-        first_layer_basic_block_module = self.faa_pseudo_trainer.net.partial_new_modules[0].layer1[0]
-        last_layer_basic_block_module = self.faa_pseudo_trainer.net.partial_new_modules[0].layer1[-1].identity
-
-        first_relu_module.register_forward_hook(was_called_hook(self.were_called, "first_relu"))
-        first_layer_basic_block_module.register_forward_hook(was_called_hook(self.were_called, "first_basic"))
-        last_layer_basic_block_module.register_forward_hook(was_called_hook(self.were_called, "last_basic_identity"))
-
+        # Three batches
         for cnt, batch in enumerate(self.datamodule.train_dataloader()):
             self.faa_pseudo_trainer.training_step(batch, cnt)["loss"]
 
         self.assertTrue(
-            self.were_called.issuperset(["first_relu", "first_basic", "last_basic_identity"]),
-            msg=f"""Not all first_parts were called!""",
+            all([v != 0 for v in self.were_called.values()]),
+            msg=f"""Not all modules were passed during forward: {self.were_called}!""",
         )
 
-    def test_second_part_is_hit(self):
-        """
-        Assure all gradients are trainable.
-        """
-
-        layer1 = self.faa_pseudo_trainer.net.partial_new_modules[1].layer1
-        layer2_block = self.faa_pseudo_trainer.net.partial_new_modules[1].layer2[0]
-        layer2_block_conv2 = self.faa_pseudo_trainer.net.partial_new_modules[1].layer2[0].conv2
-        layer2_block2 = self.faa_pseudo_trainer.net.partial_new_modules[1].layer2[2]
-        layer3_block0 = self.faa_pseudo_trainer.net.partial_new_modules[1].layer3[0]
-        layer3_block0_downsample = self.faa_pseudo_trainer.net.partial_new_modules[1].layer3[0].downsample
-        layer3_block2 = self.faa_pseudo_trainer.net.partial_new_modules[1].layer3[2]
-        layer4_block2 = self.faa_pseudo_trainer.net.partial_new_modules[1].layer4[2]
-
-        layer1.register_forward_hook(was_called_hook(self.were_called, "a"))
-        layer2_block.register_forward_hook(was_called_hook(self.were_called, "b"))
-        layer2_block_conv2.register_forward_hook(was_called_hook(self.were_called, "c"))
-        layer2_block2.register_forward_hook(was_called_hook(self.were_called, "d"))
-        layer3_block0.register_forward_hook(was_called_hook(self.were_called, "e"))
-        layer3_block0_downsample.register_forward_hook(was_called_hook(self.were_called, "f"))
-        layer3_block2.register_forward_hook(was_called_hook(self.were_called, "g"))
-        layer4_block2.register_forward_hook(was_called_hook(self.were_called, "h"))
+    def test_all_named_modules_are_hit_exactly_once_during_forward(self):
+        """Registers a forward_hook at all architecture, assuring they are hit during forward pass."""
+        named_modules = list(self.faa_pseudo_trainer.net.partial_new_modules[0].named_modules())
+        named_modules = named_modules + list(self.faa_pseudo_trainer.net.partial_new_modules[1].named_modules())
+        named_modules = named_modules + list(self.faa_pseudo_trainer.net.linear_layer.named_modules())
+        for name, module in named_modules:
+            self.were_called[name] = 0
+            module.register_forward_hook(was_called_hook(self.were_called, name))
 
         for cnt, batch in enumerate(self.datamodule.train_dataloader()):
             self.faa_pseudo_trainer.training_step(batch, cnt)["loss"]
 
+        # Three batches
         self.assertTrue(
-            self.were_called.issuperset(["a", "b", "c", "d", "e", "f", "g", "h"]),
-            msg=f"""Not all first_parts were called!""",
+            all([v == 3 for v in self.were_called.values()]),
+            msg=f"""Not all modules were passed during forward: {self.were_called}!""",
         )
 
-    def test_assert_partial_linear_layer_is_hit(self):
-        """
-        Assure linear_layer_is_hit are trainable.
-        """
+    def test_all_named_modules_are_hit_during_backward(self):
+        """Registers a backward at all architecture, assuring they are hit during forward pass."""
+        named_modules = list(self.faa_pseudo_trainer.net.partial_new_modules[0].named_modules())
+        named_modules = named_modules + list(self.faa_pseudo_trainer.net.partial_new_modules[1].named_modules())
+        named_modules = named_modules + list(self.faa_pseudo_trainer.net.linear_layer.named_modules())
+        for name, module in named_modules:
+            self.were_called[name] = 0
+            module.register_backward_hook(was_called_hook(self.were_called, name))
 
-        linear_layer = self.faa_pseudo_trainer.net.linear_layer
-
-        linear_layer.register_forward_hook(was_called_hook(self.were_called, "linear"))
-
+        # Three batches
         for cnt, batch in enumerate(self.datamodule.train_dataloader()):
-            self.faa_pseudo_trainer.training_step(batch, cnt)["loss"]
+            self.faa_pseudo_trainer.training_step(batch, cnt)["loss"].backward()
 
         self.assertTrue(
-            self.were_called.issuperset(["linear"]),
-            msg=f"""Not all first_parts were called!""",
+            all([v == 3 for v in self.were_called.values()]),
+            msg=f"""Not all modules were called exactly once during backwards: {self.were_called}!""",
         )
 
 

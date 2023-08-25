@@ -76,7 +76,6 @@ class TestGradientsWhenOnlySimilarity(unittest.TestCase):
             dissim_weight=0,
             sim_weight=1.0,
             regularization_epoch_start=-1,
-            n_classes=10,
         )
 
         self.faa_pseudo_trainer = Pseudo_faa_trainer(self.faarch, p, faa_loss)

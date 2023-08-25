@@ -167,7 +167,6 @@ def main():
                 dissim_weight=dis_loss_weight,
                 sim_weight=sim_loss_weight,
                 regularization_epoch_start=epochs_before_regularization,
-                n_classes=arch_params["n_cls"],
             )
             kelm = IntermediateRepresentationLightningModule(
                 model_info=training_info,

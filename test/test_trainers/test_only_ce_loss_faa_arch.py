@@ -52,7 +52,6 @@ class TestGradientsWhenOnlyCELoss(unittest.TestCase):
             dissim_weight=0,
             sim_weight=0,
             regularization_epoch_start=-1,
-            n_classes=10,
         )
 
         datamodule = TestDataModule()
@@ -118,6 +117,15 @@ class TestGradientsWhenOnlyCELoss(unittest.TestCase):
         self.patched_intermediate_lightning_module.net.train()
         tmp = self.patched_intermediate_lightning_module.configure_optimizers()
         optim = tmp[0][0]
+
+        # Do a pre-step
+        for cnt, batch in enumerate(self.trainer.datamodule.train_dataloader()):
+            optim.zero_grad()
+            with self.subTest(i=cnt):
+                loss = self.patched_intermediate_lightning_module.training_step(batch, cnt)["loss"]
+                loss.backward()
+                optim.step()
+
         for cnt, batch in enumerate(self.trainer.datamodule.train_dataloader()):
             optim.zero_grad()
             with self.subTest(i=cnt):

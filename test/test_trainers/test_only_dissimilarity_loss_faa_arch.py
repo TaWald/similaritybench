@@ -77,7 +77,6 @@ class TestGradientsWhenOnlyDissimilarity(unittest.TestCase):
             dissim_weight=1.0,
             sim_weight=0,
             regularization_epoch_start=-1,
-            n_classes=10,
         )
 
         self.faa_pseudo_trainer = Pseudo_faa_trainer(self.faarch, p, faa_loss)
@@ -94,10 +93,16 @@ class TestGradientsWhenOnlyDissimilarity(unittest.TestCase):
 
     def test_first_partial_new_arch_gradients_are_non_zero(self):
         """Test that the first part of the new architecture gradients are non-zero."""
+        for cnt, batch in enumerate(self.datamodule.val_dataloader()):
+            self.faa_optim.zero_grad()  # Make sure they are zero at the beginning
+            self.faa_pseudo_trainer.training_step(batch, cnt)["loss"].backward()
+            self.faa_optim.step()  # Maybe it's just the first step?
+
         for cnt, batch in enumerate(self.datamodule.train_dataloader()):
             self.faa_optim.zero_grad()  # Make sure they are zero at the beginning
             with self.subTest(i=cnt):
                 self.faa_pseudo_trainer.training_step(batch, cnt)["loss"].backward()
+                self.faa_optim.step()  # Maybe it's just the first step?
 
                 faa_grads_partial_new = [
                     p.grad.data.cpu().numpy() for p in self.faa_pseudo_trainer.net.partial_new_modules[0].parameters()
