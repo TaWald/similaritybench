@@ -68,5 +68,5 @@ def get_patched_trainer() -> type[BaseTrainer]:
     PatchedBaseTrainer.save_outputs = lambda *args, **kwargs: None
     PatchedBaseTrainer.save_activations = lambda *args, **kwargs: None
     PatchedBaseTrainer.train = patched_train
-    PatchedBaseTrainer.calculate_accuracy = lambda *args, **kwargs: None
+    PatchedBaseTrainer.calculate_acc = lambda *args, **kwargs: None
     return PatchedBaseTrainer
