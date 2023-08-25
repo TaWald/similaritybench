@@ -138,11 +138,11 @@ def main():
 
     if not first_model_info.model_is_finished():
         tbt_arch_info = ArchitectureInfo(first_model_info.architecture, arch_params, first_model_info.path_ckpt, None)
-        module = fa.get_base_arch(ds.BaseArchitecture(tbt_arch_info.arch_type_str))(**arch_params)
-        arch = SingleModel(module)
+        base_arch = fa.get_base_arch(ds.BaseArchitecture(tbt_arch_info.arch_type_str))(**arch_params)
+        base_arch_wrapper = SingleModel(base_arch)
 
         loss = DummyLoss(ce_weight=1.0)
-        lightning_mod = SingleLightningModule(first_model_info, arch, True, p, hparams, loss, None, True)
+        lightning_mod = SingleLightningModule(first_model_info, base_arch_wrapper, True, p, hparams, loss, None, True)
         hparams.update({"model_id": 0, "is_regularized": False})
         training_info = first_model_info
     else:
@@ -207,7 +207,6 @@ def main():
             dissim_weight=dis_loss_weight,
             sim_weight=sim_loss_weight,
             regularization_epoch_start=epochs_before_regularization,
-            n_classes=arch_params["n_cls"],
         )
         lightning_mod = IntermediateRepresentationLightningModule(
             model_info=training_info,
@@ -215,7 +214,7 @@ def main():
             save_checkpoints=True,
             params=p,
             hparams=hparams,
-            loss=DummyLoss(),
+            loss=loss,
             skip_n_epochs=None,
             log=True,
             save_approx=args.save_approximation_layers,
