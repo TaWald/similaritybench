@@ -7,7 +7,7 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset) -> ds.Pa
     if dataset == ds.Dataset.CIFAR10:
         params = ds.Params(
             architecture_name=architecture_name,
-            num_epochs=10,  # 250,
+            num_epochs=200,  # 250,
             save_last_checkpoint=True,
             batch_size=128,
             label_smoothing=False,
