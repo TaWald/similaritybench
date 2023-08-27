@@ -137,6 +137,7 @@ def main():
     arch_params = get_default_arch_params(dataset)
 
     if not first_model_info.model_is_finished():
+        print("Creating first model!")
         tbt_arch_info = ArchitectureInfo(first_model_info.architecture, arch_params, first_model_info.path_ckpt, None)
         base_arch = fa.get_base_arch(ds.BaseArchitecture(tbt_arch_info.arch_type_str))(**arch_params)
         base_arch_wrapper = SingleModel(base_arch)
@@ -149,6 +150,7 @@ def main():
         n_trained_models: int = len(file_io.get_trained_ke_models(ke_data_root_dir, ke_ckpt_root_dir))
         if (n_trained_models + 1) >= train_till_n_models:
             return
+        print(f"Found {n_trained_models} trained models! Creating model {n_trained_models + 1}!")
 
         hparams.update({"model_id": n_trained_models + 1, "is_regularized": True})
         prev_training_infos: list[ds.KETrainingInfo] = file_io.get_trained_ke_models(
