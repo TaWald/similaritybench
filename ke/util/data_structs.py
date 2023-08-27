@@ -165,7 +165,7 @@ class FirstModelInfo:
         )
 
         object.__setattr__(self, "path_ckpt", self.path_ckpt_root / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME)
-        object.__setattr__(self, "path_activations", self.path_data_root / nc.ACTI_DIR_NAME)
+        object.__setattr__(self, "path_activations", self.path_ckpt_root / nc.ACTI_DIR_NAME)
         object.__setattr__(
             self, "path_predictions_train", self.path_ckpt_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_PD_TMPLT
         )
