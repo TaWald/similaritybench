@@ -26,6 +26,7 @@ from ke.util.find_ke_loss import find_ke_loss
 
 def main():
     # --------------- Parsing
+    print("Getting started!")
     parser = argparse.ArgumentParser(description="Specify model hyperparams.")
     dpa.ke_default_parser_arguments(parser)
     args = parser.parse_args()
