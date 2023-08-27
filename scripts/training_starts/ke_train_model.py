@@ -129,7 +129,7 @@ def main():
     }
 
     arch_params = get_default_arch_params(dataset)
-
+    print(f"First model info: {first_model_info} Status: {first_model_info.model_is_finished()} finished!")
     if not first_model_info.model_is_finished():
         print("Creating first model!")
         tbt_arch_info = ArchitectureInfo(first_model_info.architecture, arch_params, first_model_info.path_ckpt, None)
