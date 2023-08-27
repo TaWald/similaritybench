@@ -25,11 +25,11 @@ from ke.util.find_ke_loss import find_ke_loss
 
 
 def main():
-    # --------------- Parsing
     print("Getting started!")
     parser = argparse.ArgumentParser(description="Specify model hyperparams.")
     dpa.ke_default_parser_arguments(parser)
     args = parser.parse_args()
+    print("Parsing done.")
 
     experiment_description: str = args.experiment_name
     architecture: ds.BaseArchitecture = ds.BaseArchitecture(args.architecture)
@@ -45,13 +45,6 @@ def main():
     tbt_arch = fa.get_base_arch(architecture)
     tmp_arch = tbt_arch(**arch_params)
     max_hooks = len(tmp_arch.hooks)
-
-    datamodule = fd.get_datamodule(dataset=dataset)
-    if args.split >= datamodule.max_splits:
-        raise ValueError(
-            f"Can't use splits greater than max splits of Datamodule! (currently: {datamodule.max_splits})!"
-        )
-    del datamodule  # Only to check that the splits is in Range!
 
     # KE specific values.
     transfer_positions: list[int] = args.transfer_positions
@@ -224,6 +217,10 @@ def main():
         )
 
     datamodule = fd.get_datamodule(dataset=dataset)
+    if args.split >= datamodule.max_splits:
+        raise ValueError(
+            f"Can't use splits greater than max splits of Datamodule! (currently: {datamodule.max_splits})!"
+        )
     trainer = BaseTrainer(
         model=lightning_mod,
         datamodule=datamodule,
