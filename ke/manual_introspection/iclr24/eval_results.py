@@ -41,6 +41,19 @@ def lambda_ablation_cifar10():
     compare_functional_same_seed_ensemble(
         lambda_ablations, 2, json_results_path=json_results_path, ckpt_result_path=ckpt_results, overwrite=False
     )
+    lambda_baseline = {
+        f"two_models__cifar10__ResNet34__None_0.00__tp_1": {
+            "dataset": "CIFAR10",
+            "architecture": "ResNet34",
+            "hooks": [1],
+            "dis_loss": "None",
+            "dis_loss_weight": 0.00,
+            "ce_loss_weight": 1.00,
+        }
+    }
+    compare_functional_same_seed_ensemble(
+        lambda_baseline, 2, json_results_path=json_results_path, ckpt_result_path=ckpt_results, overwrite=False
+    )
 
 
 def cifar10_resnet_34_ensemble_early_middle_late_very_late_vs_baseline():
@@ -86,7 +99,7 @@ def cifar10_resnet_34_ensemble_early_middle_late_very_late_vs_baseline():
 
 
 def main():
-    lambda_ablation_cifar10()
+    cifar10_resnet_34_ensemble_early_middle_late_very_late_vs_baseline()
 
 
 if __name__ == "__main__":
