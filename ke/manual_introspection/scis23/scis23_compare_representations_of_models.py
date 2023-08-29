@@ -233,7 +233,9 @@ def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> Mode
     logit_a = torch.from_numpy(np.concatenate(logit_a, axis=0))[None, ...]  # Expand first dim. (is expected
     logit_b = torch.from_numpy(np.concatenate(logit_b, axis=0))
 
-    metrics = multi_output_metrics(logit_b, logit_a, gt, "CIFAR10", "ResNet34")
+    metrics = multi_output_metrics(
+        logit_b, logit_a, gt, hparams["dataset"], hparams["architecture"], datamodule.n_classes
+    )
 
     res = ModelToModelComparison(
         g_id_a=None,
@@ -364,6 +366,9 @@ def compare_models_functional(models: list[Path], hparams: dict) -> list[OutputE
 
 
 def get_matching_model_dirs_of_ke_ensembles(ke_src_path: Path, wanted_hparams: dict) -> list[tuple[Path, dict]]:
+    """Returns a list of all model directories that match the wanted hparams.
+    wanted_hparams can also contain a list of values for a key. In that case all models that match any of the values are returned.
+    """
     matching_dirs: list[tuple[Path, dict]] = []
     ke_src_paths = list(ke_src_path.iterdir())
     for ke_p in ke_src_paths:
@@ -421,6 +426,11 @@ def get_matching_model_dirs_of_ke_ensembles(ke_src_path: Path, wanted_hparams: d
 
 @dataclass
 class SeedResult:
+    """Contains the HParams of a seed (a trained sequence) and the path to the models as dict of model_id -> path.
+    Additionally it contains the path to the checkpoints as dict of model_id -> path for convenience.
+    IMPORTANT: Per default models and checkpoints are not set and need to be filled post-init!
+    """
+
     hparams: dict
     models: dict[int, Path] = field(init=False)
     checkpoints: dict[int, Path] = field(init=False)
@@ -430,12 +440,11 @@ def get_models_with_ids_from_dir_and_first_model(
     model_paths: list[tuple[Path, dict]], model_ids: list[int]
 ) -> list[SeedResult]:
     """
-    Extracts all models from the path.
-    If model_ids list contains the 0 it also grabs the first unregularized models. ([0,...]).
-    besides that saves all models of all group_ids in the
+    Extracts all models from the path (which contains the whole sequence of traied models).
+    Since the very first model is shared, it is not present in the dir, but if model_ids
+    contains the 0 it will also grabs the first unregularized model. ([0,...]).
 
     Returns a list of all model_ids (different group_ids) with path to ckpt source.
-
     """
     all_models_of_ensemble: list[SeedResult] = []
 
@@ -466,7 +475,8 @@ def get_models_with_ids_from_dir_and_first_model(
 
 def get_ckpts_from_paths(seed_result: SeedResult) -> SeedResult:
     """
-    Returns the checkpoints of the paths.
+    Fills the checkpoints dict of the seed_result with the paths to the checkpoints.
+
     """
 
     seed_result.checkpoints = {}

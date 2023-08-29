@@ -143,7 +143,12 @@ class KEOutputAlternatingTrainingModule(BaseLightningModule):
 
         with torch.no_grad():
             out_metrics = multi_output_metrics(
-                self.new_y_out, self.old_y_outs, self.gts, self.params.dataset, self.params.architecture_name
+                self.new_y_out,
+                self.old_y_outs,
+                self.gts,
+                self.params.dataset,
+                self.params.architecture_name,
+                self.ke_hparams["n_cls"],
             )
             self.final_metrics = asdict(out_metrics)
             tensorboard_dict.update({f"metrics/{k}": v for k, v in self.final_metrics.items()})

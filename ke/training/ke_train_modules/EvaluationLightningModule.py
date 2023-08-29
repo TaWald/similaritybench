@@ -8,6 +8,8 @@ import torch
 from ke.arch.arch_loading import load_model_from_info_file
 from ke.metrics.ke_metrics import multi_output_metrics
 from ke.metrics.ke_metrics import single_output_metrics
+from ke.util import find_datamodules
+from ke.util.data_structs import Dataset
 from ke.util.data_structs import FirstModelInfo
 from ke.util.load_own_objects import load_temperature_from_info
 from torch import nn
@@ -27,6 +29,7 @@ class EvaluationLightningModule(pl.LightningModule):
 
         self.infos = infos
         self.dataset_name = dataset_name
+        self.num_classes = find_datamodules.get_datamodule(Dataset(dataset_name)).num_classes
         self.arch_name = arch_name
         self.models = nn.ModuleList(architectures)
         self._calibrated = False
@@ -83,6 +86,7 @@ class EvaluationLightningModule(pl.LightningModule):
                         groundtruth=self.gts,
                         dataset=self.dataset_name,
                         architecture=self.arch_name,
+                        n_cls=self.num_classes,
                     )
                 )
         if self._calibrated:
@@ -96,6 +100,7 @@ class EvaluationLightningModule(pl.LightningModule):
                             groundtruth=self.gts,
                             dataset=self.dataset_name,
                             architecture=self.arch_name,
+                            n_cls=self.num_classes,
                         )
                     )
 

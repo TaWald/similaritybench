@@ -109,10 +109,20 @@ class KEUnusableDownstreamLightningModule(BaseLightningModule):
             self.save_checkpoint()
             loss_values = self.calculate_loss(self.new_y_out, self.y_transferred_outs, self.gts)
             out_metrics = multi_output_metrics(
-                self.new_y_out, self.old_y_outs, self.gts, self.params.dataset, self.params.architecture_name
+                self.new_y_out,
+                self.old_y_outs,
+                self.gts,
+                self.params.dataset,
+                self.params.architecture_name,
+                self.ke_hparams["n_cls"],
             )
             trans_metrics = multi_output_metrics(
-                self.new_y_out, self.y_transferred_outs, self.gts, self.params.dataset, self.params.architecture_name
+                self.new_y_out,
+                self.y_transferred_outs,
+                self.gts,
+                self.params.dataset,
+                self.params.architecture_name,
+                self.ke_hparams["n_cls"],
             )
 
             metrics = asdict(out_metrics)

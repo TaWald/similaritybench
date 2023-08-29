@@ -22,6 +22,8 @@ from ke.util import data_structs as ds
 from numpy import genfromtxt
 from torch.nn import functional as F
 from torch.nn.functional import cross_entropy
+from torchmetrics.functional import accuracy
+from torchmetrics.functional import calibration_error
 
 
 @cache
@@ -118,10 +120,7 @@ def mutual_bald(logits) -> t.Tensor:
     return pred_entropy(tp_logits) - exp_entropy(tp_logits)
 
 
-def single_output_metrics(
-    new_output: t.Tensor,
-    groundtruth: t.Tensor,
-) -> SingleOutMetrics:
+def single_output_metrics(new_output: t.Tensor, groundtruth: t.Tensor, n_cls: int) -> SingleOutMetrics:
     """
     Calculates a variety of metrics for a single model.
 
@@ -132,10 +131,10 @@ def single_output_metrics(
     # num_classes = new_output.shape[-1]
     new_prob = F.softmax(new_output, dim=-1)
     new_y_hat_class_id = t.argmax(new_prob, dim=-1)
-    acc: float = float(t.mean(new_y_hat_class_id == groundtruth, dtype=t.float).detach().cpu())
+    acc: float = accuracy(new_y_hat_class_id, groundtruth, task="multiclass", num_classes=n_cls)
     # ToDo: fix
-    # ece = calibration_error(new_prob, groundtruth, task="multiclass", n_bins=15, num_classes=num_classes)
-    # ece = float(ece.detach().cpu())
+    ece = calibration_error(new_prob, groundtruth, task="multiclass", n_bins=15, num_classes=n_cls)
+    ece = float(ece.detach().cpu())
 
     ce = float(cross_entropy(new_output, groundtruth).detach().cpu())
     max_softmax_confidence = t.max(new_prob, dim=-1).values  # Softmax max probability
@@ -156,6 +155,7 @@ def multi_output_metrics(
     groundtruth: t.Tensor,
     dataset: ds.Dataset | str,
     architecture: ds.BaseArchitecture | str,
+    n_cls: int,
 ) -> MultiOutMetrics:
     """
     Calculates a variety of metrics that are based on multiple output predictions being present.
@@ -193,10 +193,7 @@ def multi_output_metrics(
 
         # ----------- Ensemble Calibration: -----------
         # ToDo: Fix
-        # ensemble_ece = float(np.nan)
-        # ensemble_ece = calibration_error(
-        #     ensemble_probs, groundtruth, task="multiclass", n_bins=15, num_classes=num_classes
-        # )
+        ensemble_ece = calibration_error(ensemble_probs, groundtruth, task="multiclass", n_bins=15, num_classes=n_cls)
         ensemble_ece = float(np.nan)
 
         # ---- Ensemble Accuracy

@@ -105,6 +105,7 @@ class KEAdversarialLenseOutputLightningModule(BaseLightningModule):
             groundtruth=self.gts,
             dataset=self.params.dataset,
             architecture=self.params.architecture_name,
+            n_cls=self.ke_hparams["n_cls"],
         )
         self.final_metrics = {k: float(v) for k, v in asdict(tensor_metrics).items()}
 

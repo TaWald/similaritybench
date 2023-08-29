@@ -98,7 +98,12 @@ class KEOutputLightningModule(BaseLightningModule):
         self.save_checkpoint()
         loss_dict = self.loss.on_epoch_end(outputs)
         out_metrics = multi_output_metrics(
-            self.new_y_out, self.old_y_outs, self.gts, self.params.dataset, self.params.architecture_name
+            self.new_y_out,
+            self.old_y_outs,
+            self.gts,
+            self.params.dataset,
+            self.params.architecture_name,
+            self.ke_hparams["n_cls"],
         )
         self.final_metrics = asdict(out_metrics)
 

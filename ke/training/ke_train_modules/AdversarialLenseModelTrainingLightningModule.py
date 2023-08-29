@@ -88,7 +88,12 @@ class AdversarialLenseModelTrainingLightningModule(BaseLightningModule):
         mean_loss = torch.stack(outputs, dim=0).mean()
 
         tensor_metrics = multi_output_metrics(
-            self.new_y_out, self.old_y_outs, self.gts, self.params.dataset, self.params.architecture_name
+            self.new_y_out,
+            self.old_y_outs,
+            self.gts,
+            self.params.dataset,
+            self.params.architecture_name,
+            self.ke_hparams["n_cls"],
         )
 
         self.final_metrics = {k: float(v) for k, v in asdict(tensor_metrics).items()}

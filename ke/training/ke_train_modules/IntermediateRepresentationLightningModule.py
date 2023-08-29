@@ -136,7 +136,12 @@ class IntermediateRepresentationLightningModule(BaseLightningModule):
             )
             first_out_metric = single_output_metrics(self.new_y_out, self.gts)
             out_metrics = multi_output_metrics(
-                self.new_y_out, self.old_y_outs, self.gts, self.params.dataset, self.params.architecture_name
+                self.new_y_out,
+                self.old_y_outs,
+                self.gts,
+                self.params.dataset,
+                self.params.architecture_name,
+                self.ke_hparams["n_cls"],
             )
             self.final_metrics = asdict(first_out_metric)  # Join dicts
             self.final_metrics = asdict(rep_metrics) | asdict(out_metrics)  # Join dicts
