@@ -193,11 +193,12 @@ def multi_output_metrics(
 
         # ----------- Ensemble Calibration: -----------
         # ToDo: Fix
-        ensemble_ece = calibration_error(ensemble_probs, groundtruth, task="multiclass", n_bins=15, num_classes=n_cls)
-        ensemble_ece = float(np.nan)
+        ensemble_ece = float(
+            calibration_error(ensemble_probs, groundtruth, task="multiclass", n_bins=15, num_classes=n_cls)
+        )
 
         # ---- Ensemble Accuracy
-        ensemble_acc = accuracy(ensemble_y_hat, groundtruth, "multiclass", n_cls)
+        ensemble_acc = accuracy(ensemble_y_hat, groundtruth, "multiclass", num_classes=n_cls)
         ensemble_acc = float(ensemble_acc.detach().cpu())
 
         # ---- Relative Ensemble Performance
