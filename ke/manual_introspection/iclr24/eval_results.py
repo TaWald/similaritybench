@@ -49,22 +49,23 @@ def cifar10_resnet_34_ensemble_early_middle_late_very_late_vs_baseline():
     to an ensemble of early, middle, late and very late regularization. (weight 1.0)
     """
     cifar10_resnet_34_ensemble = {
-        f"ensemble__cifar10__ResNet34__ExpVar_1.00__tp_{i}": {
+        f"ensemble__cifar10__ResNet34__ExpVar_{dlw:.02f}__tp_{i}": {
             "dataset": "CIFAR10",
             "architecture": "ResNet34",
             "hooks": [i],
             "dis_loss": "ExpVar",
-            "dis_loss_weight": 1.00,
+            "dis_loss_weight": dlw,
             "ce_loss_weight": 1.00,
         }
         for i in [1, 3, 8, 13]
+        for dlw in [0.25, 1.0, 4.0]
     }
     compare_functional_same_seed_ensemble(
         cifar10_resnet_34_ensemble,
         5,
         json_results_path=json_results_path,
         ckpt_result_path=ckpt_results,
-        overwrite=False,
+        overwrite=True,
     )
     cifar10_resnet_34_ensemble_baseline = {
         f"ensemble__cifar10__ResNet34__baseline": {
@@ -80,12 +81,12 @@ def cifar10_resnet_34_ensemble_early_middle_late_very_late_vs_baseline():
         5,
         json_results_path=json_results_path,
         ckpt_result_path=ckpt_results,
-        overwrite=False,
+        overwrite=True,
     )
 
 
 def main():
-    cifar10_resnet_34_ensemble_early_middle_late_very_late_vs_baseline()
+    lambda_ablation_cifar10()
 
 
 if __name__ == "__main__":
