@@ -181,7 +181,7 @@ def multi_output_metrics(
         ensemble_y_hat = t.argmax(ensemble_probs, dim=1)
 
         # ---- New model accuracy
-        single_metrics = single_output_metrics(new_output, groundtruth)
+        single_metrics = single_output_metrics(new_output, groundtruth, n_cls)
 
         # ----------- Ensemble Uncertainty: -----------
         max_softmax_confidence = t.max(ensemble_probs, dim=-1).values

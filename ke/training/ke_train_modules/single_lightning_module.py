@@ -86,7 +86,7 @@ class SingleLightningModule(BaseLightningModule):
 
     def validation_epoch_end(self, outputs):
         loss_dict = self.loss.on_epoch_end(outputs)
-        single_metrics = single_output_metrics(self.new_y_out, self.gts)
+        single_metrics = single_output_metrics(self.new_y_out, self.gts, self.ke_hparams["n_cls"])
         self.final_metrics = asdict(single_metrics)
 
         loss_dict.update({f"metrics/{k}": v for k, v in self.final_metrics.items()})

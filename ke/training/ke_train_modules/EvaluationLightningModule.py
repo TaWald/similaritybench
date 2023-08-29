@@ -76,7 +76,7 @@ class EvaluationLightningModule(pl.LightningModule):
     def on_validation_end(self) -> None:
         for i in range(self.outputs.shape[0]):
             self.all_single_metrics[i] = asdict(
-                single_output_metrics(new_output=self.outputs[i], groundtruth=self.gts)
+                single_output_metrics(new_output=self.outputs[i], groundtruth=self.gts, n_cls=self.num_classes)
             )
             if i > 0:
                 self.all_ensemble_metrics[i] = asdict(

@@ -71,7 +71,7 @@ def compare_single_model(path_to_dir: Path) -> SingleOutMetrics:
     gt = torch.cat(gt, axis=0)
     predictions = torch.cat(logits, axis=0)
 
-    metrics = single_output_metrics(predictions, gt)
+    metrics = single_output_metrics(predictions, gt, datamodule.n_classes)
 
     print(asdict(metrics))
 

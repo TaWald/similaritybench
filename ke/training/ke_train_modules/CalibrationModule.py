@@ -66,8 +66,8 @@ class Calibrator:
         uncalibrated_logits = all_logits
         calibrated_logits = all_logits / self.temperature
 
-        uncalibrated_metrics = single_output_metrics(uncalibrated_logits, all_labels)
-        calibrated_metrics = single_output_metrics(calibrated_logits, all_labels)
+        uncalibrated_metrics = single_output_metrics(uncalibrated_logits, all_labels, self.model.n_cls)
+        calibrated_metrics = single_output_metrics(calibrated_logits, all_labels, self.model.n_cls)
 
         assert np.isclose(
             uncalibrated_metrics.accuracy, calibrated_metrics.accuracy

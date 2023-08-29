@@ -134,7 +134,7 @@ class IntermediateRepresentationLightningModule(BaseLightningModule):
                 calc_cka=True,
                 calc_cos=True,
             )
-            first_out_metric = single_output_metrics(self.new_y_out, self.gts)
+            first_out_metric = single_output_metrics(self.new_y_out, self.gts, self.ke_hparams["n_cls"])
             out_metrics = multi_output_metrics(
                 self.new_y_out,
                 self.old_y_outs,

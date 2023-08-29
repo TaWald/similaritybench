@@ -110,8 +110,12 @@ class AdversarialLenseLightningModule(BaseLightningModule):
         self.save_checkpoint()
         out = self.loss.on_epoch_end(outputs)
 
-        aug_metrics = single_output_metrics(new_output=self.y_transferred_outs[0, ...], groundtruth=self.gts)
-        cln_metrics = single_output_metrics(new_output=self.old_y_outs[0, ...], groundtruth=self.gts)
+        aug_metrics = single_output_metrics(
+            new_output=self.y_transferred_outs[0, ...], groundtruth=self.gts, n_cls=self.ke_hparams["n_cls"]
+        )
+        cln_metrics = single_output_metrics(
+            new_output=self.old_y_outs[0, ...], groundtruth=self.gts, n_cls=self.ke_hparams["n_cls"]
+        )
 
         out["metrics/augmented_accuracy"] = aug_metrics.accuracy
         out["metrics/clean_accuracy"] = cln_metrics.accuracy
