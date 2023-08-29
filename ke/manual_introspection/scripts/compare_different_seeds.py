@@ -5,7 +5,7 @@ from pathlib import Path
 
 from ke.manual_introspection.scripts import grouped_model_results as grm
 from ke.manual_introspection.scripts.compare_representations_of_models import ckpt_results
-from ke.manual_introspection.scripts.compare_representations_of_models import compare_models_parallel
+from ke.manual_introspection.scripts.compare_representations_of_models import compare_models_representations_parallel
 from ke.manual_introspection.scripts.compare_representations_of_models import get_ckpts_from_paths
 from ke.manual_introspection.scripts.compare_representations_of_models import get_matching_model_dirs_of_ke_ensembles
 from ke.manual_introspection.scripts.compare_representations_of_models import (
@@ -59,7 +59,7 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
         else:
             layer_results: list[ModelToModelComparison] = []
             for a, b in tqdm(cross_seed_unregularized_paths[:20]):
-                res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
+                res = compare_models_representations_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 layer_results.append(res)
             save_json(
                 [{**asdict(lr), **hparams_dict} for lr in layer_results],
@@ -71,7 +71,7 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
         else:
             layer_results: list[ModelToModelComparison] = []
             for a, b in tqdm(in_seed_regularized_unregularized):
-                res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
+                res = compare_models_representations_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 layer_results.append(res)
             save_json(
                 [{**asdict(lr), **hparams_dict} for lr in layer_results],
@@ -83,7 +83,7 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
         else:
             layer_results: list[ModelToModelComparison] = []
             for a, b in tqdm(cross_seed_unregularized_regularized_paths):
-                res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
+                res = compare_models_representations_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 layer_results.append(res)
             save_json(
                 [{**asdict(lr), **hparams_dict} for lr in layer_results],
@@ -95,7 +95,7 @@ def create_comps_between_regularized_unregularized_by_id(hparam: dict, overwrite
         else:
             layer_results: list[ModelToModelComparison] = []
             for a, b in tqdm(cross_seed_regularized_paths):
-                res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
+                res = compare_models_representations_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 layer_results.append(res)
             save_json(
                 [{**asdict(lr), **hparams_dict} for lr in layer_results],
@@ -122,7 +122,7 @@ def create_comps_between_single_5_consecutive_models(hparam: dict, overwrite=Fal
         json_results = {"hparams": first_seed_with_5_models.hparams, "results": []}
         for i in range(n_models):
             for j in range(n_models):
-                res = compare_models_parallel(
+                res = compare_models_representations_parallel(
                     model_a=first_seed_with_5_models.checkpoints[i],
                     model_b=first_seed_with_5_models.checkpoints[j],
                     hparams=first_seed_with_5_models.hparams,

@@ -188,7 +188,7 @@ def reshape(acti: torch.Tensor):
     return acti
 
 
-def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> ModelToModelComparison:
+def compare_models_representations_parallel(model_a: Path, model_b: Path, hparams: dict) -> ModelToModelComparison:
     arch_a: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))()
     arch_b: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))()
 
@@ -288,7 +288,9 @@ def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> Mode
     logit_a = torch.from_numpy(np.concatenate(logit_a, axis=0))[None, ...]  # Expand first dim. (is expected
     logit_b = torch.from_numpy(np.concatenate(logit_b, axis=0))
 
-    metrics = multi_output_metrics(logit_b, logit_a, gt, "CIFAR10", "ResNet34")
+    metrics = multi_output_metrics(
+        logit_b, logit_a, gt, hparams["dataset"], hparams["architecture"], datamodule.n_classes
+    )
 
     res = ModelToModelComparison(
         g_id_a=None,
@@ -311,7 +313,7 @@ def get_matching_model_dirs_of_ke_ensembles(ke_src_path: Path, wanted_hparams: d
     matching_dirs: list[tuple[Path, dict]] = []
     ke_src_paths = list(ke_src_path.iterdir())
     for ke_p in ke_src_paths:
-        if ke_p.name.startswith("FIRST"):
+        if ke_p.name.startswith("FIRST") or ke_p.name.startswith(".DS") or ke_p.name.startswith("._."):
             continue
         decodes = io.KENameEncoder.decode(ke_p)
         (
@@ -677,7 +679,7 @@ def create_baseline_comparisons(hparam: dict, overwrite=False):
 
         seed_result: SeedResult
         for ckpt_a, ckpt_b in tqdm(list(itertools.combinations(all_ckpts, 2))):
-            res = compare_models_parallel(ckpt_a, ckpt_b, hparams=hparams_dict)
+            res = compare_models_representations_parallel(ckpt_a, ckpt_b, hparams=hparams_dict)
             layer_results.append(res)
         save_json(
             [{**asdict(lr), **hparams_dict} for lr in layer_results],
@@ -701,7 +703,7 @@ def create_same_seed_comparisons(hparam: dict, overwrite=False):
         for seed_result in tqdm(model_ckpt_paths[:20]):
             combis = itertools.combinations(seed_result.checkpoints.values(), r=2)
             for a, b in combis:
-                res = compare_models_parallel(model_a=a, model_b=b, hparams=hparams_dict)
+                res = compare_models_representations_parallel(model_a=a, model_b=b, hparams=hparams_dict)
                 layer_results.append(res)
         if len(layer_results) == 0:
             warn("Nothing to save. skipping file creation!")
