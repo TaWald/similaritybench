@@ -271,7 +271,6 @@ def compare_models_functional(models: list[Path], hparams: dict) -> list[OutputE
     datamodule = find_datamodules.get_datamodule(ds.Dataset(hparams["dataset"]))
     if hparams["dataset"] in ["CIFAR10", "CIFAR100"]:
         dataloader = datamodule.test_dataloader(
-            0,
             transform=ds.Augmentation.VAL,
             **{
                 "shuffle": False,
