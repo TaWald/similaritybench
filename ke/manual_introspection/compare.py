@@ -269,18 +269,34 @@ def compare_models_functional(models: list[Path], hparams: dict) -> list[OutputE
                 raise e
 
     datamodule = find_datamodules.get_datamodule(ds.Dataset(hparams["dataset"]))
-    val_dataloader = datamodule.val_dataloader(
-        0,
-        transform=ds.Augmentation.VAL,
-        **{
-            "shuffle": False,
-            "drop_last": False,
-            "pin_memory": True,
-            "batch_size": 250,
-            "num_workers": 0,
-            "persistent_workers": False,
-        },
-    )
+    if hparams["dataset"] in ["CIFAR10", "CIFAR100"]:
+        dataloader = datamodule.test_dataloader(
+            0,
+            transform=ds.Augmentation.VAL,
+            **{
+                "shuffle": False,
+                "drop_last": False,
+                "pin_memory": True,
+                "batch_size": 128,
+                "num_workers": 0,
+                "persistent_workers": False,
+            },
+        )
+    elif hparams["dataset"] == "ImageNet":
+        dataloader = datamodule.val_dataloader(
+            0,
+            transform=ds.Augmentation.VAL,
+            **{
+                "shuffle": False,
+                "drop_last": False,
+                "pin_memory": True,
+                "batch_size": 128,
+                "num_workers": 0,
+                "persistent_workers": False,
+            },
+        )
+    else:
+        raise NotImplementedError(f"Dataset {hparams['dataset']} not implemented yet.")
 
     archs = [arch.cuda() for arch in archs]
 
@@ -292,7 +308,7 @@ def compare_models_functional(models: list[Path], hparams: dict) -> list[OutputE
 
     # create 2d array of combinations of all_activations_a and all_activations_b
     with torch.no_grad():
-        for batch in val_dataloader:
+        for batch in dataloader:
             x, y = batch
             x = x.cuda()
             gt.append(y.detach().cpu())
@@ -303,10 +319,10 @@ def compare_models_functional(models: list[Path], hparams: dict) -> list[OutputE
     logits_cat: list[torch.Tensor] = [torch.cat(logit, axis=0) for logit in logits]
 
     # Calculate the metrics for n_models = 1, 2, 3, ..., n
-    result = []
+    result: list[OutputEnsembleResults] = []
     ke_metrics = []
     for i in range(2, len(archs) + 1):
-        result.append(final_multi_output_metrics([l.numpy() for l in logits_cat], gt_cat.numpy()))
+        result.append(final_multi_output_metrics([l.numpy() for l in logits_cat[:i]], gt_cat.numpy()))
         ke_metrics.append(
             multi_output_metrics(
                 logits_cat[i - 1],
@@ -319,7 +335,7 @@ def compare_models_functional(models: list[Path], hparams: dict) -> list[OutputE
         )
 
     for r in result:
-        r.regularization_metric = hparams["dis_loss"] if hparams["dis_loss"] in hparams.keys() else "None"
+        r.regularization_metric = hparams["dis_loss"] if "dis_loss" in hparams.keys() else "None"
         r.regularization_position = hparams["hooks"][0]
 
     return result

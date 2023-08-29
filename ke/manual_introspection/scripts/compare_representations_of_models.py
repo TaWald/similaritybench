@@ -213,18 +213,34 @@ def compare_models_representations_parallel(model_a: Path, model_b: Path, hparam
             raise e
 
     datamodule = find_datamodules.get_datamodule(ds.Dataset(hparams["dataset"]))
-    val_dataloader = datamodule.val_dataloader(
-        0,
-        transform=ds.Augmentation.VAL,
-        **{
-            "shuffle": False,
-            "drop_last": False,
-            "pin_memory": True,
-            "batch_size": 128,
-            "num_workers": 0,
-            "persistent_workers": False,
-        },
-    )
+    if hparams["dataset"] in ["CIFAR10", "CIFAR100"]:
+        dataloader = datamodule.test_dataloader(
+            0,
+            transform=ds.Augmentation.VAL,
+            **{
+                "shuffle": False,
+                "drop_last": False,
+                "pin_memory": True,
+                "batch_size": 128,
+                "num_workers": 0,
+                "persistent_workers": False,
+            },
+        )
+    elif hparams["dataset"] == "ImageNet":
+        dataloader = datamodule.val_dataloader(
+            0,
+            transform=ds.Augmentation.VAL,
+            **{
+                "shuffle": False,
+                "drop_last": False,
+                "pin_memory": True,
+                "batch_size": 128,
+                "num_workers": 0,
+                "persistent_workers": False,
+            },
+        )
+    else:
+        raise NotImplementedError(f"Dataset {hparams['dataset']} not implemented yet.")
 
     arch_a = arch_a.cuda()
     arch_b = arch_b.cuda()
@@ -252,7 +268,7 @@ def compare_models_representations_parallel(model_a: Path, model_b: Path, hparam
     for cnt, h in enumerate(arch_b.hooks):
         all_handles_b.append(arch_b.register_parallel_batch_cka_hooks(h, all_activations_b[h.name]))
     with torch.no_grad():
-        for batch in val_dataloader:
+        for batch in dataloader:
             x, y = batch
             x = x.cuda()
             gt.append(y.detach().cpu().numpy())
