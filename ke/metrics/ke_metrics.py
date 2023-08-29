@@ -206,7 +206,7 @@ def multi_output_metrics(
 
         # ---- Old mean accuracy
         old_acc = t.mean(
-            t.stack([accuracy(tmp_y, groundtruth, "multiclass", n_cls) for tmp_y in old_y_hat_class_ids])
+            t.stack([accuracy(tmp_y, groundtruth, "multiclass", num_classes=n_cls) for tmp_y in old_y_hat_class_ids])
         )
         mean_old_acc = float(old_acc.detach().cpu())
 
