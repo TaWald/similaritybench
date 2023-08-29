@@ -148,11 +148,16 @@ def compare_functional_same_seed_ensemble(
 
         json_results_path.mkdir(parents=True, exist_ok=True)
         this_output_file = json_results_path / f"functional_{wanted_hparams_name}.json"
+
         if this_output_file.exists():
             existing_json = load_json(this_output_file)
             if len(existing_json) == ((len(model_ids) - 1) * len(model_ckpt_paths)):
-                print("Skipping existing file")
-                continue
+                if overwrite:  # Go ahead despite existing.
+                    print("Overwriting existing file")
+                    pass
+                else:
+                    print("Skipping existing file")
+                    continue
 
         # ToDo: Currently the checkpoints seem to not provide the right performance?
         #   At least the different models preform differently Whats the Issue! -> Checkpoint?/Loading?/Eval?
