@@ -1,6 +1,6 @@
 # Done all but VGG19
 cnt = 0
-for arch in ["ResNet34", "ResNet101"]:  # , "ResNet101"]:
+for arch in ["ResNet34"]:  # , "ResNet101"]:
     trans_pos = [[1]]
     group_id = [0, 1, 2, 3, 4]
     for tp in trans_pos:
@@ -16,12 +16,12 @@ for arch in ["ResNet34", "ResNet101"]:  # , "ResNet101"]:
                 for dl in dis_loss_weight:  # [01.0]
                     epochs_before_regularization = -1
                     exp_name = "ICLR24"
-                    dataset = ["ImageNet"]
+                    dataset = ["CIFAR10"]
                     if arch == "ResNet101":
                         min_gmem = "14.5"
                     else:
                         min_gmem = "10.5"
-                    tr_n_models = 2
+                    tr_n_models = 5
                     tk = 1
                     if dis_loss == "LinCKA":
                         td = 0
@@ -30,8 +30,7 @@ for arch in ["ResNet34", "ResNet101"]:  # , "ResNet101"]:
                     for ds in dataset:  # trans_depth = 1
                         reg_pos = " ".join([str(t) for t in tp])
                         print(
-                            f"""bsub -L /bin/bash -R "select[hname!='e230-dgx1-1']" """
-                            + f""" -R "select[hname!='e230-dgxa100-4']" -R "tensorcore" """
+                            f"""bsub -L /bin/bash -R "select[hname!='e230-dgx1-1']" -R "tensorcore" """
                             + f"""-gpu num=1:j_exclusive=yes:mode=exclusive_process:gmem={min_gmem}G -q gpu"""
                             + f""" ./ke_training.sh"""
                             + f""" /home/t006d/Code/knowledge_extension/scripts/training_starts/ke_train_model.py"""
