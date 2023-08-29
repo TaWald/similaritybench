@@ -131,7 +131,7 @@ def single_output_metrics(new_output: t.Tensor, groundtruth: t.Tensor, n_cls: in
     # num_classes = new_output.shape[-1]
     new_prob = F.softmax(new_output, dim=-1)
     new_y_hat_class_id = t.argmax(new_prob, dim=-1)
-    acc: float = accuracy(new_y_hat_class_id, groundtruth, task="multiclass", num_classes=n_cls)
+    acc: float = float(accuracy(new_y_hat_class_id, groundtruth, task="multiclass", num_classes=n_cls).detach().cpu())
     # ToDo: fix
     ece = calibration_error(new_prob, groundtruth, task="multiclass", n_bins=15, num_classes=n_cls)
     ece = float(ece.detach().cpu())
@@ -197,14 +197,16 @@ def multi_output_metrics(
         ensemble_ece = float(np.nan)
 
         # ---- Ensemble Accuracy
-        ensemble_acc = t.mean(ensemble_y_hat == groundtruth, dtype=t.float)
+        ensemble_acc = accuracy(ensemble_y_hat, groundtruth, "multiclass", n_cls)
         ensemble_acc = float(ensemble_acc.detach().cpu())
 
         # ---- Relative Ensemble Performance
         rel_ens_performance = float(relative_ensemble_performance(joint_yhats, ensemble_y_hat, groundtruth))
 
         # ---- Old mean accuracy
-        old_acc = t.mean(t.stack([t.mean(tmp_y == groundtruth, dtype=t.float) for tmp_y in old_y_hat_class_ids]))
+        old_acc = t.mean(
+            t.stack([accuracy(tmp_y, groundtruth, "multiclass", n_cls) for tmp_y in old_y_hat_class_ids])
+        )
         mean_old_acc = float(old_acc.detach().cpu())
 
         # ---- Error ratio
