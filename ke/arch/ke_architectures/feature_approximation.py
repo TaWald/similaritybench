@@ -170,12 +170,6 @@ class FAArch(BaseFeatureArch):
         Makes sure lightning doesn't put stuff to train mode which should remain static!
         """
         super(FAArch, self).train(mode)
-        # self.training = mode
-
-        # self.new_arch.train()
-        # self.partial_new_modules.train()
-        # self.linear_layer.train()
-        # self.all_transfer_modules.train()
 
         self.old_archs.eval()
         self.all_partial_old_models_t.eval()
