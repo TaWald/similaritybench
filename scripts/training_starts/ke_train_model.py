@@ -125,6 +125,7 @@ def main():
         "group_id": group_id,
         "model_id": None,
         "is_regularized": None,
+        "n_cls": fd.get_datamodule(dataset).n_classes,
         **vars(p),
     }
 

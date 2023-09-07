@@ -5,6 +5,7 @@ from ke.data.imagenet100_dm import Imagenet100DataModule
 from ke.data.imagenet_dm import ImagenetDataModule
 from ke.data.medmnist_dm import DermaMNISTDataModule
 from ke.data.test_dm import TestDataModule
+from ke.data.tiny_imagenet_dm import TinyImagenetDataModule
 from ke.util import data_structs as ds
 
 
@@ -20,6 +21,8 @@ def get_datamodule(dataset: ds.Dataset) -> BaseDataModule:
         return ImagenetDataModule()
     elif dataset == ds.Dataset.IMAGENET100:
         return Imagenet100DataModule()
+    elif dataset == ds.Dataset.TinyIMAGENET:
+        return TinyImagenetDataModule()
     elif dataset == ds.Dataset.DermaMNIST:
         return DermaMNISTDataModule()
     elif dataset == ds.Dataset.SPLITCIFAR100:

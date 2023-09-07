@@ -46,6 +46,7 @@ class Dataset(Enum):
     IMAGENET = "ImageNet"
     IMAGENET100 = "ImageNet100"
     DermaMNIST = "DermaMNIST"
+    TinyIMAGENET = "TinyImageNet"
 
 
 class BaseArchitecture(Enum):
