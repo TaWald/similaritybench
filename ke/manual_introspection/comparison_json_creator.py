@@ -180,6 +180,62 @@ def compare_functional_same_seed_ensemble(
     return
 
 
+def compare_functional_ensemble_of_first_models_across_seeds(
+    hparam: dict,
+    json_results_path: Path,
+    ckpt_result_path: Path,
+    overwrite=False,
+):
+    """
+    This ensembles the first models of the same configuration (as they are the ones that get regularized the best) and then
+    evaluates their performance to baseline"""
+    model_ids = list(range(2))
+    for wanted_hparams_name, hparams_dict in hparam.items():
+        model_ids = list(range(2))
+
+        # Get the regularized models
+        model_ckpt_paths: list[SeedResult] = get_seed_results_of_interest(ckpt_result_path, hparams_dict, model_ids)
+        model_ckpt_paths = filter_all_results_that_dont_have_n_models(model_ckpt_paths, 2)
+
+        json_results_path.mkdir(parents=True, exist_ok=True)
+        this_output_file = json_results_path / f"functional_first_models_ensemble_{wanted_hparams_name}.json"
+
+        if this_output_file.exists():
+            existing_json = load_json(this_output_file)
+            if len(existing_json) == ((len(model_ids) - 1) * len(model_ckpt_paths)):
+                if overwrite:  # Go ahead despite existing.
+                    print("Overwriting existing file")
+                    pass
+                else:
+                    print("Skipping existing file")
+                    continue
+
+        list_of_checkpoints: list[Path] = [mcp.checkpoints[1] for mcp in model_ckpt_paths]
+
+        n_2_models = list(itertools.combinations(list_of_checkpoints, 2))
+        n_3_models = list(itertools.combinations(list_of_checkpoints, 3))
+        n_4_models = list(itertools.combinations(list_of_checkpoints, 4))
+        n_5_models = list(itertools.combinations(list_of_checkpoints, 5))
+
+        layer_results: list[OutputEnsembleResults] = []
+
+        for n_model in [n_2_models, n_3_models, n_4_models, n_5_models]:
+            for ckpt_paths in tqdm(list(n_model)):
+                res = compare_models_functional(list(ckpt_paths), hparams=hparams_dict)
+                filtered_res = [r for r in res if r.n_models == len(ckpt_paths)]  # Filter duplicates
+                layer_results.extend(filtered_res)
+
+        if len(layer_results) == 0:
+            warn("Nothing to save. skipping file creation!")
+            continue
+        else:
+            save_json(
+                [{**asdict(lr), **hparams_dict} for lr in layer_results],
+                json_results_path / f"functional_first_regularized_model_ensemble_{wanted_hparams_name}.json",
+            )
+    return
+
+
 def compare_representation_same_seed_ensemble(
     hparam: dict,
     n_models: int,
