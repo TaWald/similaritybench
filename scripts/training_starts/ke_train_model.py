@@ -1,6 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
+from warnings import warn
 
 from ke.arch.ke_architectures.feature_approximation import FAArch
 from ke.arch.ke_architectures.single_model import SingleModel
@@ -142,15 +143,22 @@ def main():
         hparams.update({"model_id": 0, "is_regularized": False})
         training_info = first_model_info
     else:
-        n_trained_models: int = len(file_io.get_trained_ke_models(ke_data_root_dir, ke_ckpt_root_dir))
+        prev_training_infos: list[ds.KETrainingInfo] = file_io.get_trained_ke_models(
+            ke_data_root_dir, ke_ckpt_root_dir
+        )
+        n_trained_models: int = len(prev_training_infos)
         if (n_trained_models + 1) >= train_till_n_models:
             return
         print(f"Found {n_trained_models} trained models! Creating model {n_trained_models + 1}!")
 
+        if not all(
+            [prev_training_info.training_succeeded(first_model_info) for prev_training_info in prev_training_infos]
+        ):
+            warn("Not all previous models were trained successfully! Skipping training of new one.")
+            sys.exit(1)
+
         hparams.update({"model_id": n_trained_models + 1, "is_regularized": True})
-        prev_training_infos: list[ds.KETrainingInfo] = file_io.get_trained_ke_models(
-            ke_data_root_dir, ke_ckpt_root_dir
-        )
+
         model_id = len(prev_training_infos) + 1
         new_model = nc.MODEL_NAME_TMPLT.format(model_id)
 

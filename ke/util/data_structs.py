@@ -228,6 +228,20 @@ class FirstModelInfo:
         else:
             return False
 
+    def training_succeeded(self, unregularized_model: FirstModelInfo) -> bool:
+        """
+        Checks that the new model converged to reasonable accuracy,
+        relative to its first (unregularized model).
+        Should the difference
+        be too large, the training is considered a failure and training should abort."""
+        if self.is_trained():
+            own_accuracy = load_json(self.path_output_json)["val"]["accuracy"]
+            first_accuracy = load_json(unregularized_model.path_output_json)["val"]["accuracy"]
+            if first_accuracy - own_accuracy > 0.15:
+                return False
+            else:
+                return True
+
     def has_checkpoint(self):
         """Checks whether model has a checkpoint."""
         return self.path_ckpt.exists()
