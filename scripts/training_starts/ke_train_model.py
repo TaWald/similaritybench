@@ -38,7 +38,7 @@ def main():
     no_activations = args.no_activations
     aggregate_reps = args.aggregate_reps
 
-    train_till_n_models = args.train_till_n_models
+    train_till_n_models = args.xz
 
     arch_params = get_default_arch_params(dataset)
     p: ds.Params = get_default_parameters(architecture.value, dataset)
@@ -149,13 +149,14 @@ def main():
         n_trained_models: int = len(prev_training_infos)
         if (n_trained_models + 1) >= train_till_n_models:
             return
-        print(f"Found {n_trained_models} trained models! Creating model {n_trained_models + 1}!")
 
         if not all(
             [prev_training_info.training_succeeded(first_model_info) for prev_training_info in prev_training_infos]
         ):
             warn("Not all previous models were trained successfully! Skipping training of new one.")
             sys.exit(1)
+        else:
+            print(f"Found {n_trained_models} successfully trained models! Creating model {n_trained_models + 1}!")
 
         hparams.update({"model_id": n_trained_models + 1, "is_regularized": True})
 
