@@ -2,8 +2,9 @@ import os
 from pathlib import Path
 
 from ke.data.base_datamodule import BaseDataModule
+from ke.data.cutout_aug import Cutout
 from ke.data.tiny_imagenet_ds import TinyImageNetDataset
-from ke.randaugment.randaugment import ImageNetPolicy
+from ke.randaugment.randaugment import CIFAR10Policy
 from ke.util import data_structs as ds
 from torch.utils.data import DataLoader
 from torchvision import transforms as trans
@@ -34,7 +35,8 @@ class TinyImagenetDataModule(BaseDataModule):
             [
                 trans.RandomResizedCrop(list(self.image_size)),
                 trans.RandomHorizontalFlip(),
-                ImageNetPolicy(),
+                CIFAR10Policy(),
+                Cutout(size=16),
                 trans.ToTensor(),
                 trans.Normalize(self.mean, self.std),
             ]
