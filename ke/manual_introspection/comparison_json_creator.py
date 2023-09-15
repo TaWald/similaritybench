@@ -44,17 +44,6 @@ def filter_all_results_that_dont_have_n_models(seed_results: list[SeedResult], n
     return filtered_seed_results
 
 
-def remove_all_but_interesting_checkpoints(seed_results: list[SeedResult], n_models: list[int]) -> list[SeedResult]:
-    """Insert only the interesting checkpoints."""
-    filtered_seed_results: list[SeedResult] = []
-    for mcp in seed_results:
-        new_see_result = SeedResult(mcp.hparams)
-        new_see_result.checkpoints = {k: v for k, v in mcp.checkpoints.items() if k in n_models}
-        new_see_result.models = {k: v for k, v in mcp.models.items() if k in n_models}
-
-    return filtered_seed_results
-
-
 def get_only_first_and_second_model(seed_results: list[SeedResult]) -> list[SeedResult]:
     """Removes every Checkpoint and Model but the first and second from the list of SeedResults.""" ""
     filtered_seed_results: list[SeedResult] = []
@@ -144,7 +133,6 @@ def compare_functional_same_seed_ensemble(
     for wanted_hparams_name, hparams_dict in hparam.items():
         model_ids = list(range(n_models))
         model_ckpt_paths = get_seed_results_of_interest(ckpt_result_path, hparams_dict, model_ids)
-        model_ckpt_paths = filter_all_results_that_dont_have_n_models(model_ckpt_paths, n_models)
 
         json_results_path.mkdir(parents=True, exist_ok=True)
         this_output_file = json_results_path / f"functional_{wanted_hparams_name}.json"
@@ -165,6 +153,7 @@ def compare_functional_same_seed_ensemble(
         layer_results: list[OutputEnsembleResults] = []
         seed_result: SeedResult
         for seed_result in tqdm(model_ckpt_paths):
+            seed_result.remove_non_converged_entries()
             layer_results.extend(
                 compare_models_functional(list(seed_result.checkpoints.values()), hparams=hparams_dict)
             )
