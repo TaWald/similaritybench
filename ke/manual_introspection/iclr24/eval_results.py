@@ -1,3 +1,4 @@
+from ke.manual_introspection.comparison_json_creator import compare_functional_ensemble_of_first_models_across_seeds
 from ke.manual_introspection.comparison_json_creator import compare_functional_same_seed_ensemble
 from ke.manual_introspection.comparison_json_creator import compare_representations_same_seed_first_to_second
 from ke.manual_introspection.iclr24.paths import ckpt_results
@@ -78,7 +79,7 @@ def cifar10_resnet_34_ensemble_early_middle_late_very_late_vs_baseline():
         5,
         json_results_path=json_results_path,
         ckpt_result_path=ckpt_results,
-        overwrite=True,
+        overwrite=False,
     )
     cifar10_resnet_34_ensemble_baseline = {
         f"ensemble__cifar10__ResNet34__baseline": {
@@ -87,6 +88,7 @@ def cifar10_resnet_34_ensemble_early_middle_late_very_late_vs_baseline():
             "dis_loss": "None",
             "dis_loss_weight": 0.00,
             "ce_loss_weight": 1.00,
+            "hooks": [1],
         }
     }
     compare_functional_same_seed_ensemble(
@@ -98,8 +100,93 @@ def cifar10_resnet_34_ensemble_early_middle_late_very_late_vs_baseline():
     )
 
 
+def cifar100_resnet_34_ensemble_early_middle_late_very_late_vs_baseline():
+    """
+    Evaluates the unregularized ensemble of 5 models of ResNet34 (trained on CIFAR10),
+    to an ensemble of early, middle, late and very late regularization. (weight 1.0)
+    """
+    cifar100_resnet_34_ensemble = {
+        f"ensemble__cifar100__ResNet34__ExpVar_{dlw:.02f}__tp_{i}": {
+            "dataset": "CIFAR100",
+            "architecture": "ResNet34",
+            "hooks": [i],
+            "dis_loss": "ExpVar",
+            "dis_loss_weight": dlw,
+            "ce_loss_weight": 1.00,
+        }
+        for i in [1, 3, 8, 13]
+        for dlw in [0.25, 1.0, 4.0]
+    }
+    compare_functional_same_seed_ensemble(
+        cifar100_resnet_34_ensemble,
+        5,
+        json_results_path=json_results_path,
+        ckpt_result_path=ckpt_results,
+        overwrite=False,
+    )
+    cifar100_resnet_34_ensemble_baseline = {
+        f"ensemble__cifar100__ResNet34__baseline": {
+            "dataset": "CIFAR100",
+            "architecture": "ResNet34",
+            "dis_loss": "None",
+            "dis_loss_weight": 0.00,
+            "ce_loss_weight": 1.00,
+            "hooks": [1],
+        }
+    }
+    compare_functional_same_seed_ensemble(
+        cifar100_resnet_34_ensemble_baseline,
+        5,
+        json_results_path=json_results_path,
+        ckpt_result_path=ckpt_results,
+        overwrite=True,
+    )
+
+
+def cifar100_resnet_34_first_model_ensembles_vs_baseline():
+    """
+    Evaluates the unregularized ensemble of 5 models of ResNet34 (trained on CIFAR10),
+    to an ensemble of early, middle, late and very late regularization. (weight 1.0)
+    """
+    cifar100_resnet_34_ensemble = {
+        f"first_models_ensemble__cifar100__ResNet34__ExpVar_{dlw:.02f}__tp_{i}": {
+            "dataset": "CIFAR100",
+            "architecture": "ResNet34",
+            "hooks": [i],
+            "dis_loss": "ExpVar",
+            "dis_loss_weight": dlw,
+            "ce_loss_weight": 1.00,
+        }
+        for i in [1, 3, 8, 13]
+        for dlw in [0.25, 1.0, 4.0]
+    }
+    compare_functional_ensemble_of_first_models_across_seeds(
+        cifar100_resnet_34_ensemble,
+        json_results_path=json_results_path,
+        ckpt_result_path=ckpt_results,
+        overwrite=False,
+    )
+    cifar100_resnet_34_ensemble_baseline = {
+        f"ensemble__imagenet__ResNet34__baseline": {
+            "dataset": "CIFAR100",
+            "architecture": "ResNet34",
+            "dis_loss": "None",
+            "dis_loss_weight": 0.00,
+            "ce_loss_weight": 1.00,
+            "hooks": [1],
+        }
+    }
+    compare_functional_same_seed_ensemble(
+        cifar100_resnet_34_ensemble_baseline,
+        5,
+        json_results_path=json_results_path,
+        ckpt_result_path=ckpt_results,
+        overwrite=True,
+    )
+
+
 def main():
-    cifar10_resnet_34_ensemble_early_middle_late_very_late_vs_baseline()
+    cifar100_resnet_34_first_model_ensembles_vs_baseline()
 
 
 if __name__ == "__main__":
