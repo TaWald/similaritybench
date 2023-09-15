@@ -16,6 +16,7 @@ def average_multiple_ensemble(res: list[dict]):
         avg_result["N Models"] = i
         avg_result["Metric"] = models_of_same_number[0]["Metric"]
         avg_result["Layer"] = models_of_same_number[0]["Layer"]
+        avg_result["Loss Weight"] = models_of_same_number[0]["Loss Weight"]
         avg_result["Ensemble Acc"] = tmp["ensemble_accuracy"].mean()
         avg_result["Ensemble Acc Std"] = tmp["ensemble_accuracy"].std()
         avg_result["New Model Acc"] = tmp["new_model_accuracy"].mean()
