@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 from dataclasses import field
+from logging import warn
 from pathlib import Path
 
 import numpy as np
+from ke.util import name_conventions as nc
+from ke.util.file_io import load_json
 
 
 @dataclass
@@ -31,6 +34,30 @@ class SeedResult:
     hparams: dict
     models: dict[int, Path] = field(init=False)
     checkpoints: dict[int, Path] = field(init=False)
+
+    def remove_non_converged_entries(self) -> "SeedResult":
+        first_model_acc = load_json(self.models[0] / nc.OUTPUT_TMPLT)["val"]["accuracy"]
+        one_failed = False
+
+        for k, v in self.checkpoints.items():
+            if one_failed:
+                self.models.pop(k)
+                self.checkpoints.pop(k)
+                continue
+
+            if not v.exists():
+                self.models.pop(k)
+                self.checkpoints.pop(k)
+                one_failed = True
+                warn(f"Model {k} did not converge!")
+            else:
+                new_model_acc = load_json(self.models[k] / nc.OUTPUT_TMPLT)["val"]["accuracy"]
+                if new_model_acc < first_model_acc - 0.15:
+                    self.models.pop(k)
+                    self.checkpoints.pop(k)
+                    one_failed = True
+                    warn(f"Model {k} did not converge!")
+        return self
 
 
 @dataclass
