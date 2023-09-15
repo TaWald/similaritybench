@@ -13,6 +13,7 @@ from ke.metrics.ke_metrics import multi_output_metrics
 from ke.util import data_structs as ds
 from ke.util import find_architectures
 from ke.util import find_datamodules
+from ke.util.default_params import get_default_arch_params
 from ke.util.file_io import strip_state_dict_of_keys
 from torch.functional import F
 
@@ -251,14 +252,19 @@ def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> Mode
     return res
 
 
-def compare_models_functional(models: list[Path], hparams: dict) -> list[OutputEnsembleResults]:
+def compare_models_functional(checkpoint_paths: list[Path], hparams: dict) -> list[OutputEnsembleResults]:
     """
     Loads the models and calculates the performance of the growing ensemble of models.
     So returns a list of results of len(models) - 1 (one for each possible stopping point 2, 3, 4, ..., n models)
     """
-    archs = [find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))() for _ in models]
-    for arch, model in zip(archs, models):
-        ckpt: dict = torch.load(str(model))
+
+    arch_params = get_default_arch_params(hparams["dataset"])
+    archs = [
+        find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))(**arch_params)
+        for _ in checkpoint_paths
+    ]
+    for arch, checkpoint_p in zip(archs, checkpoint_paths):
+        ckpt: dict = torch.load(str(checkpoint_p))
         try:
             arch.load_state_dict(ckpt)
         except RuntimeError as _:  # noqa
@@ -319,19 +325,21 @@ def compare_models_functional(models: list[Path], hparams: dict) -> list[OutputE
 
     # Calculate the metrics for n_models = 1, 2, 3, ..., n
     result: list[OutputEnsembleResults] = []
-    ke_metrics = []
+    # ke_metrics: list[MultiOutMetrics] = []
     for i in range(2, len(archs) + 1):
-        result.append(final_multi_output_metrics([l.numpy() for l in logits_cat[:i]], gt_cat.numpy()))
-        ke_metrics.append(
-            multi_output_metrics(
-                logits_cat[i - 1],
-                torch.stack(logits_cat[: i - 1]),
-                gt_cat,
-                hparams["dataset"],
-                hparams["architecture"],
-                datamodule.n_classes,
-            )
-        )
+        out_metrics = final_multi_output_metrics([l.numpy() for l in logits_cat[:i]], gt_cat.numpy())
+        if out_metrics.new_model_accuracy > 0.5:
+            result.append(out_metrics)  # Only append if the new model converged!
+            # ke_metrics.append(
+            #     multi_output_metrics(
+            #         logits_cat[i - 1],
+            #         torch.stack(logits_cat[: i - 1]),
+            #         gt_cat,
+            #         hparams["dataset"],
+            #         hparams["architecture"],
+            #         datamodule.n_classes,
+            #     )
+            # )
 
     for r in result:
         r.regularization_metric = hparams["dis_loss"] if "dis_loss" in hparams.keys() else "None"
