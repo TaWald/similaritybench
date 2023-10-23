@@ -2,13 +2,14 @@ import os
 from pathlib import Path
 
 from ke.data.base_datamodule import BaseDataModule
-from ke.randaugment.randaugment import CIFAR10Policy
 from ke.randaugment.randaugment import Cutout
 from ke.util import data_structs as ds
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
 from torchvision import transforms as trans
 from torchvision.datasets import CIFAR100
+
+#  from ke.randaugment.randaugment import CIFAR10Policy
 
 
 # from ke.data import auto_augment
@@ -41,7 +42,7 @@ class CIFAR100DataModule(BaseDataModule):
             [
                 trans.RandomCrop(self.image_size, padding=4, fill=(128, 128, 128)),
                 trans.RandomHorizontalFlip(),
-                CIFAR10Policy(),
+                # CIFAR10Policy(),
                 Cutout(size=16),
                 trans.ToTensor(),
                 trans.Normalize(self.mean, self.std),
