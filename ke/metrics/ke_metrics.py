@@ -84,6 +84,25 @@ class MultiOutMetrics(SingleOutMetrics):
 
 
 @dataclass
+class MultiOutMetricsParallel:
+    mean_accuracy: float
+    accuracies: dict[int:float]
+
+    # Ensembled Metrics
+    ensemble_accuracy: float
+    ensemble_max_softmax_aurc: float
+    ensemble_mutual_info_aurc: float
+    rel_ensemble_performance: float  # Ensemble Acc / Mean Single Accs
+    ensemble_ece: float  # Ensemble estimate calibration error
+
+    # Cohens Kappa
+    cohens_kappa: ds.GroupMetrics
+    error_ratio: ds.GroupMetrics
+    jensen_shannon_div: ds.GroupMetrics
+    n_models: int
+
+
+@dataclass
 class RepresentationMetrics:
     celu_r2: float | None = None
     corr: float | None = None
@@ -147,6 +166,65 @@ def single_output_metrics(new_output: t.Tensor, groundtruth: t.Tensor, n_cls: in
     # aurc_mi = aurc(residual, mi_confidence)
 
     return SingleOutMetrics(accuracy=acc, ce=ce, ece=np.nan, max_softmax_aurc=paurc_sm, mutual_info_aurc=paurc_mi)
+
+
+def parallel_multi_output_metrics(
+    outputs: t.Tensor,
+    groundtruth: t.Tensor,
+) -> MultiOutMetricsParallel:
+    with t.no_grad():
+        n_cls = outputs.shape[-1]
+        # Calculation of probabilties and predicted classes.
+        logits = outputs
+        probs = F.softmax(logits, dim=-1)
+        y_hats = t.argmax(probs, dim=-1)
+
+        ensemble_probs = t.mean(probs, dim=0)
+        ensemble_y_hat = t.argmax(ensemble_probs, dim=1)
+
+        # ---- Single model accuracy
+        single_accuracies = [accuracy(y_hat, groundtruth, "multiclass", num_classes=n_cls) for y_hat in y_hats]
+        # ---- Cohens Kappa
+        unbound_probs: list[t.Tensor] = t.unbind(probs, dim=0)
+        unbound_yhats: list[t.Tensor] = t.unbind(y_hats, dim=0)
+
+        cks = calculate_cohens_kappas(unbound_yhats, groundtruth)
+        jsds = jensen_shannon_divergences(unbound_probs)
+        err = calculate_error_ratios(unbound_yhats, groundtruth)
+
+        # ----------- Ensemble Uncertainty: -----------
+        max_softmax_confidence = t.max(ensemble_probs, dim=-1).values
+        mi_confidence = mutual_bald(logits)
+
+        residual = (~(ensemble_y_hat == groundtruth)).float()
+        ensemble_ms_aurc = parallel_aurc(residual, max_softmax_confidence)
+        ensemble_mi_aurc = parallel_aurc(residual, mi_confidence)
+
+        # ----------- Ensemble Calibration: -----------
+        ensemble_ece = float(
+            calibration_error(ensemble_probs, groundtruth, task="multiclass", n_bins=15, num_classes=n_cls)
+        )
+
+        # ---- Ensemble Accuracy
+        ensemble_acc = accuracy(ensemble_y_hat, groundtruth, "multiclass", num_classes=n_cls)
+        ensemble_acc = float(ensemble_acc.detach().cpu())
+
+        # ---- Relative Ensemble Performance
+        rel_ens_performance = float(relative_ensemble_performance(y_hats, ensemble_y_hat, groundtruth))
+
+    return MultiOutMetricsParallel(
+        mean_accuracy=float(t.mean(t.stack(single_accuracies)).cpu()),
+        accuracies={i: float(acc.detach().cpu()) for i, acc in enumerate(single_accuracies)},
+        ensemble_accuracy=ensemble_acc,
+        ensemble_max_softmax_aurc=ensemble_ms_aurc,
+        ensemble_mutual_info_aurc=ensemble_mi_aurc,
+        rel_ensemble_performance=rel_ens_performance,
+        ensemble_ece=ensemble_ece,
+        cohens_kappa=cks,
+        error_ratio=err,
+        jensen_shannon_div=jsds,
+        n_models=n_cls,
+    )
 
 
 def multi_output_metrics(

@@ -1,4 +1,4 @@
-from ke.losses.output_losses.adaptive_diversity_promoting_regularization import AdaptiveDiversityPromotion
+from ke.losses.output_losses.adaptive_diversity_promoting_regularization import AdaptiveDiversityPromotionV2
 from ke.losses.output_losses.ensemble_entropy_maximization import EnsembleEntropyMaximization
 from ke.losses.output_losses.entropy_weighted_boosting import EntropyWeightedBoosting
 from ke.losses.output_losses.false_predicted_crossentropy import FalsePredictedCrossEntropy
@@ -77,7 +77,8 @@ def find_output_ke_loss(loss_name: str, n_classes: int, *args):
     elif loss_name == "PseudoKnowledgeExtension8":
         return PseudoKnowledgeExtension8(n_classes)
     elif loss_name == "AdaptiveDiversityPromotion":
-        return AdaptiveDiversityPromotion(n_classes, *args)
+        raise NotImplementedError("Removed due to changes in underlying funcs")
+        #  AdaptiveDiversityPromotion(n_classes, *args)
     elif loss_name == "FocalCosineSimProbability":
         return FocalCosineSimProbability(n_classes, *args)
     elif loss_name == "FocalEnsembleEntropyMaximization":
@@ -86,3 +87,14 @@ def find_output_ke_loss(loss_name: str, n_classes: int, *args):
         return NoneOutputLoss(n_classes)
     else:
         raise NotImplementedError
+
+
+def find_parallel_ke_loss(loss_name: str, *args):
+    if loss_name == "NegativeCorrelationLearning":
+        raise NotImplementedError("NegativeCorrelationLearning not implemented yet")
+    elif loss_name == "AdaptiveDiversityPromotion":
+        return AdaptiveDiversityPromotionV2(*args)
+    elif loss_name == "SaliencyDiversity":
+        raise NotImplementedError("SaliencyDiversity not implemented yet")
+    else:
+        raise NotImplementedError("Unknown loss passed")

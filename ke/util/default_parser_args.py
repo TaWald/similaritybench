@@ -195,6 +195,62 @@ def ke_default_parser_arguments(parser: argparse.ArgumentParser):
     )
 
 
+def ke_parallel_parser_arguments(parser: argparse.ArgumentParser):
+    parser.add_argument("-exp", "--experiment_name", default="cifar10", nargs="?")
+    parser.add_argument(
+        "-d",
+        "--dataset",
+        default=ds.Dataset.CIFAR10.value,
+        nargs="?",
+        choices=[c.value for c in list(ds.Dataset)],
+        type=str,
+        help="Dataset name to be trained on.",
+    )
+    parser.add_argument(
+        "-a",
+        "--architecture",
+        choices=[c.value for c in list(ds.BaseArchitecture)],
+        default=ds.BaseArchitecture.RESNET50.value,
+        type=str,
+        nargs="?",
+        help="Name of the architecture to train.",
+    )
+    parser.add_argument(
+        "-gid",
+        "--group_id",
+        type=int,
+        required=True,
+        help="To differentiate between different groups with same config (for MC runs)",
+    )
+    parser.add_argument(
+        "-n",
+        "--n_models",
+        default=1,
+        type=int,
+        help="The total number of models that are trained.",
+    )
+    parser.add_argument(
+        "-disl",
+        "--dis_loss",
+        default="ADP",
+        type=str,
+        help="Indicator which loss will be used for training.",
+    )
+    parser.add_argument(
+        "-ce",
+        "--ce_loss_weight",
+        default=1,
+        type=float,
+        help="Weight of the Cross Entropy in the CELU loss",
+    )
+    parser.add_argument(
+        "-disw",
+        "--dis_loss_weight",
+        type=float,
+        help="Weight of the Dissimilarity in the CELU loss",
+    )
+
+
 def ke_unuseable_downstream_parser_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("-exp", "--experiment_name", default="cifar10", nargs="?")
     parser.add_argument(

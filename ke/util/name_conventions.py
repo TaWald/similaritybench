@@ -93,6 +93,59 @@ class KENameEncoder:
         )
 
 
+class KEParallel:
+    @staticmethod
+    def encode(
+        experiment_description: str,
+        dataset: str,
+        n_models: int,
+        architecture: str,
+        group_id: int,
+        dis_loss: str,
+        dis_loss_weight: float,
+        ce_loss_weight: float,
+    ):
+        return (
+            f"{experiment_description}__{n_models}__{dataset}__{architecture}__GroupID_{group_id}"
+            + f"__Dis_{dis_loss}_{dis_loss_weight}_{ce_loss_weight:.02f}"
+        )
+
+    @staticmethod
+    def decode(
+        dirname: str | Path,
+    ) -> tuple[str, int, str, str, int, str, float, float]:
+        """Decodes the Directory name that has been encoded.
+        :returns experiment name, hook_id, transfer_depth, transfer_width, kernel_width
+        """
+
+        values = str(dirname).split("__")
+        try:
+            (
+                exp_description,
+                n_models,
+                dataset,
+                architecture,
+                group_id,
+                dis_l,
+            ) = values
+        except ValueError as e:
+            raise ValueError(f"{dirname} seems not to be up to current knowledge_extension naming standards.") from e
+        group_id_i: int = int(group_id.split("_")[-1])
+        dis_stuff: list = dis_l.split("_")
+        dis_loss, dis_loss_weight, ce_loss_weight = dis_stuff[1], float(dis_stuff[2]), float(dis_stuff[3])
+
+        return (
+            exp_description,
+            n_models,
+            dataset,
+            architecture,
+            group_id_i,
+            dis_loss,
+            dis_loss_weight,
+            ce_loss_weight,
+        )
+
+
 class KEUnusableDownstreamNameEncoder:
     @staticmethod
     def encode(
@@ -477,6 +530,8 @@ class KEAdversarialLenseOutputNameEncoder:
 
 
 KNOWLEDGE_EXTENSION_DIRNAME = "knowledge_extension_iclr24"
+KE_PARALLEL_DIR = "ke_parallel"
+BASELINE_ADP_DIR = "baseline_adp"
 # KNOWLEDGE_EXTENSION_DIRNAME = "knowledge_extension"
 KNOWLEDGE_UNUSEABLE_DIRNAME = "knowledge_extension_unusable_downstream"
 KNOWLEDGE_ADVERSARIAL_DIRNAME = "knowledge_adversarial_extension"
@@ -583,6 +638,8 @@ DISTIL_MODEL_NAME_TMPLT = "distil_mID_{}_arch_{}_source_mID_{}_arch_{}"
 STATIC_CKPT_NAME = "final.ckpt"
 APPROX_CKPT_NAME = "approx_layer_{}.ckpt"
 APPROX_CKPT_INFO_NAME = "approx_layer_info_{}.json"
+CKPT_PARALLEL_TMPLT = "model_{}.ckpt"
+CKPT_PARALLEL_RE = r"^model_\d+.ckpt$"
 CKPT_NAME_TMPLT = "epoch_{}.ckpt"
 CKPT_NAME_RE = r"^epoch_\d+.ckpt$"
 

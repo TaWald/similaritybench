@@ -100,6 +100,72 @@ class TransferLayersInfo:
 
 
 @dataclass(frozen=True)
+class ParallelModelInfo:
+    dir_name: str
+    n_models: int
+    group_id: int
+
+    architecture: str
+    dataset: str
+
+    path_root: Path
+    # Results json
+    path_output_json: Path = field(init=False)
+    sequence_ensemble_json: Path = field(init=False)
+    sequence_calibrated_ensemble_json: Path = field(init=False)
+    path_last_metrics_json: Path = field(init=False)
+    path_calib_json: Path = field(init=False)
+    path_train_log: Path = field(init=False)
+    path_train_info_json: Path = field(init=False)
+
+    robust_sequence_ensemble_json: Path = field(init=False)
+    robust_calib_sequence_ensemble_json: Path = field(init=False)
+
+    path_ckpt: Path = field(init=False)
+    path_activations: Path = field(init=False)
+    path_predictions_train: Path = field(init=False)
+    path_predictions_test: Path = field(init=False)
+    path_groundtruths_train: Path = field(init=False)
+    path_groundtruths_test: Path = field(init=False)
+
+    def __post_init__(self):
+        object.__setattr__(self, "sequence_ensemble_json", self.path_root / nc.ENSEMBLE_RESULTS_FILE)
+        object.__setattr__(
+            self,
+            "sequence_calibrated_ensemble_json",
+            self.path_root / nc.CALIBRATED_ENSEMBLE_RESULTS_FILE,
+        )
+        object.__setattr__(self, "robust_sequence_single_json", self.path_root / nc.ROBUST_SINGLE_RESULTS)
+        object.__setattr__(self, "robust_sequence_ensemble_json", self.path_root / nc.ROBUST_ENSEMBLE_RESULTS)
+        object.__setattr__(
+            self,
+            "robust_calib_sequence_ensemble_json",
+            self.path_root / nc.ROBUST_CALIB_ENS_RESULTS,
+        )
+
+        object.__setattr__(self, "path_ckpt", self.path_root / nc.CKPT_DIR_NAME)
+        self.path_ckpt.mkdir(exist_ok=True, parents=True)
+        object.__setattr__(self, "path_activations", self.path_root / nc.ACTI_DIR_NAME)
+        object.__setattr__(
+            self, "path_predictions_train", self.path_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_PD_TMPLT
+        )
+        object.__setattr__(self, "path_predictions_test", self.path_root / nc.ACTI_DIR_NAME / nc.MODEL_TEST_PD_TMPLT)
+        object.__setattr__(
+            self, "path_groundtruths_train", self.path_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_GT_TMPLT
+        )
+        object.__setattr__(self, "path_groundtruths_test", self.path_root / nc.ACTI_DIR_NAME / nc.MODEL_TEST_GT_TMPLT)
+        object.__setattr__(self, "path_output_json", self.path_root / nc.OUTPUT_TMPLT)
+        object.__setattr__(self, "path_last_metrics_json", self.path_root / nc.LAST_METRICS_TMPLT)
+        object.__setattr__(self, "path_calib_json", self.path_root / nc.CALIB_TMPLT)
+        object.__setattr__(self, "path_generalization_json", self.path_root / nc.GENERALIZATION_TMPLT)
+        object.__setattr__(self, "path_train_log", self.path_root / nc.LOG_DIR)
+        object.__setattr__(self, "path_train_info_json", self.path_root / nc.KE_INFO_FILE)
+
+    def get_root_path(self):
+        return self.path_root
+
+
+@dataclass(frozen=True)
 class FirstModelInfo:
     """
     Most important ModelInfo class. This contains all the parameters,
@@ -395,6 +461,7 @@ class Params:
     gamma: float
     split: int
     dataset: str
+    optimizer: dict[str, Any] | None = None
 
 
 @dataclass
