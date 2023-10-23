@@ -251,6 +251,22 @@ def ke_parallel_parser_arguments(parser: argparse.ArgumentParser):
     )
 
 
+def adaptive_diversity_promotion_parser(parser: argparse.ArgumentParser):
+    parser.add_argument(
+        "-ce", "--ce_loss_weight", default=1, type=float, help="Weight of the Cross Entropy in the CELU loss"
+    )
+    parser.add_argument(
+        "-led",
+        "--log_ensemble_diversity",
+        default=2,
+        type=float,
+        help="Weight of the log ensemble diversity in the CELU loss",
+    )
+    parser.add_argument(
+        "-ee", "--ensemble_entropy", default=0.5, type=float, help="Weight of the ensemble entropy in the CELU loss"
+    )
+
+
 def ke_unuseable_downstream_parser_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("-exp", "--experiment_name", default="cifar10", nargs="?")
     parser.add_argument(

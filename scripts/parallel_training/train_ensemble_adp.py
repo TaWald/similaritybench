@@ -20,6 +20,7 @@ def main():
     print("Getting started!")
     parser = argparse.ArgumentParser(description="Specify model hyperparams.")
     dpa.ke_parallel_parser_arguments(parser)
+    dpa.adaptive_diversity_promotion_parser(parser)
     args = parser.parse_args()
     print("Parsing done.")
 
@@ -42,11 +43,9 @@ def main():
     p.cosine_annealing = True
     n_models = n_models
 
-    dis_loss_weight = args.dis_loss_weight
-    ce_weight = args.ce_loss_weight
-    weight_led = 2.0
-    weight_ee = 0.5
-    weight_ce = 1
+    weight_ce = args.ce_loss_weight
+    weight_led = args.log_ensemble_diversity
+    weight_ee = args.ensemble_entropy
     dis_loss = "ADP"
 
     loss = AdaptiveDiversityPromotionV2(
@@ -64,7 +63,7 @@ def main():
         group_id=group_id,
         dis_loss=dis_loss,
         dis_loss_weight=f"{weight_led:.2f}_{weight_ee:.2f}",
-        ce_loss_weight=ce_weight,
+        ce_loss_weight=weight_ce,
     )
 
     # Create paths
@@ -73,8 +72,9 @@ def main():
     ke_path = base_ckpt_path / nc.KE_PARALLEL_DIR / nc.BASELINE_ADP_DIR / dataset.value / exp_name
 
     hparams = {
-        "crossentropy_loss_weight": ce_weight,
-        "dissimilarity_loss_weight": dis_loss_weight,
+        "crossentropy_loss_weight": weight_ce,
+        "log_ensemble_diversity": weight_led,
+        "ensemble_entropy": weight_ee,
         "dissimilarity_loss": dis_loss,
         "group_id": group_id,
         "model_id": None,
