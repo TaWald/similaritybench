@@ -59,7 +59,6 @@ class BaseTrainerV2:
     def write_info(self):
         info_json = asdict(self.params)
         info_json["arch_params"] = self.arch_params
-        info_json = {}
         for k, v in info_json.items():
             if isinstance(v, Path):
                 info_json[k] = str(v)
@@ -69,8 +68,8 @@ class BaseTrainerV2:
 
     def train(self):
         """Trains a model and keeps it as attribute self.model
-         After finishing training saves checkpoint and a short Hyperparameter summary
-         to the model directory.
+        After finishing training saves checkpoint and a short Hyperparameter summary
+        to the model directory.
 
         :return:
         """
