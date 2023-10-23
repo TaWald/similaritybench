@@ -2,14 +2,13 @@ import os
 from pathlib import Path
 
 from ke.data.base_datamodule import BaseDataModule
+from ke.randaugment.randaugment import CIFAR10Policy
 from ke.randaugment.randaugment import Cutout
 from ke.util import data_structs as ds
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
 from torchvision import transforms as trans
 from torchvision.datasets import CIFAR100
-
-#  from ke.randaugment.randaugment import CIFAR10Policy
 
 
 # from ke.data import auto_augment
@@ -32,22 +31,33 @@ class CIFAR100DataModule(BaseDataModule):
     #   override wherever the splitting takes place.
     #   Because this is where the KFold and Disjoint DataModule differ!
 
-    def __init__(self):
+    def __init__(self, advanced_da: bool):
         """ """
         super().__init__()
         self.mean = (0.4914, 0.4822, 0.4465)
         self.std = (0.2023, 0.1994, 0.2010)
         self.image_size = (32, 32)
-        self.train_trans = trans.Compose(
-            [
-                trans.RandomCrop(self.image_size, padding=4, fill=(128, 128, 128)),
-                trans.RandomHorizontalFlip(),
-                # CIFAR10Policy(),
-                Cutout(size=16),
-                trans.ToTensor(),
-                trans.Normalize(self.mean, self.std),
-            ]
-        )
+        if advanced_da:
+            self.train_trans = trans.Compose(
+                [
+                    trans.RandomCrop(self.image_size, padding=4, fill=(128, 128, 128)),
+                    trans.RandomHorizontalFlip(),
+                    CIFAR10Policy(),
+                    Cutout(size=16),
+                    trans.ToTensor(),
+                    trans.Normalize(self.mean, self.std),
+                ]
+            )
+        else:
+            self.train_trans = trans.Compose(
+                [
+                    trans.RandomCrop(self.image_size, padding=4, fill=(128, 128, 128)),
+                    trans.RandomHorizontalFlip(),
+                    Cutout(size=16),
+                    trans.ToTensor(),
+                    trans.Normalize(self.mean, self.std),
+                ]
+            )
         self.val_trans = trans.Compose(
             [
                 trans.ToTensor(),

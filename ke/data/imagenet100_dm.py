@@ -24,22 +24,31 @@ class Imagenet100DataModule(BaseDataModule):
     #   wherever the splitting takes place.
     #   Because this is where the KFold and Disjoint DataModule differ!
 
-    def __init__(self):
+    def __init__(self, advanced_da: bool):
         """ """
         super().__init__()
         self.mean = (0.485, 0.456, 0.406)
         self.std = (0.229, 0.224, 0.225)
         self.image_size = (160, 160)
-
-        self.train_trans = trans.Compose(
-            [
-                trans.RandomResizedCrop(list(self.image_size)),
-                trans.RandomHorizontalFlip(),
-                ImageNetPolicy(),
-                trans.ToTensor(),
-                trans.Normalize(self.mean, self.std),
-            ]
-        )
+        if advanced_da:
+            self.train_trans = trans.Compose(
+                [
+                    trans.RandomResizedCrop(list(self.image_size)),
+                    trans.RandomHorizontalFlip(),
+                    ImageNetPolicy(),
+                    trans.ToTensor(),
+                    trans.Normalize(self.mean, self.std),
+                ]
+            )
+        else:
+            self.train_trans = trans.Compose(
+                [
+                    trans.RandomResizedCrop(list(self.image_size)),
+                    trans.RandomHorizontalFlip(),
+                    trans.ToTensor(),
+                    trans.Normalize(self.mean, self.std),
+                ]
+            )
         self.val_trans = trans.Compose(
             [
                 trans.Resize(size=list(self.image_size)),

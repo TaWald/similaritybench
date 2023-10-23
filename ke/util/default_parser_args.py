@@ -230,24 +230,10 @@ def ke_parallel_parser_arguments(parser: argparse.ArgumentParser):
         help="The total number of models that are trained.",
     )
     parser.add_argument(
-        "-disl",
-        "--dis_loss",
-        default="ADP",
-        type=str,
-        help="Indicator which loss will be used for training.",
-    )
-    parser.add_argument(
-        "-ce",
-        "--ce_loss_weight",
-        default=1,
-        type=float,
-        help="Weight of the Cross Entropy in the CELU loss",
-    )
-    parser.add_argument(
-        "-disw",
-        "--dis_loss_weight",
-        type=float,
-        help="Weight of the Dissimilarity in the CELU loss",
+        "-adv_da",
+        "--advanced_da",
+        type=str2bool,
+        help="Whether to use the advanced data augmentation of Rand/AutoAugment",
     )
 
 

@@ -461,6 +461,7 @@ class Params:
     gamma: float
     split: int
     dataset: str
+    advanced_da: bool = True
     optimizer: dict[str, Any] | None = None
 
 
