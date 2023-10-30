@@ -4,12 +4,15 @@ from ke.metrics.utils import mean_upper_triangular
 from ke.util import data_structs as ds
 
 
-def jensen_shannon_distance(probs_1, probs_2):
+def jensen_shannon_distance(probs_1, probs_2, aggregated=True):
     """Calcualtes bounded JSD between two predictions."""
     total_m = 0.5 * (probs_1 + probs_2)
-
-    kl_p1_m = torch.mean(torch.sum(probs_1 * torch.log2(probs_1 / total_m), dim=-1), dim=0)
-    kl_p2_m = torch.mean(torch.sum(probs_2 * torch.log2(probs_2 / total_m), dim=-1), dim=0)
+    if aggregated:
+        kl_p1_m = torch.mean(torch.sum(probs_1 * torch.log2(probs_1 / total_m), dim=-1), dim=0)
+        kl_p2_m = torch.mean(torch.sum(probs_2 * torch.log2(probs_2 / total_m), dim=-1), dim=0)
+    else:
+        kl_p1_m = torch.sum(probs_1 * torch.log2(probs_1 / total_m), dim=-1)
+        kl_p2_m = torch.sum(probs_2 * torch.log2(probs_2 / total_m), dim=-1)
     jsd = (kl_p1_m + kl_p2_m) / 2
     return jsd
 
