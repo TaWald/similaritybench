@@ -101,48 +101,37 @@ class KEParallel:
         n_models: int,
         architecture: str,
         group_id: int,
-        dis_loss: str,
-        dis_loss_weight: float,
-        ce_loss_weight: float,
+        loss_info: str,
+        advanced_da: bool,
     ):
         return (
             f"{experiment_description}__{n_models}__{dataset}__{architecture}__GroupID_{group_id}"
-            + f"__Dis_{dis_loss}_{dis_loss_weight}_{ce_loss_weight:.02f}"
+            + f"__{loss_info}__advDA_{1 if advanced_da else 0}"
         )
 
     @staticmethod
     def decode(
         dirname: str | Path,
-    ) -> tuple[str, int, str, str, int, str, float, float]:
+    ) -> tuple[str, int, str, str, int, str, bool]:
         """Decodes the Directory name that has been encoded.
         :returns experiment name, hook_id, transfer_depth, transfer_width, kernel_width
         """
 
         values = str(dirname).split("__")
         try:
-            (
-                exp_description,
-                n_models,
-                dataset,
-                architecture,
-                group_id,
-                dis_l,
-            ) = values
+            (exp_description, n_models, dataset, architecture, group_id, loss_info, adv_da) = values
         except ValueError as e:
             raise ValueError(f"{dirname} seems not to be up to current knowledge_extension naming standards.") from e
         group_id_i: int = int(group_id.split("_")[-1])
-        dis_stuff: list = dis_l.split("_")
-        dis_loss, dis_loss_weight, ce_loss_weight = dis_stuff[1], float(dis_stuff[2]), float(dis_stuff[3])
-
+        adv_da: bool = bool(adv_da.split("_")[-1])
         return (
             exp_description,
             n_models,
             dataset,
             architecture,
             group_id_i,
-            dis_loss,
-            dis_loss_weight,
-            ce_loss_weight,
+            loss_info,
+            adv_da,
         )
 
 
