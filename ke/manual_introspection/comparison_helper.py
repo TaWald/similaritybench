@@ -35,28 +35,26 @@ class SeedResult:
     models: dict[int, Path] = field(init=False)
     checkpoints: dict[int, Path] = field(init=False)
 
-    def remove_non_converged_entries(self) -> "SeedResult":
+    def remove_non_converged_entries(self):
         first_model_acc = load_json(self.models[0] / nc.OUTPUT_TMPLT)["val"]["accuracy"]
-        one_failed = False
+        keys_to_pop = []
 
         for k, v in self.checkpoints.items():
-            if one_failed:
-                self.models.pop(k)
-                self.checkpoints.pop(k)
+            if len(keys_to_pop) > 0:
+                keys_to_pop.append(k)
                 continue
 
             if not v.exists():
-                self.models.pop(k)
-                self.checkpoints.pop(k)
-                one_failed = True
+                keys_to_pop.append(k)
                 warn(f"Model {k} did not converge!")
             else:
                 new_model_acc = load_json(self.models[k] / nc.OUTPUT_TMPLT)["val"]["accuracy"]
                 if new_model_acc < first_model_acc - 0.15:
-                    self.models.pop(k)
-                    self.checkpoints.pop(k)
-                    one_failed = True
-                    warn(f"Model {k} did not converge!")
+                    keys_to_pop.append(k)
+        if len(keys_to_pop) > 0:
+            warn(f"Model {keys_to_pop[0]} did not converge, popping models {keys_to_pop}!")
+            [self.models.pop(k) for k in keys_to_pop]
+            [self.checkpoints.pop(k) for k in keys_to_pop]
         return self
 
 

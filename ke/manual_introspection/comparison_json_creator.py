@@ -132,7 +132,7 @@ def compare_functional_same_seed_ensemble(
     model_ids = list(range(n_models))
     for wanted_hparams_name, hparams_dict in hparam.items():
         model_ids = list(range(n_models))
-        model_ckpt_paths = get_seed_results_of_interest(ckpt_result_path, hparams_dict, model_ids)
+        model_ckpt_paths: list[SeedResult] = get_seed_results_of_interest(ckpt_result_path, hparams_dict, model_ids)
 
         json_results_path.mkdir(parents=True, exist_ok=True)
         this_output_file = json_results_path / f"functional_{wanted_hparams_name}.json"
@@ -146,9 +146,6 @@ def compare_functional_same_seed_ensemble(
                 else:
                     print("Skipping existing file")
                     continue
-
-        # ToDo: Currently the checkpoints seem to not provide the right performance?
-        #   At least the different models preform differently Whats the Issue! -> Checkpoint?/Loading?/Eval?
 
         layer_results: list[OutputEnsembleResults] = []
         seed_result: SeedResult

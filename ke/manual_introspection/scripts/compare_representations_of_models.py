@@ -3,7 +3,6 @@ from __future__ import annotations
 import itertools
 from dataclasses import asdict
 from dataclasses import dataclass
-from dataclasses import field
 from pathlib import Path
 from warnings import warn
 
@@ -13,6 +12,7 @@ import pandas as pd
 import seaborn as sns
 import torch
 from ke.arch.abstract_acti_extr import AbsActiExtrArch
+from ke.manual_introspection.comparison_helper import SeedResult
 from ke.manual_introspection.scripts import grouped_model_results as grm
 from ke.metrics.ke_metrics import multi_output_metrics
 from ke.util import data_structs as ds
@@ -379,13 +379,6 @@ def get_matching_model_dirs_of_ke_ensembles(ke_src_path: Path, wanted_hparams: d
         if matches:
             matching_dirs.append((ke_p, decoded_params))
     return matching_dirs
-
-
-@dataclass
-class SeedResult:
-    hparams: dict
-    models: dict[int, Path] = field(init=False)
-    checkpoints: dict[int, Path] = field(init=False)
 
 
 def get_models_with_ids_from_dir_and_first_model(

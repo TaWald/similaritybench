@@ -465,3 +465,35 @@ baseline_imagenet1k = {
         #  "epochs_before_regularization": 0,
     }
 }
+
+baseline_5_ensembles_imagenet1k = {
+    f"ensemble_5_baseline_imagenet_{i}": {
+        "exp_name": "ImageNet_5_ensembles_resnets",
+        "dataset": "ImageNet",
+        "architecture": "ResNet34",
+        "hooks": [i],
+        "trans_depth": 1,
+        "kernel_width": 1,
+        "sim_loss": "ExpVar",
+        "sim_loss_weight": 1.00,
+        "dis_loss": "None",
+        "dis_loss_weight": 0.00,
+    }
+    for i in [1]
+}
+
+five_ensembles_imagenet1k = {
+    f"ensemble_5_baseline_imagenet_{i}_{dlw:.02f}": {
+        "dataset": "ImageNet",
+        "architecture": "ResNet34",
+        "hooks": [i],
+        "trans_depth": 1,
+        "kernel_width": 1,
+        "sim_loss": "ExpVar",
+        "sim_loss_weight": 1.00,
+        "dis_loss": "ExpVar",
+        "dis_loss_weight": dlw,
+    }
+    for i in [1, 3, 8, 13]
+    for dlw in [0.25, 1.0, 4.0]
+}
