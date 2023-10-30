@@ -31,25 +31,25 @@ def _consolidate_cka_batch_results(batch_results: list[BatchCKAResult]):
 
 def unbiased_hsic(K: torch.Tensor, L: torch.Tensor):
     """Calculates the unbiased HSIC estimate between two variables X and Y.
-    Shape of the input should be (batch_size, batch_size (already calced)
+    Shape of the input should be (N, N) (already calculated)
 
     implementation of HSIC_1 from https://arxiv.org/pdf/2010.15327.pdf (Eq 3)
     """
 
-    batch_size = K.shape[0]
+    N = K.shape[0]
 
     # Center the activations
     K.fill_diagonal_(0)
     L.fill_diagonal_(0)
 
-    ones = torch.ones((batch_size, 1), device=K.device, dtype=K.dtype)
+    ones = torch.ones((N, 1), device=K.device, dtype=K.dtype)
 
     first = torch.trace(K @ L)
-    second = (ones.T @ K @ ones @ ones.T @ L @ ones) / ((batch_size - 1) * (batch_size - 2))
-    third = (ones.T @ K @ L @ ones) * (2 / (batch_size - 2))
-    factor = 1 / (batch_size * (batch_size - 3))
+    second = (ones.T @ K @ ones @ ones.T @ L @ ones) / ((N - 1) * (N - 2))
+    third = (ones.T @ K @ L @ ones) * (2 / (N - 2))
+    factor = 1 / (N * (N - 3))
 
-    hsic = factor * (first + second - third)
+    hsic = factor * (first + second - third) + 1e-12
     return torch.squeeze(hsic)
 
 
