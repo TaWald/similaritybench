@@ -96,10 +96,13 @@ class TinyImagenetDataModule(BaseDataModule):
         )
         return DataLoader(dataset=dataset, **kwargs)
 
-    def test_dataloader(self, transform: ds.Augmentation, **kwargs) -> DataLoader:
+    def test_dataloader(self, transform: ds.Augmentation = ds.Augmentation.VAL, **kwargs) -> DataLoader:
         dataset = TinyImageNetDataset(
             root=self.dataset_path,
             split="test",
             transform=self.get_transforms(transform),
         )
         return DataLoader(dataset=dataset, **kwargs)
+
+    def anchor_dataloader(self, **kwargs) -> DataLoader:
+        raise NotImplementedError("No anchor dataloader for TinyImageNet yet")

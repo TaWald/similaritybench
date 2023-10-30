@@ -113,7 +113,7 @@ class CIFAR100DataModule(BaseDataModule):
         dataset = Subset(dataset, val_ids)
         return DataLoader(dataset=dataset, **kwargs)
 
-    def test_dataloader(self, transform: ds.Augmentation, **kwargs) -> DataLoader:
+    def test_dataloader(self, transform: ds.Augmentation = ds.Augmentation.VAL, **kwargs) -> DataLoader:
         dataset = CIFAR100(
             root=self.dataset_path,
             train=False,
@@ -121,3 +121,23 @@ class CIFAR100DataModule(BaseDataModule):
             transform=self.get_transforms(transform),
         )
         return DataLoader(dataset=dataset, **kwargs)
+
+    def anchor_dataloader(self):
+        dataset = CIFAR100(
+            root=self.dataset_path, train=True, download=False, transform=self.get_transforms(ds.Augmentation.VAL)
+        )
+        # Grab the first 1000 samples from the training set (for the anchors)
+        anchors: dict[int, tuple] = {}
+        samples_per_class = 1000 // self.n_classes
+        cnt = 0
+        while sum([len(v) for v in anchors.values()]) < 1000:
+            im, lbl = dataset[cnt]
+            if lbl not in anchors.keys():
+                anchors[lbl] = [(im, lbl)]
+            elif len(anchors[lbl]) < samples_per_class:
+                anchors[lbl].append((im, lbl))
+            cnt += 1
+        # Flatten the list of lists
+        # Anchors are
+        preprocessed_anchors = [item for sublist in anchors.values() for item in sublist]
+        return DataLoader(dataset=preprocessed_anchors, batch_size=100, shuffle=False)

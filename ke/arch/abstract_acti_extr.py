@@ -10,6 +10,7 @@ import torch
 from ke.util.data_structs import BaseArchitecture
 from ke.util.data_structs import Hook
 from torch import nn
+from torch.nn import functional as F
 from torch.utils.hooks import RemovableHandle
 
 
@@ -61,11 +62,19 @@ class AbsActiExtrArch(nn.Module):
         self.activations = []
         return None
 
-    def register_parallel_rep_hooks(self, hook: Hook, save_container: list):
+    def register_parallel_rep_hooks(self, hook: Hook, save_container: list, remain_spatial=False):
         self.slice_shift = 0
         desired_module = self.get_wanted_module(hook)
         handle = desired_module.register_forward_hook(
-            self.get_layer_output_parallel(save_container, wanted_spatial=int(0))
+            self.get_layer_output_parallel(save_container, wanted_spatial=int(0), remain_spatial=remain_spatial)
+        )
+        return handle
+
+    def register_relative_rep_hooks(self, hook: Hook, anchor_reps: torch.Tensor, save_container: list):
+        self.slice_shift = 0
+        desired_module = self.get_wanted_module(hook)
+        handle = desired_module.register_forward_hook(
+            self.get_relative_rep_hook_parallel(anchor_reps, save_container)
         )
         return handle
 
@@ -181,11 +190,7 @@ class AbsActiExtrArch(nn.Module):
 
         return hook
 
-    def get_layer_output_parallel(
-        self,
-        container: list,
-        wanted_spatial: int = 0,
-    ):
+    def get_layer_output_parallel(self, container: list, wanted_spatial: int = 0, remain_spatial: bool = False):
         def hook(model, inp, output):
             """
             Attaches a forward hook that takes the output of a layer,
@@ -198,16 +203,50 @@ class AbsActiExtrArch(nn.Module):
             # self.activations.append(output.detach().cpu().numpy())
             output_shape = output.shape  # Batch x Channel x Width x Height?
             wh_pixel = output_shape[2] * output_shape[3]
-            flat_output = torch.reshape(output, [output_shape[0], output_shape[1], -1])
-            if wanted_spatial < wh_pixel and wanted_spatial != 0:  # Undersample
-                ids = np.sort(
-                    np.floor((np.linspace(0, wh_pixel, wanted_spatial, endpoint=False) + self.slice_shift) % wh_pixel)
-                ).astype(int)
-                flat_output = flat_output[:, :, ids]
-                self.slice_shift = self.slice_shift + 1
-                if self.slice_shift - 1 >= wanted_spatial:
-                    self.slice_shift = 0
-            container[0] = flat_output
+            if remain_spatial:
+                flat_output = output
+            else:
+                flat_output = torch.reshape(output, [output_shape[0], output_shape[1], -1])
+                if wanted_spatial < wh_pixel and wanted_spatial != 0:  # Undersample
+                    ids = np.sort(
+                        np.floor(
+                            (np.linspace(0, wh_pixel, wanted_spatial, endpoint=False) + self.slice_shift) % wh_pixel
+                        )
+                    ).astype(int)
+                    flat_output = flat_output[:, :, ids]
+                    self.slice_shift = self.slice_shift + 1
+                    if self.slice_shift - 1 >= wanted_spatial:
+                        self.slice_shift = 0
+            container.append(flat_output.cpu())
+
+        return hook
+
+    def get_relative_rep_hook_parallel(
+        self,
+        anchor_reps: torch.Tensor,
+        container: list,
+    ):
+        """
+        Register a hook that can be used to calcualte relative representations.
+        Uses the passed anchor_reps to calculate the cosine similarity between the anchors and the current batch.
+        Saves the cosine similarity matrix in the container.
+        :param anchor_reps: Tensor of shape (n_anchors, n_features). Has to be the same n_features as the layer
+
+        """
+
+        def hook(model, inp, output):
+            """
+            Attaches a forward hook that takes the output of a layer,
+            checks how high the spatial extent is and only saves as many values
+            of the representations as passed in wrapper `wanted_spatial`.
+
+            ATTENTION: This procedure removes location information, making intra-layer comparisons
+            based off pooling or something like it impossible!
+            """
+            # self.activations.append(output.detach().cpu().numpy())
+            flat_output = torch.reshape(output, [output.shape[0], -1])
+            cos_sim = F.cosine_similarity(flat_output[:, None, :], anchor_reps[None, ...], dim=2, eps=1e-8).cpu()
+            container.append(cos_sim)
 
         return hook
 

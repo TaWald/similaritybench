@@ -92,7 +92,7 @@ class ImagenetDataModule(BaseDataModule):
         )
         return DataLoader(dataset=dataset, **kwargs)
 
-    def test_dataloader(self, transform: ds.Augmentation, **kwargs) -> DataLoader:
+    def test_dataloader(self, transform: ds.Augmentation = ds.Augmentation.VAL, **kwargs) -> DataLoader:
         dataset = ImageNetDataset(
             root=self.dataset_path,
             split="test",

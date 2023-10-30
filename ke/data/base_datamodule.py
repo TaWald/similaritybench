@@ -90,7 +90,15 @@ class BaseDataModule(ABC):
     @abstractmethod
     def test_dataloader(
         self,
-        transform: ds.Augmentation,
+        transform: ds.Augmentation = ds.Augmentation.VAL,
+        **kwargs,
+    ) -> DataLoader:
+        """Returns the test datalodaer with the respective Augmentations"""
+        pass
+
+    @abstractmethod
+    def anchor_dataloader(
+        self,
         **kwargs,
     ) -> DataLoader:
         """Returns the test datalodaer with the respective Augmentations"""
