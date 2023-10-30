@@ -13,6 +13,7 @@ import pandas as pd
 import seaborn as sns
 import torch
 from ke.arch.abstract_acti_extr import AbsActiExtrArch
+from ke.manual_introspection.comparison_helper import SeedResult
 from ke.manual_introspection.scripts import grouped_model_results as grm
 from ke.metrics.cohens_kappa import calculate_cohens_kappas
 from ke.metrics.error_ratios import calculate_error_ratios
@@ -23,6 +24,7 @@ from ke.util import file_io as io
 from ke.util import find_architectures
 from ke.util import find_datamodules
 from ke.util import name_conventions as nc
+from ke.util.default_params import get_default_arch_params
 from ke.util.file_io import load_json
 from ke.util.file_io import save_json
 from ke.util.file_io import strip_state_dict_of_keys
@@ -31,7 +33,7 @@ from tqdm import tqdm
 
 json_results_path = Path(__file__).parent / "representation_comp_results"
 output_plots = Path("/home/tassilowald/Data/Results/SCIS23_Plots")
-ckpt_results = Path("/mnt/cluster-checkpoint-all/t006d/results/knowledge_extension_scis")
+ckpt_results = Path("/mnt/cluster-checkpoint-all/t006d/results/knowledge_extension_iclr24")
 
 
 @dataclass
@@ -130,11 +132,12 @@ def reshape(acti: torch.Tensor):
 
 
 def compare_models_parallel(model_a: Path, model_b: Path, hparams: dict) -> ModelToModelComparison:
+    arch_params = get_default_arch_params(dataset=ds.Dataset(hparams["dataset"]))
     arch_a: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))(
-        n_cls=10 if hparams["dataset"] == "CIFAR10" else 100
+        **arch_params
     )
     arch_b: AbsActiExtrArch = find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))(
-        n_cls=10 if hparams["dataset"] == "CIFAR10" else 100
+        **arch_params
     )
 
     ckpt_a: dict = torch.load(str(model_a))
@@ -311,7 +314,10 @@ def final_multi_output_metrics(
 
 
 def compare_models_functional(models: list[Path], hparams: dict) -> list[OutputEnsembleResults]:
-    archs = [find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))() for _ in models]
+    arch_hparams = get_default_arch_params(dataset=ds.Dataset(hparams["dataset"]))
+    archs = [
+        find_architectures.get_base_arch(ds.BaseArchitecture(hparams["architecture"]))(**arch_hparams) for _ in models
+    ]
     for arch, model in zip(archs, models):
         ckpt: dict = torch.load(str(model))
         try:
@@ -372,7 +378,7 @@ def get_matching_model_dirs_of_ke_ensembles(ke_src_path: Path, wanted_hparams: d
     matching_dirs: list[tuple[Path, dict]] = []
     ke_src_paths = list(ke_src_path.iterdir())
     for ke_p in ke_src_paths:
-        if ke_p.name.startswith("FIRST"):
+        if ke_p.name.startswith(("FIRST", ".DS_Store", "._.DS_Store")):
             continue
         decodes = io.KENameEncoder.decode(ke_p.name)
         (
@@ -422,18 +428,6 @@ def get_matching_model_dirs_of_ke_ensembles(ke_src_path: Path, wanted_hparams: d
         if matches:
             matching_dirs.append((ke_p, decoded_params))
     return matching_dirs
-
-
-@dataclass
-class SeedResult:
-    """Contains the HParams of a seed (a trained sequence) and the path to the models as dict of model_id -> path.
-    Additionally it contains the path to the checkpoints as dict of model_id -> path for convenience.
-    IMPORTANT: Per default models and checkpoints are not set and need to be filled post-init!
-    """
-
-    hparams: dict
-    models: dict[int, Path] = field(init=False)
-    checkpoints: dict[int, Path] = field(init=False)
 
 
 def get_models_with_ids_from_dir_and_first_model(
@@ -741,7 +735,6 @@ def create_baseline_comparisons(hparam: dict, overwrite=False):
         layer_results: list[ModelToModelComparison] = []
         all_ckpts = list(set([str(mcp.checkpoints[0]) for mcp in model_ckpt_paths]))  # only first models
 
-        seed_result: SeedResult
         for ckpt_a, ckpt_b in tqdm(list(itertools.combinations(all_ckpts, 2))):
             res = compare_models_parallel(ckpt_a, ckpt_b, hparams=hparams_dict)
             layer_results.append(res)
