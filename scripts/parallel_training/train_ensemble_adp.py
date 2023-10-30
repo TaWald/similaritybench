@@ -37,16 +37,18 @@ def main():
 
     p: ds.Params = get_default_parameters(architecture.value, dataset)
     p = dpa.overwrite_params(p, args)
-    p.learning_rate = 1e-1  # As from https://arxiv.org/abs/2305.11616 in Pang
+    p.learning_rate = 0.1  # As from https://arxiv.org/abs/2305.11616 in Pang
     p.batch_size = 64
     p.num_epochs = 100
     p.cosine_annealing = True
+    p.advanced_da = args.advanced_da
     n_models = n_models
 
     weight_ce = args.ce_loss_weight
     weight_led = args.log_ensemble_diversity
     weight_ee = args.ensemble_entropy
     dis_loss = "ADP"
+    loss_info = "ADP_{:.2f}_{:.2f}_{:.2f}".format(weight_led, weight_ee, weight_ce)
 
     loss = AdaptiveDiversityPromotionV2(
         weight_led=weight_led,
@@ -61,9 +63,8 @@ def main():
         n_models=n_models,
         architecture=architecture.value,
         group_id=group_id,
-        dis_loss=dis_loss,
-        dis_loss_weight=f"{weight_led:.2f}_{weight_ee:.2f}",
-        ce_loss_weight=weight_ce,
+        loss_info=loss_info,
+        advanced_da=p.advanced_da,
     )
 
     # Create paths
@@ -102,7 +103,7 @@ def main():
         loss=loss,
         log=True,
     )
-    datamodule = fd.get_datamodule(dataset=dataset)
+    datamodule = fd.get_datamodule(dataset=dataset, advanced_da=p.advanced_da)
     trainer = BaseTrainerV2(
         model=lightning_mod,
         datamodule=datamodule,
