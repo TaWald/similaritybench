@@ -1,0 +1,3 @@
+name: gpt2
+remove_sos_token: true
+token_pos: -1

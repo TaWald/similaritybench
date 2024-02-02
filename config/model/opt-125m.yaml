@@ -1,0 +1,3 @@
+name: facebook/opt-125m
+remove_sos_token: true
+token_pos: -1

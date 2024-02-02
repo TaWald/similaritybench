@@ -1,0 +1,9 @@
+_target_: compare_representations.MeasureSelection
+measures:
+  - rsm_norm_diff
+  - eigenspace_overlap_score
+  - linear_reg
+  - aligned_cossim
+  - orthogonal_procrustes
+  - representational_similarity_analysis
+  - centered_kernel_alignment

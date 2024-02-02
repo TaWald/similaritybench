@@ -1,0 +1,42 @@
+- _target_: llmcomp.measures.utils.Pipeline
+  preprocess_funcs:
+    - _target_: llmcomp.measures.utils.center_columns
+      _partial_: true
+    - _target_: llmcomp.measures.utils.normalize_matrix_norm
+      _partial_: true
+  similarity_func:
+    _target_: llmcomp.measures.permutation_procrustes
+    _partial_: true
+
+- _target_: llmcomp.measures.utils.Pipeline
+  preprocess_funcs:
+    - _target_: llmcomp.measures.utils.center_columns
+      _partial_: true
+  similarity_func:
+    _target_: llmcomp.measures.permutation_angular_shape_metric
+    _partial_: true
+
+- _target_: llmcomp.measures.utils.Pipeline
+  preprocess_funcs:
+    - _target_: llmcomp.measures.utils.center_columns
+      _partial_: true
+  similarity_func:
+    _target_: llmcomp.measures.permutation_aligned_cossim
+    _partial_: true
+
+- _target_: llmcomp.measures.representational_similarity_analysis
+  _partial_: true
+
+- _target_: llmcomp.measures.utils.Pipeline
+  preprocess_funcs: []
+  similarity_func:
+    _target_: llmcomp.measures.correlation_match
+    _partial_: true
+    mode: "soft"
+
+- _target_: llmcomp.measures.utils.Pipeline
+  preprocess_funcs: []
+  similarity_func:
+    _target_: llmcomp.measures.correlation_match
+    _partial_: true
+    mode: "hard"

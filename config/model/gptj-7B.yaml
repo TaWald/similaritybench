@@ -1,0 +1,3 @@
+name: EleutherAI/gpt-j-6b
+remove_sos_token: false
+token_pos: -1

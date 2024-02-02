@@ -1,0 +1,5 @@
+name: EleutherAI/pythia-6.9b-deduped
+remove_sos_token: false
+kwargs:
+  revision: step512
+token_pos: -1

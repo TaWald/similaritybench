@@ -1,0 +1,4 @@
+name: truthful_qa # huggingface load_dataset argument: path
+config: multiple_choice # huggingface load_dataset argument: name
+split: validation
+prompt_template: # promptsource template name

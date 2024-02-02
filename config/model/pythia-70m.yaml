@@ -1,0 +1,3 @@
+name: EleutherAI/pythia-70m-deduped
+remove_sos_token: false
+token_pos: -1

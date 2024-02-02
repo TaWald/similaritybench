@@ -1,0 +1,2 @@
+- _target_: llmcomp.measures.permutation_procrustes
+  _partial_: true

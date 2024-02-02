@@ -1,0 +1,3 @@
+name: bigscience/bloom-560m
+remove_sos_token: false
+token_pos: -1

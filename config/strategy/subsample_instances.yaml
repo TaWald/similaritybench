@@ -1,0 +1,11 @@
+_target_: llmcomp.representations.SubsampleStrategy
+substrategy:
+  _target_: llmcomp.representations.FinalTokenStrategy
+sample_rates:
+  - 0.2
+  - 0.4
+  - 0.6
+  - 0.8
+  - 1.0
+n_repeat: 3
+random_state: 1234567

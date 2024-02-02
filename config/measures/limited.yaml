@@ -1,0 +1,6 @@
+_target_: compare_attentions.MeasureSelection
+measures:
+  - rsm_norm_diff
+  - eigenspace_overlap_score
+  - orthogonal_procrustes
+  - centered_kernel_alignment

@@ -1,0 +1,6 @@
+local: false
+root_dir: /homes/klabunde/llm-comp/
+reps_subdir: representations
+results_subdir: results
+endpoint_url: https://share.pads.fim.uni-passau.de
+profile: default

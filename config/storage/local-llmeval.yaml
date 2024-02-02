@@ -1,0 +1,5 @@
+local: true
+root_dir: ""
+reps_subdir: /llmdata/representations/hf_pipeline
+preds_subdir: data/lm-eval-harness/multiple-choice
+results_subdir: results

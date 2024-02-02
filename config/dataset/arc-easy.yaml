@@ -1,0 +1,4 @@
+name: ai2_arc # huggingface load_dataset argument: path
+config: ARC-Easy # huggingface load_dataset argument: name
+split: validation
+prompt_template: pick_the_most_correct_option # promptsource template name
