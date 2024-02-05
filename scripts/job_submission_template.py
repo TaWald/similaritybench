@@ -1,4 +1,4 @@
-from ke.util import name_conventions as nc
+from simbench.util import name_conventions as nc
 
 arch = "ResNet101"
 queue = "verylong"

@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ke"
+name = "simbench"
 version = "0.0"
 authors = [{ name = "Tassilo Wald", email = "tassilo.wald@dkfz-heidelberg.de"}]
 description= """Framework for developing diverse Ensembles through regularizations of different kinds"""

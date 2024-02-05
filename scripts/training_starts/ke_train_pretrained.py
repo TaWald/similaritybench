@@ -2,18 +2,18 @@ import argparse
 import sys
 from pathlib import Path
 
-from ke.arch.ke_architectures.single_model import SingleModel
-from ke.losses.dummy_loss import DummyLoss
-from ke.training.ke_train_modules.single_lightning_module import WarmStartSingleLightningModule
-from ke.training.trainers.base_trainer import BaseTrainer
-from ke.util import data_structs as ds
-from ke.util import default_parser_args as dpa
-from ke.util import file_io
-from ke.util import find_datamodules as fd
-from ke.util import name_conventions as nc
-from ke.util.default_params import get_default_arch_params
-from ke.util.default_params import get_default_parameters
-from ke.util.find_architectures import get_tv_arch
+from simbench.arch.ke_architectures.single_model import SingleModel
+from simbench.losses.dummy_loss import DummyLoss
+from simbench.training.ke_train_modules.single_lightning_module import WarmStartSingleLightningModule
+from simbench.training.trainers.base_trainer import BaseTrainer
+from simbench.util import data_structs as ds
+from simbench.util import default_parser_args as dpa
+from simbench.util import file_io
+from simbench.util import find_datamodules as fd
+from simbench.util import name_conventions as nc
+from simbench.util.default_params import get_default_arch_params
+from simbench.util.default_params import get_default_parameters
+from simbench.util.find_architectures import get_tv_arch
 
 
 def main():

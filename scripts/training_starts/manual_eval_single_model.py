@@ -2,14 +2,14 @@ from dataclasses import asdict
 from pathlib import Path
 
 import torch
-from ke.arch.arch_loading import strip_state_dict_of_keys
-from ke.metrics.ke_metrics import single_output_metrics
-from ke.metrics.ke_metrics import SingleOutMetrics
-from ke.util import data_structs as ds
-from ke.util import find_architectures
-from ke.util import find_datamodules
-from ke.util import name_conventions as nc
-from ke.util.file_io import load_json
+from simbench.arch.arch_loading import strip_state_dict_of_keys
+from simbench.metrics.ke_metrics import single_output_metrics
+from simbench.metrics.ke_metrics import SingleOutMetrics
+from simbench.util import data_structs as ds
+from simbench.util import find_architectures
+from simbench.util import find_datamodules
+from simbench.util import name_conventions as nc
+from simbench.util.file_io import load_json
 
 
 def compare_single_model(path_to_dir: Path) -> SingleOutMetrics:

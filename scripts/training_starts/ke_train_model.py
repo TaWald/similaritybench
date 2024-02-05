@@ -3,26 +3,22 @@ import sys
 from pathlib import Path
 from warnings import warn
 
-from ke.arch.ke_architectures.feature_approximation import FAArch
-from ke.arch.ke_architectures.single_model import SingleModel
-from ke.losses.dummy_loss import DummyLoss
-from ke.losses.ke_loss import KETrainLoss
-from ke.training.ke_train_modules.calibrate import calibrate_model
-from ke.training.ke_train_modules.IntermediateRepresentationLightningModule import (
-    IntermediateRepresentationLightningModule,
-)
-from ke.training.ke_train_modules.single_lightning_module import SingleLightningModule
-from ke.training.trainers.base_trainer import BaseTrainer
-from ke.util import data_structs as ds
-from ke.util import default_parser_args as dpa
-from ke.util import file_io
-from ke.util import find_architectures as fa
-from ke.util import find_datamodules as fd
-from ke.util import name_conventions as nc
-from ke.util.data_structs import ArchitectureInfo
-from ke.util.default_params import get_default_arch_params
-from ke.util.default_params import get_default_parameters
-from ke.util.find_ke_loss import find_ke_loss
+
+from simbench.arch.ke_architectures.single_model import SingleModel
+from simbench.losses.dummy_loss import DummyLoss
+from simbench.training.ke_train_modules.calibrate import calibrate_model
+
+from simbench.training.ke_train_modules.single_lightning_module import SingleLightningModule
+from simbench.training.trainers.base_trainer import BaseTrainer
+from simbench.util import data_structs as ds
+from simbench.util import default_parser_args as dpa
+from simbench.util import file_io
+from simbench.util import find_architectures as fa
+from simbench.util import find_datamodules as fd
+from simbench.util import name_conventions as nc
+from simbench.util.data_structs import ArchitectureInfo
+from simbench.util.default_params import get_default_arch_params
+from simbench.util.default_params import get_default_parameters
 
 
 def main():
@@ -108,13 +104,7 @@ def main():
         group_id=group_id,
     )
 
-    sim_l = find_ke_loss(sim_loss, softmax_mets, celu_alpha)
-    dis_l = find_ke_loss(dis_loss, softmax_mets, celu_alpha)
-
     hparams = {
-        "trans_depth": trans_depth,
-        "trans_kernel": trans_kernel,
-        "trans_hooks": str(transfer_positions),
         "aggregate_source_reps": aggregate_reps,
         "crossentropy_loss_weight": ce_weight,
         "dissimilarity_loss_weight": dis_loss_weight,
@@ -143,88 +133,7 @@ def main():
         hparams.update({"model_id": 0, "is_regularized": False})
         training_info = first_model_info
     else:
-        prev_training_infos: list[ds.KETrainingInfo] = file_io.get_trained_ke_models(
-            ke_data_root_dir, ke_ckpt_root_dir
-        )
-        n_trained_models: int = len(prev_training_infos)
-        if (n_trained_models + 1) >= train_till_n_models:
-            return
-
-        if not all(
-            [prev_training_info.training_succeeded(first_model_info) for prev_training_info in prev_training_infos]
-        ):
-            warn("Not all previous models were trained successfully! Skipping training of new one.")
-            sys.exit(1)
-        else:
-            print(f"Found {n_trained_models} successfully trained models! Creating model {n_trained_models + 1}!")
-
-        hparams.update({"model_id": n_trained_models + 1, "is_regularized": True})
-
-        model_id = len(prev_training_infos) + 1
-        new_model = nc.MODEL_NAME_TMPLT.format(model_id)
-
-        tbt_model_data_dir = ke_data_root_dir / new_model
-        tbt_model_ckpt_dir = ke_ckpt_root_dir / new_model
-
-        training_info: ds.FirstModelInfo = ds.KETrainingInfo(
-            experiment_name=exp_name,
-            experiment_description=experiment_description,
-            dir_name=new_model,
-            model_id=model_id,
-            group_id=group_id,
-            architecture=str(architecture.value),
-            dataset=str(dataset.value),
-            aggregate_source_reps=aggregate_reps,
-            softmax_metrics=bool(softmax_mets),
-            similarity_loss=sim_loss,
-            similarity_loss_weight=sim_loss_weight,
-            dissimilarity_loss=dis_loss,
-            crossentropy_loss_weight=ce_weight,
-            dissimilarity_loss_weight=dis_loss_weight,
-            epochs_before_regularization=epochs_before_regularization,
-            learning_rate=p.learning_rate,
-            split=p.split,
-            weight_decay=p.weight_decay,
-            batch_size=p.batch_size,
-            trans_hooks=transfer_positions,
-            trans_depth=trans_depth,
-            trans_kernel=trans_kernel,
-            path_data_root=tbt_model_data_dir,
-            path_ckpt_root=tbt_model_ckpt_dir,
-        )
-
-        all_src_arch_infos = [
-            ArchitectureInfo(first_model_info.architecture, arch_params, first_model_info.path_ckpt, tbt_hook)
-        ]
-        for pti in prev_training_infos:
-            all_src_arch_infos.append(ArchitectureInfo(pti.architecture, arch_params, pti.path_ckpt, tbt_hook))
-        tbt_arch_info = ArchitectureInfo(training_info.architecture, arch_params, training_info.path_ckpt, tbt_hook)
-        module = FAArch(
-            old_model_info=all_src_arch_infos,
-            new_model_info=tbt_arch_info,
-            aggregate_old_reps=aggregate_reps,
-            transfer_depth=trans_depth,
-            transfer_kernel_width=trans_kernel,
-        )
-        loss = KETrainLoss(
-            similar_loss=sim_l,
-            dissimilar_loss=dis_l,
-            ce_weight=ce_weight,
-            dissim_weight=dis_loss_weight,
-            sim_weight=sim_loss_weight,
-            regularization_epoch_start=epochs_before_regularization,
-        )
-        lightning_mod = IntermediateRepresentationLightningModule(
-            model_info=training_info,
-            network=module,
-            save_checkpoints=True,
-            params=p,
-            hparams=hparams,
-            loss=loss,
-            skip_n_epochs=None,
-            log=True,
-            save_approx=args.save_approximation_layers,
-        )
+        return  # Already exists. Nothing to be done.
 
     datamodule = fd.get_datamodule(dataset=dataset)
     if args.split >= datamodule.max_splits:
