@@ -4,12 +4,13 @@ import numpy as np
 import numpy.typing as npt
 import torch
 
-from repsim.measures.utils import to_numpy_if_needed
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
 
 
 def imd_score(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
     approximation_steps: int = 8000,
     n_repeat: int = 5,
 ) -> float:
@@ -23,6 +24,7 @@ def imd_score(
         )
         raise e
 
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
     # We use much higher defaults for the heat kernel approximation steps as the results

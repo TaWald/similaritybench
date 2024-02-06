@@ -7,15 +7,20 @@ import scipy.optimize
 import torch
 
 from repsim.measures.utils import (
+    SHAPE_TYPE,
     adjust_dimensionality,
+    flatten,
     normalize_matrix_norm,
     to_numpy_if_needed,
 )
 
 
 def orthogonal_procrustes(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
     nucnorm = scipy.linalg.orthogonal_procrustes(R, Rp)[1]
@@ -29,9 +34,11 @@ def orthogonal_procrustes(
 def permutation_procrustes(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
     optimal_permutation_alignment: Optional[Tuple[npt.NDArray, npt.NDArray]] = None,
 ) -> float:
     # ) -> Dict[str, Any]:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
 
@@ -51,8 +58,10 @@ def permutation_procrustes(
 def permutation_angular_shape_metric(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
     optimal_permutation_alignment: Optional[Tuple[npt.NDArray, npt.NDArray]] = None,
 ) -> Dict[str, Any]:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
     R, Rp = normalize_matrix_norm(R), normalize_matrix_norm(Rp)
@@ -78,7 +87,9 @@ def permutation_angular_shape_metric(
 def orthogonal_angular_shape_metric(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
     R, Rp = normalize_matrix_norm(R), normalize_matrix_norm(Rp)
@@ -93,8 +104,11 @@ def orthogonal_angular_shape_metric(
 
 
 def aligned_cossim(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
     align, _ = scipy.linalg.orthogonal_procrustes(R, Rp)

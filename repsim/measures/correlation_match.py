@@ -5,14 +5,21 @@ import scipy.optimize
 import scipy.spatial.distance
 import torch
 
-from repsim.measures.utils import center_columns, to_numpy_if_needed
+from repsim.measures.utils import (
+    SHAPE_TYPE,
+    center_columns,
+    flatten,
+    to_numpy_if_needed,
+)
 
 
 def correlation_match(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
     mode: str = "hard",
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = center_columns(R), center_columns(Rp)
 

@@ -1,12 +1,15 @@
 import functools
 import logging
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Callable, List, Literal, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
 import torch
 
 log = logging.getLogger(__name__)
+
+
+SHAPE_TYPE = Literal["ntd", "nchw", "nd"]
 
 
 def to_numpy_if_needed(*args: Union[torch.Tensor, npt.NDArray]) -> List[npt.NDArray]:
@@ -63,17 +66,17 @@ class Pipeline:
     def __init__(
         self,
         preprocess_funcs: List[Callable[[npt.NDArray], npt.NDArray]],
-        similarity_func: Callable[[npt.NDArray, npt.NDArray], Dict[str, Any]],
+        similarity_func: Callable[[npt.NDArray, npt.NDArray, SHAPE_TYPE], float],
     ) -> None:
         self.preprocess_funcs = preprocess_funcs
         self.similarity_func = similarity_func
 
-    def __call__(self, R: npt.NDArray, Rp: npt.NDArray) -> Union[float, Dict[str, Any]]:
+    def __call__(self, R: npt.NDArray, Rp: npt.NDArray, shape: SHAPE_TYPE) -> float:
         try:
             for preprocess_func in self.preprocess_funcs:
                 R = preprocess_func(R)
                 Rp = preprocess_func(Rp)
-            return self.similarity_func(R, Rp)
+            return self.similarity_func(R, Rp, shape)
         except ValueError as e:
             log.info(f"Pipeline failed: {e}")
             return np.nan
@@ -102,3 +105,26 @@ class Pipeline:
             )
             + ")"
         )
+
+
+def flatten(
+    *args: Union[torch.Tensor, npt.NDArray], shape: SHAPE_TYPE
+) -> List[Union[torch.Tensor, npt.NDArray]]:
+    if shape == "ntd":
+        return list(map(flatten_nxtxd_to_nxtd, args))
+    elif shape == "nd":
+        return list(args)
+    elif shape == "nchw":
+        # TODO:
+        raise NotImplementedError()
+    else:
+        raise ValueError(
+            "Unknown shape of representations. Must be one of 'ntd', 'nchw', 'nd'."
+        )
+
+
+def flatten_nxtxd_to_nxtd(
+    R: Union[torch.Tensor, npt.NDArray]
+) -> Union[torch.Tensor, npt.NDArray]:
+    R = to_torch_if_needed(R)[0]
+    return torch.flatten(R, start_dim=1)

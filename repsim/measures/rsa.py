@@ -6,12 +6,13 @@ import scipy.spatial.distance
 import scipy.stats
 import torch
 
-from repsim.measures.utils import to_numpy_if_needed
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
 
 
 def representational_similarity_analysis(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
     inner="correlation",
     outer="spearman",
 ) -> float:
@@ -28,6 +29,7 @@ def representational_similarity_analysis(
     Returns:
         float: _description_
     """
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     S = 1 - scipy.spatial.distance.pdist(R, inner)  # type:ignore
     Sp = 1 - scipy.spatial.distance.pdist(Rp, inner)  # type:ignore

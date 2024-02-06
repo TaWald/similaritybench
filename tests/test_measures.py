@@ -40,78 +40,81 @@ N_DIM = 2
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [1],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
     ],
 )
-def test_aligned_cossim(rep1, rep2, expected_outcome):
-    _test_generic_measure(aligned_cossim, rep1, rep2, expected_outcome)
+def test_aligned_cossim(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(aligned_cossim, rep1, rep2, shape, expected_outcome)
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [1],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
     ],
 )
-def test_centered_kernel_alignment(rep1, rep2, expected_outcome):
-    _test_generic_measure(centered_kernel_alignment, rep1, rep2, expected_outcome)
+def test_centered_kernel_alignment(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(
+        centered_kernel_alignment, rep1, rep2, shape, expected_outcome
+    )
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [1],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
     ],
 )
-def test_eigenspace_overlap_score(rep1, rep2, expected_outcome):
-    _test_generic_measure(eigenspace_overlap_score, rep1, rep2, expected_outcome)
+def test_eigenspace_overlap_score(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(eigenspace_overlap_score, rep1, rep2, shape, expected_outcome)
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [1],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
     ],
 )
-def test_linear_reg(rep1, rep2, expected_outcome):
-    _test_generic_measure(linear_reg, rep1, rep2, expected_outcome)
+def test_linear_reg(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(linear_reg, rep1, rep2, shape, expected_outcome)
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [0],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
     ],
 )
-def test_orthogonal_procrustes(rep1, rep2, expected_outcome):
-    _test_generic_measure(orthogonal_procrustes, rep1, rep2, expected_outcome)
+def test_orthogonal_procrustes(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(orthogonal_procrustes, rep1, rep2, shape, expected_outcome)
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [0],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
         [
             get_rep(N_ROWS, N_DIM, seed=123),
             get_rep(N_ROWS, N_DIM, seed=123) @ np.array([[0, 1], [1, 0]]),
+            "nd",
             0,
         ],
     ],
 )
-def test_permutation_procrustes(rep1, rep2, expected_outcome):
-    _test_generic_measure(permutation_procrustes, rep1, rep2, expected_outcome)
+def test_permutation_procrustes(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(permutation_procrustes, rep1, rep2, shape, expected_outcome)
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome,kwargs",
+    "rep1,rep2,shape,expected_outcome,kwargs",
     [
         get_identical_reps(N_ROWS, N_DIM)
         + [1]
@@ -133,25 +136,32 @@ def test_permutation_procrustes(rep1, rep2, expected_outcome):
         ),
     ],
 )
-def test_representational_similarity_analysis(rep1, rep2, expected_outcome, kwargs):
+def test_representational_similarity_analysis(
+    rep1, rep2, shape, expected_outcome, kwargs
+):
     _test_generic_measure(
-        representational_similarity_analysis, rep1, rep2, expected_outcome, **kwargs
+        representational_similarity_analysis,
+        rep1,
+        rep2,
+        shape,
+        expected_outcome,
+        **kwargs
     )
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [0],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
     ],
 )
-def test_rsm_norm_diff(rep1, rep2, expected_outcome):
-    _test_generic_measure(rsm_norm_diff, rep1, rep2, expected_outcome)
+def test_rsm_norm_diff(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(rsm_norm_diff, rep1, rep2, shape, expected_outcome)
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome,mode",
+    "rep1,rep2,shape,expected_outcome,mode",
     [
         get_identical_reps(N_ROWS, N_DIM) + [1] + ["soft"],
         pytest.param(
@@ -163,156 +173,160 @@ def test_rsm_norm_diff(rep1, rep2, expected_outcome):
         ),
     ],
 )
-def test_correlation_match(rep1, rep2, expected_outcome, mode):
-    _test_generic_measure(correlation_match, rep1, rep2, expected_outcome, mode=mode)
-
-
-@pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
-    [
-        get_identical_reps(N_ROWS, N_DIM) + [0],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
-    ],
-)
-def test_magnitude_difference(rep1, rep2, expected_outcome):
-    _test_generic_measure(magnitude_difference, rep1, rep2, expected_outcome)
-
-
-@pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
-    [
-        get_identical_reps(N_ROWS, N_DIM) + [0],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
-    ],
-)
-def test_magnitude_nrmse(rep1, rep2, expected_outcome):
-    _test_generic_measure(magnitude_nrmse, rep1, rep2, expected_outcome)
-
-
-@pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
-    [
-        get_identical_reps(N_ROWS, N_DIM) + [0],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
-    ],
-)
-def test_uniformity_difference(rep1, rep2, expected_outcome):
-    _test_generic_measure(uniformity_difference, rep1, rep2, expected_outcome)
-
-
-@pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
-    [
-        get_identical_reps(N_ROWS, N_DIM) + [1],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
-    ],
-)
-def test_distance_correlation(rep1, rep2, expected_outcome):
-    _test_generic_measure(distance_correlation, rep1, rep2, expected_outcome)
-
-
-@pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
-    [
-        get_identical_reps(N_ROWS, N_DIM) + [0],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
-    ],
-)
-def test_orthogonal_angular_shape_metric(rep1, rep2, expected_outcome):
-    _test_generic_measure(orthogonal_angular_shape_metric, rep1, rep2, expected_outcome)
-
-
-@pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
-    [
-        get_identical_reps(N_ROWS, N_DIM) + [0],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
-    ],
-)
-def test_concentricity_difference(rep1, rep2, expected_outcome):
-    _test_generic_measure(concentricity_difference, rep1, rep2, expected_outcome)
-
-
-@pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
-    [
-        get_identical_reps(N_ROWS, N_DIM) + [0],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
-    ],
-)
-def test_concentricity_nrmse(rep1, rep2, expected_outcome):
-    _test_generic_measure(concentricity_nrmse, rep1, rep2, expected_outcome)
-
-
-@pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
-    [
-        get_identical_reps(N_ROWS, N_DIM) + [1],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
-    ],
-)
-def test_jaccard_similarity(rep1, rep2, expected_outcome):
-    _test_generic_measure(jaccard_similarity, rep1, rep2, expected_outcome, k=2)
-
-
-@pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
-    [
-        get_identical_reps(N_ROWS, N_DIM) + [1],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
-    ],
-)
-def test_second_order_cosine_similarity(rep1, rep2, expected_outcome):
+def test_correlation_match(rep1, rep2, shape, expected_outcome, mode):
     _test_generic_measure(
-        second_order_cosine_similarity, rep1, rep2, expected_outcome, k=2
+        correlation_match, rep1, rep2, shape, expected_outcome, mode=mode
     )
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
-        get_identical_reps(N_ROWS, N_DIM) + [1],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
+        get_identical_reps(N_ROWS, N_DIM) + [0],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
     ],
 )
-def test_rank_similarity(rep1, rep2, expected_outcome):
-    _test_generic_measure(rank_similarity, rep1, rep2, expected_outcome, k=2)
+def test_magnitude_difference(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(magnitude_difference, rep1, rep2, shape, expected_outcome)
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [0],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
+    ],
+)
+def test_magnitude_nrmse(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(magnitude_nrmse, rep1, rep2, shape, expected_outcome)
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [0],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
+    ],
+)
+def test_uniformity_difference(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(uniformity_difference, rep1, rep2, shape, expected_outcome)
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [1],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
     ],
 )
-def test_joint_rank_jaccard_similarity(rep1, rep2, expected_outcome):
+def test_distance_correlation(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(distance_correlation, rep1, rep2, shape, expected_outcome)
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [0],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
+    ],
+)
+def test_orthogonal_angular_shape_metric(rep1, rep2, shape, expected_outcome):
     _test_generic_measure(
-        joint_rank_jaccard_similarity, rep1, rep2, expected_outcome, k=2
+        orthogonal_angular_shape_metric, rep1, rep2, shape, expected_outcome
+    )
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [0],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
+    ],
+)
+def test_concentricity_difference(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(concentricity_difference, rep1, rep2, shape, expected_outcome)
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [0],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
+    ],
+)
+def test_concentricity_nrmse(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(concentricity_nrmse, rep1, rep2, shape, expected_outcome)
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [1],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
+    ],
+)
+def test_jaccard_similarity(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(jaccard_similarity, rep1, rep2, shape, expected_outcome, k=2)
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [1],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
+    ],
+)
+def test_second_order_cosine_similarity(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(
+        second_order_cosine_similarity, rep1, rep2, shape, expected_outcome, k=2
+    )
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [1],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
+    ],
+)
+def test_rank_similarity(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(rank_similarity, rep1, rep2, shape, expected_outcome, k=2)
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [1],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
+    ],
+)
+def test_joint_rank_jaccard_similarity(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(
+        joint_rank_jaccard_similarity, rep1, rep2, shape, expected_outcome, k=2
     )
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [0],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
     ],
 )
-def test_geometry_score(rep1, rep2, expected_outcome):
-    _test_generic_measure(geometry_score, rep1, rep2, expected_outcome)
+def test_geometry_score(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(geometry_score, rep1, rep2, shape, expected_outcome)
 
 
 def test_imd_score():
     n_dim = 10
     n_rows = 100
-    rep1, rep2 = get_identical_reps(n_rows, n_dim)
-    imd_score(rep1, rep2, approximation_steps=10)
+    rep1, rep2, shape = get_identical_reps(n_rows, n_dim)
+    imd_score(rep1, rep2, shape, approximation_steps=10)
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome,lmbda",
+    "rep1,rep2,shape,expected_outcome,lmbda",
     [
         get_identical_reps(N_ROWS, N_DIM) + [0] + [0],
         pytest.param(
@@ -324,28 +338,28 @@ def test_imd_score():
         ),
     ],
 )
-def test_gulp(rep1, rep2, expected_outcome, lmbda):
-    retval = gulp(rep1, rep2, lmbda=lmbda)
+def test_gulp(rep1, rep2, shape, expected_outcome, lmbda):
+    retval = gulp(rep1, rep2, shape, lmbda=lmbda)
     np.testing.assert_allclose(retval, expected_outcome, atol=1e-7)
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [1],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
     ],
 )
-def test_svcca(rep1, rep2, expected_outcome):
-    _test_generic_measure(svcca, rep1, rep2, expected_outcome)
+def test_svcca(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(svcca, rep1, rep2, shape, expected_outcome)
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_outcome",
+    "rep1,rep2,shape,expected_outcome",
     [
         get_identical_reps(N_ROWS, N_DIM) + [1],
         pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
     ],
 )
-def test_pwcca(rep1, rep2, expected_outcome):
-    _test_generic_measure(pwcca, rep1, rep2, expected_outcome)
+def test_pwcca(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(pwcca, rep1, rep2, shape, expected_outcome)

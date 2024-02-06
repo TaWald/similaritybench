@@ -4,11 +4,14 @@ import numpy as np
 import numpy.typing as npt
 import torch
 
-from repsim.measures.utils import to_numpy_if_needed
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
 
 
 def geometry_score(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray], **kwargs
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
+    **kwargs
 ) -> float:
     try:
         import gs
@@ -20,6 +23,7 @@ def geometry_score(
         )
         raise e
 
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
     rlt_R = gs.rlts(R, **kwargs)

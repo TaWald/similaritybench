@@ -6,13 +6,15 @@ import scipy.optimize
 import scipy.spatial.distance
 import torch
 
-from repsim.measures.utils import double_center, to_numpy_if_needed
+from repsim.measures.utils import SHAPE_TYPE, double_center, flatten, to_numpy_if_needed
 
 
 def distance_correlation(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
     S = scipy.spatial.distance.squareform(

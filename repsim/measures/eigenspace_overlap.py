@@ -4,12 +4,15 @@ import numpy as np
 import numpy.typing as npt
 import torch
 
-from repsim.measures.utils import to_numpy_if_needed
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
 
 
 def eigenspace_overlap_score(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     u, _, _ = np.linalg.svd(R)
     v, _, _ = np.linalg.svd(Rp)
