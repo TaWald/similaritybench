@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -60,7 +60,7 @@ def permutation_angular_shape_metric(
     Rp: Union[torch.Tensor, npt.NDArray],
     shape: SHAPE_TYPE,
     optimal_permutation_alignment: Optional[Tuple[npt.NDArray, npt.NDArray]] = None,
-) -> Dict[str, Any]:
+) -> float:
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
@@ -78,10 +78,7 @@ def permutation_angular_shape_metric(
 
     # From https://github.com/ahwillia/netrep/blob/0f3d825aad58c6d998b44eb0d490c0c5c6251fc9/netrep/utils.py#L107  # noqa: E501
     # numerical precision issues require us to clip inputs to arccos
-    return {
-        "score": np.arccos(np.clip(corr, -1.0, 1.0)),
-        "optimal_permutation_alignment": optimal_permutation_alignment,
-    }
+    return np.arccos(np.clip(corr, -1.0, 1.0))
 
 
 def orthogonal_angular_shape_metric(
