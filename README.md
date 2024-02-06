@@ -5,7 +5,7 @@ Representational Similarity Benchmark
 ## Structure
 
 - Library (`repsim`)
-  - utils    
+  - utils
   - Ähnlichkeitsmaße (`measures`)
     - utils für Maße wie padding und preprocessing
 - Tests der Maße
@@ -26,8 +26,10 @@ conda create -n ENVNAME python=3.10
 conda active ENVNAME
 python -m venv .venv
 source .venv/bin/activate
-pip install torch torchvision torchaudio hydra-core ipykernel flake8 black huggingface-hub ipywidgets matplotlib seaborn numpy scipy pyarrow tokenizers datasets transformers pytest Cython gudhi
+pip install torch=2.0.1 torchvision torchaudio hydra-core ipykernel flake8 black huggingface-hub ipywidgets matplotlib seaborn numpy scipy pyarrow tokenizers datasets transformers pytest Cython gudhi
 ```
+
+(Max: Die GPU Treiber sind veraltet bei uns, weswegen keine höhere pytorch Version funktioniert.)
 
 Additional dependencies for some measures:
 ```shell
