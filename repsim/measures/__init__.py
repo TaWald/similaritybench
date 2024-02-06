@@ -1,4 +1,3 @@
-from .blue_score import blue_score
 from .cca import pwcca, svcca
 from .cka import centered_kernel_alignment
 from .correlation_match import correlation_match
@@ -6,7 +5,6 @@ from .distance_correlation import distance_correlation
 from .eigenspace_overlap import eigenspace_overlap_score
 from .geometry_score import geometry_score
 from .gulp import gulp
-from .kl_div import kl_divergence
 from .linear_regression import linear_reg
 from .multiscale_intrinsic_distance import imd_score
 from .nearest_neighbor import (
@@ -44,8 +42,6 @@ MEASURES = [
     permutation_aligned_cossim,
     representational_similarity_analysis,
     centered_kernel_alignment,
-    blue_score,
-    kl_divergence,
     correlation_match,
     magnitude_difference,
     magnitude_nrmse,
