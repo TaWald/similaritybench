@@ -520,20 +520,24 @@ from typing import Union
 import numpy.typing as npt
 import torch
 
-from repsim.measures.utils import to_numpy_if_needed
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
 
 
 def svcca(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
-
     return _svcca_original(R.T, Rp.T)
 
 
 def pwcca(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
-
     return compute_pwcca(R.T, Rp.T)[0]

@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 import torch
 
-from repsim.measures.utils import to_numpy_if_needed
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
 
 
 # Copied from https://github.com/sgstepaniants/GULP/blob/main/distance_functions.py
@@ -61,8 +61,10 @@ def predictor_dist(
 def gulp(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
     lmbda: float = 0,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
     # The GULP paper assumes DxN matrices; we have NxD matrices.

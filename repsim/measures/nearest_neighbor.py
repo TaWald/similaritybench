@@ -6,7 +6,7 @@ import scipy.spatial.distance
 import sklearn.neighbors
 import torch
 
-from repsim.measures.utils import to_numpy_if_needed
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
 
 
 def _jac_sim_i(idx_R: Set[int], idx_Rp: Set[int]) -> float:
@@ -16,10 +16,12 @@ def _jac_sim_i(idx_R: Set[int], idx_Rp: Set[int]) -> float:
 def jaccard_similarity(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
     k: int = 10,
     inner: str = "cosine",
     n_jobs: int = 8,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
     indices_R = nn_array_to_setlist(top_k_neighbors(R, k, inner, n_jobs))
@@ -56,10 +58,12 @@ def nn_array_to_setlist(nn: npt.NDArray) -> List[Set[int]]:
 def second_order_cosine_similarity(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
     k: int = 10,
     n_jobs: int = 8,
 ) -> float:
     inner = "cosine"
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
     nns_R = top_k_neighbors(R, k, inner, n_jobs)
@@ -105,10 +109,12 @@ def _rank_sim_i(
 def rank_similarity(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
     k: int = 10,
     inner: str = "cosine",
     n_jobs: int = 8,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
     nns_R = top_k_neighbors(R, k, inner, n_jobs)
@@ -128,10 +134,12 @@ def rank_similarity(
 def joint_rank_jaccard_similarity(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
     k: int = 10,
     inner: str = "cosine",
     n_jobs: int = 8,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
     nns_R = top_k_neighbors(R, k, inner, n_jobs)

@@ -5,20 +5,26 @@ import numpy.typing as npt
 import scipy.spatial.distance
 import torch
 
-from repsim.measures.utils import to_numpy_if_needed
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
 
 
 def magnitude_difference(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
     return abs(float(np.linalg.norm(R.mean(axis=0)) - np.linalg.norm(Rp.mean(axis=0))))
 
 
 def magnitude_nrmse(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
     di_bar = np.hstack(
@@ -48,8 +54,12 @@ def magnitude_nrmse(
 
 
 def uniformity_difference(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
+
     def uniformity(x, t=2):
         pdist = scipy.spatial.distance.pdist(x, metric="sqeuclidean")
         pdist = scipy.spatial.distance.squareform(pdist)
@@ -65,14 +75,20 @@ def concentricity(x):
 
 
 def concentricity_difference(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     return float(abs(concentricity(R).mean() - concentricity(Rp).mean()))
 
 
 def concentricity_nrmse(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
+    R, Rp = flatten(R, Rp, shape=shape)
     alphai_bar = np.hstack(
         [
             concentricity(R),

@@ -3,13 +3,16 @@ from typing import Union
 import numpy.typing as npt
 import torch
 
-from repsim.measures.utils import to_torch_if_needed
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_torch_if_needed
 
 
 def centered_kernel_alignment(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
 ) -> float:
     """Kornblith et al. (2019)"""
+    R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_torch_if_needed(R, Rp)
     N, D = R.size()
 

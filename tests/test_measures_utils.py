@@ -14,14 +14,14 @@ from tests.conftest import SEED, get_identical_reps, get_rep
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,expected_shape",
+    "rep1,rep2,shape,expected_shape",
     [
         (*get_identical_reps(5, 2), (5, 2)),
         (get_rep(5, 2, SEED), get_rep(5, 100, SEED), (5, 100)),
         (get_rep(5, 100, SEED), get_rep(5, 2, SEED), (5, 100)),
     ],
 )
-def test_adjust_dimensionality(rep1, rep2, expected_shape):
+def test_adjust_dimensionality(rep1, rep2, shape, expected_shape):
     rep1, rep2 = to_numpy_if_needed(rep1, rep2)
     rep1, rep2 = adjust_dimensionality(rep1, rep2)
     assert rep1.shape == rep2.shape
@@ -65,9 +65,9 @@ def test_normalize_row_norm():
 
 
 def test_Pipeline():
-    rep1, rep2 = get_identical_reps(5, 2)
+    rep1, rep2, shape = get_identical_reps(5, 2)
     rep1, rep2 = to_numpy_if_needed(rep1, rep2)
 
     pipeline = Pipeline([center_columns], centered_kernel_alignment)
-    result = pipeline(rep1, rep2)
+    result = pipeline(rep1, rep2, shape)
     np.testing.assert_approx_equal(result, 1)
