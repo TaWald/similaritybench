@@ -1,4 +1,0 @@
-_target_: compare_logits.MeasureSelection
-measures:
-  - blue_score
-  - kl_divergence

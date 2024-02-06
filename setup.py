@@ -11,13 +11,13 @@ with open("README.md") as f:
 #     license = f.read()
 
 setup(
-    name="llmcomp",
+    name="repsim",
     version="0.1.0",
-    description="Tools to compare representations of LLMs",
+    description="Tools to compare representations",
     long_description=readme,
-    author="Max Klabunde",
-    author_email="max.klabunde@uni-passau.de",
-    url="https://github.com/mklabunde/llmcomp",
+    # author="Max Klabunde",
+    # author_email="max.klabunde@uni-passau.de",
+    # url="https://github.com/mklabunde/llmcomp",
     # license=license,
     packages=find_packages(exclude=("tests", "docs")),
 )

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from llmcomp.measures import (
+from repsim.measures import (
     aligned_cossim,
     centered_kernel_alignment,
     concentricity_difference,

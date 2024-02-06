@@ -1,4 +1,0 @@
-name: winogrande # huggingface load_dataset argument: path
-config: winogrande_xs # huggingface load_dataset argument: name
-split: validation
-prompt_template: fill in the blank # promptsource template name

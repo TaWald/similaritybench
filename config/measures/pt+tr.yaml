@@ -1,7 +1,0 @@
-- _target_: llmcomp.measures.utils.Pipeline
-  preprocess_funcs:
-    - _target_: llmcomp.measures.utils.center_columns
-      _partial_: true
-  similarity_func:
-    _target_: llmcomp.measures.permutation_procrustes
-    _partial_: true

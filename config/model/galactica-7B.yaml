@@ -1,3 +1,0 @@
-name: facebook/galactica-6.7b
-remove_sos_token: true
-token_pos: -1

@@ -1,7 +1,0 @@
-name: /root/LLM-comparison/outputs/hf_ft_tutorial/checkpoint-9000
-name_human: multibert-0-mnli
-remove_sos_token: false
-token_pos: 0
-kwargs:
-  tokenizer_name: google/multiberts-seed_0
-  model_type: sequence-classification

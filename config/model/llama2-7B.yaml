@@ -1,3 +1,0 @@
-name: meta-llama/Llama-2-7b-hf
-remove_sos_token: false
-token_pos: -1

@@ -1,3 +1,0 @@
-name: stabilityai/stablelm-base-alpha-7b
-remove_sos_token: false
-token_pos: -1

@@ -1,4 +1,0 @@
-name: piqa # huggingface load_dataset argument: path
-config: # huggingface load_dataset argument: name
-split: validation
-prompt_template: pick_correct_choice_index # promptsource template name

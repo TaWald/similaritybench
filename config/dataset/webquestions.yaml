@@ -1,4 +1,0 @@
-name: web_questions # huggingface load_dataset argument: path
-config: # huggingface load_dataset argument: name
-split: test
-prompt_template: whats_the_answer # promptsource template name

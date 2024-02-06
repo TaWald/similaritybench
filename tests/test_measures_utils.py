@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from llmcomp.measures import centered_kernel_alignment
-from llmcomp.measures.utils import (
+from repsim.measures import centered_kernel_alignment
+from repsim.measures.utils import (
     Pipeline,
     adjust_dimensionality,
     center_columns,

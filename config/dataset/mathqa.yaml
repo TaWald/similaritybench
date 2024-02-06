@@ -1,4 +1,0 @@
-name: math_qa # huggingface load_dataset argument: path
-config: # huggingface load_dataset argument: name
-split: validation
-prompt_template: pick_the_correct # promptsource template name
