@@ -27,6 +27,7 @@ conda active ENVNAME
 python -m venv .venv
 source .venv/bin/activate
 pip install torch=2.0.1 torchvision torchaudio hydra-core ipykernel flake8 black huggingface-hub ipywidgets matplotlib seaborn numpy scipy pyarrow tokenizers datasets transformers pytest Cython gudhi
+pip install -e .
 ```
 
 (Max: Die GPU Treiber sind veraltet bei uns, weswegen keine höhere pytorch Version funktioniert.)
