@@ -8,6 +8,9 @@
 /.cache
 /figures
 
+nlp/multirun
+nlp/outputs
+nlp/results
 
 *.env
 
