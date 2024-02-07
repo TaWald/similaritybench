@@ -17,8 +17,8 @@ from tests.conftest import SEED, get_identical_reps, get_rep
     "rep1,rep2,shape,expected_shape",
     [
         (*get_identical_reps(5, 2), (5, 2)),
-        (get_rep(5, 2, SEED), get_rep(5, 100, SEED), (5, 100)),
-        (get_rep(5, 100, SEED), get_rep(5, 2, SEED), (5, 100)),
+        (get_rep(5, 2, SEED), get_rep(5, 100, SEED), "nd", (5, 100)),
+        (get_rep(5, 100, SEED), get_rep(5, 2, SEED), "nd", (5, 100)),
     ],
 )
 def test_adjust_dimensionality(rep1, rep2, shape, expected_shape):

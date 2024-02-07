@@ -111,7 +111,7 @@ def flatten(
     *args: Union[torch.Tensor, npt.NDArray], shape: SHAPE_TYPE
 ) -> List[Union[torch.Tensor, npt.NDArray]]:
     if shape == "ntd":
-        return list(map(flatten_nxtxd_to_nxtd, args))
+        return list(map(flatten_nxtxd_to_ntxd, args))
     elif shape == "nd":
         return list(args)
     elif shape == "nchw":
@@ -123,8 +123,9 @@ def flatten(
         )
 
 
-def flatten_nxtxd_to_nxtd(
-    R: Union[torch.Tensor, npt.NDArray]
-) -> Union[torch.Tensor, npt.NDArray]:
+def flatten_nxtxd_to_ntxd(R: Union[torch.Tensor, npt.NDArray]) -> torch.Tensor:
     R = to_torch_if_needed(R)[0]
-    return torch.flatten(R, start_dim=1)
+    log.debug("Shape before flattening: %s", str(R.shape))
+    R = torch.flatten(R, start_dim=0, end_dim=1)
+    log.debug("Shape after flattening: %s", str(R.shape))
+    return R
