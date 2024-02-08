@@ -16,3 +16,6 @@ __pycache__/*
 **__pycache__**
 
 *.egg-info/
+*build
+._.DS_Store
+.DS_Store
