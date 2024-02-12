@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-
 # Learn more: https://github.com/kennethreitz/setup.py
-
-from setuptools import find_packages, setup
+from setuptools import find_packages
+from setuptools import setup
 
 with open("README.md") as f:
     readme = f.read()

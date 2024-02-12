@@ -2,8 +2,9 @@ from typing import Union
 
 import numpy.typing as npt
 import torch
-
-from repsim.measures.utils import SHAPE_TYPE, flatten, to_torch_if_needed
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_torch_if_needed
 
 
 def centered_kernel_alignment(
@@ -26,10 +27,7 @@ def centered_kernel_alignment(
     else:
         return (
             torch.linalg.norm(Rp.T @ R, ord="fro") ** 2
-            / (
-                torch.linalg.norm(R.T @ R, ord="fro")
-                * torch.linalg.norm(Rp.T @ Rp, ord="fro")
-            )
+            / (torch.linalg.norm(R.T @ R, ord="fro") * torch.linalg.norm(Rp.T @ Rp, ord="fro"))
         ).item()
 
 

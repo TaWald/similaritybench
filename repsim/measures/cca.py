@@ -1,6 +1,5 @@
 ##################################################################################
 # Copied from https://github.com/google/svcca/blob/1f3fbf19bd31bd9b76e728ef75842aa1d9a4cd2b/cca_core.py
-
 # Copyright 2018 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 The core code for applying Canonical Correlation Analysis to deep networks.
 
@@ -35,9 +32,6 @@ https://arxiv.org/abs/1806.05759
 for full details.
 
 """
-
-from __future__ import absolute_import, division, print_function
-
 import numpy as np
 
 num_cca_trials = 5
@@ -278,9 +272,7 @@ def get_cca_similarity(
     # assert dimensionality equal
     assert acts1.shape[1] == acts2.shape[1], "dimensions don't match"
     # check that acts1, acts2 are transposition
-    assert acts1.shape[0] < acts1.shape[1], (
-        "input must be number of neurons" "by datapoints"
-    )
+    assert acts1.shape[0] < acts1.shape[1], "input must be number of neurons" "by datapoints"
     return_dict = {}
 
     # compute covariance with numpy function for extra stability
@@ -370,9 +362,7 @@ def get_cca_similarity(
     return return_dict
 
 
-def robust_cca_similarity(
-    acts1, acts2, threshold=0.98, epsilon=1e-6, compute_dirns=True
-):
+def robust_cca_similarity(acts1, acts2, threshold=0.98, epsilon=1e-6, compute_dirns=True):
     """Calls get_cca_similarity multiple times while adding noise.
 
     This function is very similar to get_cca_similarity, and can be used if
@@ -481,10 +471,7 @@ def compute_pwcca(acts1, acts2, epsilon=0.0):
         dirns = (
             np.dot(
                 sresults["coef_x"],
-                (
-                    acts1[sresults["x_idxs"]]
-                    - sresults["neuron_means1"][sresults["x_idxs"]]
-                ),
+                (acts1[sresults["x_idxs"]] - sresults["neuron_means1"][sresults["x_idxs"]]),
             )
             + sresults["neuron_means1"][sresults["x_idxs"]]
         )
@@ -495,10 +482,7 @@ def compute_pwcca(acts1, acts2, epsilon=0.0):
         dirns = (
             np.dot(
                 sresults["coef_y"],
-                (
-                    acts1[sresults["y_idxs"]]
-                    - sresults["neuron_means2"][sresults["y_idxs"]]
-                ),
+                (acts1[sresults["y_idxs"]] - sresults["neuron_means2"][sresults["y_idxs"]]),
             )
             + sresults["neuron_means2"][sresults["y_idxs"]]
         )
@@ -515,12 +499,12 @@ def compute_pwcca(acts1, acts2, epsilon=0.0):
 
 ##################################################################################
 
-from typing import Union
+from typing import Union  # noqa:e402
 
-import numpy.typing as npt
-import torch
+import numpy.typing as npt  # noqa:e402
+import torch  # noqa:e402
 
-from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed  # noqa:e402
 
 
 def svcca(

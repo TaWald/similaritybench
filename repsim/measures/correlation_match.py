@@ -4,13 +4,10 @@ import numpy.typing as npt
 import scipy.optimize
 import scipy.spatial.distance
 import torch
-
-from repsim.measures.utils import (
-    SHAPE_TYPE,
-    center_columns,
-    flatten,
-    to_numpy_if_needed,
-)
+from repsim.measures.utils import center_columns
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_numpy_if_needed
 
 
 def correlation_match(
@@ -43,6 +40,4 @@ def correlation_match(
         score2 = corr_matrix.max(axis=0).mean()
         return (score1 + score2) / 2
     else:
-        raise ValueError(
-            f"Unknown matching mode: {mode}. Must be one of 'hard' or 'soft'."
-        )
+        raise ValueError(f"Unknown matching mode: {mode}. Must be one of 'hard' or 'soft'.")
