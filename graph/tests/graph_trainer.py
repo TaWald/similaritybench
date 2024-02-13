@@ -68,7 +68,7 @@ class GraphTrainer(ABC):
             model_file = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_AT_SEED(seed))
 
             if not os.path.isfile(model_file):
-                return FileNotFoundError(f"Model File for seed {seed} does not exist")
+                raise FileNotFoundError(f"Model File for seed {seed} does not exist")
 
             models[seed].load_state_dict(torch.load(model_file))
 
