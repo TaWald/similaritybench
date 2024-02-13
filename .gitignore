@@ -12,6 +12,9 @@ nlp/multirun
 nlp/outputs
 nlp/results
 
+graph/data*
+graph/output*
+
 *.env
 
 .idea/*
