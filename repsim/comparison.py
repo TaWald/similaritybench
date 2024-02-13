@@ -2,15 +2,18 @@ import itertools
 import logging
 import time
 from collections import defaultdict
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Callable, List, Optional, Sequence, Union
+from typing import Callable
+from typing import List
+from typing import Optional
+from typing import Union
 
 import numpy.typing as npt
 import pandas as pd
 import torch
-from tqdm import tqdm
-
 from repsim.measures.utils import SHAPE_TYPE
+from tqdm import tqdm
 
 log = logging.getLogger(__name__)
 
@@ -100,9 +103,7 @@ def compare_representations(
         )
 
     for sim_func in measures:
-        log.info(
-            "Assuming symmetric similarity measures, so skipping upper triangle of score matrix."
-        )
+        log.info("Assuming symmetric similarity measures, so skipping upper triangle of score matrix.")
 
         start = time.perf_counter()
         measure_name = name_of_similarity_function(sim_func)
@@ -113,9 +114,7 @@ def compare_representations(
         # pairwise similarity scores between layers
         scores = torch.zeros(n_layers1, n_layers2, dtype=torch.double)
         combinations = torch.tril_indices(n_layers1, n_layers2).transpose(1, 0)
-        for rep1_layer_idx, rep2_layer_idx in tqdm(
-            combinations, total=combinations.size(0)
-        ):
+        for rep1_layer_idx, rep2_layer_idx in tqdm(combinations, total=combinations.size(0)):
             rep1_layer_idx, rep2_layer_idx = int(rep1_layer_idx), int(rep2_layer_idx)
             log.debug("Comparing layers: %d, %d", rep1_layer_idx, rep2_layer_idx)
             score = sim_func(rep1[rep1_layer_idx], rep2[rep2_layer_idx], shape)
@@ -145,9 +144,7 @@ def compare_representations(
         for key, value in metadata.items():
             results[key].extend([value] * n_times_to_add)
 
-        log.info(
-            f"{measure_name} completed in {time.perf_counter() - start:.1f} seconds"  # noqa: E501
-        )
+        log.info(f"{measure_name} completed in {time.perf_counter() - start:.1f} seconds")  # noqa: E501
 
     df = pd.DataFrame.from_dict(results)
     if results_path:

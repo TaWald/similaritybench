@@ -1,17 +1,23 @@
 import logging
 import os
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import datasets
 import hydra
+import repsim.utils
 import torch
 import transformers
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
+from omegaconf import OmegaConf
 from tqdm import tqdm
-
-import repsim
-import repsim.utils
 
 log = logging.getLogger(__name__)
 
@@ -42,9 +48,7 @@ def get_tokenizer_and_model(
 
 def get_prompt_creator(
     dataset_path: str, dataset_config: Optional[str] = None
-) -> Union[
-    Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]
-]:
+) -> Union[Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]]:
     if dataset_path == "glue" and dataset_config == "mnli":
 
         def create_prompt(example: Dict[str, Any]) -> Tuple[str, str]:  # type:ignore
@@ -65,13 +69,9 @@ def get_prompt_creator(
 
 def extract_representations(
     model: Any,
-    tokenizer: Union[
-        transformers.PreTrainedTokenizer, transformers.PreTrainedTokenizerFast
-    ],
+    tokenizer: Union[transformers.PreTrainedTokenizer, transformers.PreTrainedTokenizerFast],
     dataset: datasets.Dataset,
-    prompt_creator: Union[
-        Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]
-    ],
+    prompt_creator: Union[Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]],
     remove_sos_token: bool,
     device: str,
     is_bert_model: bool = True,
@@ -136,12 +136,7 @@ def extract_representations(
 
         # If we dont need the full representation for all tokens, discard unneeded ones.
         if token_pos_to_extract is not None:
-            out = tuple(
-                (
-                    representations[:, token_pos_to_extract, :].unsqueeze(1)
-                    for representations in out
-                )
-            )
+            out = tuple((representations[:, token_pos_to_extract, :].unsqueeze(1) for representations in out))
 
         out = tuple((representations.to("cpu") for representations in out))
         all_representations.append(out)
@@ -157,10 +152,7 @@ def set_seeds(seed: int = 12345678) -> None:
 
 
 def is_bert_model(cfg: DictConfig) -> bool:
-    if (
-        "google/multiberts" in cfg.kwargs.tokenizer_name
-        or "multibert" in cfg.name_human
-    ):
+    if "google/multiberts" in cfg.kwargs.tokenizer_name or "multibert" in cfg.name_human:
         return True
     return False
 
@@ -171,10 +163,7 @@ def to_ntxd_shape(reps: List[Tuple[torch.Tensor, ...]]) -> Tuple[torch.Tensor, .
     for layer_idx in range(n_layers):
         concated_reps.append(
             torch.cat(
-                [
-                    torch.flatten(reps[i][layer_idx], end_dim=-2)
-                    for i in range(len(reps))
-                ],
+                [torch.flatten(reps[i][layer_idx], end_dim=-2) for i in range(len(reps))],
                 dim=0,
             )
         )
@@ -191,9 +180,7 @@ def main(cfg: DictConfig) -> None:
 
     ################
     # Extracting representations
-    dataset = repsim.utils.get_dataset(cfg.dataset.name, cfg.dataset.config)[
-        cfg.dataset.split
-    ]
+    dataset = repsim.utils.get_dataset(cfg.dataset.name, cfg.dataset.config)[cfg.dataset.split]
     prompt_creator = get_prompt_creator(cfg.dataset.name, cfg.dataset.config)
 
     # Assumption: we can temporarily cache the representations from both models for all layers in memory
@@ -215,11 +202,7 @@ def main(cfg: DictConfig) -> None:
                 model_cfg.remove_sos_token,
                 cfg.device,
                 is_bert_model=is_bert_model(model_cfg),
-                token_pos_to_extract=(
-                    model_cfg.token_pos
-                    if isinstance(model_cfg.token_pos, int)
-                    else None
-                ),
+                token_pos_to_extract=(model_cfg.token_pos if isinstance(model_cfg.token_pos, int) else None),
             )
         log.info("Completed representation extraction for %s", model_cfg.name)
 

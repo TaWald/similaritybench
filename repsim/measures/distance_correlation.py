@@ -5,8 +5,10 @@ import numpy.typing as npt
 import scipy.optimize
 import scipy.spatial.distance
 import torch
-
-from repsim.measures.utils import SHAPE_TYPE, double_center, flatten, to_numpy_if_needed
+from repsim.measures.utils import double_center
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_numpy_if_needed
 
 
 def distance_correlation(
@@ -17,12 +19,8 @@ def distance_correlation(
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
-    S = scipy.spatial.distance.squareform(
-        scipy.spatial.distance.pdist(R, metric="euclidean")
-    )
-    Sp = scipy.spatial.distance.squareform(
-        scipy.spatial.distance.pdist(Rp, metric="euclidean")
-    )
+    S = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(R, metric="euclidean"))
+    Sp = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(Rp, metric="euclidean"))
 
     S = double_center(S)
     Sp = double_center(Sp)

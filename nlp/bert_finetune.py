@@ -5,11 +5,12 @@ from functools import partial
 import evaluate
 import hydra
 import numpy as np
-import torch
-from omegaconf import DictConfig, OmegaConf
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-
 import repsim.utils
+import torch
+from omegaconf import DictConfig
+from omegaconf import OmegaConf
+from transformers import AutoModelForSequenceClassification
+from transformers import AutoTokenizer
 
 log = logging.getLogger(__name__)
 
@@ -55,9 +56,7 @@ def main(cfg: DictConfig) -> None:
     dataset = repsim.utils.get_dataset(cfg.dataset.name, cfg.dataset.config)
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.kwargs.tokenizer_name)
     dataset_name = (
-        cfg.dataset.name + "__" + cfg.dataset.config
-        if cfg.dataset.config is not None
-        else cfg.dataset.name
+        cfg.dataset.name + "__" + cfg.dataset.config if cfg.dataset.config is not None else cfg.dataset.name
     )
     tokenized_dataset = dataset.map(
         partial(tokenize_function, tokenizer=tokenizer, dataset_name=dataset_name),

@@ -4,8 +4,9 @@ import numpy as np
 import numpy.typing as npt
 import scipy.spatial.distance
 import torch
-
-from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_numpy_if_needed
 
 
 def rsm_norm_diff(
@@ -18,6 +19,4 @@ def rsm_norm_diff(
     R, Rp = to_numpy_if_needed(R, Rp)
     S = scipy.spatial.distance.pdist(R, inner)  # type:ignore
     Sp = scipy.spatial.distance.pdist(Rp, inner)  # type:ignore
-    return float(
-        np.linalg.norm(S - Sp, ord=2)
-    )  # ord=2 because pdist gives vectorized lower triangle of RSM
+    return float(np.linalg.norm(S - Sp, ord=2))  # ord=2 because pdist gives vectorized lower triangle of RSM

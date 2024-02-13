@@ -1,12 +1,15 @@
-from typing import List, Set, Union
+from typing import List
+from typing import Set
+from typing import Union
 
 import numpy as np
 import numpy.typing as npt
 import scipy.spatial.distance
 import sklearn.neighbors
 import torch
-
-from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_numpy_if_needed
 
 
 def _jac_sim_i(idx_R: Set[int], idx_Rp: Set[int]) -> float:
@@ -27,11 +30,7 @@ def jaccard_similarity(
     indices_R = nn_array_to_setlist(top_k_neighbors(R, k, inner, n_jobs))
     indices_Rp = nn_array_to_setlist(top_k_neighbors(Rp, k, inner, n_jobs))
 
-    return float(
-        np.mean(
-            [_jac_sim_i(idx_R, idx_Rp) for idx_R, idx_Rp in zip(indices_R, indices_Rp)]
-        )
-    )
+    return float(np.mean([_jac_sim_i(idx_R, idx_Rp) for idx_R, idx_Rp in zip(indices_R, indices_Rp)]))
 
 
 def top_k_neighbors(
@@ -43,9 +42,7 @@ def top_k_neighbors(
     # k+1 nearest neighbors, because we pass in all the data, which means that a point
     # will be the nearest neighbor to itself. We remove this point from the results and
     # report only the k nearest neighbors distinct from the point itself.
-    nns = sklearn.neighbors.NearestNeighbors(
-        n_neighbors=k + 1, metric=inner, n_jobs=n_jobs
-    )
+    nns = sklearn.neighbors.NearestNeighbors(n_neighbors=k + 1, metric=inner, n_jobs=n_jobs)
     nns.fit(R)
     _, nns = nns.kneighbors(R)
     return nns[:, 1:]
@@ -69,9 +66,7 @@ def second_order_cosine_similarity(
     nns_R = top_k_neighbors(R, k, inner, n_jobs)
     nns_Rp = top_k_neighbors(Rp, k, inner, n_jobs)
 
-    union_nns = [
-        list(set(nns_Ri).union(set(nns_Rpi))) for nns_Ri, nns_Rpi in zip(nns_R, nns_Rp)
-    ]
+    union_nns = [list(set(nns_Ri).union(set(nns_Rpi))) for nns_Ri, nns_Rpi in zip(nns_R, nns_Rp)]
 
     dists_R = scipy.spatial.distance.pdist(R, inner)
     dists_Rp = scipy.spatial.distance.pdist(Rp, inner)
@@ -79,19 +74,14 @@ def second_order_cosine_similarity(
     return float(
         np.mean(
             [
-                1
-                - scipy.spatial.distance.cosine(
-                    dists_R[union_nns_i], dists_Rp[union_nns_i]
-                )
+                1 - scipy.spatial.distance.cosine(dists_R[union_nns_i], dists_Rp[union_nns_i])
                 for union_nns_i in union_nns
             ]
         )
     )
 
 
-def _rank_sim_i(
-    joint_nns_i: List[int], nns_Ri: npt.NDArray, nns_Rpi: npt.NDArray
-) -> float:
+def _rank_sim_i(joint_nns_i: List[int], nns_Ri: npt.NDArray, nns_Rpi: npt.NDArray) -> float:
     if not joint_nns_i:
         return 0
 
@@ -120,10 +110,7 @@ def rank_similarity(
     nns_R = top_k_neighbors(R, k, inner, n_jobs)
     nns_Rp = top_k_neighbors(Rp, k, inner, n_jobs)
 
-    nns_of_both = [
-        list(set(nns_Ri).intersection(set(nns_Rpi)))
-        for nns_Ri, nns_Rpi in zip(nns_R, nns_Rp)
-    ]
+    nns_of_both = [list(set(nns_Ri).intersection(set(nns_Rpi))) for nns_Ri, nns_Rpi in zip(nns_R, nns_Rp)]
 
     scores = np.zeros(R.shape[0])
     for i, nns_i in enumerate(nns_of_both):
@@ -148,18 +135,13 @@ def joint_rank_jaccard_similarity(
     indices_R = nn_array_to_setlist(nns_R)
     indices_Rp = nn_array_to_setlist(nns_Rp)
 
-    nns_of_both = [
-        list(set(nns_Ri).intersection(set(nns_Rpi)))
-        for nns_Ri, nns_Rpi in zip(nns_R, nns_Rp)
-    ]
+    nns_of_both = [list(set(nns_Ri).intersection(set(nns_Rpi))) for nns_Ri, nns_Rpi in zip(nns_R, nns_Rp)]
 
     return float(
         np.mean(
             [
                 _jac_sim_i(idx_R, idx_Rp) * _rank_sim_i(nns, nns_R[i], nns_Rp[i])
-                for i, (idx_R, idx_Rp, nns) in enumerate(
-                    zip(indices_R, indices_Rp, nns_of_both)
-                )
+                for i, (idx_R, idx_Rp, nns) in enumerate(zip(indices_R, indices_Rp, nns_of_both))
             ]
         )
     )

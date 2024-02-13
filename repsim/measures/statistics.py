@@ -4,8 +4,9 @@ import numpy as np
 import numpy.typing as npt
 import scipy.spatial.distance
 import torch
-
-from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_numpy_if_needed
 
 
 def magnitude_difference(
@@ -34,16 +35,9 @@ def magnitude_nrmse(
         ]
     ).mean(axis=1)
     rmse = np.sqrt(
-        1
-        / 2
-        * (
-            (np.linalg.norm(R, axis=1, ord=2) - di_bar) ** 2
-            + (np.linalg.norm(Rp, axis=1, ord=2) - di_bar) ** 2
-        )
+        1 / 2 * ((np.linalg.norm(R, axis=1, ord=2) - di_bar) ** 2 + (np.linalg.norm(Rp, axis=1, ord=2) - di_bar) ** 2)
     )
-    normalization = np.abs(
-        np.linalg.norm(R, axis=1, ord=2) - np.linalg.norm(Rp, axis=1, ord=2)
-    )
+    normalization = np.abs(np.linalg.norm(R, axis=1, ord=2) - np.linalg.norm(Rp, axis=1, ord=2))
     # this might create nans as normalization can theoretically be zero, but we fix this
     # by setting the nan values to zero (If there is no difference in the norm of the
     # instance in both representations, then the RMSE term will also be zero. We then
@@ -69,9 +63,7 @@ def uniformity_difference(
 
 
 def concentricity(x):
-    return 1 - scipy.spatial.distance.cdist(
-        x, x.mean(axis=0, keepdims=True), metric="cosine"
-    )
+    return 1 - scipy.spatial.distance.cdist(x, x.mean(axis=0, keepdims=True), metric="cosine")
 
 
 def concentricity_difference(
@@ -95,10 +87,7 @@ def concentricity_nrmse(
             concentricity(Rp),
         ]
     ).mean(axis=1, keepdims=True)
-    rmse = np.sqrt(
-        ((concentricity(R) - alphai_bar) ** 2 + (concentricity(Rp) - alphai_bar) ** 2)
-        / 2
-    )
+    rmse = np.sqrt(((concentricity(R) - alphai_bar) ** 2 + (concentricity(Rp) - alphai_bar) ** 2) / 2)
     normalization = np.abs(concentricity(R) - concentricity(Rp))
 
     # this might create nans as normalization can theoretically be zero, but we fix this
