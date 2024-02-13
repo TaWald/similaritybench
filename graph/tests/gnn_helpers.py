@@ -1,13 +1,11 @@
 import random
-
-from sklearn.metrics import accuracy_score
+from typing import Dict
 
 import numpy as np
 import torch
+from sklearn.metrics import accuracy_score
 from torch.nn import functional as func
-
 from tqdm import tqdm
-from typing import Dict
 
 
 def train_model(model, data, split_idx, seed: int, optimizer_params: Dict, save_path: str):

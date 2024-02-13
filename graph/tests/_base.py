@@ -1,9 +1,16 @@
 import json
+import os
 import pickle
-
-from graph.config import *
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 from typing import List
+
+from graph.config import DEFAULT_SEEDS
+from graph.config import RES_DIR
+from graph.config import SIMILARITIES_FILE_NAME
+from graph.config import TEST_RESULTS_JSON_NAME
+
+# from graph.config import *
 
 
 class GraphTest(ABC):

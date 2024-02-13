@@ -1,31 +1,31 @@
-import os
 import multiprocessing
+import os
 
-from repsim.measures import (
-    rsm_norm_diff,
-    eigenspace_overlap_score,
-    linear_reg,
-    aligned_cossim,
-    orthogonal_procrustes,
-    representational_similarity_analysis,
-    centered_kernel_alignment,
-    correlation_match,
-    distance_correlation,
-    orthogonal_angular_shape_metric,
-    jaccard_similarity,
-    second_order_cosine_similarity,
-    rank_similarity,
-    joint_rank_jaccard_similarity,
-    geometry_score,
-    imd_score,
-    gulp,
-    pwcca,
-    svcca,
-)
-
-from repsim.measures.utils import center_columns, normalize_row_norm, normalize_matrix_norm
-
-from torch_geometric.nn.models import GCN, GraphSAGE, GAT
+from repsim.measures import aligned_cossim
+from repsim.measures import centered_kernel_alignment
+from repsim.measures import correlation_match
+from repsim.measures import distance_correlation
+from repsim.measures import eigenspace_overlap_score
+from repsim.measures import geometry_score
+from repsim.measures import gulp
+from repsim.measures import imd_score
+from repsim.measures import jaccard_similarity
+from repsim.measures import joint_rank_jaccard_similarity
+from repsim.measures import linear_reg
+from repsim.measures import orthogonal_angular_shape_metric
+from repsim.measures import orthogonal_procrustes
+from repsim.measures import pwcca
+from repsim.measures import rank_similarity
+from repsim.measures import representational_similarity_analysis
+from repsim.measures import rsm_norm_diff
+from repsim.measures import second_order_cosine_similarity
+from repsim.measures import svcca
+from repsim.measures.utils import center_columns
+from repsim.measures.utils import normalize_matrix_norm
+from repsim.measures.utils import normalize_row_norm
+from torch_geometric.nn.models import GAT
+from torch_geometric.nn.models import GCN
+from torch_geometric.nn.models import GraphSAGE
 
 # ----------------------------------------------------------------------------------------------------------------------
 # GENERAL PATH-RELATED VARIABLES
@@ -51,7 +51,10 @@ if not os.path.isdir(RES_DIR):
 SIMILARITIES_FILE_NAME = "similarities.pkl"
 TEST_RESULTS_JSON_NAME = "results.json"
 
-TORCH_STATE_DICT_FILE_NAME_AT_SEED = lambda s: f"model_s{s}.pt"
+
+def TORCH_STATE_DICT_FILE_NAME_AT_SEED(s):
+    return f"model_s{s}.pt"
+
 
 NUM_CORES = multiprocessing.cpu_count()
 

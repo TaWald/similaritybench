@@ -1,12 +1,23 @@
-import torch
-from torch_geometric import transforms as t
+import os
+from abc import ABC
+from abc import abstractmethod
 
 import pandas as pd
+import torch
+from graph.config import DATA_DIR
+from graph.config import GNN_DICT
+from graph.config import GNN_PARAMS_DEFAULT_DIMENSION
+from graph.config import GNN_PARAMS_DEFAULT_DROPOUT
+from graph.config import GNN_PARAMS_DEFAULT_LR
+from graph.config import GNN_PARAMS_DEFAULT_N_EPOCHS
+from graph.config import LAYER_TEST_N_LAYERS
+from graph.config import LAYER_TEST_NAME
+from graph.config import MODEL_DIR
+from graph.config import TORCH_STATE_DICT_FILE_NAME_AT_SEED
+from graph.tests.gnn_helpers import get_representations
+from graph.tests.gnn_helpers import train_model
 from ogb.nodeproppred import PygNodePropPredDataset
-
-from graph.tests.gnn_helpers import train_model, get_representations
-
-from graph.tests._base import *
+from torch_geometric import transforms as t
 
 
 class GraphTrainer(ABC):

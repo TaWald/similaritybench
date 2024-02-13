@@ -1,10 +1,18 @@
+import argparse
+
 import numpy as np
+from graph.config import DATASET_LIST
+from graph.config import DEFAULT_SEEDS
+from graph.config import GNN_LIST
+from graph.config import LAYER_TEST_N_LAYERS
+from graph.config import LAYER_TEST_NAME
+from graph.config import MEASURE_DICT
+from graph.config import MEASURE_DICT_FUNC_KEY
+from graph.config import MEASURE_DICT_PREP_KEY
+from graph.config import MEASURE_LIST
 
 from ._base import GraphTest
 from .graph_trainer import LayerTestTrainer
-from graph.config import *
-
-import argparse
 
 
 class LayerTest(GraphTest):
