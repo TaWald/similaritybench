@@ -106,3 +106,5 @@ DATASET_LIST = {"ogbn-arxiv"}
 
 LAYER_TEST_NAME = "layer_test"
 LAYER_TEST_N_LAYERS = 6
+
+NN_TESTS_LIST = [LAYER_TEST_NAME]
