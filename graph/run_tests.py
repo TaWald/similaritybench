@@ -4,7 +4,6 @@ from itertools import product
 from graph.config import DATASET_LIST
 from graph.config import GNN_LIST
 from graph.config import LAYER_TEST_NAME
-from graph.config import MEASURE_DICT
 from graph.config import MEASURE_LIST
 from graph.config import NN_TESTS_LIST
 from graph.tests.graph_test import LayerTest
@@ -38,16 +37,7 @@ def parse_args():
         type=str,
         choices=MEASURE_LIST,
         default=MEASURE_LIST,
-        help="Datasets used in evaluation.",
-    )
-    parser.add_argument(
-        "-m",
-        "--measures",
-        nargs="*",
-        type=str,
-        choices=MEASURE_LIST,
-        default=MEASURE_LIST,
-        help="Datasets used in evaluation.",
+        help="Measures to test.",
     )
     parser.add_argument(
         "-t",
@@ -56,13 +46,7 @@ def parse_args():
         type=str,
         choices=NN_TESTS_LIST,
         default=LAYER_TEST_NAME,
-        help="Datasets used in evaluation.",
-    )
-    parser.add_argument(
-        "--train_only", action="store_true", help="whether to only train models but not apply any measures."
-    )
-    parser.add_argument(
-        "-m", "--measures", nargs="*", type=str, choices=MEASURE_LIST, default=MEASURE_DICT, help="Measure to apply."
+        help="Tests to run.",
     )
     return parser.parse_args()
 
