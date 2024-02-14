@@ -10,11 +10,10 @@ from huggingface_hub import hf_hub_download
 
 
 def find_files(directory, filename):
-    # Construct the pattern to search for
-    pattern = os.path.join(directory, "**", filename)
+    """Find all files in the directory the end with the filename."""
 
     # Use glob to find all files matching the pattern
-    files_found = glob.glob(pattern, recursive=True)
+    files_found = glob(os.path.join(directory, "**", filename), recursive=True)
 
     return files_found
 
@@ -54,7 +53,7 @@ def download_models_from_zenodo():
 
     # Download each file
     for file in files:
-        if file == Path(VISION_TAR_PATH).name:
+        if file["key"] == Path(VISION_TAR_PATH).name:
             file_url = file["links"]["self"]
 
             print(f"Downloading {file}...")
@@ -88,7 +87,6 @@ def download_public_models():
 
 def maybe_download_all_models():
     """Download the models from the model zoo."""
-    logger.info("Downloading the models from the model zoo.")
     if not own_vision_models_exist():
         tar_path = Path(VISION_TAR_PATH)
         if not tar_path.exists():
@@ -96,8 +94,9 @@ def maybe_download_all_models():
             download_models_from_zenodo()
 
         logger.info(f"Extracting the models to {VISION_MODEL_PATH}.")
-        with tarfile.open(tar_path, "r:gz") as tar:
+        with tarfile.open(str(tar_path), "r:gz") as tar:
             tar.extractall(VISION_MODEL_PATH)
+        # Potentially reshape the tar-file contents to correct location later.
         logger.info("Models downloaded and extracted.")
     logger.info("All own models present.")
 
