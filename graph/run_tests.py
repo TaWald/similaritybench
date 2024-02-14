@@ -57,5 +57,4 @@ if __name__ == "__main__":
     for model_name, dataset_name in product(args.architectures, args.datasets):
 
         test = GNN_TEST_DICT[args.test](model_name=model_name, dataset_name=dataset_name)
-        for m in args.measures:
-            test.test_measure(measure_name=m)
+        test.test_measures(args.measures)
