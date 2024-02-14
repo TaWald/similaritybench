@@ -13,6 +13,16 @@ from vision.util.download import maybe_download_all_models
 from vision.util.file_io import get_vision_model_info
 from loguru import logger
 
+from dataclasses import dataclass
+
+
+@dataclass
+class VisionModelInfo:
+    architecture_name: str
+    train_dataset: str
+    seed_id: int
+    setting_identifier: str
+
 
 def _format_reps_appropriately(all_outs) -> list[SingleLayerRepresentation]:
     all_single_layer_reps = []
@@ -25,11 +35,17 @@ def _format_reps_appropriately(all_outs) -> list[SingleLayerRepresentation]:
             shape = "nc"
         else:
             raise ValueError(f"Unknown shape of representations: {reps.shape}")
-        all_single_layer_reps.append(SingleLayerRepresentation(layer_id=layer_id, representation=reps, shape=shape))
+        all_single_layer_reps.append(SingleLayerRepresentation(layer_id=int(layer_id), representation=reps, shape=shape))
     return all_single_layer_reps
 
 
-def get_vision_representations(model_info: dict, dataset: str) -> ModelRepresentations:
+def get_vision_representations(
+    architecture_name: str,
+    train_dataset: str,
+    seed_id: int,
+    setting_identifier: str | None,
+    representation_dataset: str,
+) -> ModelRepresentations:
     """
     Finds the representations for a given model and dataset.
     :param architecture_name: The name of the architecture.
@@ -37,22 +53,22 @@ def get_vision_representations(model_info: dict, dataset: str) -> ModelRepresent
     :param dataset: The name of the dataset.
     """
 
-    if "setting_identifier" not in model_info.keys():
+    if setting_identifier == "Normal":
         model_info: ds.ModelInfo = get_vision_model_info(
-            architecture_name=model_info["architecture_name"],
-            dataset=model_info["train_dataset"],
-            seed_id=model_info["seed_id"],
+            architecture_name=architecture_name,
+            dataset=train_dataset,
+            seed_id=seed_id,
         )
     else:
         model_info: ds.ModelInfo = get_vision_model_info(
-            architecture_name=model_info["architecture_name"],
-            dataset=model_info["train_dataset"],
-            seed_id=model_info["seed_id"],
-            setting_identifier=model_info["setting_identifier"],
+            architecture_name=architecture_name,
+            dataset=train_dataset,
+            seed_id=seed_id,
+            setting_identifier=setting_identifier,
         )
 
     loaded_model: AbsActiExtrArch = load_model_from_info_file(model_info, load_ckpt=True)
-    datamodule = fd.get_datamodule(dataset=dataset)
+    datamodule = fd.get_datamodule(dataset=representation_dataset)
     test_dataloader = datamodule.test_dataloader(batch_size=100)
 
     # Optionally there shoudl be a saving step in here.
@@ -66,7 +82,7 @@ def get_vision_representations(model_info: dict, dataset: str) -> ModelRepresent
         architecture_name=model_info.architecture,
         seed_id=model_info.seed_id,
         train_dataset=model_info.dataset,
-        representation_dataset=dataset,
+        representation_dataset=representation_dataset,
         representations=tuple(all_single_layer_reps),
     )
     return model_reps
