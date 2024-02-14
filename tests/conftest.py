@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.testing
 import torch
+from scipy.stats import ortho_group
 
 SEED = 123
 
@@ -27,4 +28,10 @@ def get_identical_reps(N, D):
 
 def get_distinct_reps(N, D):
     rep1, rep2 = get_rep(N, D, seed=SEED), get_rep(N, D, seed=SEED + 1)
+    return [rep1, rep2, "nd"]
+
+def get_orthogonal_reps(N, D):
+    rep1, rep2 = get_rep(N, D, seed=SEED), get_rep(N, D, seed=SEED)
+    orth_trafo = ortho_group.rvs(D, random_state=SEED)
+    rep2 = rep2 @ orth_trafo
     return [rep1, rep2, "nd"]
