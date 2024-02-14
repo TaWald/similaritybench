@@ -76,12 +76,19 @@ def monotonicity_test():
 
 
 if __name__ == "__main__":
-    subset_of_models = [
+    subset_of_vision_models = [
         m
         for m in ALL_TRAINED_MODELS
-        if (m.domain == "VISION") and (m.architecture == "ResNet18") and (m.train_dataset == "CIFAR10")
+        if (m.domain == "VISION")
+        and (m.architecture == "ResNet18")
+        and (m.train_dataset == "CIFAR10")
+        and (m.additional_kwargs["seed_id"] <= 1)
     ]
-    experiment = SameLayerExperiment(subset_of_models, [centered_kernel_alignment], "CIFAR10")
+    subset_of_nlp_models = []
+    subset_of_graph_models = []
+    experiment = SameLayerExperiment(subset_of_vision_models, [centered_kernel_alignment], "CIFAR10")
+    # experiment = SameLayerExperiment(subset_of_nlp_models, [centered_kernel_alignment], "CIFAR10")
+    # experiment = SameLayerExperiment(subset_of_graph_models, [centered_kernel_alignment], "CIFAR10")
     result = experiment.run()
     print(result)
     print(0)
