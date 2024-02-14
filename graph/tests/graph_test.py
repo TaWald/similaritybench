@@ -9,6 +9,8 @@ import numpy as np
 from graph.config import DEFAULT_SEEDS
 from graph.config import LAYER_TEST_N_LAYERS
 from graph.config import LAYER_TEST_NAME
+from graph.config import MEASURE_DICT
+from graph.config import MEASURE_DICT_FUNC_KEY
 from graph.config import RES_DIR
 from graph.config import SIMILARITIES_FILE_NAME
 from graph.config import TEST_RESULTS_JSON_NAME
@@ -70,9 +72,23 @@ class GraphTest(ABC):
     def _get_representations(self):
         pass
 
-    @abstractmethod
-    def test_measure(self, measure):
-        pass
+    def test_measures(self, measures, save_similarities=True):
+
+        rep_dict = self._get_representations()
+
+        for measure_name in measures:
+            similarities = self._build_similarity_matrices(
+                rep_dict, MEASURE_DICT[measure_name][MEASURE_DICT_FUNC_KEY]
+            )
+
+            res_score = self._get_performance_score(similarities)
+
+            print(f"The test score for the {measure_name} measure is {res_score}")
+
+            if save_similarities:
+                self._save_similarities(similarity_dict=similarities)
+
+            self._save_results(measure_name, res_score)
 
 
 class LayerTest(GraphTest):
@@ -86,13 +102,9 @@ class LayerTest(GraphTest):
         graph_trainer = LayerTestTrainer(self.model_name, self.dataset_name, self.seeds)
         return graph_trainer.get_test_representations()
 
-    def test_measure(self, measure_name, measure=None, save_similarities=True):
+    def _build_similarity_matrices(self, rep_dict, measure):
 
         similarities = dict()
-        n_violations = 0
-        n_comb_count = 0
-
-        rep_dict = self._get_representations()
 
         for seed in self.seeds:
 
@@ -104,8 +116,17 @@ class LayerTest(GraphTest):
                 for j in range(i + 1, self.n_layers):
                     similarities[seed][i, j] = measure(curr_reps[i], curr_reps[j], shape="nd")
 
-            # this computes the "accuracy" score based on the given matrix, or rather counts the violations
-            # TODO: wrap this kind of accuracy into separate function, and add rank correlation
+        return similarities
+
+    def _get_performance_score(self, similarities):
+
+        n_violations = 0
+        n_comb_count = 0
+
+        # this computes the "accuracy" score based on the given matrix, or rather counts the violations
+        # TODO: wrap this kind of accuracy into separate function, and add rank correlation
+
+        for seed in self.seeds:
             for i in range(self.n_layers):
                 for j in range(i + 1, self.n_layers):
 
@@ -115,13 +136,4 @@ class LayerTest(GraphTest):
                             if similarities[seed][i, j] < similarities[seed][k, l]:
                                 n_violations += 1
 
-            print(similarities[seed])
-
-        res_score = 1 - n_violations / n_comb_count
-
-        print(f"The test score for the {measure_name} measure is {res_score}")
-
-        if save_similarities:
-            self._save_similarities(similarity_dict=similarities)
-
-        self._save_results(measure_name, res_score)
+        return 1 - n_violations / n_comb_count
