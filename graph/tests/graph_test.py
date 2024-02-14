@@ -16,8 +16,6 @@ from graph.config import SIMILARITIES_FILE_NAME
 from graph.config import TEST_RESULTS_JSON_NAME
 from graph.tests.graph_trainer import LayerTestTrainer
 
-# from graph.config import *
-
 
 class GraphTest(ABC):
 
@@ -76,6 +74,10 @@ class GraphTest(ABC):
     def _build_similarity_matrices(self, rep_dict, measure):
         pass
 
+    @abstractmethod
+    def _get_performance_score(self, similarities):
+        pass
+
     def test_measures(self, measures, save_similarities=True):
 
         rep_dict = self._get_representations()
@@ -93,10 +95,6 @@ class GraphTest(ABC):
                 self._save_similarities(similarity_dict=similarities)
 
             self._save_results(measure_name, res_score)
-
-    @abstractmethod
-    def _get_performance_score(self, similarities):
-        pass
 
 
 class LayerTest(GraphTest):
