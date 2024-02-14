@@ -5,6 +5,7 @@ from vision.util import data_structs as ds
 from vision.util import find_architectures as fa
 from vision.util import default_params as dp
 from paths import get_experiments_path
+from vision.util.download import maybe_download_all_models
 
 
 def get_possible_model_ids(architecture_name: str, dataset: str) -> list[int]:
@@ -34,3 +35,22 @@ def get_vision_representations(architecture_name: ds.BaseArchitecture, model_id:
     """
     
     return ds.get_model_representations(architecture_name, dataset, model_id)
+
+
+def test_models_and_data_available():
+    """
+    Test that all models are where they should be.
+    """
+    
+    maybe_download_all_models()
+    # ToDo: Check that all datasets are where they should be!
+
+
+
+
+
+
+if __name__ == "__main__":
+    maybe_download_all_models()
+    reps = get_vision_representations("resnet18", 1, "cifar10")
+    print(list(reps.keys()))

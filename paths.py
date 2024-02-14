@@ -17,3 +17,7 @@ def get_experiments_path() -> str:
         exp_pth = Path(__file__).parent / "experiments"
         exp_pth.mkdir(exist_ok=True)
         return exp_pth
+
+
+VISION_MODEL_PATH = os.path.join(get_experiments_path(), "models", "vision")
+VISION_TAR_PATH = os.path.join(VISION_MODEL_PATH, "vissimbench.tar.gz")
