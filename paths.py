@@ -20,4 +20,5 @@ def get_experiments_path() -> str:
 
 
 VISION_MODEL_PATH = os.path.join(get_experiments_path(), "models", "vision")
+VISION_DATA_PATH = os.path.join(get_experiments_path(), "datasets", "vision")
 VISION_TAR_PATH = os.path.join(VISION_MODEL_PATH, "vissimbench.tar.gz")

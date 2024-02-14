@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from paths import VISION_DATA_PATH
 from vision.data.base_datamodule import BaseDataModule
 from vision.randaugment.randaugment import CIFAR10Policy
 from vision.randaugment.randaugment import Cutout
@@ -63,20 +64,17 @@ class CIFAR10DataModule(BaseDataModule):
                 trans.Normalize(self.mean, self.std),
             ]
         )
+        self.dataset_path = self.prepare_data()
 
-        if "RAW_DATA" in os.environ:
-            dataset_path_p = Path(os.environ["RAW_DATA"]) / "CIFAR10"
-        elif "data" in os.environ:
-            dataset_path_p = Path(os.environ["data"]) / "cifar10"
+    def prepare_data(self, **kwargs) -> None:
+        if "CIFAR10" in os.environ:
+            # Setting the path for this can also be made optional (It's 170 mb afterall)
+            dataset_path = os.environ["CIFAR10"]
         else:
-            raise KeyError(
-                "Couldn't find environ variable 'RAW_DATA' or 'data'." "Therefore unable to find CIFAR10 dataset"
-            )
-
-        assert dataset_path_p.exists(), f"CIFAR10 dataset not found at {dataset_path_p}"
-
-        dataset_path: str = str(dataset_path_p)
-        self.dataset_path = dataset_path
+            # Test that it is as expected
+            dataset_path = os.path.join(VISION_DATA_PATH, "CIFAR10")
+            _ = CIFAR10(root=dataset_path, download=True)
+        return dataset_path
 
     def train_dataloader(
         self,

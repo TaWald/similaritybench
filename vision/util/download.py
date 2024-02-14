@@ -103,3 +103,8 @@ def maybe_download_all_models():
     # Possibly can be downloaded on demand?
     if not public_models_exist():
         download_public_models()
+
+
+def maybe_download_datasets():
+    """Download the datasets from the model zoo."""
+    pass

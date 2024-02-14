@@ -31,8 +31,8 @@ MODEL_VAL_GT_TMPLT = "val_groundtruth.npy"
 # For the transfer setting: Includes layer indicator to know transfer creating preds
 
 # ----------------- First Models ------------------
-KE_FIRST_MODEL_DIR = "FIRST_MODELS__{}__{}"
-KE_FIRST_MODEL_GROUP_ID_DIR = "groupid_{}"
+MODEL_DIR = "{}__{}__{}"
+MODEL_SEED_ID_DIR = "groupid_{}"
 
 # ----------------- Noise ---------------
 MODEL_NAME_TMPLT = "model_{:04d}"

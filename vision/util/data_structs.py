@@ -84,90 +84,37 @@ class ModelInfo:
     paths and other information needed to load a model and access its results.
     """
 
-    dir_name: str
-    group_id: int
-
-    # HParams  -- Needed for continuation and reinit
+    # Basic information
+    seed_id: int
     architecture: str
     dataset: str
-    learning_rate: float
-    split: int
-    weight_decay: float
-    batch_size: int
+    setting_identifier: str
 
     # Basic paths
-    path_data_root: Path
-    path_ckpt_root: Path
-
-    path_sequence_dir_path: Path = field(init=False)
-    sequence_single_json: Path = field(init=False)
-    sequence_ensemble_json: Path = field(init=False)
-    sequence_calibrated_ensemble_json: Path = field(init=False)
-
-    robust_sequence_single_json: Path = field(init=False)
-    robust_sequence_ensemble_json: Path = field(init=False)
-    robust_calib_sequence_ensemble_json: Path = field(init=False)
-
+    path_root: Path
     path_ckpt: Path = field(init=False)
     path_activations: Path = field(init=False)
-    path_predictions_train: Path = field(init=False)
-    path_predictions_test: Path = field(init=False)
-    path_groundtruths_train: Path = field(init=False)
-    path_groundtruths_test: Path = field(init=False)
+
+    path_pd_train: Path = field(init=False)
+    path_pd_test: Path = field(init=False)
+    path_gt_train: Path = field(init=False)
+    path_gt_test: Path = field(init=False)
     path_output_json: Path = field(init=False)
     path_last_metrics_json: Path = field(init=False)
-    path_calib_json: Path = field(init=False)
-    path_generalization_json: Path = field(init=False)
     path_train_log: Path = field(init=False)
     path_train_info_json: Path = field(init=False)
 
     def __post_init__(self):
-        object.__setattr__(self, "path_ckpt", self.path_ckpt_root / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME)
-        object.__setattr__(self, "path_activations", self.path_ckpt_root / nc.ACTI_DIR_NAME)
-        object.__setattr__(
-            self, "path_predictions_train", self.path_ckpt_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_PD_TMPLT
-        )
-        object.__setattr__(
-            self, "path_predictions_test", self.path_ckpt_root / nc.ACTI_DIR_NAME / nc.MODEL_TEST_PD_TMPLT
-        )
-        object.__setattr__(
-            self, "path_groundtruths_train", self.path_ckpt_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_GT_TMPLT
-        )
-        object.__setattr__(
-            self, "path_groundtruths_test", self.path_ckpt_root / nc.ACTI_DIR_NAME / nc.MODEL_TEST_GT_TMPLT
-        )
-        object.__setattr__(self, "path_output_json", self.path_ckpt_root / nc.OUTPUT_TMPLT)
-        object.__setattr__(self, "path_last_metrics_json", self.path_ckpt_root / nc.LAST_METRICS_TMPLT)
-        object.__setattr__(self, "path_train_log", self.path_ckpt_root / nc.LOG_DIR)
-        object.__setattr__(self, "path_train_info_json", self.path_ckpt_root / nc.KE_INFO_FILE)
-
-    def is_trained(self) -> bool:
-        """Checks whether model has been trained by testing if output_json exists."""
-        return self.path_output_json.exists()
-
-    def model_converged(self) -> bool:
-        if self.is_trained():
-            output_json = load_json(self.path_output_json)
-            if output_json_has_nans(output_json) or (output_json["val"]["accuracy"] < 0.2):
-                return False
-            else:
-                return True
-        else:
-            return False
-
-    def training_succeeded(self, unregularized_model: ModelInfo) -> bool:
-        """
-        Checks that the new model converged to reasonable accuracy,
-        relative to its first (unregularized model).
-        Should the difference
-        be too large, the training is considered a failure and training should abort."""
-        if self.is_trained():
-            own_accuracy = load_json(self.path_output_json)["val"]["accuracy"]
-            first_accuracy = load_json(unregularized_model.path_output_json)["val"]["accuracy"]
-            if first_accuracy - own_accuracy > 0.15:
-                return False
-            else:
-                return True
+        object.__setattr__(self, "path_ckpt", self.path_root / nc.CKPT_DIR_NAME / nc.STATIC_CKPT_NAME)
+        object.__setattr__(self, "path_activations", self.path_root / nc.ACTI_DIR_NAME)
+        object.__setattr__(self, "path_pd_train", self.path_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_PD_TMPLT)
+        object.__setattr__(self, "path_pd_test", self.path_root / nc.ACTI_DIR_NAME / nc.MODEL_TEST_PD_TMPLT)
+        object.__setattr__(self, "path_gt_train", self.path_root / nc.ACTI_DIR_NAME / nc.MODEL_TRAIN_GT_TMPLT)
+        object.__setattr__(self, "path_gt_test", self.path_root / nc.ACTI_DIR_NAME / nc.MODEL_TEST_GT_TMPLT)
+        object.__setattr__(self, "path_output_json", self.path_root / nc.OUTPUT_TMPLT)
+        object.__setattr__(self, "path_last_metrics_json", self.path_root / nc.LAST_METRICS_TMPLT)
+        object.__setattr__(self, "path_train_log", self.path_root / nc.LOG_DIR)
+        object.__setattr__(self, "path_train_info_json", self.path_root / nc.KE_INFO_FILE)
 
     def has_checkpoint(self):
         """Checks whether model has a checkpoint."""
@@ -180,10 +127,6 @@ class ModelInfo:
         preds = self.path_predictions_test
         gts = self.path_groundtruths_test
         return preds.exists() and gts.exists()
-
-    def model_is_finished(self) -> bool:
-        """Checks whether model has been trained and checkpoint exists."""
-        return self.is_trained() and self.has_checkpoint()
 
 
 @dataclass

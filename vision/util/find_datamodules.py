@@ -9,8 +9,10 @@ from vision.data.tiny_imagenet_dm import TinyImagenetDataModule
 from vision.util import data_structs as ds
 
 
-def get_datamodule(dataset: ds.Dataset, advanced_da: bool = True) -> BaseDataModule:
+def get_datamodule(dataset: ds.Dataset | str, advanced_da: bool = True) -> BaseDataModule:
     """Returns the datamodule specified by the Dataset and the train/val/test split."""
+    if isinstance(dataset, str):
+        dataset = ds.Dataset(dataset)
     if dataset == ds.Dataset.CIFAR10:
         return CIFAR10DataModule(advanced_da)
     elif dataset == ds.Dataset.TEST:

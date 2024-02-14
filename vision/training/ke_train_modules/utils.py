@@ -10,12 +10,12 @@ from vision.util.data_structs import Dataset
 from vision.util.find_architectures import get_base_arch
 
 
-def get_first_model_base_trainer(
-    first_model_info: ds.FirstModelInfo,
+def get_model_base_trainer(
+    first_model_info: ds.ModelInfo,
     arch_params: dict,
     hparams: dict,
     dataset: Dataset,
-    base_info: ds.FirstModelInfo,
+    base_info: ds.ModelInfo,
     params: ds.Params,
 ) -> BaseTrainer:
     datamodule = fd.get_datamodule(dataset=dataset)

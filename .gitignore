@@ -19,3 +19,4 @@ __pycache__/*
 *build
 ._.DS_Store
 .DS_Store
+experiments

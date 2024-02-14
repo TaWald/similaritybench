@@ -16,10 +16,12 @@ class SingleLayerRepresentation:
 
 @dataclass
 class ModelRepresentations:
+    setting_identifier: str | None
     architecture_name: str
-    model_id: int  # Additional identifier to distinguish between different models with the same name
+    train_dataset: str
+    seed_id: int  # Additional identifier to distinguish between different models with the same name
+    representation_dataset: str
     representations: tuple[SingleLayerRepresentation]  # immutable to maintain ordering
-    dataset: str
 
 
 log = logging.getLogger(__name__)

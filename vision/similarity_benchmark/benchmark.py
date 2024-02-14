@@ -1,4 +1,5 @@
 from pathlib import Path
+from repsim.measures import centered_kernel_alignment
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
 from vision.arch.arch_loading import load_model_from_info_file
 from vision.similarity_benchmark.neighbour_layer_comp import compare_models_layer_to_neighbours
@@ -19,7 +20,7 @@ def main():
     metrics: dict[str, callable] = {
         # "svcca": svcca_from_raw_activations,
         # "pwcca": pwcca_from_raw_activations,
-        "lin_cka": cka_from_raw_activation,
+        "lin_cka": centered_kernel_alignment,
     }
 
     full_results = []

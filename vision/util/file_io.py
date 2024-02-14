@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from paths import VISION_MODEL_PATH
+
 import collections
 import json
 import logging
@@ -159,53 +161,44 @@ def strip_state_dict_of_keys(state_dict: dict) -> OrderedDict:
     return new_dict
 
 
-def get_first_model(
-    ke_data_path: str | Path,
-    ke_ckpt_path: str | Path,
-    params: ds.Params,
-    group_id: int,
+def get_vision_model_info(
+    dataset: str,
+    architecture_name: str,
+    seed_id: int,
+    setting_identifier: str = "FIRST_MODELS",
 ) -> ds.ModelInfo:
     """Return the checkpoint of the group id if it already exists!"""
-    edp: Path = (
-        Path(ke_data_path)
-        / nc.KE_FIRST_MODEL_DIR.format(params.dataset, params.architecture_name)
-        / nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id)
-    )
-    ecp: Path = (
-        Path(ke_ckpt_path)
-        / nc.KE_FIRST_MODEL_DIR.format(params.dataset, params.architecture_name)
-        / nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id)
+    root_path: Path = (
+        Path(VISION_MODEL_PATH)
+        / "vision_models_simbench"
+        / nc.MODEL_DIR.format(setting_identifier, dataset, architecture_name)
+        / nc.MODEL_SEED_ID_DIR.format(seed_id)
     )
 
-    first_model = ds.ModelInfo(
-        dir_name=nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(group_id),
-        architecture=params.architecture_name,
-        dataset=params.dataset,
-        learning_rate=params.learning_rate,
-        split=params.split,
-        weight_decay=params.weight_decay,
-        batch_size=params.batch_size,
-        path_data_root=edp,
-        path_ckpt_root=ecp,
-        group_id=group_id,
+    model = ds.ModelInfo(
+        architecture=architecture_name,
+        dataset=dataset,
+        seed_id=seed_id,
+        setting_identifier=setting_identifier,
+        path_root=root_path,
     )
 
-    return first_model
+    return model
 
 
-def first_model_trained(first_model: ds.FirstModelInfo) -> bool:
+def first_model_trained(first_model: ds.ModelInfo) -> bool:
     """Return true if the info file and checkpoint exists."""
     return first_model.path_train_info_json.exists() and first_model.path_ckpt.exists()
 
 
-def get_corresponding_first_model(model_info: ds.FirstModelInfo):
+def get_corresponding_first_model(model_info: ds.ModelInfo):
     """Return the corresponding first model info."""
-    first_model_dir_name = nc.KE_FIRST_MODEL_DIR.format(model_info.dataset, model_info.architecture)
-    dir_name = nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(model_info.group_id)
+    first_model_dir_name = nc.KE_MODEL_DIR.format(model_info.dataset, model_info.architecture)
+    dir_name = nc.KE_MODEL_GROUP_ID_DIR.format(model_info.seed_id)
     first_data_path = model_info.path_data_root.parent.parent / first_model_dir_name / dir_name
     first_ckpt_path = model_info.path_ckpt_root.parent.parent / first_model_dir_name / dir_name
-    return ds.FirstModelInfo(
-        dir_name=nc.KE_FIRST_MODEL_GROUP_ID_DIR.format(model_info.group_id),
+    return ds.ModelInfo(
+        dir_name=nc.KE_MODEL_GROUP_ID_DIR.format(model_info.seed_id),
         architecture=model_info.architecture,
         dataset=model_info.dataset,
         learning_rate=model_info.learning_rate,
@@ -214,7 +207,7 @@ def get_corresponding_first_model(model_info: ds.FirstModelInfo):
         batch_size=model_info.batch_size,
         path_data_root=first_data_path,
         path_ckpt_root=first_ckpt_path,
-        group_id=model_info.group_id,
+        seed_id=model_info.seed_id,
         model_id=0,
     )
 
