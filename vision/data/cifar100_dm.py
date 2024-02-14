@@ -73,7 +73,7 @@ class CIFAR100DataModule(BaseDataModule):
             dataset_path = os.environ["CIFAR100"]  # Optional pathing for the dataset
         else:
             # Test that it is as expected
-            dataset_path = os.path.join(VISION_DATA_PATH, "CIFAR10")
+            dataset_path = os.path.join(VISION_DATA_PATH, "CIFAR100")
             _ = CIFAR100(root=dataset_path, download=True)
         return dataset_path
 
