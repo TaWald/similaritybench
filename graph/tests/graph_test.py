@@ -72,6 +72,10 @@ class GraphTest(ABC):
     def _get_representations(self):
         pass
 
+    @abstractmethod
+    def _build_similarity_matrices(self, rep_dict, measure):
+        pass
+
     def test_measures(self, measures, save_similarities=True):
 
         rep_dict = self._get_representations()
@@ -89,6 +93,10 @@ class GraphTest(ABC):
                 self._save_similarities(similarity_dict=similarities)
 
             self._save_results(measure_name, res_score)
+
+    @abstractmethod
+    def _get_performance_score(self, similarities):
+        pass
 
 
 class LayerTest(GraphTest):
