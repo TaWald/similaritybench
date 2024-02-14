@@ -3,8 +3,9 @@ from typing import Union
 import numpy as np
 import numpy.typing as npt
 import torch
-
-from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_numpy_if_needed
 
 
 def imd_score(
@@ -18,9 +19,7 @@ def imd_score(
         import msid
     except ImportError as e:
         print(
-            "Install IMD from"
-            "https://github.com/xgfs/imd.git."
-            "Clone and cd into directory, then `pip install .`"
+            "Install IMD from" "https://github.com/xgfs/imd.git." "Clone and cd into directory, then `pip install .`"
         )
         raise e
 
@@ -30,7 +29,5 @@ def imd_score(
     # We use much higher defaults for the heat kernel approximation steps as the results
     # have very high variance otherwise. We also repeat the estimation to get an idea
     # about the variance of the score (TODO: report variance)
-    scores = [
-        msid.msid_score(R, Rp, niters=approximation_steps) for _ in range(n_repeat)
-    ]
+    scores = [msid.msid_score(R, Rp, niters=approximation_steps) for _ in range(n_repeat)]
     return float(np.mean(scores))

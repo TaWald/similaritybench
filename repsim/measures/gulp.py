@@ -3,14 +3,13 @@ from typing import Union
 import numpy as np
 import numpy.typing as npt
 import torch
-
-from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_numpy_if_needed
 
 
 # Copied from https://github.com/sgstepaniants/GULP/blob/main/distance_functions.py
-def predictor_dist(
-    A, B, evals_a=None, evecs_a=None, evals_b=None, evecs_b=None, lmbda=0
-):
+def predictor_dist(A, B, evals_a=None, evecs_a=None, evals_b=None, evecs_b=None, lmbda=0):
     """
     Computes distance between best linear predictors on representations A and B
     """
@@ -26,17 +25,13 @@ def predictor_dist(
 
     evals_a = (evals_a + np.abs(evals_a)) / (2 * n)
     if lmbda > 0:
-        inv_a_lmbda = np.array(
-            [1 / (x + lmbda) if x > 0 else 1 / lmbda for x in evals_a]
-        )
+        inv_a_lmbda = np.array([1 / (x + lmbda) if x > 0 else 1 / lmbda for x in evals_a])
     else:
         inv_a_lmbda = np.array([1 / x if x > 0 else 0 for x in evals_a])
 
     evals_b = (evals_b + np.abs(evals_b)) / (2 * n)
     if lmbda > 0:
-        inv_b_lmbda = np.array(
-            [1 / (x + lmbda) if x > 0 else 1 / lmbda for x in evals_b]
-        )
+        inv_b_lmbda = np.array([1 / (x + lmbda) if x > 0 else 1 / lmbda for x in evals_b])
     else:
         inv_b_lmbda = np.array([1 / x if x > 0 else 0 for x in evals_b])
 

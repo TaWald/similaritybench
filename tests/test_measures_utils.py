@@ -1,24 +1,23 @@
 import numpy as np
 import pytest
-
 from repsim.measures import centered_kernel_alignment
-from repsim.measures.utils import (
-    Pipeline,
-    adjust_dimensionality,
-    center_columns,
-    normalize_matrix_norm,
-    normalize_row_norm,
-    to_numpy_if_needed,
-)
-from tests.conftest import SEED, get_identical_reps, get_rep
+from repsim.measures.utils import adjust_dimensionality
+from repsim.measures.utils import center_columns
+from repsim.measures.utils import normalize_matrix_norm
+from repsim.measures.utils import normalize_row_norm
+from repsim.measures.utils import Pipeline
+from repsim.measures.utils import to_numpy_if_needed
+from tests.conftest import get_identical_reps
+from tests.conftest import get_rep
+from tests.conftest import SEED
 
 
 @pytest.mark.parametrize(
     "rep1,rep2,shape,expected_shape",
     [
         (*get_identical_reps(5, 2), (5, 2)),
-        (get_rep(5, 2, SEED), get_rep(5, 100, SEED), (5, 100)),
-        (get_rep(5, 100, SEED), get_rep(5, 2, SEED), (5, 100)),
+        (get_rep(5, 2, SEED), get_rep(5, 100, SEED), "nd", (5, 100)),
+        (get_rep(5, 100, SEED), get_rep(5, 2, SEED), "nd", (5, 100)),
     ],
 )
 def test_adjust_dimensionality(rep1, rep2, shape, expected_shape):
@@ -43,9 +42,7 @@ def test_to_numpy_if_needed():
 def test_center_columns():
     rep = to_numpy_if_needed(get_rep(5, 20, SEED))[0]
     centered_rep = center_columns(rep)
-    np.testing.assert_allclose(
-        centered_rep.mean(axis=0), np.zeros_like(centered_rep.mean(axis=0)), atol=1e-5
-    )
+    np.testing.assert_allclose(centered_rep.mean(axis=0), np.zeros_like(centered_rep.mean(axis=0)), atol=1e-5)
 
 
 def test_normalize_matrix_norm():

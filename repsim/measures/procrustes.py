@@ -1,18 +1,17 @@
-from typing import Optional, Tuple, Union
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import numpy as np
 import numpy.typing as npt
 import scipy.linalg
 import scipy.optimize
 import torch
-
-from repsim.measures.utils import (
-    SHAPE_TYPE,
-    adjust_dimensionality,
-    flatten,
-    normalize_matrix_norm,
-    to_numpy_if_needed,
-)
+from repsim.measures.utils import adjust_dimensionality
+from repsim.measures.utils import flatten
+from repsim.measures.utils import normalize_matrix_norm
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_numpy_if_needed
 
 
 def orthogonal_procrustes(
@@ -24,11 +23,7 @@ def orthogonal_procrustes(
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
     nucnorm = scipy.linalg.orthogonal_procrustes(R, Rp)[1]
-    return np.sqrt(
-        -2 * nucnorm
-        + np.linalg.norm(R, ord="fro") ** 2
-        + np.linalg.norm(Rp, ord="fro") ** 2
-    )
+    return np.sqrt(-2 * nucnorm + np.linalg.norm(R, ord="fro") ** 2 + np.linalg.norm(Rp, ord="fro") ** 2)
 
 
 def permutation_procrustes(
@@ -43,9 +38,7 @@ def permutation_procrustes(
     R, Rp = adjust_dimensionality(R, Rp)
 
     if not optimal_permutation_alignment:
-        PR, PRp = scipy.optimize.linear_sum_assignment(
-            R.T @ Rp, maximize=True
-        )  # returns column assignments
+        PR, PRp = scipy.optimize.linear_sum_assignment(R.T @ Rp, maximize=True)  # returns column assignments
         optimal_permutation_alignment = (PR, PRp)
     PR, PRp = optimal_permutation_alignment
     return float(np.linalg.norm(R[:, PR] - Rp[:, PRp], ord="fro"))
@@ -66,9 +59,7 @@ def permutation_angular_shape_metric(
     R, Rp = adjust_dimensionality(R, Rp)
     R, Rp = normalize_matrix_norm(R), normalize_matrix_norm(Rp)
 
-    PR, PRp = scipy.optimize.linear_sum_assignment(
-        R.T @ Rp, maximize=True
-    )  # returns column assignments
+    PR, PRp = scipy.optimize.linear_sum_assignment(R.T @ Rp, maximize=True)  # returns column assignments
 
     aligned_R = R[:, PR]
     aligned_Rp = Rp[:, PRp]
@@ -117,15 +108,11 @@ def aligned_cossim(
     return sum_cossim / R.shape[0]
 
 
-def permutation_aligned_cossim(
-    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]
-) -> float:
+def permutation_aligned_cossim(R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]) -> float:
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
 
-    PR, PRp = scipy.optimize.linear_sum_assignment(
-        R.T @ Rp, maximize=True
-    )  # returns column assignments
+    PR, PRp = scipy.optimize.linear_sum_assignment(R.T @ Rp, maximize=True)  # returns column assignments
     R_aligned = R[:, PR]
     Rp_aligned = Rp[:, PRp]
 
