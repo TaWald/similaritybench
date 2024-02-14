@@ -4,13 +4,10 @@ import numpy as np
 import numpy.typing as npt
 import scipy.linalg
 import torch
-
-from repsim.measures.utils import (
-    SHAPE_TYPE,
-    center_columns,
-    flatten,
-    to_numpy_if_needed,
-)
+from repsim.measures.utils import center_columns
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_numpy_if_needed
 
 
 def linear_reg(
@@ -25,7 +22,4 @@ def linear_reg(
     Rp_orthonormal_base = Rp @ scipy.linalg.inv(  # type:ignore
         scipy.linalg.sqrtm(Rp.T @ Rp)  # type:ignore
     )
-    return float(
-        (np.linalg.norm(Rp_orthonormal_base.T @ R, ord="fro") ** 2)
-        / (np.linalg.norm(R, ord="fro") ** 2)
-    )
+    return float((np.linalg.norm(Rp_orthonormal_base.T @ R, ord="fro") ** 2) / (np.linalg.norm(R, ord="fro") ** 2))

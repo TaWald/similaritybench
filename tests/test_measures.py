@@ -1,39 +1,34 @@
 import numpy as np
 import pytest
-
-from repsim.measures import (
-    aligned_cossim,
-    centered_kernel_alignment,
-    concentricity_difference,
-    concentricity_nrmse,
-    correlation_match,
-    distance_correlation,
-    eigenspace_overlap_score,
-    geometry_score,
-    gulp,
-    imd_score,
-    jaccard_similarity,
-    joint_rank_jaccard_similarity,
-    linear_reg,
-    magnitude_difference,
-    magnitude_nrmse,
-    orthogonal_angular_shape_metric,
-    orthogonal_procrustes,
-    permutation_procrustes,
-    pwcca,
-    rank_similarity,
-    representational_similarity_analysis,
-    rsm_norm_diff,
-    second_order_cosine_similarity,
-    svcca,
-    uniformity_difference,
-)
-from tests.conftest import (
-    _test_generic_measure,
-    get_distinct_reps,
-    get_identical_reps,
-    get_rep,
-)
+from repsim.measures import aligned_cossim
+from repsim.measures import centered_kernel_alignment
+from repsim.measures import concentricity_difference
+from repsim.measures import concentricity_nrmse
+from repsim.measures import correlation_match
+from repsim.measures import distance_correlation
+from repsim.measures import eigenspace_overlap_score
+from repsim.measures import geometry_score
+from repsim.measures import gulp
+from repsim.measures import imd_score
+from repsim.measures import jaccard_similarity
+from repsim.measures import joint_rank_jaccard_similarity
+from repsim.measures import linear_reg
+from repsim.measures import magnitude_difference
+from repsim.measures import magnitude_nrmse
+from repsim.measures import orthogonal_angular_shape_metric
+from repsim.measures import orthogonal_procrustes
+from repsim.measures import permutation_procrustes
+from repsim.measures import pwcca
+from repsim.measures import rank_similarity
+from repsim.measures import representational_similarity_analysis
+from repsim.measures import rsm_norm_diff
+from repsim.measures import second_order_cosine_similarity
+from repsim.measures import svcca
+from repsim.measures import uniformity_difference
+from tests.conftest import _test_generic_measure
+from tests.conftest import get_distinct_reps
+from tests.conftest import get_identical_reps
+from tests.conftest import get_rep
 
 N_ROWS = 5
 N_DIM = 2
@@ -58,9 +53,7 @@ def test_aligned_cossim(rep1, rep2, shape, expected_outcome):
     ],
 )
 def test_centered_kernel_alignment(rep1, rep2, shape, expected_outcome):
-    _test_generic_measure(
-        centered_kernel_alignment, rep1, rep2, shape, expected_outcome
-    )
+    _test_generic_measure(centered_kernel_alignment, rep1, rep2, shape, expected_outcome)
 
 
 @pytest.mark.parametrize(
@@ -116,18 +109,14 @@ def test_permutation_procrustes(rep1, rep2, shape, expected_outcome):
 @pytest.mark.parametrize(
     "rep1,rep2,shape,expected_outcome,kwargs",
     [
-        get_identical_reps(N_ROWS, N_DIM)
-        + [1]
-        + [dict(inner="correlation", outer="spearman")],
+        get_identical_reps(N_ROWS, N_DIM) + [1] + [dict(inner="correlation", outer="spearman")],
         pytest.param(
             *get_distinct_reps(N_ROWS, N_DIM),
             [1],
             [dict(inner="correlation", outer="spearman")],
             marks=pytest.mark.xfail
         ),
-        get_identical_reps(N_ROWS, N_DIM)
-        + [0]
-        + [dict(inner="euclidean", outer="euclidean")],
+        get_identical_reps(N_ROWS, N_DIM) + [0] + [dict(inner="euclidean", outer="euclidean")],
         pytest.param(
             *get_distinct_reps(N_ROWS, N_DIM),
             [0],
@@ -136,17 +125,8 @@ def test_permutation_procrustes(rep1, rep2, shape, expected_outcome):
         ),
     ],
 )
-def test_representational_similarity_analysis(
-    rep1, rep2, shape, expected_outcome, kwargs
-):
-    _test_generic_measure(
-        representational_similarity_analysis,
-        rep1,
-        rep2,
-        shape,
-        expected_outcome,
-        **kwargs
-    )
+def test_representational_similarity_analysis(rep1, rep2, shape, expected_outcome, kwargs):
+    _test_generic_measure(representational_similarity_analysis, rep1, rep2, shape, expected_outcome, **kwargs)
 
 
 @pytest.mark.parametrize(
@@ -164,19 +144,13 @@ def test_rsm_norm_diff(rep1, rep2, shape, expected_outcome):
     "rep1,rep2,shape,expected_outcome,mode",
     [
         get_identical_reps(N_ROWS, N_DIM) + [1] + ["soft"],
-        pytest.param(
-            *get_distinct_reps(N_ROWS, N_DIM), [1], ["soft"], marks=pytest.mark.xfail
-        ),
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], ["soft"], marks=pytest.mark.xfail),
         get_identical_reps(N_ROWS, N_DIM) + [1] + ["hard"],
-        pytest.param(
-            *get_distinct_reps(N_ROWS, N_DIM), [1], ["hard"], marks=pytest.mark.xfail
-        ),
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], ["hard"], marks=pytest.mark.xfail),
     ],
 )
 def test_correlation_match(rep1, rep2, shape, expected_outcome, mode):
-    _test_generic_measure(
-        correlation_match, rep1, rep2, shape, expected_outcome, mode=mode
-    )
+    _test_generic_measure(correlation_match, rep1, rep2, shape, expected_outcome, mode=mode)
 
 
 @pytest.mark.parametrize(
@@ -231,9 +205,7 @@ def test_distance_correlation(rep1, rep2, shape, expected_outcome):
     ],
 )
 def test_orthogonal_angular_shape_metric(rep1, rep2, shape, expected_outcome):
-    _test_generic_measure(
-        orthogonal_angular_shape_metric, rep1, rep2, shape, expected_outcome
-    )
+    _test_generic_measure(orthogonal_angular_shape_metric, rep1, rep2, shape, expected_outcome)
 
 
 @pytest.mark.parametrize(
@@ -277,9 +249,7 @@ def test_jaccard_similarity(rep1, rep2, shape, expected_outcome):
     ],
 )
 def test_second_order_cosine_similarity(rep1, rep2, shape, expected_outcome):
-    _test_generic_measure(
-        second_order_cosine_similarity, rep1, rep2, shape, expected_outcome, k=2
-    )
+    _test_generic_measure(second_order_cosine_similarity, rep1, rep2, shape, expected_outcome, k=2)
 
 
 @pytest.mark.parametrize(
@@ -301,9 +271,7 @@ def test_rank_similarity(rep1, rep2, shape, expected_outcome):
     ],
 )
 def test_joint_rank_jaccard_similarity(rep1, rep2, shape, expected_outcome):
-    _test_generic_measure(
-        joint_rank_jaccard_similarity, rep1, rep2, shape, expected_outcome, k=2
-    )
+    _test_generic_measure(joint_rank_jaccard_similarity, rep1, rep2, shape, expected_outcome, k=2)
 
 
 @pytest.mark.slow
@@ -329,13 +297,9 @@ def test_imd_score():
     "rep1,rep2,shape,expected_outcome,lmbda",
     [
         get_identical_reps(N_ROWS, N_DIM) + [0] + [0],
-        pytest.param(
-            *get_distinct_reps(N_ROWS, N_DIM), [0], [0], marks=pytest.mark.xfail
-        ),
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], [0], marks=pytest.mark.xfail),
         get_identical_reps(N_ROWS, N_DIM) + [0] + [1],
-        pytest.param(
-            *get_distinct_reps(N_ROWS, N_DIM), [0], [1], marks=pytest.mark.xfail
-        ),
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], [1], marks=pytest.mark.xfail),
     ],
 )
 def test_gulp(rep1, rep2, shape, expected_outcome, lmbda):

@@ -1,0 +1,23 @@
+name: glue # huggingface load_dataset argument: path
+config: mnli # huggingface load_dataset argument: name
+split: test_matched
+prompt_template: # promptsource template name
+
+# Hyperparameters for the finetuning of BERT on this dataset
+finetuning:
+  num_labels: 3
+  trainer:
+    _target_: transformers.Trainer
+    args:
+      _target_: transformers.TrainingArguments
+      output_dir: ${hydra:runtime.output_dir}
+      overwrite_output_dir: true
+      warmup_ratio: 0.1
+      evaluation_strategy: steps
+      eval_steps: 1000
+      per_device_train_batch_size: 128
+      per_device_eval_batch_size: 128
+      seed: 123456789
+  eval_dataset:
+    - "validation_matched"
+    - "validation_mismatched"

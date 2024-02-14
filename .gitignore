@@ -8,7 +8,12 @@
 /.cache
 /figures
 
+
 build/
+nlp/multirun
+nlp/outputs
+nlp/results
+
 *.env
 ._.DS_Store
 .DS_Store

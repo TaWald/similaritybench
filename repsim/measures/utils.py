@@ -1,6 +1,10 @@
 import functools
 import logging
-from typing import Callable, List, Literal, Tuple, Union
+from typing import Callable
+from typing import List
+from typing import Literal
+from typing import Tuple
+from typing import Union
 
 import numpy as np
 import numpy.typing as npt
@@ -26,9 +30,7 @@ def to_torch_if_needed(*args: Union[torch.Tensor, npt.NDArray]) -> List[torch.Te
     return list(map(convert, args))
 
 
-def adjust_dimensionality(
-    R: npt.NDArray, Rp: npt.NDArray, strategy="zero_pad"
-) -> Tuple[npt.NDArray, npt.NDArray]:
+def adjust_dimensionality(R: npt.NDArray, Rp: npt.NDArray, strategy="zero_pad") -> Tuple[npt.NDArray, npt.NDArray]:
     D = R.shape[1]
     Dp = Rp.shape[1]
     if strategy == "zero_pad":
@@ -83,11 +85,7 @@ class Pipeline:
 
     def __str__(self) -> str:
         def func_name(func: Callable) -> str:
-            return (
-                func.__name__
-                if not isinstance(func, functools.partial)
-                else func.func.__name__
-            )
+            return func.__name__ if not isinstance(func, functools.partial) else func.func.__name__
 
         def partial_keywords(func: Callable) -> str:
             if not isinstance(func, functools.partial):
@@ -107,24 +105,21 @@ class Pipeline:
         )
 
 
-def flatten(
-    *args: Union[torch.Tensor, npt.NDArray], shape: SHAPE_TYPE
-) -> List[Union[torch.Tensor, npt.NDArray]]:
+def flatten(*args: Union[torch.Tensor, npt.NDArray], shape: SHAPE_TYPE) -> List[Union[torch.Tensor, npt.NDArray]]:
     if shape == "ntd":
-        return list(map(flatten_nxtxd_to_nxtd, args))
+        return list(map(flatten_nxtxd_to_ntxd, args))
     elif shape == "nd":
         return list(args)
     elif shape == "nchw":
         # TODO:
         raise NotImplementedError()
     else:
-        raise ValueError(
-            "Unknown shape of representations. Must be one of 'ntd', 'nchw', 'nd'."
-        )
+        raise ValueError("Unknown shape of representations. Must be one of 'ntd', 'nchw', 'nd'.")
 
 
-def flatten_nxtxd_to_nxtd(
-    R: Union[torch.Tensor, npt.NDArray]
-) -> Union[torch.Tensor, npt.NDArray]:
+def flatten_nxtxd_to_ntxd(R: Union[torch.Tensor, npt.NDArray]) -> torch.Tensor:
     R = to_torch_if_needed(R)[0]
-    return torch.flatten(R, start_dim=1)
+    log.debug("Shape before flattening: %s", str(R.shape))
+    R = torch.flatten(R, start_dim=0, end_dim=1)
+    log.debug("Shape after flattening: %s", str(R.shape))
+    return R

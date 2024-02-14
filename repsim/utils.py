@@ -6,9 +6,7 @@ import datasets
 log = logging.getLogger(__name__)
 
 
-def get_dataset(
-    dataset_name: str, config: Optional[str] = None
-) -> datasets.dataset_dict.DatasetDict:
+def get_dataset(dataset_name: str, config: Optional[str] = None) -> datasets.dataset_dict.DatasetDict:
     ds = datasets.load_dataset(dataset_name, config)
     assert isinstance(ds, datasets.dataset_dict.DatasetDict)
     return ds

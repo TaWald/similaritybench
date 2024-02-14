@@ -3,15 +3,13 @@ from typing import Union
 import numpy as np
 import numpy.typing as npt
 import torch
-
-from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import to_numpy_if_needed
 
 
 def geometry_score(
-    R: Union[torch.Tensor, npt.NDArray],
-    Rp: Union[torch.Tensor, npt.NDArray],
-    shape: SHAPE_TYPE,
-    **kwargs
+    R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray], shape: SHAPE_TYPE, **kwargs
 ) -> float:
     try:
         import gs
