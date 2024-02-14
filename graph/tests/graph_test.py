@@ -9,9 +9,6 @@ import numpy as np
 from graph.config import DEFAULT_SEEDS
 from graph.config import LAYER_TEST_N_LAYERS
 from graph.config import LAYER_TEST_NAME
-from graph.config import MEASURE_DICT
-from graph.config import MEASURE_DICT_FUNC_KEY
-from graph.config import MEASURE_DICT_PREP_KEY
 from graph.config import RES_DIR
 from graph.config import SIMILARITIES_FILE_NAME
 from graph.config import TEST_RESULTS_JSON_NAME
@@ -70,6 +67,10 @@ class GraphTest(ABC):
             pickle.dump(similarity_dict, f)
 
     @abstractmethod
+    def _get_representations(self):
+        pass
+
+    @abstractmethod
     def test_measure(self, measure):
         pass
 
@@ -81,34 +82,29 @@ class LayerTest(GraphTest):
 
         self.n_layers = n_layers
 
-    def test_measure(self, measure_name, measure=None, save_similarities=True):
+    def _get_representations(self):
+        graph_trainer = LayerTestTrainer(self.model_name, self.dataset_name, self.seeds)
+        return graph_trainer.get_test_representations()
 
-        if measure is None:
-            measure = MEASURE_DICT[measure_name][MEASURE_DICT_FUNC_KEY]
-            prep_funcs = MEASURE_DICT[measure_name][MEASURE_DICT_PREP_KEY]
-        else:
-            prep_funcs = []
+    def test_measure(self, measure_name, measure=None, save_similarities=True):
 
         similarities = dict()
         n_violations = 0
         n_comb_count = 0
 
-        graph_trainer = LayerTestTrainer(self.model_name, self.dataset_name, self.seeds)
-        rep_dict = graph_trainer.get_test_representations()
+        rep_dict = self._get_representations()
 
         for seed in self.seeds:
 
             curr_reps = rep_dict[seed]
 
-            for f in prep_funcs:
-                curr_reps = {i: f(R) for i, R in curr_reps.items()}
-
+            # this builds the similarity matrix for given seed/model ID
             similarities[seed] = np.zeros((self.n_layers, self.n_layers))
             for i in range(self.n_layers):
-
                 for j in range(i + 1, self.n_layers):
                     similarities[seed][i, j] = measure(curr_reps[i], curr_reps[j], shape="nd")
 
+            # this computes the "accuracy" score based on the given matrix, or rather counts the violations
             # TODO: wrap this kind of accuracy into separate function, and add rank correlation
             for i in range(self.n_layers):
                 for j in range(i + 1, self.n_layers):
