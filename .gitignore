@@ -8,6 +8,8 @@
 /.cache
 /figures
 
+
+build/
 nlp/multirun
 nlp/outputs
 nlp/results
@@ -16,9 +18,15 @@ graph/data*
 graph/output*
 
 *.env
+._.DS_Store
+.DS_Store
 
 .idea/*
 __pycache__/*
 **__pycache__**
 
 *.egg-info/
+*build
+._.DS_Store
+.DS_Store
+experiments
