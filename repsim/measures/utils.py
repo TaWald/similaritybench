@@ -111,8 +111,7 @@ def flatten(*args: Union[torch.Tensor, npt.NDArray], shape: SHAPE_TYPE) -> List[
     elif shape == "nd":
         return list(args)
     elif shape == "nchw":
-        # TODO:
-        raise NotImplementedError()
+        return list(map(flatten_nxcxhxw_to_nxchw, args))  # Flattening non-trivial for nchw
     else:
         raise ValueError("Unknown shape of representations. Must be one of 'ntd', 'nchw', 'nd'.")
 
@@ -121,5 +120,13 @@ def flatten_nxtxd_to_ntxd(R: Union[torch.Tensor, npt.NDArray]) -> torch.Tensor:
     R = to_torch_if_needed(R)[0]
     log.debug("Shape before flattening: %s", str(R.shape))
     R = torch.flatten(R, start_dim=0, end_dim=1)
+    log.debug("Shape after flattening: %s", str(R.shape))
+    return R
+
+
+def flatten_nxcxhxw_to_nxchw(R: Union[torch.Tensor, npt.NDArray]) -> torch.Tensor:
+    R = to_torch_if_needed(R)[0]
+    log.debug("Shape before flattening: %s", str(R.shape))
+    R = torch.reshape(R, (R.shape[0], -1))
     log.debug("Shape after flattening: %s", str(R.shape))
     return R
