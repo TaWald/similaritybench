@@ -1,8 +1,8 @@
 import torch
-from vision.data.base_datamodule import BaseDataModule
-from vision.util import data_structs as ds
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
+from vision.data.base_datamodule import BaseDataModule
+from vision.util import data_structs as ds
 
 
 # from ke.data import auto_augment

@@ -4,13 +4,13 @@ from dataclasses import asdict
 
 import torch
 import torchvision.models.resnet
+from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 from vision.arch.ke_architectures.single_model import SingleModel
 from vision.losses.dummy_loss import DummyLoss
 from vision.metrics.ke_metrics import single_output_metrics
 from vision.training.ke_train_modules.base_training_module import BaseLightningModule
 from vision.util import data_structs as ds
 from vision.util.data_structs import BasicTrainingInfo
-from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 
 
 class SingleLightningModule(BaseLightningModule):

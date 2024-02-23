@@ -3,9 +3,9 @@ from abc import abstractmethod
 from typing import Optional
 
 import numpy as np
-from vision.util import data_structs as ds
 from torch.utils.data import DataLoader
 from torchvision import transforms as trans
+from vision.util import data_structs as ds
 
 
 class BaseDataModule(ABC):

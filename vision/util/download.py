@@ -1,12 +1,13 @@
-from glob import glob
 import os
+import tarfile
+from glob import glob
+from pathlib import Path
 
 import requests
-from paths import VISION_MODEL_PATH, VISION_TAR_PATH
-from pathlib import Path
-import tarfile
-from loguru import logger
 from huggingface_hub import hf_hub_download
+from loguru import logger
+from paths import VISION_MODEL_PATH
+from paths import VISION_TAR_PATH
 
 
 def find_files(directory, filename):

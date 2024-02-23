@@ -2,14 +2,14 @@ from itertools import combinations
 from pathlib import Path
 
 import torch
+from torch.nn import functional as F
+from tqdm import tqdm
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
 from vision.metrics.jensen_shannon_distance import jensen_shannon_distance
 from vision.util import data_structs as ds
 from vision.util import find_architectures as fa
 from vision.util.default_params import get_default_arch_params
 from vision.util.find_datamodules import get_datamodule
-from torch.nn import functional as F
-from tqdm import tqdm
 
 
 def collect_models_to_compare(architecture: ds.BaseArchitecture, dataset: ds.Dataset):

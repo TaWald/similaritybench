@@ -30,6 +30,7 @@ def get_distinct_reps(N, D):
     rep1, rep2 = get_rep(N, D, seed=SEED), get_rep(N, D, seed=SEED + 1)
     return [rep1, rep2, "nd"]
 
+
 def get_orthogonal_reps(N, D):
     rep1, rep2 = get_rep(N, D, seed=SEED), get_rep(N, D, seed=SEED)
     orth_trafo = ortho_group.rvs(D, random_state=SEED)

@@ -1,8 +1,8 @@
-from repsim.benchmark.registry import TrainedModel
 import numpy as np
-from scipy.stats import spearmanr
 from registry import ALL_TRAINED_MODELS
+from repsim.benchmark.registry import TrainedModel
 from repsim.measures.cka import centered_kernel_alignment
+from scipy.stats import spearmanr
 
 
 class SameLayerExperiment:
@@ -50,12 +50,12 @@ class SameLayerExperiment:
                 )
                 for first in reps.representations:
                     for second in reps.representations:
+                        i = first.layer_id
+                        j = second.layer_id
+
                         # All metrics should be symmetric
                         if j > i:
                             continue
-
-                        i = first.layer_id
-                        j = second.layer_id
                         ret = measure(first.representation, second.representation, first.shape)
                         vals[i, j] = ret
                         vals[j, i] = vals[i, j]

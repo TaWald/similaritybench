@@ -1,9 +1,8 @@
 import logging
 from dataclasses import dataclass
+
 import numpy as np
-
 import torch
-
 from repsim.measures.utils import SHAPE_TYPE
 
 

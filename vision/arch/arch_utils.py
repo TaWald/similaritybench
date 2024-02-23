@@ -4,10 +4,10 @@ from dataclasses import asdict
 from pathlib import Path
 
 import torch
+from torch import nn
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
 from vision.util.data_structs import ArchitectureInfo
 from vision.util.data_structs import Hook
-from torch import nn
 
 
 def create_module(

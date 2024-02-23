@@ -2,14 +2,14 @@ import os
 from pathlib import Path
 
 from paths import VISION_DATA_PATH
-from vision.data.base_datamodule import BaseDataModule
-from vision.randaugment.randaugment import CIFAR10Policy
-from vision.randaugment.randaugment import Cutout
-from vision.util import data_structs as ds
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
 from torchvision import transforms as trans
 from torchvision.datasets import CIFAR10
+from vision.data.base_datamodule import BaseDataModule
+from vision.randaugment.randaugment import CIFAR10Policy
+from vision.randaugment.randaugment import Cutout
+from vision.util import data_structs as ds
 
 # from ke.data import auto_augment
 

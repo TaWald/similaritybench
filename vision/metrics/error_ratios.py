@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import vision.util.data_structs as ds
 import numpy as np
 import torch
 import torch as t
+import vision.util.data_structs as ds
 from vision.metrics.utils import mean_upper_triangular
 
 

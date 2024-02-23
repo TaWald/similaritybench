@@ -1,5 +1,6 @@
-from repsim.benchmark.registry import TrainedModel, TrainedModelRep
 import numpy as np
+from repsim.benchmark.registry import TrainedModelRep
+
 
 class TwoGroupExperiment:
     def __init__(

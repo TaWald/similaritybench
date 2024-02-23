@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytorch_lightning as pl
 import torch
+from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
+from torch.utils.tensorboard.writer import SummaryWriter
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
 from vision.util import data_structs as ds
 from vision.util.file_io import save_json
-from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
-from torch.utils.tensorboard.writer import SummaryWriter
 
 
 class BaseLightningModule(pl.LightningModule, ABC):

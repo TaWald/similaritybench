@@ -5,14 +5,14 @@ from dataclasses import asdict
 
 import pytorch_lightning as pl
 import torch
+from torch import nn
+from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 from vision.arch.arch_loading import load_model_from_info_file
 from vision.metrics.ke_metrics import multi_output_metrics
 from vision.metrics.ke_metrics import single_output_metrics
 from vision.util import find_datamodules
 from vision.util.data_structs import Dataset
 from vision.util.data_structs import ModelInfo
-from torch import nn
-from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 
 
 class EvaluationLightningModule(pl.LightningModule):

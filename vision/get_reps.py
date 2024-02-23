@@ -1,19 +1,19 @@
 import os
+from dataclasses import dataclass
 
-from repsim.utils import ModelRepresentations, SingleLayerRepresentation
+from loguru import logger
+from paths import get_experiments_path
+from repsim.utils import ModelRepresentations
+from repsim.utils import SingleLayerRepresentation
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
 from vision.arch.arch_loading import load_model_from_info_file
 from vision.toy_examples.rel_rep_to_jsd import extract_representations
 from vision.util import data_structs as ds
+from vision.util import default_params as dp
 from vision.util import find_architectures as fa
 from vision.util import find_datamodules as fd
-from vision.util import default_params as dp
-from paths import get_experiments_path
 from vision.util.download import maybe_download_all_models
 from vision.util.file_io import get_vision_model_info
-from loguru import logger
-
-from dataclasses import dataclass
 
 
 @dataclass
@@ -35,7 +35,9 @@ def _format_reps_appropriately(all_outs) -> list[SingleLayerRepresentation]:
             shape = "nc"
         else:
             raise ValueError(f"Unknown shape of representations: {reps.shape}")
-        all_single_layer_reps.append(SingleLayerRepresentation(layer_id=int(layer_id), representation=reps, shape=shape))
+        all_single_layer_reps.append(
+            SingleLayerRepresentation(layer_id=int(layer_id), representation=reps, shape=shape)
+        )
     return all_single_layer_reps
 
 

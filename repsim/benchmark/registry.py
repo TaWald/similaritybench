@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import List, Literal
-from repsim.utils import ModelRepresentations
-from vision.get_reps import get_vision_representations, VisionModelInfo
+from typing import List
+from typing import Literal
 
+from repsim.utils import ModelRepresentations
+from vision.get_reps import get_vision_representations
 
 # -------------------- All categories  trained model that can -------------------- #
 DOMAIN_TYPE = Literal["VISION", "NLP", "GRAPHS"]
