@@ -36,9 +36,7 @@ def procrustes_size_and_shape_distance(
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = center_columns(R), center_columns(Rp)
-    R, Rp = adjust_dimensionality(R, Rp)
-    nucnorm = scipy.linalg.orthogonal_procrustes(R, Rp)[1]
-    return np.sqrt(-2 * nucnorm + np.linalg.norm(R, ord="fro") ** 2 + np.linalg.norm(Rp, ord="fro") ** 2)
+    return orthogonal_procrustes(R, Rp, "nd")
 
 
 def orthogonal_procrustes_centered_and_normalized(
@@ -51,9 +49,7 @@ def orthogonal_procrustes_centered_and_normalized(
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = center_columns(R), center_columns(Rp)
     R, Rp = normalize_matrix_norm(R), normalize_matrix_norm(Rp)
-    R, Rp = adjust_dimensionality(R, Rp)
-    nucnorm = scipy.linalg.orthogonal_procrustes(R, Rp)[1]
-    return np.sqrt(-2 * nucnorm + np.linalg.norm(R, ord="fro") ** 2 + np.linalg.norm(Rp, ord="fro") ** 2)
+    return orthogonal_procrustes(R, Rp, "nd")
 
 
 def permutation_procrustes(
@@ -62,7 +58,6 @@ def permutation_procrustes(
     shape: SHAPE_TYPE,
     optimal_permutation_alignment: Optional[Tuple[npt.NDArray, npt.NDArray]] = None,
 ) -> float:
-    # ) -> Dict[str, Any]:
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
@@ -78,7 +73,6 @@ def permutation_angular_shape_metric(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
     shape: SHAPE_TYPE,
-    optimal_permutation_alignment: Optional[Tuple[npt.NDArray, npt.NDArray]] = None,
 ) -> float:
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
@@ -125,17 +119,8 @@ def orthogonal_angular_shape_metric_centered(
     """Williams et al., 2021 version"""
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
-    R, Rp = adjust_dimensionality(R, Rp)
     R, Rp = center_columns(R), center_columns(Rp)
-    R, Rp = normalize_matrix_norm(R), normalize_matrix_norm(Rp)
-
-    Qstar, nucnorm = scipy.linalg.orthogonal_procrustes(R, Rp)
-    # matrices are already normalized so no division necessary
-    corr = np.trace(Qstar.T @ R.T @ Rp)  # = \langle RQ, R' \rangle
-
-    # From https://github.com/ahwillia/netrep/blob/0f3d825aad58c6d998b44eb0d490c0c5c6251fc9/netrep/utils.py#L107  # noqa: E501
-    # numerical precision issues require us to clip inputs to arccos
-    return float(np.arccos(np.clip(corr, -1.0, 1.0)))
+    return orthogonal_angular_shape_metric(R, Rp, "nd")
 
 
 def aligned_cossim(

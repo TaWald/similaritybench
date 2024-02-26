@@ -49,7 +49,7 @@ SYMMETRIC_MEASURES = [
     hard_correlation_match,
     soft_correlation_match,
     distance_correlation,
-    orthogonal_angular_shape_metric_centered,  # williams version of ortho angular SM
+    orthogonal_angular_shape_metric_centered,  # williams version of ortho angular shape metric
     jaccard_similarity,  # gwilliam 2022 and hyrniowski 2022 have the essentially the same setup (euclidean)
     second_order_cosine_similarity,
     rank_similarity,
