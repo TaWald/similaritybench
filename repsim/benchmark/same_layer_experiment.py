@@ -1,3 +1,5 @@
+from typing import Callable
+
 import numpy as np
 from registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
@@ -6,7 +8,7 @@ from scipy.stats import spearmanr
 
 
 class SameLayerExperiment:
-    def __init__(self, models: list[TrainedModel], measures: list[callable], representation_dataset: str) -> None:
+    def __init__(self, models: list[TrainedModel], measures: list[Callable], representation_dataset: str) -> None:
         """Collect all the models and datasets to be used in the experiment"""
         self.models: list[TrainedModel] = models
         self.measures = measures
@@ -40,9 +42,9 @@ class SameLayerExperiment:
         """Run the experiment"""
         model_wise_results = []
         for model in self.models:
+            reps = model.get_representation(self.representation_dataset)
             measure_wise_result = {}
             for measure in self.measures:
-                reps = model.get_representation(self.representation_dataset)
                 vals = np.full(
                     (len(reps.representations), len(reps.representations)),
                     fill_value=np.nan,
