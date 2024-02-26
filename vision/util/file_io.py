@@ -13,7 +13,7 @@ from typing import Any
 from warnings import warn
 
 import numpy as np
-from paths import VISION_MODEL_PATH
+from repsim.benchmark.paths import VISION_MODEL_PATH
 from vision.util import data_structs as ds
 from vision.util import name_conventions as nc
 

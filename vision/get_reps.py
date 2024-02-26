@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 
 from loguru import logger
-from paths import get_experiments_path
+from repsim.benchmark.paths import get_experiments_path
 from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
