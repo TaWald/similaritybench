@@ -1,12 +1,12 @@
 import argparse
 from itertools import product
 
-from graph.config import DATASET_LIST
-from graph.config import GNN_LIST
-from graph.config import LAYER_TEST_NAME
-from graph.config import MEASURE_LIST
-from graph.config import NN_TESTS_LIST
-from graph.tests.graph_test import LayerTest
+from graphs.config import DATASET_LIST
+from graphs.config import GNN_LIST
+from graphs.config import LAYER_TEST_NAME
+from graphs.config import MEASURE_LIST
+from graphs.config import NN_TESTS_LIST
+from graphs.tests.graph_test import LayerTest
 
 GNN_TEST_DICT = {LAYER_TEST_NAME: LayerTest}
 

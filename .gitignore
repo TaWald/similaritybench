@@ -14,8 +14,10 @@ nlp/multirun
 nlp/outputs
 nlp/results
 
-graph/data*
-graph/output*
+graphs/data*
+graphs/output*
+
+jobs*
 
 *.env
 ._.DS_Store

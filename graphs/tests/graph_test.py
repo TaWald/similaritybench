@@ -6,15 +6,15 @@ from abc import abstractmethod
 from typing import List
 
 import numpy as np
-from graph.config import DEFAULT_SEEDS
-from graph.config import LAYER_TEST_N_LAYERS
-from graph.config import LAYER_TEST_NAME
-from graph.config import MEASURE_DICT
-from graph.config import MEASURE_DICT_FUNC_KEY
-from graph.config import RES_DIR
-from graph.config import SIMILARITIES_FILE_NAME
-from graph.config import TEST_RESULTS_JSON_NAME
-from graph.tests.graph_trainer import LayerTestTrainer
+from graphs.config import DEFAULT_SEEDS
+from graphs.config import LAYER_TEST_N_LAYERS
+from graphs.config import LAYER_TEST_NAME
+from graphs.config import MEASURE_DICT
+from graphs.config import MEASURE_DICT_FUNC_KEY
+from graphs.config import RES_DIR
+from graphs.config import SIMILARITIES_FILE_NAME
+from graphs.config import TEST_RESULTS_JSON_NAME
+from graphs.tests.graph_trainer import LayerTestTrainer
 
 
 class GraphTest(ABC):
@@ -115,12 +115,13 @@ class LayerTest(GraphTest):
         for seed in self.seeds:
 
             curr_reps = rep_dict[seed]
-
+            print(curr_reps[0].shape)
             # this builds the similarity matrix for given seed/model ID
             similarities[seed] = np.zeros((self.n_layers, self.n_layers))
             for i in range(self.n_layers):
                 for j in range(i + 1, self.n_layers):
                     similarities[seed][i, j] = measure(curr_reps[i], curr_reps[j], shape="nd")
+            print(similarities[seed])
 
         return similarities
 

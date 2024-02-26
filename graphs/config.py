@@ -1,6 +1,8 @@
 import multiprocessing
 import os
 
+from graphs.gnn import GCN
+from graphs.gnn import SAGE
 from repsim.measures import aligned_cossim
 from repsim.measures import centered_kernel_alignment
 from repsim.measures import correlation_match
@@ -23,9 +25,10 @@ from repsim.measures import svcca
 from repsim.measures.utils import center_columns
 from repsim.measures.utils import normalize_matrix_norm
 from repsim.measures.utils import normalize_row_norm
-from torch_geometric.nn.models import GAT
-from torch_geometric.nn.models import GCN
-from torch_geometric.nn.models import GraphSAGE
+
+# from torch_geometric.nn.models import GAT
+# from torch_geometric.nn.models import GCN
+# from torch_geometric.nn.models import GraphSAGE
 
 # ----------------------------------------------------------------------------------------------------------------------
 # GENERAL PATH-RELATED VARIABLES
@@ -90,21 +93,22 @@ MEASURE_DICT = {
 MEASURE_LIST = MEASURE_DICT.keys()
 
 # DEFAULT_SEEDS = [1]
-DEFAULT_SEEDS = list(range(1, 11))
 
 GNN_PARAMS_DEFAULT_DIMENSION = 128
 GNN_PARAMS_DEFAULT_N_LAYERS = 2
 GNN_PARAMS_DEFAULT_DROPOUT = 0.5
 GNN_PARAMS_DEFAULT_LR = 0.01
 GNN_PARAMS_DEFAULT_N_EPOCHS = 500
+GNN_PARAMS_DEFAULT_NORM = "BatchNorm"
 
-GNN_DICT = {"gcn": GCN, "sage": GraphSAGE, "gat": GAT}
+# GNN_DICT = {"gcn": GCN, "sage": GraphSAGE, "gat": GAT}
+GNN_DICT = {"gcn": GCN, "sage": SAGE}
 
 GNN_LIST = list(GNN_DICT.keys())
 
 DATASET_LIST = {"ogbn-arxiv"}
 
 LAYER_TEST_NAME = "layer_test"
-LAYER_TEST_N_LAYERS = 6
+LAYER_TEST_N_LAYERS = 10
 
 NN_TESTS_LIST = [LAYER_TEST_NAME]

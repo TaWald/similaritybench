@@ -1,34 +1,21 @@
 from dataclasses import dataclass
-from typing import List, Literal
+from typing import get_args
+from typing import List
+
+from graphs.get_reps import get_graph_representations
+from repsim.benchmark.config import DOMAIN_TYPE
+from repsim.benchmark.config import EXPERIMENT_DICT
+from repsim.benchmark.config import EXPERIMENT_IDENTIFIER
+from repsim.benchmark.config import EXPERIMENT_SEED
+from repsim.benchmark.config import GRAPH_ARCHITECTURE_TYPE
+from repsim.benchmark.config import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.config import NLP_ARCHITECTURE_TYPE
+from repsim.benchmark.config import NLP_DATASET_TRAINED_ON
+from repsim.benchmark.config import SETTING_IDENTIFIER
+from repsim.benchmark.config import VISION_ARCHITECTURE_TYPE
+from repsim.benchmark.config import VISION_DATASET_TRAINED_ON
 from repsim.utils import ModelRepresentations
-from vision.get_reps import get_vision_representations, VisionModelInfo
-
-
-# -------------------- All categories  trained model that can -------------------- #
-DOMAIN_TYPE = Literal["VISION", "NLP", "GRAPHS"]
-# ----------------------------- All Architectures ---------------------------- #
-VISION_ARCHITECTURE_TYPE = Literal["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19", "ViT-b19"]
-NLP_ARCHITECTURE_TYPE = Literal["BERT", "LSTM", "GRU"]
-GRAPH_ARCHITECTURE_TYPE = Literal["GCN", "GAT", "GraphSAGE"]
-
-# ----------------------------- Datasets trained on ---------------------------- #
-VISION_DATASET_TRAINED_ON = Literal["CIFAR10", "CIFAR100", "ImageNet"]
-NLP_DATASET_TRAINED_ON = Literal["IMDB"]
-GRAPH_DATASET_TRAINED_ON = Literal["Cora", "CiteSeer", "PubMed"]
-
-# ---------------------------- Identifier_settings --------------------------- #
-# These are shared across domains and datasets
-EXPERIMENT_IDENTIFIER = Literal[
-    "Normal",
-    "RandomInit",
-    "RandomLabels_25",
-    "RandomLabels_50",
-    "RandomLabels_75",
-    "RandomLabels_100",
-    "Shortcut_25",
-    "Shortcut_50",
-    "Shortcut_75",
-]
+from vision.get_reps import get_vision_representations
 
 # ---------------------------- SIMILARITY_METRICS --------------------------- #
 # Maybe only?
@@ -44,7 +31,8 @@ class TrainedModel:
     domain: DOMAIN_TYPE
     architecture: VISION_ARCHITECTURE_TYPE | NLP_ARCHITECTURE_TYPE | GRAPH_ARCHITECTURE_TYPE
     train_dataset: VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
-    identifier: EXPERIMENT_IDENTIFIER
+    experiment_identifier: EXPERIMENT_IDENTIFIER
+    setting_identifier: SETTING_IDENTIFIER
     additional_kwargs: dict  # Maybe one can remove this to make it more general
 
     def get_representation(self, representation_dataset: str) -> ModelRepresentations:
@@ -56,13 +44,20 @@ class TrainedModel:
                 architecture_name=self.architecture,
                 train_dataset=self.train_dataset,
                 seed_id=self.additional_kwargs["seed_id"],
-                setting_identifier=self.identifier,
+                setting_identifier=self.setting_identifier,
                 representation_dataset=representation_dataset,
             )
         elif self.domain == "NLP":
             raise NotImplementedError
         elif self.domain == "GRAPHS":
-            raise NotImplementedError
+            return get_graph_representations(
+                architecture_name=self.architecture,
+                train_dataset=self.train_dataset,
+                seed_id=self.additional_kwargs["seed_id"],
+                experiment_identifier=self.experiment_identifier,
+                setting_identifier=self.setting_identifier,
+                representation_dataset=representation_dataset,
+            )
         else:
             raise ValueError("Unknown domain type")
 
@@ -87,7 +82,7 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             domain="VISION",
                             architecture=arch,
                             train_dataset=dataset,
-                            identifier=identifier,
+                            setting_identifier=identifier,
                             additional_kwargs={"seed_id": i, "setting_identifier": None},
                         )
                     )
@@ -101,9 +96,24 @@ def all_trained_nlp_models() -> list[TrainedModel]:
 
 
 def all_trained_graph_models() -> list[TrainedModel]:
-    all_trained_graph_models = []
-    # Enter models here
-    return all_trained_graph_models
+    all_trained_models = []
+
+    for i in get_args(EXPERIMENT_SEED):
+        for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
+            for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
+                for identifier in ["layer_test"]:
+                    for setting in EXPERIMENT_DICT[identifier]:
+                        all_trained_models.append(
+                            TrainedModel(
+                                domain="GRAPHS",
+                                architecture=arch,
+                                train_dataset=dataset,
+                                experiment_identifier=identifier,
+                                setting_identifier=setting,
+                                additional_kwargs={"seed_id": i, "setting_identifier": None},
+                            )
+                        )
+    return all_trained_models
 
 
 ALL_TRAINED_MODELS: List[TrainedModel] = []

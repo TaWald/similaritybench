@@ -1,0 +1,48 @@
+from typing import Dict
+from typing import get_args
+from typing import List
+from typing import Literal
+
+# -------------------- All categories  trained model that can -------------------- #
+DOMAIN_TYPE = Literal["VISION", "NLP", "GRAPHS"]
+# ----------------------------- All Architectures ---------------------------- #
+VISION_ARCHITECTURE_TYPE = Literal["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19", "ViT-b19"]
+NLP_ARCHITECTURE_TYPE = Literal["BERT", "LSTM", "GRU"]
+GRAPH_ARCHITECTURE_TYPE = Literal["GCN", "GAT", "GraphSAGE"]
+
+# ----------------------------- Datasets trained on ---------------------------- #
+VISION_DATASET_TRAINED_ON = Literal["CIFAR10", "CIFAR100", "ImageNet"]
+NLP_DATASET_TRAINED_ON = Literal["IMDB"]
+GRAPH_DATASET_TRAINED_ON = Literal["obgn-arxiv"]
+
+# ---------------------------- Identifier_settings --------------------------- #
+# These are shared across domains and datasets
+SETTING_IDENTIFIER = Literal[
+    "Standard",
+    "RandomInit",
+    "RandomLabels_25",
+    "RandomLabels_50",
+    "RandomLabels_75",
+    "RandomLabels_100",
+    "Shortcut_25",
+    "Shortcut_50",
+    "Shortcut_75",
+]
+
+EXPERIMENT_IDENTIFIER = Literal["layer_test", "label_test", "shortcut_test"]
+
+LAYER_TEST_NAME, LABEL_TEST_NAME, SHORTCUT_TEST_NAME = (
+    get_args(EXPERIMENT_IDENTIFIER)[0],
+    get_args(EXPERIMENT_IDENTIFIER)[1],
+    get_args(EXPERIMENT_IDENTIFIER)[2],
+)
+
+EXPERIMENT_DICT: Dict[EXPERIMENT_IDENTIFIER, List[str]] = dict(
+    {
+        LAYER_TEST_NAME: ["Standard"],
+        LABEL_TEST_NAME: ["Standard", "RandomLabels_25", "RandomLabels_75", "RandomLabels_100"],
+        SHORTCUT_TEST_NAME: ["Shortcut_25", "Shortcut_50", "Shortcut_75"],
+    }
+)
+
+EXPERIMENT_SEED = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
