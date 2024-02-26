@@ -4,11 +4,11 @@ from repsim.measures import aligned_cossim
 from repsim.measures import centered_kernel_alignment
 from repsim.measures import concentricity_difference
 from repsim.measures import concentricity_nrmse
-from repsim.measures import correlation_match
 from repsim.measures import distance_correlation
 from repsim.measures import eigenspace_overlap_score
 from repsim.measures import geometry_score
 from repsim.measures import gulp
+from repsim.measures import hard_correlation_match
 from repsim.measures import imd_score
 from repsim.measures import jaccard_similarity
 from repsim.measures import joint_rank_jaccard_similarity
@@ -17,12 +17,15 @@ from repsim.measures import magnitude_difference
 from repsim.measures import magnitude_nrmse
 from repsim.measures import orthogonal_angular_shape_metric
 from repsim.measures import orthogonal_procrustes
+from repsim.measures import orthogonal_procrustes_centered_and_normalized
 from repsim.measures import permutation_procrustes
+from repsim.measures import procrustes_size_and_shape_distance
 from repsim.measures import pwcca
 from repsim.measures import rank_similarity
 from repsim.measures import representational_similarity_analysis
 from repsim.measures import rsm_norm_diff
 from repsim.measures import second_order_cosine_similarity
+from repsim.measures import soft_correlation_match
 from repsim.measures import svcca
 from repsim.measures import uniformity_difference
 from tests.conftest import _test_generic_measure
@@ -138,19 +141,6 @@ def test_representational_similarity_analysis(rep1, rep2, shape, expected_outcom
 )
 def test_rsm_norm_diff(rep1, rep2, shape, expected_outcome):
     _test_generic_measure(rsm_norm_diff, rep1, rep2, shape, expected_outcome)
-
-
-@pytest.mark.parametrize(
-    "rep1,rep2,shape,expected_outcome,mode",
-    [
-        get_identical_reps(N_ROWS, N_DIM) + [1] + ["soft"],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], ["soft"], marks=pytest.mark.xfail),
-        get_identical_reps(N_ROWS, N_DIM) + [1] + ["hard"],
-        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], ["hard"], marks=pytest.mark.xfail),
-    ],
-)
-def test_correlation_match(rep1, rep2, shape, expected_outcome, mode):
-    _test_generic_measure(correlation_match, rep1, rep2, shape, expected_outcome, mode=mode)
 
 
 @pytest.mark.parametrize(
@@ -327,3 +317,50 @@ def test_svcca(rep1, rep2, shape, expected_outcome):
 )
 def test_pwcca(rep1, rep2, shape, expected_outcome):
     _test_generic_measure(pwcca, rep1, rep2, shape, expected_outcome)
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [1],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
+    ],
+)
+def test_hard_correlation_match(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(hard_correlation_match, rep1, rep2, shape, expected_outcome)
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [1],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [1], marks=pytest.mark.xfail),
+    ],
+)
+def test_soft_correlation_match(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(soft_correlation_match, rep1, rep2, shape, expected_outcome)
+
+
+@pytest.mark.special
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [0],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
+    ],
+)
+def test_orthogonal_procrustes_centered_and_normalized(rep1, rep2, shape, expected_outcome):
+    _test_generic_measure(orthogonal_procrustes_centered_and_normalized, rep1, rep2, shape, expected_outcome)
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape,expected_outcome",
+    [
+        get_identical_reps(N_ROWS, N_DIM) + [0],
+        pytest.param(*get_distinct_reps(N_ROWS, N_DIM), [0], marks=pytest.mark.xfail),
+    ],
+)
+def test_procrustes_size_and_shape_distance(rep1, rep2, shape, expected_outcome):
+    retval = procrustes_size_and_shape_distance(rep1, rep2, shape)
+    assert isinstance(retval, float)
+    np.testing.assert_allclose(retval, expected_outcome, atol=1e-7)
