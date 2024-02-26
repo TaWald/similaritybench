@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from paths import VISION_DATA_PATH
+from repsim.benchmark.paths import VISION_DATA_PATH
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
 from torchvision import transforms as trans

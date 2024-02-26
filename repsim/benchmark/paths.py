@@ -14,7 +14,7 @@ def get_experiments_path() -> str:
         return EXPERIMENTS_ROOT_PATH
     except KeyError:
         warn("Could not find 'DATA_RESULTS_FOLDER' -- Defaulting to '<project_root>/experiments' .")
-        exp_pth = Path(__file__).parent / "experiments"
+        exp_pth = Path(__file__).parent.parent.parent / "experiments"
         exp_pth.mkdir(exist_ok=True)
         return exp_pth
 

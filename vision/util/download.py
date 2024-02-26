@@ -6,8 +6,8 @@ from pathlib import Path
 import requests
 from huggingface_hub import hf_hub_download
 from loguru import logger
-from paths import VISION_MODEL_PATH
-from paths import VISION_TAR_PATH
+from repsim.benchmark.paths import VISION_MODEL_PATH
+from repsim.benchmark.paths import VISION_TAR_PATH
 
 
 def find_files(directory, filename):
