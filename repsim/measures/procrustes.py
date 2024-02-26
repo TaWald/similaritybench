@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional
 from typing import Tuple
 from typing import Union
@@ -24,7 +25,14 @@ def orthogonal_procrustes(
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
     nucnorm = scipy.linalg.orthogonal_procrustes(R, Rp)[1]
-    return np.sqrt(-2 * nucnorm + np.linalg.norm(R, ord="fro") ** 2 + np.linalg.norm(Rp, ord="fro") ** 2)
+    squared_dist = -2 * nucnorm + np.linalg.norm(R, ord="fro") ** 2 + np.linalg.norm(Rp, ord="fro") ** 2
+    if squared_dist < 0 and abs(squared_dist) < 1e-7:
+        warnings.warn(
+            f"Squared Orthogonal Procrustes distance is less than 0, but small, likely due to numerical errors. "
+            f"Exact value={squared_dist}. Rounding to zero."
+        )
+        squared_dist = 0
+    return np.sqrt(squared_dist)
 
 
 def procrustes_size_and_shape_distance(

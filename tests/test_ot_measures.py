@@ -3,11 +3,11 @@ import pytest
 from repsim.measures import aligned_cossim
 from repsim.measures import centered_kernel_alignment
 from repsim.measures import concentricity_difference
-from repsim.measures import correlation_match
 from repsim.measures import distance_correlation
 from repsim.measures import eigenspace_overlap_score
 from repsim.measures import geometry_score
 from repsim.measures import gulp
+from repsim.measures import hard_correlation_match
 from repsim.measures import imd_score
 from repsim.measures import jaccard_similarity
 from repsim.measures import joint_rank_jaccard_similarity
@@ -17,10 +17,12 @@ from repsim.measures import magnitude_nrmse
 from repsim.measures import orthogonal_angular_shape_metric
 from repsim.measures import orthogonal_procrustes
 from repsim.measures import permutation_procrustes
+from repsim.measures import pwcca  # noqa: F401
 from repsim.measures import rank_similarity
 from repsim.measures import representational_similarity_analysis
 from repsim.measures import rsm_norm_diff
 from repsim.measures import second_order_cosine_similarity
+from repsim.measures import soft_correlation_match
 from repsim.measures import svcca
 from repsim.measures import uniformity_difference
 from tests.conftest import _test_generic_measure
@@ -142,6 +144,7 @@ def test_ortho_inv_eigenspace_overlap_score(rep1, rep2, shape, expected_outcome)
     ],
 )
 def test_ortho_inv_geometry_score(rep1, rep2, shape, expected_outcome):
+    # this test will sometimes fail because of randomness in the geometry score calculation
     _test_generic_measure(geometry_score, rep1, rep2, shape, expected_outcome)
 
 
@@ -153,7 +156,7 @@ def test_ortho_inv_geometry_score(rep1, rep2, shape, expected_outcome):
     ],
 )
 def test_ortho_inv_rsm_norm_diff(rep1, rep2, shape, expected_outcome):
-    _test_generic_measure(rsm_norm_diff, rep1, rep2, shape, expected_outcome)
+    _test_generic_measure(rsm_norm_diff, rep1, rep2, shape, expected_outcome, atol=1e-7)
 
 
 @pytest.mark.parametrize(
@@ -265,16 +268,26 @@ def test_not_ortho_inv_rsa(rep1, rep2, shape):
 
 
 @pytest.mark.parametrize(
-    "rep1,rep2,shape,mode",
+    "rep1,rep2,shape",
     [
-        get_orthogonal_reps(N_ROWS, N_DIM) + ["soft"],
-        pytest.param(*get_orthogonal_reps(N_ROWS, N_DIM), ["soft"], marks=pytest.mark.xfail),
-        get_orthogonal_reps(N_ROWS, N_DIM) + ["hard"],
-        pytest.param(*get_orthogonal_reps(N_ROWS, N_DIM), ["hard"], marks=pytest.mark.xfail),
+        get_orthogonal_reps(N_ROWS, N_DIM),
+        pytest.param(*get_orthogonal_reps(N_ROWS, N_DIM), marks=pytest.mark.xfail),
     ],
 )
-def test_not_ortho_correlation_match(rep1, rep2, shape, mode):
-    sim = correlation_match(rep1, rep2, shape, mode)
+def test_not_ortho_soft_correlation_match(rep1, rep2, shape):
+    sim = soft_correlation_match(rep1, rep2, shape)
+    assert not np.isclose(sim, 1)  # Shouldn't be inv to orthogonal trafos
+
+
+@pytest.mark.parametrize(
+    "rep1,rep2,shape",
+    [
+        get_orthogonal_reps(N_ROWS, N_DIM),
+        pytest.param(*get_orthogonal_reps(N_ROWS, N_DIM), marks=pytest.mark.xfail),
+    ],
+)
+def test_not_ortho_hard_correlation_match(rep1, rep2, shape):
+    sim = hard_correlation_match(rep1, rep2, shape)
     assert not np.isclose(sim, 1)  # Shouldn't be inv to orthogonal trafos
 
 
