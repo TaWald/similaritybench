@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import jsonlines
 import numpy as np
 import numpy.typing as npt
@@ -79,7 +81,7 @@ class TwoGroupExperiment:
 
 class Result:
     def __init__(self, identifier: str) -> None:
-        self.basedir = EXPERIMENT_RESULTS_PATH / identifier
+        self.basedir = EXPERIMENT_RESULTS_PATH / identifier / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.data = {"numpy_vals": [], "jsonable": []}
 
     def save(self) -> None:
