@@ -8,9 +8,11 @@ from repsim.benchmark.config import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.config import EXPERIMENT_SEED
 from repsim.benchmark.config import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.config import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.config import LAYER_TEST_NAME
 from repsim.benchmark.config import NLP_ARCHITECTURE_TYPE
 from repsim.benchmark.config import NLP_DATASET_TRAINED_ON
 from repsim.benchmark.config import SETTING_IDENTIFIER
+from repsim.benchmark.config import STANDARD_SETTING
 from repsim.benchmark.config import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.config import VISION_DATASET_TRAINED_ON
 from repsim.nlp import get_representations
@@ -32,7 +34,7 @@ class TrainedModel:
     domain: DOMAIN_TYPE
     architecture: VISION_ARCHITECTURE_TYPE | NLP_ARCHITECTURE_TYPE | GRAPH_ARCHITECTURE_TYPE
     train_dataset: VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
-    experiment_identifier: EXPERIMENT_IDENTIFIER
+    experiment_identifier: EXPERIMENT_IDENTIFIER | None
     setting_identifier: SETTING_IDENTIFIER
     additional_kwargs: dict  # Maybe one can remove this to make it more general
 
@@ -70,12 +72,12 @@ class TrainedModel:
                 kwargs["token_pos"],
             )
             return ModelRepresentations(
-                self.identifier,
-                self.architecture,
-                self.train_dataset,
-                None,
-                kwargs["dataset_path"] + kwargs["dataset_config"] + kwargs["dataset_split"],
-                tuple(SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
+                setting_identifier=self.setting_identifier,
+                architecture_name=self.architecture,
+                train_dataset=self.train_dataset,
+                seed_id=None,
+                representation_dataset=kwargs["dataset_path"] + kwargs["dataset_config"] + kwargs["dataset_split"],
+                representations=tuple(SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
             )
         elif self.domain == "GRAPHS":
             return get_graph_representations(
@@ -104,12 +106,13 @@ def all_trained_vision_models() -> list[TrainedModel]:
     for i in range(5):
         for arch in ["ResNet18"]:
             for dataset in ["CIFAR10", "CIFAR100"]:
-                for identifier in ["Normal"]:
+                for identifier in [STANDARD_SETTING]:
                     all_trained_vision_models.append(
                         TrainedModel(
                             domain="VISION",
                             architecture=arch,
                             train_dataset=dataset,
+                            experiment_identifier=None,
                             setting_identifier=identifier,
                             additional_kwargs={"seed_id": i, "setting_identifier": None},
                         )
@@ -123,7 +126,8 @@ def all_trained_nlp_models() -> list[TrainedModel]:
             domain="NLP",
             architecture="BERT",
             train_dataset="SST2",
-            identifier="Normal",
+            experiment_identifier=None,
+            setting_identifier=STANDARD_SETTING,
             additional_kwargs={
                 "human_name": "multibert-0-sst2",
                 "model_path": "/root/LLM-comparison/outputs/2024-01-31/13-12-49",
@@ -140,14 +144,14 @@ def all_trained_graph_models() -> list[TrainedModel]:
     for i in get_args(EXPERIMENT_SEED):
         for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
-                for identifier in ["layer_test"]:
-                    for setting in EXPERIMENT_DICT[identifier]:
+                for experiment in [LAYER_TEST_NAME]:
+                    for setting in EXPERIMENT_DICT[experiment]:
                         all_trained_models.append(
                             TrainedModel(
                                 domain="GRAPHS",
                                 architecture=arch,
                                 train_dataset=dataset,
-                                experiment_identifier=identifier,
+                                experiment_identifier=experiment,
                                 setting_identifier=setting,
                                 additional_kwargs={"seed_id": i, "setting_identifier": None},
                             )
