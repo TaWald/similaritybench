@@ -75,13 +75,13 @@ class GraphTrainer(ABC):
     def _get_gnn_params(self):
         pass
 
-    def _check_pretrained(self):
+    def _check_pretrained(self, settings):
         missing_settings = []
-        for setting in self.settings:
+        for setting in settings:
             if not os.path.exists(
                 os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
             ):
-                missing_settings.append(self.seed)
+                missing_settings.append(setting)
 
         return missing_settings
 
@@ -105,13 +105,16 @@ class GraphTrainer(ABC):
 
         return pyg_dataset[0], pyg_dataset.num_classes, pyg_dataset.get_idx_split()
 
-    def train_models(self, settings: List[SETTING_IDENTIFIER] = None):
+    def train_models(self, settings: List[SETTING_IDENTIFIER] = None, retrain: bool = False):
 
         if settings is None:
             settings = self.settings
         else:
             for setting in settings:
                 assert setting in self.settings, f"Setting {setting} is invalid, valid settings are {self.settings}"
+
+        if not retrain:
+            settings = self._check_pretrained(settings)
 
         for setting in settings:
             self.models[setting] = self._train_model(setting)
@@ -211,10 +214,8 @@ class LabelTestTrainer(GraphTrainer):
         setting_data = self.data.clone()
 
         if setting != STANDARD_SETTING:
-
             old_labels = self.data.y.detach().clone()
             shuffle_frac = int(setting.split("_")[0]) / 100
-
             setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac)
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
@@ -276,6 +277,11 @@ def parse_args():
         default=None,
         help="Tests to run.",
     )
+    parser.add_argument(
+        "--retrain",
+        action="store_true",
+        help="Whether to retrain existing models.",
+    )
     return parser.parse_args()
 
 
@@ -286,6 +292,5 @@ if __name__ == "__main__":
 
     for s in args.seeds:
         for architecture, dataset in product(args.architectures, args.datasets):
-            print(args.test)
             trainer = GNN_TRAINER_DICT[args.test](architecture_type=architecture, dataset_name=dataset, seed=s)
-            trainer.train_models(settings=args.settings)
+            trainer.train_models(settings=args.settings, retrain=args.retrain)
