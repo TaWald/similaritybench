@@ -3,6 +3,10 @@ import os
 
 from graphs.gnn import GCN
 from graphs.gnn import SAGE
+from repsim.benchmark.config import EXPERIMENT_SEED
+from repsim.benchmark.config import LABEL_TEST_NAME
+from repsim.benchmark.config import LAYER_TEST_NAME
+from repsim.benchmark.config import SETTING_IDENTIFIER
 from repsim.measures import aligned_cossim
 from repsim.measures import centered_kernel_alignment
 from repsim.measures import correlation_match
@@ -55,8 +59,8 @@ SIMILARITIES_FILE_NAME = "similarities.pkl"
 TEST_RESULTS_JSON_NAME = "results.json"
 
 
-def TORCH_STATE_DICT_FILE_NAME_AT_SEED(s):
-    return f"model_s{s}.pt"
+def TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: EXPERIMENT_SEED):
+    return f"model_{st}_s{sd}.pt"
 
 
 NUM_CORES = multiprocessing.cpu_count()
@@ -108,7 +112,6 @@ GNN_LIST = list(GNN_DICT.keys())
 
 DATASET_LIST = {"ogbn-arxiv"}
 
-LAYER_TEST_NAME = "layer_test"
 LAYER_TEST_N_LAYERS = 10
 
-NN_TESTS_LIST = [LAYER_TEST_NAME]
+NN_TESTS_LIST = [LAYER_TEST_NAME, LABEL_TEST_NAME]

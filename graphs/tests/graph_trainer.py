@@ -4,6 +4,7 @@ from abc import ABC
 from abc import abstractmethod
 from itertools import product
 from typing import get_args
+from typing import List
 
 import pandas as pd
 import torch
@@ -16,20 +17,23 @@ from graphs.config import GNN_PARAMS_DEFAULT_DROPOUT
 from graphs.config import GNN_PARAMS_DEFAULT_LR
 from graphs.config import GNN_PARAMS_DEFAULT_N_EPOCHS
 from graphs.config import GNN_PARAMS_DEFAULT_N_LAYERS
-from graphs.config import GNN_PARAMS_DEFAULT_NORM
 from graphs.config import LAYER_TEST_N_LAYERS
 from graphs.config import LAYER_TEST_NAME
 from graphs.config import MODEL_DIR
 from graphs.config import NN_TESTS_LIST
-from graphs.config import TORCH_STATE_DICT_FILE_NAME_AT_SEED
+from graphs.config import TORCH_STATE_DICT_FILE_NAME_SETTING_SEED
 from graphs.gnn import get_representations
 from graphs.gnn import train_model
+from graphs.tests.tools import shuffle_labels
 from ogb.nodeproppred import PygNodePropPredDataset
 from repsim.benchmark.config import EXPERIMENT_DICT
 from repsim.benchmark.config import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.config import EXPERIMENT_SEED
 from repsim.benchmark.config import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.config import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.config import LABEL_TEST_NAME
+from repsim.benchmark.config import SETTING_IDENTIFIER
+from repsim.benchmark.config import STANDARD_SETTING
 from torch_geometric import transforms as t
 
 
@@ -43,12 +47,13 @@ class GraphTrainer(ABC):
         seed: EXPERIMENT_SEED,
     ):
 
+        self.test_name = test_name
+        self.settings = EXPERIMENT_DICT[test_name]
         self.architecture_type = architecture_type
         self.seed = seed
         self.dataset_name: str = dataset_name
-        self.data, self.n_classes, self.split_idx = self._preprocess_data()
-        self.models = None
-        self.test_name = test_name
+        self.data, self.n_classes, self.split_idx = self._get_data()
+        self.models = dict()
         self.settings = EXPERIMENT_DICT[test_name]
 
         self.gnn_params, self.optimizer_params = self._get_gnn_params()
@@ -71,15 +76,18 @@ class GraphTrainer(ABC):
         pass
 
     def _check_pretrained(self):
-        missing_seeds = []
-        if not os.path.exists(os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_AT_SEED(self.seed))):
-            missing_seeds.append(self.seed)
+        missing_settings = []
+        for setting in self.settings:
+            if not os.path.exists(
+                os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
+            ):
+                missing_settings.append(self.seed)
 
-        return missing_seeds
+        return missing_settings
 
-    def _load_model(self):
+    def _load_model(self, setting):
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
-        model_file = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_AT_SEED(self.seed))
+        model_file = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
 
         if not os.path.isfile(model_file):
             raise FileNotFoundError(f"Model File for seed {self.seed} does not exist")
@@ -88,16 +96,32 @@ class GraphTrainer(ABC):
 
         return model
 
+    def _get_data(self):
+        # TODO: This is assuming an OGB dataset, consider multiple cases if non-obg data is used
+
+        pyg_dataset = PygNodePropPredDataset(
+            name=self.dataset_name, transform=t.Compose([t.ToUndirected(), t.ToSparseTensor()]), root=DATA_DIR
+        )
+
+        return pyg_dataset[0], pyg_dataset.num_classes, pyg_dataset.get_idx_split()
+
+    def train_models(self, settings: List[SETTING_IDENTIFIER] = None):
+
+        if settings is None:
+            settings = self.settings
+        else:
+            for setting in settings:
+                assert setting in self.settings, f"Setting {setting} is invalid, valid settings are {self.settings}"
+
+        for setting in settings:
+            self.models[setting] = self._train_model(setting)
+
     @abstractmethod
-    def _preprocess_data(self):
+    def _train_model(self, setting: SETTING_IDENTIFIER):
         pass
 
     @abstractmethod
-    def train_model(self):
-        pass
-
-    @abstractmethod
-    def get_test_representations(self):
+    def get_test_representations(self, setting: SETTING_IDENTIFIER):
         pass
 
 
@@ -116,14 +140,6 @@ class LayerTestTrainer(GraphTrainer):
             self, architecture_type=architecture_type, dataset_name=dataset_name, seed=seed, test_name=LAYER_TEST_NAME
         )
 
-    def _preprocess_data(self):
-        # TODO: This is assuming an OGB dataset, consider multiple cases if non-obg data is used
-        dataset = PygNodePropPredDataset(
-            name=self.dataset_name, transform=t.Compose([t.ToUndirected(), t.ToSparseTensor()]), root=DATA_DIR
-        )
-
-        return dataset[0], dataset.num_classes, dataset.get_idx_split()
-
     def _get_gnn_params(self):
 
         gnn_params = {
@@ -138,19 +154,23 @@ class LayerTestTrainer(GraphTrainer):
 
         return gnn_params, optimizer_params
 
-    def train_model(self):
+    def _train_model(self, setting: SETTING_IDENTIFIER):
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
-        save_path = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_AT_SEED(self.seed))
+        save_path = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
         train_results = train_model(model, self.data, self.split_idx, self.seed, self.optimizer_params, save_path)
         print(train_results[-1])
 
+        # TODO: outsource function to create results frames, create global functions/vars for colnames and result
+        #  file name
         df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
-        df_train.to_csv(os.path.join(self.models_path, f"train_results_s{self.seed}.csv"), index=False)
+        df_train.to_csv(os.path.join(self.models_path, f"train_results_{setting}_s{self.seed}.csv"), index=False)
 
-    def get_test_representations(self):
+        return model
 
-        model = self._load_model()
+    def get_test_representations(self, setting: SETTING_IDENTIFIER):
+
+        model = self._load_model(setting)
         reps = get_representations(model, self.data, self.split_idx["test"], self.gnn_params["num_layers"])
 
         return reps
@@ -167,16 +187,8 @@ class LabelTestTrainer(GraphTrainer):
     ):
         self.n_layers = LAYER_TEST_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
-            self, architecture_type=architecture_type, dataset_name=dataset_name, seed=seed, test_name=LAYER_TEST_NAME
+            self, architecture_type=architecture_type, dataset_name=dataset_name, seed=seed, test_name=LABEL_TEST_NAME
         )
-
-    def _preprocess_data(self):
-        # TODO: This is assuming an OGB dataset, consider multiple cases if non-obg data is used
-        dataset = PygNodePropPredDataset(
-            name=self.dataset_name, transform=t.Compose([t.ToUndirected(), t.ToSparseTensor()]), root=DATA_DIR
-        )
-
-        return dataset[0], dataset.get_idx_split()
 
     def _get_gnn_params(self):
 
@@ -185,25 +197,36 @@ class LabelTestTrainer(GraphTrainer):
             "in_channels": self.data.num_features,
             "hidden_channels": GNN_PARAMS_DEFAULT_DIMENSION,
             "dropout": GNN_PARAMS_DEFAULT_DROPOUT,
-            "norm": GNN_PARAMS_DEFAULT_NORM,
+            "out_channels": self.n_classes,
+            # "norm": GNN_PARAMS_DEFAULT_NORM,
         }
         optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
 
         return gnn_params, optimizer_params
 
-    def train_model(self):
+    def _train_model(self, setting):
+
+        print(f"Train {self.architecture_type} on {self.dataset_name} in {setting} setting.")
+
+        setting_data = self.data.clone()
+
+        if setting != STANDARD_SETTING:
+
+            old_labels = self.data.y.detach().clone()
+            shuffle_frac = int(setting.split("_")[0]) / 100
+
+            setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac)
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
-        save_path = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_AT_SEED(self.seed))
-        train_results = train_model(model, self.data, self.split_idx, self.seed, self.optimizer_params, save_path)
-        print(train_results[-1])
+        save_path = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
+        train_results = train_model(model, setting_data, self.split_idx, self.seed, self.optimizer_params, save_path)
 
         df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
         df_train.to_csv(os.path.join(self.models_path, f"train_results_s{self.seed}.csv"), index=False)
 
-    def get_test_representations(self):
+    def get_test_representations(self, setting: SETTING_IDENTIFIER):
 
-        model = self._load_model()
+        model = self._load_model(setting)
         reps = get_representations(model, self.data, self.split_idx["test"], self.gnn_params["num_layers"])
 
         return reps
@@ -231,7 +254,6 @@ def parse_args():
     parser.add_argument(
         "-t",
         "--test",
-        nargs=1,
         type=str,
         choices=NN_TESTS_LIST,
         default=LAYER_TEST_NAME,
@@ -246,15 +268,24 @@ def parse_args():
         default=list(get_args(EXPERIMENT_SEED)),
         help="Tests to run.",
     )
+    parser.add_argument(
+        "--settings",
+        nargs="*",
+        type=str,
+        choices=list(get_args(SETTING_IDENTIFIER)),
+        default=None,
+        help="Tests to run.",
+    )
     return parser.parse_args()
 
 
-GNN_TRAINER_DICT = {LAYER_TEST_NAME: LayerTestTrainer}
+GNN_TRAINER_DICT = {LAYER_TEST_NAME: LayerTestTrainer, LABEL_TEST_NAME: LabelTestTrainer}
 
 if __name__ == "__main__":
     args = parse_args()
 
     for s in args.seeds:
         for architecture, dataset in product(args.architectures, args.datasets):
+            print(args.test)
             trainer = GNN_TRAINER_DICT[args.test](architecture_type=architecture, dataset_name=dataset, seed=s)
-            trainer.train_model()
+            trainer.train_models(settings=args.settings)
