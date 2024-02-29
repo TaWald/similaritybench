@@ -3,13 +3,13 @@ from __future__ import annotations
 import os
 from copy import deepcopy
 
+from pytorch_lightning import Trainer
+from torch.utils.data import DataLoader
 from vision.training.ke_train_modules.EvaluationLightningModule import EvaluationLightningModule
 from vision.util import data_structs as ds
 from vision.util import file_io
 from vision.util.gpu_cluster_worker_nodes import get_workers_for_current_node
 from vision.util.load_own_objects import load_datamodule_from_info
-from pytorch_lightning import Trainer
-from torch.utils.data import DataLoader
 
 
 class EvalTrainer:

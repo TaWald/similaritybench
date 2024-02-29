@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import torch
+from torch import nn
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
 from vision.arch.arch_utils import create_module
 from vision.arch.arch_utils import serialize_architecture_info
@@ -10,7 +11,6 @@ from vision.arch.ke_architectures.base_feature_arch import BaseFeatureArch
 from vision.util.data_structs import ArchitectureInfo
 from vision.util.data_structs import BaseArchitecture
 from vision.util.find_architectures import get_base_arch
-from torch import nn
 
 
 def create_model_instances(multiple_arch_infos: list[ArchitectureInfo]) -> nn.ModuleList[AbsActiExtrArch]:

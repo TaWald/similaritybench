@@ -1,5 +1,10 @@
-from repsim.benchmark.registry import TrainedModel, TrainedModelRep
+import jsonlines
 import numpy as np
+import numpy.typing as npt
+from loguru import logger
+from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
+from repsim.benchmark.registry import TrainedModelRep
+
 
 class TwoGroupExperiment:
     def __init__(
@@ -70,3 +75,26 @@ class TwoGroupExperiment:
                 "acc": (acc_a + acc_b) / 2,
             }
         return results
+
+
+class Result:
+    def __init__(self, identifier: str) -> None:
+        self.basedir = EXPERIMENT_RESULTS_PATH / identifier
+        self.data = {"numpy_vals": [], "jsonable": []}
+
+    def save(self) -> None:
+        self.basedir.mkdir(exist_ok=True, parents=True)
+        logger.info(f"Writing results to {self.basedir}")
+
+        with jsonlines.open(self.basedir / "results.jsonl", mode="w") as writer:
+            writer.write_all(self.data["jsonable"])
+
+        # arr_0 will correspond to the first row in the jsonl file
+        np.savez(self.basedir / "numpy_vals.npz", *self.data["numpy_vals"])
+
+    def load(self) -> None:
+        raise NotImplementedError
+
+    def add(self, numpy_vals: npt.NDArray, **others) -> None:
+        self.data["numpy_vals"].append(numpy_vals)
+        self.data["jsonable"].append({str(key): str(val) for key, val in others.items()})

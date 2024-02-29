@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from abc import ABC
+from collections.abc import Sequence
 from typing import List
-from typing import Sequence
 from typing import Union
 
 import numpy as np
+from torch import nn
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
 from vision.util.data_structs import BaseArchitecture
 from vision.util.data_structs import Hook
-from torch import nn
 
 arch_cfg: dict[str, list[int | str]] = {
     "VGG11": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],

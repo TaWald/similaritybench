@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import get_args
-from typing import List
 
 from graphs.get_reps import get_graph_representations
 from repsim.benchmark.config import DOMAIN_TYPE
@@ -14,7 +13,9 @@ from repsim.benchmark.config import NLP_DATASET_TRAINED_ON
 from repsim.benchmark.config import SETTING_IDENTIFIER
 from repsim.benchmark.config import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.config import VISION_DATASET_TRAINED_ON
+from repsim.nlp import get_representations
 from repsim.utils import ModelRepresentations
+from repsim.utils import SingleLayerRepresentation
 from vision.get_reps import get_vision_representations
 
 # ---------------------------- SIMILARITY_METRICS --------------------------- #
@@ -35,7 +36,7 @@ class TrainedModel:
     setting_identifier: SETTING_IDENTIFIER
     additional_kwargs: dict  # Maybe one can remove this to make it more general
 
-    def get_representation(self, representation_dataset: str) -> ModelRepresentations:
+    def get_representation(self, representation_dataset: str, **kwargs) -> ModelRepresentations:
         """
         This function should return the representation of the model.
         """
@@ -48,7 +49,34 @@ class TrainedModel:
                 representation_dataset=representation_dataset,
             )
         elif self.domain == "NLP":
-            raise NotImplementedError
+            # TODO: this requires so many additional arguments. We should likely have some specialized classes for the
+            #  different domains
+            additional_required_model_args = ["tokenizer_name", "model_type", "model_path"]
+            if not all((key in self.additional_kwargs for key in additional_required_model_args)):
+                raise ValueError(f"Unable to load model. One or more of {additional_required_model_args} missing.")
+
+            kwargs["dataset_path"] = kwargs["dataset_path"] if kwargs["dataset_path"] is not None else ""
+            kwargs["dataset_config"] = kwargs["dataset_config"] if kwargs["dataset_config"] is not None else ""
+            kwargs["dataset_split"] = kwargs["dataset_split"] if kwargs["dataset_split"] is not None else ""
+
+            reps = get_representations(
+                self.additional_kwargs["model_path"],
+                self.additional_kwargs["model_type"],
+                self.additional_kwargs["tokenizer_name"],
+                kwargs["dataset_path"],
+                kwargs["dataset_config"],
+                kwargs["dataset_split"],
+                kwargs["device"],
+                kwargs["token_pos"],
+            )
+            return ModelRepresentations(
+                self.identifier,
+                self.architecture,
+                self.train_dataset,
+                None,
+                kwargs["dataset_path"] + kwargs["dataset_config"] + kwargs["dataset_split"],
+                tuple(SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
+            )
         elif self.domain == "GRAPHS":
             return get_graph_representations(
                 architecture_name=self.architecture,
@@ -90,9 +118,20 @@ def all_trained_vision_models() -> list[TrainedModel]:
 
 
 def all_trained_nlp_models() -> list[TrainedModel]:
-    all_trained_nlp_models = []
-    # Enter models here
-    return all_trained_nlp_models
+    return [
+        TrainedModel(
+            domain="NLP",
+            architecture="BERT",
+            train_dataset="SST2",
+            identifier="Normal",
+            additional_kwargs={
+                "human_name": "multibert-0-sst2",
+                "model_path": "/root/LLM-comparison/outputs/2024-01-31/13-12-49",
+                "model_type": "sequence-classification",
+                "tokenizer_name": "google/multiberts-seed_0",
+            },
+        )
+    ]
 
 
 def all_trained_graph_models() -> list[TrainedModel]:
@@ -116,7 +155,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
     return all_trained_models
 
 
-ALL_TRAINED_MODELS: List[TrainedModel] = []
+ALL_TRAINED_MODELS: list[TrainedModel] = []
 ALL_TRAINED_MODELS.extend(all_trained_vision_models())
 ALL_TRAINED_MODELS.extend(all_trained_nlp_models())
 ALL_TRAINED_MODELS.extend(all_trained_graph_models())

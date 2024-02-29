@@ -1,5 +1,5 @@
-from vision.arch.ke_architectures.base_feature_arch import BaseFeatureArch
 from torch import nn
+from vision.arch.ke_architectures.base_feature_arch import BaseFeatureArch
 
 
 class SingleModel(BaseFeatureArch):

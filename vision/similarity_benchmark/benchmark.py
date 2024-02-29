@@ -1,13 +1,16 @@
 from pathlib import Path
+
 from repsim.measures import centered_kernel_alignment
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
 from vision.arch.arch_loading import load_model_from_info_file
 from vision.similarity_benchmark.neighbour_layer_comp import compare_models_layer_to_neighbours
-from vision.util import file_io
-from vision.util.default_params import get_default_arch_params, get_default_parameters
-from vision.util.file_io import get_first_model, save_json
 from vision.util import data_structs as ds
+from vision.util import file_io
 from vision.util import find_datamodules as fd
+from vision.util.default_params import get_default_arch_params
+from vision.util.default_params import get_default_parameters
+from vision.util.file_io import get_first_model
+from vision.util.file_io import save_json
 
 
 def main():
