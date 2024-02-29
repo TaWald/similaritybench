@@ -1,8 +1,8 @@
-from repsim.benchmark.registry import TrainedModel
 import numpy as np
-from scipy.stats import spearmanr
 from registry import ALL_TRAINED_MODELS
+from repsim.benchmark.registry import TrainedModel
 from repsim.measures.cka import centered_kernel_alignment
+from scipy.stats import spearmanr
 
 
 class SameLayerExperiment:
@@ -36,6 +36,25 @@ class SameLayerExperiment:
 
         return np.nanmean(forward_corrs + backward_corrs)
 
+    def _meta_accuracy(self, sim: np.ndarray) -> float:
+        """Calculate the spearman rank correlation of the similarity to the layers"""
+
+        n_rows, n_cols = sim.shape
+
+        n_violations = 0
+        n_comb_count = 0
+
+        for i in range(n_rows):
+            for j in range(i + 1, n_cols):
+
+                for k in range(i, j):
+                    for l in range(k + 1, j + 1):
+                        n_comb_count += 1
+                        if sim[i, j] < sim[k, l]:
+                            n_violations += 1
+
+        return 1 - n_violations / n_comb_count
+
     def run(self) -> dict[str, dict]:
         """Run the experiment"""
         model_wise_results = []
@@ -50,12 +69,13 @@ class SameLayerExperiment:
                 )
                 for first in reps.representations:
                     for second in reps.representations:
+                        i = first.layer_id
+                        j = second.layer_id
+
                         # All metrics should be symmetric
                         if j > i:
                             continue
 
-                        i = first.layer_id
-                        j = second.layer_id
                         ret = measure(first.representation, second.representation, first.shape)
                         vals[i, j] = ret
                         vals[j, i] = vals[i, j]
@@ -63,6 +83,7 @@ class SameLayerExperiment:
                     "models": self.models,
                     "raw_values": vals,
                     "spearman_rank_correlation": self._layerwise_forward_sim(vals),
+                    "meta_accruacy": self._meta_accuracy(vals),
                 }
             model_wise_results.append(measure_wise_result)
         return model_wise_results  # TODO: Aggregate the results somehow?
