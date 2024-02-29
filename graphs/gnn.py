@@ -141,7 +141,7 @@ def validate(model, data, train_idx, val_idx):
 
 
 @torch.no_grad()
-def get_representations(model, data, test_idx, n_layers):
+def get_representations(model, data, test_idx, layer_ids):
     model.eval()
 
     activations = {}
@@ -154,16 +154,16 @@ def get_representations(model, data, test_idx, n_layers):
         return hook
 
     hooks = dict()
-    for i in range(n_layers):
+    for i in layer_ids:
         hooks[i] = model.convs[i].register_forward_hook(getActivation(f"layer{i + 1}"))
 
     _ = model(data.x, data.adj_t)
 
-    for i in range(n_layers):
+    for i in layer_ids:
         hooks[i].remove()
 
     reps = dict()
-    for i in range(n_layers):
+    for i in layer_ids:
         reps[i] = activations[f"layer{i + 1}"].detach()[test_idx].numpy()
 
     return reps

@@ -174,7 +174,12 @@ class LayerTestTrainer(GraphTrainer):
     def get_test_representations(self, setting: SETTING_IDENTIFIER):
 
         model = self._load_model(setting)
-        reps = get_representations(model, self.data, self.split_idx["test"], self.gnn_params["num_layers"])
+        reps = get_representations(
+            model=model,
+            data=self.data,
+            test_idx=self.split_idx["test"],
+            layer_ids=list(range(self.gnn_params["num_layers"])),
+        )
 
         return reps
 
@@ -215,7 +220,7 @@ class LabelTestTrainer(GraphTrainer):
 
         if setting != STANDARD_SETTING:
             old_labels = self.data.y.detach().clone()
-            shuffle_frac = int(setting.split("_")[0]) / 100
+            shuffle_frac = int(setting.split("_")[-1]) / 100.0
             setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac)
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
@@ -228,9 +233,16 @@ class LabelTestTrainer(GraphTrainer):
     def get_test_representations(self, setting: SETTING_IDENTIFIER):
 
         model = self._load_model(setting)
-        reps = get_representations(model, self.data, self.split_idx["test"], self.gnn_params["num_layers"])
+        setting_data = self.data.clone()
 
-        return reps
+        if setting != STANDARD_SETTING:
+            old_labels = self.data.y.detach().clone()
+            shuffle_frac = int(setting.split("_")[-1]) / 100.0
+            setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac)
+
+        reps = get_representations(model=model, data=setting_data, test_idx=self.split_idx["test"], layer_ids=[-1])
+
+        return reps[-1]
 
 
 def parse_args():
