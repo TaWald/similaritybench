@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from paths import VISION_MODEL_PATH
-
 import collections
 import json
 import logging
@@ -9,12 +7,13 @@ import os
 import pickle
 import re
 from collections import OrderedDict
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
-from typing import Iterable
 from warnings import warn
 
 import numpy as np
+from repsim.benchmark.paths import VISION_MODEL_PATH
 from vision.util import data_structs as ds
 from vision.util import name_conventions as nc
 

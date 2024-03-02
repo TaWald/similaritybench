@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import os
+from collections.abc import Iterable
+from dataclasses import replace
 
 import git
 from vision.util import data_structs as ds

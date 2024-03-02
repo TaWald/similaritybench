@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Sequence
 from typing import List
-from typing import Sequence
 from typing import Union
 
 import numpy as np
 import torch
-from vision.util.data_structs import BaseArchitecture
-from vision.util.data_structs import Hook
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.hooks import RemovableHandle
+from vision.util.data_structs import BaseArchitecture
+from vision.util.data_structs import Hook
 
 
 class AbsActiExtrArch(nn.Module):

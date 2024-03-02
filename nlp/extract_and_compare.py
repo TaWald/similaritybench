@@ -22,6 +22,12 @@ from tqdm import tqdm
 log = logging.getLogger(__name__)
 
 
+def get_dataset(dataset_name: str, config: Optional[str] = None) -> datasets.dataset_dict.DatasetDict:
+    ds = datasets.load_dataset(dataset_name, config)
+    assert isinstance(ds, datasets.dataset_dict.DatasetDict)
+    return ds
+
+
 def get_tokenizer_and_model(
     model_name: str,
     tokenizer_name: Optional[str] = None,
@@ -180,7 +186,7 @@ def main(cfg: DictConfig) -> None:
 
     ################
     # Extracting representations
-    dataset = repsim.utils.get_dataset(cfg.dataset.name, cfg.dataset.config)[cfg.dataset.split]
+    dataset = get_dataset(cfg.dataset.name, cfg.dataset.config)[cfg.dataset.split]
     prompt_creator = get_prompt_creator(cfg.dataset.name, cfg.dataset.config)
 
     # Assumption: we can temporarily cache the representations from both models for all layers in memory

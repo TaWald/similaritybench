@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional
 from typing import Tuple
 from typing import Union
@@ -8,6 +9,7 @@ import scipy.linalg
 import scipy.optimize
 import torch
 from repsim.measures.utils import adjust_dimensionality
+from repsim.measures.utils import center_columns
 from repsim.measures.utils import flatten
 from repsim.measures.utils import normalize_matrix_norm
 from repsim.measures.utils import SHAPE_TYPE
@@ -23,7 +25,39 @@ def orthogonal_procrustes(
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
     nucnorm = scipy.linalg.orthogonal_procrustes(R, Rp)[1]
-    return np.sqrt(-2 * nucnorm + np.linalg.norm(R, ord="fro") ** 2 + np.linalg.norm(Rp, ord="fro") ** 2)
+    squared_dist = -2 * nucnorm + np.linalg.norm(R, ord="fro") ** 2 + np.linalg.norm(Rp, ord="fro") ** 2
+    if squared_dist < 0 and abs(squared_dist) < 1e-7:
+        warnings.warn(
+            f"Squared Orthogonal Procrustes distance is less than 0, but small, likely due to numerical errors. "
+            f"Exact value={squared_dist}. Rounding to zero."
+        )
+        squared_dist = 0
+    return np.sqrt(squared_dist)
+
+
+def procrustes_size_and_shape_distance(
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
+) -> float:
+    """Same setup as Williams et al., 2021 for the rotation invariant metric"""
+    R, Rp = flatten(R, Rp, shape=shape)
+    R, Rp = to_numpy_if_needed(R, Rp)
+    R, Rp = center_columns(R), center_columns(Rp)
+    return orthogonal_procrustes(R, Rp, "nd")
+
+
+def orthogonal_procrustes_centered_and_normalized(
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
+) -> float:
+    """Same setup as Ding et al., 2021"""
+    R, Rp = flatten(R, Rp, shape=shape)
+    R, Rp = to_numpy_if_needed(R, Rp)
+    R, Rp = center_columns(R), center_columns(Rp)
+    R, Rp = normalize_matrix_norm(R), normalize_matrix_norm(Rp)
+    return orthogonal_procrustes(R, Rp, "nd")
 
 
 def permutation_procrustes(
@@ -32,7 +66,6 @@ def permutation_procrustes(
     shape: SHAPE_TYPE,
     optimal_permutation_alignment: Optional[Tuple[npt.NDArray, npt.NDArray]] = None,
 ) -> float:
-    # ) -> Dict[str, Any]:
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = adjust_dimensionality(R, Rp)
@@ -42,17 +75,12 @@ def permutation_procrustes(
         optimal_permutation_alignment = (PR, PRp)
     PR, PRp = optimal_permutation_alignment
     return float(np.linalg.norm(R[:, PR] - Rp[:, PRp], ord="fro"))
-    # return {
-    #     "score": float(np.linalg.norm(R[:, PR] - Rp[:, PRp], ord="fro")),
-    #     "optimal_permutation_alignment": optimal_permutation_alignment,
-    # }
 
 
 def permutation_angular_shape_metric(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
     shape: SHAPE_TYPE,
-    optimal_permutation_alignment: Optional[Tuple[npt.NDArray, npt.NDArray]] = None,
 ) -> float:
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
@@ -89,6 +117,18 @@ def orthogonal_angular_shape_metric(
     # From https://github.com/ahwillia/netrep/blob/0f3d825aad58c6d998b44eb0d490c0c5c6251fc9/netrep/utils.py#L107  # noqa: E501
     # numerical precision issues require us to clip inputs to arccos
     return float(np.arccos(np.clip(corr, -1.0, 1.0)))
+
+
+def orthogonal_angular_shape_metric_centered(
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
+) -> float:
+    """Williams et al., 2021 version"""
+    R, Rp = flatten(R, Rp, shape=shape)
+    R, Rp = to_numpy_if_needed(R, Rp)
+    R, Rp = center_columns(R), center_columns(Rp)
+    return orthogonal_angular_shape_metric(R, Rp, "nd")
 
 
 def aligned_cossim(

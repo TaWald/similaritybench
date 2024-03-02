@@ -9,6 +9,11 @@ from typing import Optional
 
 import numpy as np
 import torch as t
+from numpy import genfromtxt
+from torch.nn import functional as F
+from torch.nn.functional import cross_entropy
+from torchmetrics.functional import accuracy
+from torchmetrics.functional import calibration_error
 from vision.losses.utils import celu_explained_variance
 from vision.losses.utils import centered_kernel_alignment
 from vision.losses.utils import cosine_similarity
@@ -19,11 +24,6 @@ from vision.metrics.error_ratios import calculate_error_ratios
 from vision.metrics.jensen_shannon_distance import jensen_shannon_divergences
 from vision.metrics.relative_ensemble_performance import relative_ensemble_performance
 from vision.util import data_structs as ds
-from numpy import genfromtxt
-from torch.nn import functional as F
-from torch.nn.functional import cross_entropy
-from torchmetrics.functional import accuracy
-from torchmetrics.functional import calibration_error
 
 
 @cache

@@ -3,10 +3,10 @@ from pathlib import Path
 from typing import Any
 from typing import Optional
 
-from vision.util.file_io import load_json
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
+from vision.util.file_io import load_json
 
 
 class ImageNet100Dataset(Dataset):

@@ -1,9 +1,9 @@
 from typing import Type
 
 import torchvision.models
+from torch import nn
 from vision.arch import abstract_acti_extr
 from vision.util import data_structs as ds
-from torch import nn
 
 # from ke.arch import o2o_average
 

@@ -15,10 +15,13 @@ def get_rep(N: int, D: int, seed: int) -> torch.Tensor:
     return torch.from_numpy(rep)
 
 
-def _test_generic_measure(func, rep1, rep2, shape, expected_outcome, *args, **kwargs):
+def _test_generic_measure(func, rep1, rep2, shape, expected_outcome, atol=None, *args, **kwargs):
     retval = func(rep1, rep2, shape, *args, **kwargs)
     assert isinstance(retval, float)
-    np.testing.assert_allclose(retval, expected_outcome)
+    if atol:
+        np.testing.assert_allclose(retval, expected_outcome, atol=atol)
+    else:
+        np.testing.assert_allclose(retval, expected_outcome)
 
 
 def get_identical_reps(N, D):
@@ -29,6 +32,7 @@ def get_identical_reps(N, D):
 def get_distinct_reps(N, D):
     rep1, rep2 = get_rep(N, D, seed=SEED), get_rep(N, D, seed=SEED + 1)
     return [rep1, rep2, "nd"]
+
 
 def get_orthogonal_reps(N, D):
     rep1, rep2 = get_rep(N, D, seed=SEED), get_rep(N, D, seed=SEED)

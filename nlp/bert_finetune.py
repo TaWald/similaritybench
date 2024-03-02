@@ -1,11 +1,12 @@
 import logging
 import os
 from functools import partial
+from typing import Optional
 
+import datasets
 import evaluate
 import hydra
 import numpy as np
-import repsim.utils
 import torch
 from omegaconf import DictConfig
 from omegaconf import OmegaConf
@@ -37,6 +38,12 @@ def tokenize_function(examples, tokenizer, dataset_name):
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
 
+def get_dataset(dataset_name: str, config: Optional[str] = None) -> datasets.dataset_dict.DatasetDict:
+    ds = datasets.load_dataset(dataset_name, config)
+    assert isinstance(ds, datasets.dataset_dict.DatasetDict)
+    return ds
+
+
 def compute_metrics(eval_pred, metric):
     logits, labels = eval_pred
     predictions = np.argmax(logits, axis=-1)
@@ -53,7 +60,7 @@ def main(cfg: DictConfig) -> None:
         str(os.environ.get("CUDA_VISIBLE_DEVICES", None)),
     )
 
-    dataset = repsim.utils.get_dataset(cfg.dataset.name, cfg.dataset.config)
+    dataset = get_dataset(cfg.dataset.name, cfg.dataset.config)
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.kwargs.tokenizer_name)
     dataset_name = (
         cfg.dataset.name + "__" + cfg.dataset.config if cfg.dataset.config is not None else cfg.dataset.name

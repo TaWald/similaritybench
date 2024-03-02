@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from abc import abstractmethod
 
-from vision.arch import abstract_acti_extr
 from torch import nn
+from vision.arch import abstract_acti_extr
 
 
 class BaseFeatureArch(nn.Module):

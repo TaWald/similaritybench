@@ -6,13 +6,13 @@ from dataclasses import asdict
 from pathlib import Path
 
 from torch.utils.data import DataLoader
+from pytorch_lightning import Trainer
 from vision.data.base_datamodule import BaseDataModule
 from vision.training.ke_train_modules.base_training_module import BaseLightningModule
 from vision.util import data_structs as ds
 from vision.util import file_io
 from vision.util import name_conventions as nc
 from vision.util.gpu_cluster_worker_nodes import get_workers_for_current_node
-from pytorch_lightning import Trainer
 
 
 class BaseTrainer:
