@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import torch
-from paths import VISION_DATA_PATH
+from repsim.benchmark.paths import VISION_DATA_PATH
 from vision.data.base_datamodule import BaseDataModule
 from vision.data.cifar10_dm import CIFAR10DataModule
 from vision.data.shortcuts.cifar10_color_dataset import ColorDotCIFAR10
