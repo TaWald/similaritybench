@@ -124,8 +124,12 @@ class ShortcutTrainer:
         )
         val_metrics_full_sc = self.model.final_metrics
 
-        diff_full_sc_to_in_domain = val_metrics_full_sc["accuracy"] - val_metrics_in_domain["accuracy"]
-        diff_no_sc_to_in_domain = val_metrics_no_sc["accuracy"] - val_metrics_in_domain["accuracy"]
+        diff_full_sc_to_in_domain = (
+            val_metrics_full_sc["no_shortcut"]["accuracy"] - val_metrics_in_domain["no_shortcut"]["accuracy"]
+        )
+        diff_no_sc_to_in_domain = (
+            val_metrics_no_sc["no_shortcut"]["accuracy"] - val_metrics_in_domain["no_shortcut"]["accuracy"]
+        )
 
         trainer.test(self.model, dataloaders=self.datamodule.test_dataloader(ds.Augmentation.VAL, **self.val_kwargs))
         test_metrics_in_domain = self.model.final_metrics
@@ -138,8 +142,12 @@ class ShortcutTrainer:
         )
         test_metrics_full_sc = self.model.final_metrics
 
-        diff_full_sc_to_in_domain_test = test_metrics_full_sc["accuracy"] - test_metrics_in_domain["accuracy"]
-        diff_no_sc_to_in_domain_test = test_metrics_no_sc["accuracy"] - test_metrics_in_domain["accuracy"]
+        diff_full_sc_to_in_domain_test = (
+            test_metrics_full_sc["no_shortcut"]["accuracy"] - test_metrics_in_domain["no_shortcut"]["accuracy"]
+        )
+        diff_no_sc_to_in_domain_test = (
+            test_metrics_no_sc["no_shortcut"]["accuracy"] - test_metrics_in_domain["no_shortcut"]["accuracy"]
+        )
 
         output = {
             "val_changes": {
