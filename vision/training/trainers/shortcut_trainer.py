@@ -15,16 +15,20 @@ from vision.util.gpu_cluster_worker_nodes import get_workers_for_current_node
 from pytorch_lightning import Trainer
 
 
-class BaseTrainer:
+class ShortcutTrainer:
     def __init__(
         self,
         model: BaseLightningModule,
         datamodule: BaseDataModule,
+        no_sc_datamodule: BaseDataModule,  # Shortcut datamodule with no shortcut
+        full_sc_datamodule: BaseDataModule,  # Shortcut datamodule with full shortcut
         model_info: ds.ModelInfo,
         arch_params: dict,
     ):
         self.model: BaseLightningModule = model
         self.datamodule: BaseDataModule = datamodule
+        self.no_sc_datamodule: BaseDataModule = no_sc_datamodule  # 0 % correlation
+        self.full_sc_datamodule: BaseDataModule = full_sc_datamodule  # 100 % correlation
         self.params = model.params
         self.arch_params = arch_params
         self.model_info = model_info
@@ -60,64 +64,6 @@ class BaseTrainer:
             "num_workers": self.num_workers,
             "persistent_workers": True,
         }
-
-    def post_train_eval(self):
-        """
-        Function if potentially a model finished training but did not write output.json or info.json accordingly.
-        Intended to only do the final eval with the given model and save it.
-        """
-        trainer = Trainer(
-            enable_checkpointing=False,
-            max_epochs=self.params.num_epochs,
-            accelerator="gpu",
-            devices=1,
-            precision=16,
-            default_root_dir=str(self.model_info.path_root),
-            enable_progress_bar=self.prog_bar,
-            logger=False,
-            profiler=None,
-        )
-
-        # Points to final checkpoint.
-        self.model.load_latest_checkpoint()
-
-        self.model.cuda()
-        self.model.eval()
-        self.model.final_validation = True
-        trainer.validate(
-            self.model,
-            dataloaders=self.datamodule.val_dataloader(
-                self.params.split, transform=ds.Augmentation.VAL, **self.val_kwargs
-            ),
-        )
-        val_metrics = self.model.final_metrics
-        trainer.test(self.model, dataloaders=self.datamodule.test_dataloader(ds.Augmentation.VAL, **self.val_kwargs))
-        test_metrics = self.model.final_metrics
-        output = {
-            "val": val_metrics,
-            "test": test_metrics,
-            **vars(self.params),
-            **self.arch_params,
-        }
-
-        file_io.save(
-            output,
-            path=self.training_info.path_ckpt_root,
-            filename=nc.OUTPUT_TMPLT,
-        )
-        file_io.save(
-            output,
-            path=self.training_info.path_data_root,
-            filename=nc.OUTPUT_TMPLT,
-        )
-
-        tbt_ke_dict = {}
-        for k, v in asdict(self.training_info).items():
-            if isinstance(v, Path):
-                tbt_ke_dict[k] = str(v)
-            else:
-                tbt_ke_dict[k] = v
-        file_io.save_json(tbt_ke_dict, self.training_info.path_train_info_json)
 
     def train(self):
         """Trains a model and keeps it as attribute self.model
@@ -160,12 +106,56 @@ class BaseTrainer:
                 self.params.split, transform=ds.Augmentation.VAL, **self.val_kwargs
             ),
         )
-        val_metrics = self.model.final_metrics
+        val_metrics_in_domain = self.model.final_metrics
+
+        trainer.validate(
+            self.model,
+            dataloaders=self.no_sc_datamodule.val_dataloader(
+                self.params.split, transform=ds.Augmentation.VAL, **self.val_kwargs
+            ),
+        )
+        val_metrics_no_sc = self.model.final_metrics
+
+        trainer.validate(
+            self.model,
+            dataloaders=self.full_sc_datamodule.val_dataloader(
+                self.params.split, transform=ds.Augmentation.VAL, **self.val_kwargs
+            ),
+        )
+        val_metrics_full_sc = self.model.final_metrics
+
+        diff_full_sc_to_in_domain = val_metrics_full_sc["accuracy"] - val_metrics_in_domain["accuracy"]
+        diff_no_sc_to_in_domain = val_metrics_no_sc["accuracy"] - val_metrics_in_domain["accuracy"]
+
         trainer.test(self.model, dataloaders=self.datamodule.test_dataloader(ds.Augmentation.VAL, **self.val_kwargs))
-        test_metrics = self.model.final_metrics
+        test_metrics_in_domain = self.model.final_metrics
+        trainer.test(
+            self.model, dataloaders=self.no_sc_datamodule.test_dataloader(ds.Augmentation.VAL, **self.val_kwargs)
+        )
+        test_metrics_no_sc = self.model.final_metrics
+        trainer.test(
+            self.model, dataloaders=self.full_sc_datamodule.test_dataloader(ds.Augmentation.VAL, **self.val_kwargs)
+        )
+        test_metrics_full_sc = self.model.final_metrics
+
+        diff_full_sc_to_in_domain_test = test_metrics_full_sc["accuracy"] - test_metrics_in_domain["accuracy"]
+        diff_no_sc_to_in_domain_test = test_metrics_no_sc["accuracy"] - test_metrics_in_domain["accuracy"]
+
         output = {
-            "val": val_metrics,
-            "test": test_metrics,
+            "val_changes": {
+                "full_sc_to_in_domain": diff_full_sc_to_in_domain,
+                "no_sc_to_in_domain": diff_no_sc_to_in_domain,
+            },
+            "test_changes": {
+                "full_sc_to_in_domain": diff_full_sc_to_in_domain_test,
+                "no_sc_to_in_domain": diff_no_sc_to_in_domain_test,
+            },
+            "val": val_metrics_in_domain,
+            "test": test_metrics_in_domain,
+            "val_no_sc": val_metrics_no_sc,
+            "test_no_sc": test_metrics_no_sc,
+            "val_full_sc": val_metrics_full_sc,
+            "test_full_sc": test_metrics_full_sc,
             **vars(self.params),
             **self.arch_params,
         }

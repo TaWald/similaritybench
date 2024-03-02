@@ -47,6 +47,11 @@ class Dataset(Enum):
     IMAGENET100 = "ImageNet100"
     DermaMNIST = "DermaMNIST"
     TinyIMAGENET = "TinyImageNet"
+    CDOT100 = "ColorDot_100_CIFAR10DataModule"
+    CDOT75 = "ColorDot_75_CIFAR10DataModule"
+    CDOT50 = "ColorDot_50_CIFAR10DataModule"
+    CDOT25 = "ColorDot_25_CIFAR10DataModule"
+    CDOT0 = "ColorDot_0_CIFAR10DataModule"
 
 
 class BaseArchitecture(Enum):
@@ -119,6 +124,10 @@ class ModelInfo:
     def has_checkpoint(self):
         """Checks whether model has a checkpoint."""
         return self.path_ckpt.exists()
+    
+    def info_file_exists(self) -> bool:
+        """Checks whether the info file exists."""
+        return self.path_train_info_json.exists()
 
     def has_predictions(self) -> bool:
         """

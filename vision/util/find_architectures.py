@@ -26,7 +26,6 @@ def get_base_arch(
 
     if isinstance(arch, str):
         arch = ds.BaseArchitecture(arch)
-
     if arch == ds.BaseArchitecture.VGG16:
         return vgg.VGG16
     elif arch == ds.BaseArchitecture.VGG11:

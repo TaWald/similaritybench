@@ -3,8 +3,18 @@ from __future__ import annotations
 from vision.util import data_structs as ds
 
 
-def get_default_parameters(architecture_name: str, dataset: ds.Dataset) -> ds.Params:
-    if dataset == ds.Dataset.CIFAR10:
+def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) -> ds.Params:
+    if isinstance(dataset, str):
+        dataset = ds.Dataset(dataset)
+
+    if dataset in [
+        ds.Dataset.CIFAR10,
+        ds.Dataset.CDOT100,
+        ds.Dataset.CDOT50,
+        ds.Dataset.CDOT75,
+        ds.Dataset.CDOT0,
+        ds.Dataset.CDOT25,
+    ]:
         params = ds.Params(
             architecture_name=architecture_name,
             num_epochs=200,  # 250,
@@ -105,7 +115,16 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset) -> ds.Pa
 def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
     if isinstance(dataset, str):
         dataset = ds.Dataset(dataset)
-    if dataset in [ds.Dataset.CIFAR10, ds.Dataset.TEST]:
+    if dataset in [
+        ds.Dataset.CIFAR10,
+        ds.Dataset.TEST,
+        ds.Dataset.CIFAR10,
+        ds.Dataset.CDOT100,
+        ds.Dataset.CDOT50,
+        ds.Dataset.CDOT75,
+        ds.Dataset.CDOT0,
+        ds.Dataset.CDOT25,
+    ]:
         output_classes = 10
         in_ch = 3
         input_resolution = (32, 32)
