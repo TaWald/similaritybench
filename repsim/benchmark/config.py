@@ -5,10 +5,17 @@ from typing import Literal
 
 # -------------------- All categories  trained model that can -------------------- #
 DOMAIN_TYPE = Literal["VISION", "NLP", "GRAPHS"]
+VISION_DOMAIN, NLP_DOMAIN, GRAPH_DOMAIN = (
+    get_args(DOMAIN_TYPE)[0],
+    get_args(DOMAIN_TYPE)[1],
+    get_args(DOMAIN_TYPE)[2],
+)
 # ----------------------------- All Architectures ---------------------------- #
 VISION_ARCHITECTURE_TYPE = Literal["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19", "ViT-b19"]
 NLP_ARCHITECTURE_TYPE = Literal["BERT", "LSTM", "GRU"]
 GRAPH_ARCHITECTURE_TYPE = Literal["GCN", "GAT", "GraphSAGE"]
+
+NN_ARCHITECTURE_TYPE = VISION_ARCHITECTURE_TYPE | NLP_ARCHITECTURE_TYPE | GRAPH_ARCHITECTURE_TYPE
 
 # ----------------------------- Datasets trained on ---------------------------- #
 VISION_DATASET_TRAINED_ON = Literal["CIFAR10", "CIFAR100", "ImageNet"]

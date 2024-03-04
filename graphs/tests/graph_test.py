@@ -6,7 +6,6 @@ from abc import abstractmethod
 from typing import List
 
 import numpy as np
-from graphs.config import DEFAULT_SEEDS
 from graphs.config import LAYER_TEST_N_LAYERS
 from graphs.config import LAYER_TEST_NAME
 from graphs.config import MEASURE_DICT
@@ -15,11 +14,12 @@ from graphs.config import RES_DIR
 from graphs.config import SIMILARITIES_FILE_NAME
 from graphs.config import TEST_RESULTS_JSON_NAME
 from graphs.tests.graph_trainer import LayerTestTrainer
+from repsim.benchmark.config import EXPERIMENT_SEED
 
 
 class GraphTest(ABC):
 
-    def __init__(self, model_name: str, dataset_name: str, test_name: str, seeds: List[int] = DEFAULT_SEEDS):
+    def __init__(self, model_name: str, dataset_name: str, test_name: str, seeds: List[EXPERIMENT_SEED]):
         self.model_name = model_name
         self.seeds = seeds
         self.dataset_name = dataset_name

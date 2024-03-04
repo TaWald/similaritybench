@@ -8,6 +8,7 @@ from repsim.benchmark.config import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.config import EXPERIMENT_SEED
 from repsim.benchmark.config import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.config import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.config import LABEL_TEST_NAME
 from repsim.benchmark.config import LAYER_TEST_NAME
 from repsim.benchmark.config import NLP_ARCHITECTURE_TYPE
 from repsim.benchmark.config import NLP_DATASET_TRAINED_ON
@@ -15,10 +16,10 @@ from repsim.benchmark.config import SETTING_IDENTIFIER
 from repsim.benchmark.config import STANDARD_SETTING
 from repsim.benchmark.config import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.config import VISION_DATASET_TRAINED_ON
-from repsim.nlp import get_representations
 from repsim.utils import ModelRepresentations
-from repsim.utils import SingleLayerRepresentation
 from vision.get_reps import get_vision_representations
+
+# from repsim.nlp import get_representations
 
 # ---------------------------- SIMILARITY_METRICS --------------------------- #
 # Maybe only?
@@ -50,35 +51,35 @@ class TrainedModel:
                 setting_identifier=self.setting_identifier,
                 representation_dataset=representation_dataset,
             )
-        elif self.domain == "NLP":
-            # TODO: this requires so many additional arguments. We should likely have some specialized classes for the
-            #  different domains
-            additional_required_model_args = ["tokenizer_name", "model_type", "model_path"]
-            if not all((key in self.additional_kwargs for key in additional_required_model_args)):
-                raise ValueError(f"Unable to load model. One or more of {additional_required_model_args} missing.")
-
-            kwargs["dataset_path"] = kwargs["dataset_path"] if kwargs["dataset_path"] is not None else ""
-            kwargs["dataset_config"] = kwargs["dataset_config"] if kwargs["dataset_config"] is not None else ""
-            kwargs["dataset_split"] = kwargs["dataset_split"] if kwargs["dataset_split"] is not None else ""
-
-            reps = get_representations(
-                self.additional_kwargs["model_path"],
-                self.additional_kwargs["model_type"],
-                self.additional_kwargs["tokenizer_name"],
-                kwargs["dataset_path"],
-                kwargs["dataset_config"],
-                kwargs["dataset_split"],
-                kwargs["device"],
-                kwargs["token_pos"],
-            )
-            return ModelRepresentations(
-                setting_identifier=self.setting_identifier,
-                architecture_name=self.architecture,
-                train_dataset=self.train_dataset,
-                seed_id=None,
-                representation_dataset=kwargs["dataset_path"] + kwargs["dataset_config"] + kwargs["dataset_split"],
-                representations=tuple(SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
-            )
+        # elif self.domain == "NLP":
+        #     # TODO: this requires so many additional arguments. We should likely have some specialized classes for the
+        #     #  different domains
+        #     additional_required_model_args = ["tokenizer_name", "model_type", "model_path"]
+        #     if not all((key in self.additional_kwargs for key in additional_required_model_args)):
+        #         raise ValueError(f"Unable to load model. One or more of {additional_required_model_args} missing.")
+        #
+        #     kwargs["dataset_path"] = kwargs["dataset_path"] if kwargs["dataset_path"] is not None else ""
+        #     kwargs["dataset_config"] = kwargs["dataset_config"] if kwargs["dataset_config"] is not None else ""
+        #     kwargs["dataset_split"] = kwargs["dataset_split"] if kwargs["dataset_split"] is not None else ""
+        #
+        #     reps = get_representations(
+        #         self.additional_kwargs["model_path"],
+        #         self.additional_kwargs["model_type"],
+        #         self.additional_kwargs["tokenizer_name"],
+        #         kwargs["dataset_path"],
+        #         kwargs["dataset_config"],
+        #         kwargs["dataset_split"],
+        #         kwargs["device"],
+        #         kwargs["token_pos"],
+        #     )
+        #     return ModelRepresentations(
+        #         setting_identifier=self.setting_identifier,
+        #         architecture_name=self.architecture,
+        #         train_dataset=self.train_dataset,
+        #         seed_id=None,
+        #         representation_dataset=kwargs["dataset_path"] + kwargs["dataset_config"] + kwargs["dataset_split"],
+        #         representations=tuple(SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
+        #     )
         elif self.domain == "GRAPHS":
             return get_graph_representations(
                 architecture_name=self.architecture,
@@ -144,7 +145,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
     for i in get_args(EXPERIMENT_SEED):
         for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
-                for experiment in [LAYER_TEST_NAME]:
+                for experiment in [LAYER_TEST_NAME, LABEL_TEST_NAME]:
                     for setting in EXPERIMENT_DICT[experiment]:
                         all_trained_models.append(
                             TrainedModel(
@@ -153,7 +154,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
                                 train_dataset=dataset,
                                 experiment_identifier=experiment,
                                 setting_identifier=setting,
-                                additional_kwargs={"seed_id": i, "setting_identifier": None},
+                                additional_kwargs={"seed_id": i},
                             )
                         )
     return all_trained_models
