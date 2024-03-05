@@ -22,6 +22,7 @@ from graphs.config import LAYER_TEST_NAME
 from graphs.config import MODEL_DIR
 from graphs.config import NN_TESTS_LIST
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SETTING_SEED
+from graphs.config import TRAIN_LOG_FILE_NAME_SETTING_SEED
 from graphs.gnn import get_representations
 from graphs.gnn import train_model
 from graphs.tests.tools import shuffle_labels
@@ -106,6 +107,12 @@ class GraphTrainer(ABC):
 
         return pyg_dataset[0], pyg_dataset.num_classes, pyg_dataset.get_idx_split()
 
+    def _log_train_results(self, train_results, setting):
+        df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
+        df_train.to_csv(
+            os.path.join(self.models_path, TRAIN_LOG_FILE_NAME_SETTING_SEED(setting, self.seed)), index=False
+        )
+
     def train_models(self, settings: List[SETTING_IDENTIFIER] = None, retrain: bool = False):
 
         if settings is None:
@@ -121,7 +128,7 @@ class GraphTrainer(ABC):
             self.models[setting] = self._train_model(setting)
 
     @abstractmethod
-    def _train_model(self, setting: SETTING_IDENTIFIER):
+    def _train_model(self, setting: SETTING_IDENTIFIER, log_results: bool = True):
         pass
 
     @abstractmethod
@@ -158,17 +165,15 @@ class LayerTestTrainer(GraphTrainer):
 
         return gnn_params, optimizer_params
 
-    def _train_model(self, setting: SETTING_IDENTIFIER):
+    def _train_model(self, setting: SETTING_IDENTIFIER, log_results: bool = True):
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
         save_path = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
         train_results = train_model(model, self.data, self.split_idx, self.seed, self.optimizer_params, save_path)
         print(train_results[-1])
 
-        # TODO: outsource function to create results frames, create global functions/vars for colnames and result
-        #  file name
-        df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
-        df_train.to_csv(os.path.join(self.models_path, f"train_results_{setting}_s{self.seed}.csv"), index=False)
+        if log_results:
+            self._log_train_results(train_results, setting)
 
         return model
 
@@ -213,7 +218,7 @@ class LabelTestTrainer(GraphTrainer):
 
         return gnn_params, optimizer_params
 
-    def _train_model(self, setting):
+    def _train_model(self, setting, log_results: bool = True):
 
         print(f"Train {self.architecture_type} on {self.dataset_name} in {setting} setting.")
 
@@ -228,8 +233,8 @@ class LabelTestTrainer(GraphTrainer):
         save_path = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
         train_results = train_model(model, setting_data, self.split_idx, self.seed, self.optimizer_params, save_path)
 
-        df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
-        df_train.to_csv(os.path.join(self.models_path, f"train_results_s{self.seed}.csv"), index=False)
+        if log_results:
+            self._log_train_results(train_results, setting)
 
     def get_test_representations(self, setting: SETTING_IDENTIFIER):
 
