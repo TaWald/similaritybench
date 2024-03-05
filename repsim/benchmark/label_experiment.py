@@ -119,8 +119,10 @@ class LabelExperiment:
                 start_time = time.perf_counter()
                 for i in range(len(setting_map)):
                     for j in range(i + 1, len(setting_map)):
-                        first = reps[setting_map[i]].representations[-1]
-                        second = reps[setting_map[j]].representations[-1]
+
+                        # TODO: check consensus on how which layers are extracted/considered here
+                        first = reps[setting_map[i]].representations[-2]
+                        second = reps[setting_map[j]].representations[-2]
 
                         ret = measure(first.representation, second.representation, first.shape)
                         vals[i, j] = ret
@@ -129,7 +131,6 @@ class LabelExperiment:
                 logger.info(
                     f"Comparisons for '{measure.__name__}' completed in {time.perf_counter() - start_time:.1f} seconds."
                 )
-                print(vals)
                 self.results.add(
                     numpy_vals=vals,
                     domain=self.domain,
