@@ -14,7 +14,7 @@ from graphs.config import RES_DIR
 from graphs.config import SIMILARITIES_FILE_NAME
 from graphs.config import TEST_RESULTS_JSON_NAME
 from graphs.tests.graph_trainer import LayerTestTrainer
-from repsim.benchmark.config import EXPERIMENT_SEED
+from repsim.benchmark.types_globals import EXPERIMENT_SEED
 
 
 class GraphTest(ABC):

@@ -4,13 +4,13 @@ from typing import get_args
 
 import numpy as np
 from loguru import logger
-from repsim.benchmark.config import DOMAIN_TYPE
-from repsim.benchmark.config import EXPERIMENT_DICT
-from repsim.benchmark.config import EXPERIMENT_SEED
-from repsim.benchmark.config import GRAPH_DOMAIN
-from repsim.benchmark.config import LABEL_TEST_NAME
-from repsim.benchmark.config import NN_ARCHITECTURE_TYPE
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
+from repsim.benchmark.types_globals import DOMAIN_TYPE
+from repsim.benchmark.types_globals import EXPERIMENT_DICT
+from repsim.benchmark.types_globals import EXPERIMENT_SEED
+from repsim.benchmark.types_globals import GRAPH_DOMAIN
+from repsim.benchmark.types_globals import LABEL_TEST_NAME
+from repsim.benchmark.types_globals import NN_ARCHITECTURE_TYPE
 from repsim.benchmark.utils import Result
 from repsim.measures.cka import centered_kernel_alignment
 from scipy.stats import spearmanr

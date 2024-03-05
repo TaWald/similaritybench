@@ -3,10 +3,10 @@ import os
 
 from graphs.gnn import GCN
 from graphs.gnn import SAGE
-from repsim.benchmark.config import EXPERIMENT_SEED
-from repsim.benchmark.config import LABEL_TEST_NAME
-from repsim.benchmark.config import LAYER_TEST_NAME
-from repsim.benchmark.config import SETTING_IDENTIFIER
+from repsim.benchmark.types_globals import EXPERIMENT_SEED
+from repsim.benchmark.types_globals import LABEL_TEST_NAME
+from repsim.benchmark.types_globals import LAYER_TEST_NAME
+from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.measures import aligned_cossim
 from repsim.measures import centered_kernel_alignment
 from repsim.measures import correlation_match

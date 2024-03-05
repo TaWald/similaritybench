@@ -26,14 +26,14 @@ from graphs.gnn import get_representations
 from graphs.gnn import train_model
 from graphs.tests.tools import shuffle_labels
 from ogb.nodeproppred import PygNodePropPredDataset
-from repsim.benchmark.config import EXPERIMENT_DICT
-from repsim.benchmark.config import EXPERIMENT_IDENTIFIER
-from repsim.benchmark.config import EXPERIMENT_SEED
-from repsim.benchmark.config import GRAPH_ARCHITECTURE_TYPE
-from repsim.benchmark.config import GRAPH_DATASET_TRAINED_ON
-from repsim.benchmark.config import LABEL_TEST_NAME
-from repsim.benchmark.config import SETTING_IDENTIFIER
-from repsim.benchmark.config import STANDARD_SETTING
+from repsim.benchmark.types_globals import EXPERIMENT_DICT
+from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
+from repsim.benchmark.types_globals import EXPERIMENT_SEED
+from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
+from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import LABEL_TEST_NAME
+from repsim.benchmark.types_globals import SETTING_IDENTIFIER
+from repsim.benchmark.types_globals import STANDARD_SETTING
 from torch_geometric import transforms as t
 
 

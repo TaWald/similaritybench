@@ -2,20 +2,20 @@ from dataclasses import dataclass
 from typing import get_args
 
 from graphs.get_reps import get_graph_representations
-from repsim.benchmark.config import DOMAIN_TYPE
-from repsim.benchmark.config import EXPERIMENT_DICT
-from repsim.benchmark.config import EXPERIMENT_IDENTIFIER
-from repsim.benchmark.config import EXPERIMENT_SEED
-from repsim.benchmark.config import GRAPH_ARCHITECTURE_TYPE
-from repsim.benchmark.config import GRAPH_DATASET_TRAINED_ON
-from repsim.benchmark.config import LABEL_TEST_NAME
-from repsim.benchmark.config import LAYER_TEST_NAME
-from repsim.benchmark.config import NLP_ARCHITECTURE_TYPE
-from repsim.benchmark.config import NLP_DATASET_TRAINED_ON
-from repsim.benchmark.config import SETTING_IDENTIFIER
-from repsim.benchmark.config import STANDARD_SETTING
-from repsim.benchmark.config import VISION_ARCHITECTURE_TYPE
-from repsim.benchmark.config import VISION_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import DOMAIN_TYPE
+from repsim.benchmark.types_globals import EXPERIMENT_DICT
+from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
+from repsim.benchmark.types_globals import EXPERIMENT_SEED
+from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
+from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import LABEL_TEST_NAME
+from repsim.benchmark.types_globals import LAYER_TEST_NAME
+from repsim.benchmark.types_globals import NLP_ARCHITECTURE_TYPE
+from repsim.benchmark.types_globals import NLP_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import SETTING_IDENTIFIER
+from repsim.benchmark.types_globals import STANDARD_SETTING
+from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
+from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
 from repsim.utils import ModelRepresentations
 from vision.get_reps import get_vision_representations
 
