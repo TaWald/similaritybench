@@ -20,7 +20,11 @@ NN_ARCHITECTURE_TYPE = VISION_ARCHITECTURE_TYPE | NLP_ARCHITECTURE_TYPE | GRAPH_
 # ----------------------------- Datasets trained on ---------------------------- #
 VISION_DATASET_TRAINED_ON = Literal["CIFAR10", "CIFAR100", "ImageNet"]
 NLP_DATASET_TRAINED_ON = Literal["IMDB"]
-GRAPH_DATASET_TRAINED_ON = Literal["obgn-arxiv"]
+GRAPH_DATASET_TRAINED_ON = Literal["ogbn-arxiv"]
+
+ARXIV_DATASET = get_args(GRAPH_DATASET_TRAINED_ON)[0]
+
+BENCHMARK_DATASET = VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
 
 # ---------------------------- Identifier_settings --------------------------- #
 # These are shared across domains and datasets
@@ -72,4 +76,4 @@ EXPERIMENT_DICT: Dict[EXPERIMENT_IDENTIFIER, List[SETTING_IDENTIFIER]] = dict(
     }
 )
 
-EXPERIMENT_SEED = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+GRAPH_EXPERIMENT_SEED = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]

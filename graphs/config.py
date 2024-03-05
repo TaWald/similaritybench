@@ -3,7 +3,8 @@ import os
 
 from graphs.gnn import GCN
 from graphs.gnn import SAGE
-from repsim.benchmark.types_globals import EXPERIMENT_SEED
+from repsim.benchmark.types_globals import ARXIV_DATASET
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_TEST_NAME
 from repsim.benchmark.types_globals import LAYER_TEST_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
@@ -59,7 +60,7 @@ SIMILARITIES_FILE_NAME = "similarities.pkl"
 TEST_RESULTS_JSON_NAME = "results.json"
 
 
-def TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: EXPERIMENT_SEED):
+def TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: GRAPH_EXPERIMENT_SEED):
     return f"model_{st}_s{sd}.pt"
 
 
@@ -105,11 +106,11 @@ GNN_PARAMS_DEFAULT_N_EPOCHS = 500
 GNN_PARAMS_DEFAULT_NORM = "BatchNorm"
 
 # GNN_DICT = {"gcn": GCN, "sage": GraphSAGE, "gat": GAT}
-GNN_DICT = {"gcn": GCN, "sage": SAGE}
+GNN_DICT = {"GCN": GCN, "GraphSAGE": SAGE}
 
 GNN_LIST = list(GNN_DICT.keys())
 
-DATASET_LIST = {"ogbn-arxiv"}
+DATASET_LIST = [ARXIV_DATASET]
 
 LAYER_TEST_N_LAYERS = 10
 

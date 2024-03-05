@@ -5,9 +5,9 @@ from graphs.get_reps import get_graph_representations
 from repsim.benchmark.types_globals import DOMAIN_TYPE
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
-from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_TEST_NAME
 from repsim.benchmark.types_globals import LAYER_TEST_NAME
 from repsim.benchmark.types_globals import NLP_ARCHITECTURE_TYPE
@@ -142,7 +142,7 @@ def all_trained_nlp_models() -> list[TrainedModel]:
 def all_trained_graph_models() -> list[TrainedModel]:
     all_trained_models = []
 
-    for i in get_args(EXPERIMENT_SEED):
+    for i in get_args(GRAPH_EXPERIMENT_SEED):
         for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
                 for experiment in [LAYER_TEST_NAME, LABEL_TEST_NAME]:
@@ -161,6 +161,6 @@ def all_trained_graph_models() -> list[TrainedModel]:
 
 
 ALL_TRAINED_MODELS: list[TrainedModel] = []
-ALL_TRAINED_MODELS.extend(all_trained_vision_models())
-ALL_TRAINED_MODELS.extend(all_trained_nlp_models())
+# ALL_TRAINED_MODELS.extend(all_trained_vision_models())
+# ALL_TRAINED_MODELS.extend(all_trained_nlp_models())
 ALL_TRAINED_MODELS.extend(all_trained_graph_models())

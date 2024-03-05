@@ -5,10 +5,12 @@ from typing import get_args
 import numpy as np
 from loguru import logger
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
+from repsim.benchmark.types_globals import ARXIV_DATASET
+from repsim.benchmark.types_globals import BENCHMARK_DATASET
 from repsim.benchmark.types_globals import DOMAIN_TYPE
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
-from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_DOMAIN
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_TEST_NAME
 from repsim.benchmark.types_globals import NN_ARCHITECTURE_TYPE
 from repsim.benchmark.utils import Result
@@ -21,7 +23,7 @@ class LabelExperiment:
         self,
         domain: DOMAIN_TYPE,
         architecture_type: NN_ARCHITECTURE_TYPE,
-        dataset: str,
+        dataset: BENCHMARK_DATASET,
         measures: list[Callable],
         **kwargs,
     ) -> None:
@@ -93,14 +95,12 @@ class LabelExperiment:
         label_test_settings = EXPERIMENT_DICT[LABEL_TEST_NAME]
         setting_map = {i: setting for (i, setting) in zip(range(len(label_test_settings)), label_test_settings)}
 
-        for seed in get_args(EXPERIMENT_SEED):
+        for seed in get_args(GRAPH_EXPERIMENT_SEED):
 
-            curr_models = [model for model in self.models if model.seed_id == seed]
-            print("number of curr models is ", len(curr_models))
+            curr_models = [model for model in self.models if model.additional_kwargs["seed_id"] == seed]
             reps = dict()
             for model in curr_models:
                 curr_setting = model.setting_identifier
-                print(curr_setting)
                 reps[curr_setting] = model.get_representation(representation_dataset=self.dataset)
 
                 start_time = time.perf_counter()
@@ -119,16 +119,22 @@ class LabelExperiment:
                 start_time = time.perf_counter()
                 for i in range(len(setting_map)):
                     for j in range(i + 1, len(setting_map)):
-                        ret = measure(reps[setting_map[i]], reps[setting_map[j]])
+                        first = reps[setting_map[i]].representations[-1]
+                        second = reps[setting_map[j]].representations[-1]
+
+                        ret = measure(first.representation, second.representation, first.shape)
                         vals[i, j] = ret
                         vals[j, i] = vals[i, j]
 
                 logger.info(
                     f"Comparisons for '{measure.__name__}' completed in {time.perf_counter() - start_time:.1f} seconds."
                 )
+                print(vals)
                 self.results.add(
                     numpy_vals=vals,
-                    model=model,
+                    domain=self.domain,
+                    model=self.architecture_type,
+                    dataset=self.dataset,
                     spearman_rank_corr=self._layerwise_forward_sim(vals),
                     meta_accuracy=self._meta_accuracy(vals),
                     seed_id=seed,
@@ -157,7 +163,10 @@ if __name__ == "__main__":
     #     and (m.setting_identifier in EXPERIMENT_DICT[LABEL_TEST_NAME])
     # ]
     experiment = LabelExperiment(
-        domain=GRAPH_DOMAIN, measures=[centered_kernel_alignment], dataset="ogbn-arxiv", architecture_type="GCN"
+        domain=GRAPH_DOMAIN,
+        measures=[centered_kernel_alignment],
+        dataset=ARXIV_DATASET,
+        architecture_type="GraphSAGE",
     )
 
     # experiment = SameLayerExperiment(subset_of_graph_models, [centered_kernel_alignment], "CIFAR10")

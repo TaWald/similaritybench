@@ -28,9 +28,9 @@ from graphs.tests.tools import shuffle_labels
 from ogb.nodeproppred import PygNodePropPredDataset
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
-from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_TEST_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import STANDARD_SETTING
@@ -44,7 +44,7 @@ class GraphTrainer(ABC):
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         test_name: EXPERIMENT_IDENTIFIER,
-        seed: EXPERIMENT_SEED,
+        seed: GRAPH_EXPERIMENT_SEED,
     ):
 
         self.test_name = test_name
@@ -89,6 +89,7 @@ class GraphTrainer(ABC):
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
         model_file = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
 
+        print(model_file)
         if not os.path.isfile(model_file):
             raise FileNotFoundError(f"Model File for seed {self.seed} does not exist")
 
@@ -100,7 +101,7 @@ class GraphTrainer(ABC):
         # TODO: This is assuming an OGB dataset, consider multiple cases if non-obg data is used
 
         pyg_dataset = PygNodePropPredDataset(
-            name=self.dataset_name, transform=t.Compose([t.ToUndirected(), t.ToSparseTensor()]), root=DATA_DIR
+            name=str(self.dataset_name), transform=t.Compose([t.ToUndirected(), t.ToSparseTensor()]), root=DATA_DIR
         )
 
         return pyg_dataset[0], pyg_dataset.num_classes, pyg_dataset.get_idx_split()
@@ -134,7 +135,7 @@ class LayerTestTrainer(GraphTrainer):
         self,
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
-        seed: EXPERIMENT_SEED,
+        seed: GRAPH_EXPERIMENT_SEED,
         n_layers: int = None,
     ):
         self.n_layers = LAYER_TEST_N_LAYERS if n_layers is None else n_layers
@@ -190,7 +191,7 @@ class LabelTestTrainer(GraphTrainer):
         self,
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
-        seed: EXPERIMENT_SEED,
+        seed: GRAPH_EXPERIMENT_SEED,
         n_layers: int = None,
     ):
         self.n_layers = LAYER_TEST_N_LAYERS if n_layers is None else n_layers
@@ -240,9 +241,14 @@ class LabelTestTrainer(GraphTrainer):
             shuffle_frac = int(setting.split("_")[-1]) / 100.0
             setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac)
 
-        reps = get_representations(model=model, data=setting_data, test_idx=self.split_idx["test"], layer_ids=[-1])
+        reps = get_representations(
+            model=model,
+            data=setting_data,
+            test_idx=self.split_idx["test"],
+            layer_ids=list(range(self.gnn_params["num_layers"])),
+        )
 
-        return reps[-1]
+        return reps
 
 
 def parse_args():
@@ -277,8 +283,8 @@ def parse_args():
         "--seeds",
         nargs="*",
         type=int,
-        choices=list(get_args(EXPERIMENT_SEED)),
-        default=list(get_args(EXPERIMENT_SEED)),
+        choices=list(get_args(GRAPH_EXPERIMENT_SEED)),
+        default=list(get_args(GRAPH_EXPERIMENT_SEED)),
         help="Tests to run.",
     )
     parser.add_argument(
