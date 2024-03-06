@@ -84,7 +84,7 @@ def train(model, data, train_idx, optimizer):
     return loss.item()
 
 
-def train_model(model, data, split_idx, seed: int, optimizer_params: Dict, save_path: str):
+def train_model(model, data, split_idx, seed: int, optimizer_params: Dict, save_path: str, b_test: bool = False):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -106,9 +106,18 @@ def train_model(model, data, split_idx, seed: int, optimizer_params: Dict, save_
     for epoch in tqdm(range(1, 1 + optimizer_params["epochs"])):
         loss = train_epoch(model, data, train_idx, optimizer)
         train_acc, val_acc = validate(model, data, train_idx, val_idx)
-        results.append((epoch, loss, train_acc, val_acc))
+
+        epoch_res = [epoch, loss, train_acc, val_acc]
+        if b_test:
+            test_acc = test(model, data, test_idx=split_idx["test"])
+            epoch_res.append(test_acc)
+
+        results.append(epoch_res)
 
     torch.save(model.state_dict(), save_path)
+
+    if b_test:
+        return results, test(model, data, split_idx["test"])
 
     return results
 
@@ -138,6 +147,16 @@ def validate(model, data, train_idx, val_idx):
     train_acc, val_acc = accuracy_score(data.y[train_idx], train_pred), accuracy_score(data.y[val_idx], val_pred)
 
     return train_acc, val_acc
+
+
+@torch.no_grad()
+def test(model, data, test_idx):
+    model.eval()
+
+    out = model(data.x, data.adj_t)[test_idx]
+    pred = out.argmax(dim=-1, keepdim=True)
+
+    return accuracy_score(data.y[test_idx], pred)
 
 
 @torch.no_grad()
