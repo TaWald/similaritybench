@@ -59,17 +59,15 @@ class GraphTrainer(ABC):
 
         self.gnn_params, self.optimizer_params = self._get_gnn_params()
 
-        model_test_path = os.path.join(MODEL_DIR, self.test_name)
-        if not os.path.isdir(model_test_path):
-            os.mkdir(model_test_path)
-
-        model_dataset_path = os.path.join(model_test_path, self.dataset_name)
+        model_dataset_path = os.path.join(MODEL_DIR, self.dataset_name)
         if not os.path.isdir(model_dataset_path):
             os.mkdir(model_dataset_path)
 
         self.models_path = os.path.join(model_dataset_path, self.architecture_type)
         if not os.path.isdir(self.models_path):
             os.mkdir(self.models_path)
+
+        self.setting_paths = dict({setting: os.path.join(self.models_path, setting) for setting in self.settings})
 
     # TODO: set up way to read in params which may be determined by graphgym
     @abstractmethod
@@ -80,7 +78,7 @@ class GraphTrainer(ABC):
         missing_settings = []
         for setting in settings:
             if not os.path.exists(
-                os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
+                os.path.join(self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
             ):
                 missing_settings.append(setting)
 
@@ -88,7 +86,9 @@ class GraphTrainer(ABC):
 
     def _load_model(self, setting):
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
-        model_file = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
+        model_file = os.path.join(
+            self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed)
+        )
 
         print(model_file)
         if not os.path.isfile(model_file):
@@ -110,7 +110,8 @@ class GraphTrainer(ABC):
     def _log_train_results(self, train_results, setting):
         df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
         df_train.to_csv(
-            os.path.join(self.models_path, TRAIN_LOG_FILE_NAME_SETTING_SEED(setting, self.seed)), index=False
+            os.path.join(self.setting_paths[setting], TRAIN_LOG_FILE_NAME_SETTING_SEED(setting, self.seed)),
+            index=False,
         )
 
     def train_models(self, settings: List[SETTING_IDENTIFIER] = None, retrain: bool = False):
@@ -125,15 +126,40 @@ class GraphTrainer(ABC):
             settings = self._check_pretrained(settings)
 
         for setting in settings:
-            self.models[setting] = self._train_model(setting)
+            self._train_model(setting)
 
     @abstractmethod
-    def _train_model(self, setting: SETTING_IDENTIFIER, log_results: bool = True):
+    def _get_setting_data(self, setting: SETTING_IDENTIFIER):
         pass
 
-    @abstractmethod
+    def _train_model(self, setting, log_results: bool = True):
+
+        print(f"Train {self.architecture_type} on {self.dataset_name} in {setting} setting.")
+
+        setting_data = self._get_setting_data(setting)
+
+        model = GNN_DICT[self.architecture_type](**self.gnn_params)
+        save_path = os.path.join(
+            self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed)
+        )
+        train_results = train_model(model, setting_data, self.split_idx, self.seed, self.optimizer_params, save_path)
+
+        if log_results:
+            self._log_train_results(train_results, setting)
+
     def get_test_representations(self, setting: SETTING_IDENTIFIER):
-        pass
+
+        model = self._load_model(setting)
+        setting_data = self._get_setting_data(setting)
+
+        reps = get_representations(
+            model=model,
+            data=setting_data,
+            test_idx=self.split_idx["test"],
+            layer_ids=list(range(self.gnn_params["num_layers"])),
+        )
+
+        return reps
 
 
 class LayerTestTrainer(GraphTrainer):
@@ -165,29 +191,8 @@ class LayerTestTrainer(GraphTrainer):
 
         return gnn_params, optimizer_params
 
-    def _train_model(self, setting: SETTING_IDENTIFIER, log_results: bool = True):
-
-        model = GNN_DICT[self.architecture_type](**self.gnn_params)
-        save_path = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
-        train_results = train_model(model, self.data, self.split_idx, self.seed, self.optimizer_params, save_path)
-        print(train_results[-1])
-
-        if log_results:
-            self._log_train_results(train_results, setting)
-
-        return model
-
-    def get_test_representations(self, setting: SETTING_IDENTIFIER):
-
-        model = self._load_model(setting)
-        reps = get_representations(
-            model=model,
-            data=self.data,
-            test_idx=self.split_idx["test"],
-            layer_ids=list(range(self.gnn_params["num_layers"])),
-        )
-
-        return reps
+    def _get_setting_data(self, setting: SETTING_IDENTIFIER):
+        return self.data.clone()
 
 
 class LabelTestTrainer(GraphTrainer):
@@ -218,9 +223,7 @@ class LabelTestTrainer(GraphTrainer):
 
         return gnn_params, optimizer_params
 
-    def _train_model(self, setting, log_results: bool = True):
-
-        print(f"Train {self.architecture_type} on {self.dataset_name} in {setting} setting.")
+    def _get_setting_data(self, setting: SETTING_IDENTIFIER):
 
         setting_data = self.data.clone()
 
@@ -229,31 +232,46 @@ class LabelTestTrainer(GraphTrainer):
             shuffle_frac = int(setting.split("_")[-1]) / 100.0
             setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac)
 
-        model = GNN_DICT[self.architecture_type](**self.gnn_params)
-        save_path = os.path.join(self.models_path, TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
-        train_results = train_model(model, setting_data, self.split_idx, self.seed, self.optimizer_params, save_path)
+        return setting_data
 
-        if log_results:
-            self._log_train_results(train_results, setting)
 
-    def get_test_representations(self, setting: SETTING_IDENTIFIER):
-
-        model = self._load_model(setting)
-        setting_data = self.data.clone()
-
-        if setting != STANDARD_SETTING:
-            old_labels = self.data.y.detach().clone()
-            shuffle_frac = int(setting.split("_")[-1]) / 100.0
-            setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac)
-
-        reps = get_representations(
-            model=model,
-            data=setting_data,
-            test_idx=self.split_idx["test"],
-            layer_ids=list(range(self.gnn_params["num_layers"])),
+class ShortCutTestTrainer(GraphTrainer):
+    def __init__(
+        self,
+        architecture_type: GRAPH_ARCHITECTURE_TYPE,
+        dataset_name: GRAPH_DATASET_TRAINED_ON,
+        seed: GRAPH_EXPERIMENT_SEED,
+        n_layers: int = None,
+    ):
+        self.n_layers = LAYER_TEST_N_LAYERS if n_layers is None else n_layers
+        GraphTrainer.__init__(
+            self, architecture_type=architecture_type, dataset_name=dataset_name, seed=seed, test_name=LABEL_TEST_NAME
         )
 
-        return reps
+    def _get_gnn_params(self):
+
+        gnn_params = {
+            "num_layers": GNN_PARAMS_DEFAULT_N_LAYERS,
+            "in_channels": self.data.num_features,
+            "hidden_channels": GNN_PARAMS_DEFAULT_DIMENSION,
+            "dropout": GNN_PARAMS_DEFAULT_DROPOUT,
+            "out_channels": self.n_classes,
+            # "norm": GNN_PARAMS_DEFAULT_NORM,
+        }
+        optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
+
+        return gnn_params, optimizer_params
+
+    def _get_setting_data(self, setting: SETTING_IDENTIFIER):
+
+        setting_data = self.data.clone()
+
+        if setting != STANDARD_SETTING:
+            old_labels = self.data.y.detach().clone()
+            shuffle_frac = int(setting.split("_")[-1]) / 100.0
+            setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac)
+
+        return setting_data
 
 
 def parse_args():
