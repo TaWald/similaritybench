@@ -39,3 +39,17 @@ plotly
 loguru
 hug
 jsonlines
+textattack
+sentence_transformers
+hydra-core
+ipykernel
+huggingface-hub
+ipywidgets
+pyarrow
+tokenizers
+datasets
+transformers
+Cython
+gudhi
+evaluate
+accelerate
