@@ -21,8 +21,8 @@ from graphs.config import LAYER_TEST_N_LAYERS
 from graphs.config import LAYER_TEST_NAME
 from graphs.config import MODEL_DIR
 from graphs.config import NN_TESTS_LIST
-from graphs.config import TORCH_STATE_DICT_FILE_NAME_SETTING_SEED
-from graphs.config import TRAIN_LOG_FILE_NAME_SETTING_SEED
+from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
+from graphs.config import TRAIN_LOG_FILE_NAME_SEED
 from graphs.gnn import get_representations
 from graphs.gnn import train_model
 from graphs.tests.tools import shuffle_labels
@@ -78,7 +78,7 @@ class GraphTrainer(ABC):
         missing_settings = []
         for setting in settings:
             if not os.path.exists(
-                os.path.join(self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed))
+                os.path.join(self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SEED(self.seed))
             ):
                 missing_settings.append(setting)
 
@@ -86,9 +86,7 @@ class GraphTrainer(ABC):
 
     def _load_model(self, setting):
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
-        model_file = os.path.join(
-            self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed)
-        )
+        model_file = os.path.join(self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SEED(self.seed))
 
         print(model_file)
         if not os.path.isfile(model_file):
@@ -110,7 +108,7 @@ class GraphTrainer(ABC):
     def _log_train_results(self, train_results, setting):
         df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
         df_train.to_csv(
-            os.path.join(self.setting_paths[setting], TRAIN_LOG_FILE_NAME_SETTING_SEED(setting, self.seed)),
+            os.path.join(self.setting_paths[setting], TRAIN_LOG_FILE_NAME_SEED(self.seed)),
             index=False,
         )
 
@@ -139,9 +137,7 @@ class GraphTrainer(ABC):
         setting_data = self._get_setting_data(setting)
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
-        save_path = os.path.join(
-            self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(setting, self.seed)
-        )
+        save_path = os.path.join(self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SEED(self.seed))
         train_results = train_model(model, setting_data, self.split_idx, self.seed, self.optimizer_params, save_path)
 
         if log_results:

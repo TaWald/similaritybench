@@ -38,6 +38,10 @@ SIMILARITIES_FILE_NAME = "similarities.pkl"
 TEST_RESULTS_JSON_NAME = "results.json"
 
 
+def TORCH_STATE_DICT_FILE_NAME_SEED(sd: GRAPH_EXPERIMENT_SEED):
+    return f"model_s{sd}.pt"
+
+
 def TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: GRAPH_EXPERIMENT_SEED):
     return f"model_{st}_s{sd}.pt"
 
