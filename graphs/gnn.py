@@ -3,10 +3,10 @@ from typing import Dict
 
 import numpy as np
 import torch
-from sklearn.metrics import accuracy_score
 from torch.nn import functional as func
 from torch_geometric.nn.conv import GCNConv
 from torch_geometric.nn.conv import SAGEConv
+from torcheval.metrics.functional import multiclass_accuracy
 from tqdm import tqdm
 
 
@@ -89,9 +89,10 @@ def train_model(model, data, split_idx, seed: int, optimizer_params: Dict, save_
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    device = f"cuda" if torch.cuda.is_available() else "cpu"
+    device = f"cuda:0" if torch.cuda.is_available() else "cpu"
     device = torch.device(device)
 
+    model = model.to(device)
     data = data.to(device)
 
     # TODO: maybe rearrange this, data passing currently quite messy
@@ -144,7 +145,10 @@ def validate(model, data, train_idx, val_idx):
     out_val = model(data.x, data.adj_t)[val_idx]
     val_pred = out_val.argmax(dim=-1, keepdim=True)
 
-    train_acc, val_acc = accuracy_score(data.y[train_idx], train_pred), accuracy_score(data.y[val_idx], val_pred)
+    train_acc, val_acc = (
+        multiclass_accuracy(train_pred, data.y[train_idx].squeeze(1)),
+        multiclass_accuracy(val_pred, data.y[val_idx].squeeze(1)),
+    )
 
     return train_acc, val_acc
 
@@ -156,7 +160,7 @@ def test(model, data, test_idx):
     out = model(data.x, data.adj_t)[test_idx]
     pred = out.argmax(dim=-1, keepdim=True)
 
-    return accuracy_score(data.y[test_idx], pred)
+    return multiclass_accuracy(pred, data.y.squeeze(1)[test_idx])
 
 
 @torch.no_grad()
