@@ -146,8 +146,8 @@ def validate(model, data, train_idx, val_idx):
     val_pred = out_val.argmax(dim=-1, keepdim=True)
 
     train_acc, val_acc = (
-        multiclass_accuracy(train_pred, data.y[train_idx].squeeze(1)),
-        multiclass_accuracy(val_pred, data.y[val_idx].squeeze(1)),
+        multiclass_accuracy(train_pred, data.y[train_idx].squeeze(1)).detach().cpu().numpy(),
+        multiclass_accuracy(val_pred, data.y[val_idx].squeeze(1)).detach().cpu().numpy(),
     )
 
     return train_acc, val_acc
@@ -160,7 +160,7 @@ def test(model, data, test_idx):
     out = model(data.x, data.adj_t)[test_idx]
     pred = out.argmax(dim=-1, keepdim=True)
 
-    return multiclass_accuracy(pred, data.y.squeeze(1)[test_idx])
+    return multiclass_accuracy(pred, data.y.squeeze(1)[test_idx]).detach().cpu().numpy()
 
 
 @torch.no_grad()
