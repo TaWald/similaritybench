@@ -43,11 +43,11 @@ def TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: GRAPH_EX
 
 
 def TRAIN_LOG_FILE_NAME_SEED(sd: GRAPH_EXPERIMENT_SEED):
-    return f"model_s{sd}.pt"
+    return f"train_results_s{sd}.pt"
 
 
 def TRAIN_LOG_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: GRAPH_EXPERIMENT_SEED):
-    return f"model_{st}_s{sd}.pt"
+    return f"train_results_{st}_s{sd}.pt"
 
 
 NUM_CORES = multiprocessing.cpu_count()
