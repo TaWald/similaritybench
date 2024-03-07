@@ -1,9 +1,16 @@
-path: sst2 # huggingface load_dataset argument: path
+path: "csv" # huggingface load_dataset argument: path
 name: # huggingface load_dataset argument: name
 split: test
 prompt_template: # promptsource template name
 feature_column: sentence
 target_column: label
+data_files:
+  train: "/root/similaritybench/experiments/datasets/nlp/robustness/sst2/train_augmented.csv"
+  validation: "/root/similaritybench/experiments/datasets/nlp/robustness/sst2/validation_augmented.csv"
+  test: "/root/similaritybench/experiments/datasets/nlp/robustness/sst2/test_augmented.csv"
+origin: # Orignal dataset that was augmented
+  path: sst2
+  name:
 
 # Hyperparameters for the finetuning of BERT on this dataset
 finetuning:
@@ -17,7 +24,6 @@ finetuning:
       warmup_ratio: 0.1
       evaluation_strategy: steps
       eval_steps: 1000
-      save_steps: 1000
       per_device_train_batch_size: 64
       per_device_eval_batch_size: 64
       seed: 123456789

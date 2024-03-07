@@ -1,3 +1,7 @@
 defaults:
-  - dataset: mnli
+  - dataset: sst2
   - model: multibert
+  - augmentation: none
+  - _self_
+
+output_dir: ${hydra:runtime.output_dir}

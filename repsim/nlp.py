@@ -17,8 +17,15 @@ from tqdm import tqdm
 log = logging.getLogger(__name__)
 
 
-def get_dataset(dataset_name: str, config: Optional[str] = None) -> datasets.dataset_dict.DatasetDict:
-    ds = datasets.load_dataset(dataset_name, config)
+def get_dataset(
+    dataset_path: str,
+    name: Optional[str] = None,
+    data_files: Optional[str | list[str] | dict[str, str] | dict[str, list[str]]] = None,
+) -> datasets.dataset_dict.DatasetDict:
+    if dataset_path == "csv":
+        ds = datasets.load_dataset(dataset_path, data_files=data_files)
+    else:
+        ds = datasets.load_dataset(dataset_path, name)
     assert isinstance(ds, datasets.dataset_dict.DatasetDict)
     return ds
 

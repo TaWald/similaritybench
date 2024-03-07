@@ -7,12 +7,13 @@
 /data
 /.cache
 /figures
-
+/runs
 
 build/
 nlp/multirun
 nlp/outputs
 nlp/results
+nlp/saved_test_configurations
 
 *.env
 ._.DS_Store

@@ -1,5 +1,5 @@
-name: glue # huggingface load_dataset argument: path
-config: mnli # huggingface load_dataset argument: name
+path: glue # huggingface load_dataset argument: path
+name: mnli # huggingface load_dataset argument: name
 split: test_matched
 prompt_template: # promptsource template name
 

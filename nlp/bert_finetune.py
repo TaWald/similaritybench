@@ -1,12 +1,16 @@
 import logging
 import os
+import warnings
 from functools import partial
+from pathlib import Path
+from typing import Literal
 from typing import Optional
 
-import datasets
 import evaluate
 import hydra
+import langtest
 import numpy as np
+import repsim.nlp
 import torch
 from omegaconf import DictConfig
 from omegaconf import OmegaConf
@@ -16,38 +20,56 @@ from transformers import AutoTokenizer
 log = logging.getLogger(__name__)
 
 
-def tokenize_function(examples, tokenizer, dataset_name):
+def tokenize_function(
+    examples: dict[str, list[str]],
+    tokenizer,
+    dataset_name: Literal["glue__mnli", "sst2"],
+    max_length: int = 128,
+    feature_column: Optional[str] = None,
+):
     # Padding with max length 128 and always padding to that length is identical to the
     # original BERT repo. Truncation also removes token from the longest sequence one by one
+    tokenization_kwargs = dict(max_length=max_length, padding="max_length", truncation=True)
     if dataset_name == "glue__mnli":
-        return tokenizer(
-            text=examples["premise"],
-            text_pair=examples["hypothesis"],
-            padding="max_length",
-            max_length=128,
-            truncation=True,
-        )
+        if feature_column:
+            warnings.warn(f"{feature_column=}, but will not be used!")
+        return tokenizer(text=examples["premise"], text_pair=examples["hypothesis"], **tokenization_kwargs)
     elif dataset_name == "sst2":
-        return tokenizer(
-            text=examples["sentence"],
-            padding="max_length",
-            max_length=128,
-            truncation=True,
-        )
+        tokenization_kwargs["max_length"] = 64  # The longest sst2 samples has 52 words (in test)
+        return tokenizer(text=examples["sentence" if not feature_column else feature_column], **tokenization_kwargs)
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
-
-
-def get_dataset(dataset_name: str, config: Optional[str] = None) -> datasets.dataset_dict.DatasetDict:
-    ds = datasets.load_dataset(dataset_name, config)
-    assert isinstance(ds, datasets.dataset_dict.DatasetDict)
-    return ds
 
 
 def compute_metrics(eval_pred, metric):
     logits, labels = eval_pred
     predictions = np.argmax(logits, axis=-1)
     return metric.compute(predictions=predictions, references=labels)
+
+
+def augment_data_langtest(
+    train_data_cfg,
+    val_data_cfg,
+    model_cfg,
+    test_cfg,
+    output_dir,
+    seed: int = 123,
+    export_mode: str = "add",
+    report_fname: str = "report.csv",
+) -> tuple[langtest.Harness, str]:
+    path_to_augmented_data = str(Path(output_dir, "augmented.csv"))
+    harness = langtest.Harness(task="text-classification", model=model_cfg, data=val_data_cfg, config=test_cfg)
+    harness.generate(seed)
+    harness.save(output_dir, include_generated_results=True)
+    harness.run()
+    harness.report().to_csv(Path(output_dir, report_fname))
+    harness.augment(training_data=train_data_cfg, save_data_path=path_to_augmented_data, export_mode=export_mode)
+    return harness, path_to_augmented_data
+
+
+def augment_textattack():
+    """See augment_textattack.ipynb for CLI commands instead"""
+    pass
 
 
 @hydra.main(config_path="config", config_name="finetune", version_base=None)
@@ -60,20 +82,72 @@ def main(cfg: DictConfig) -> None:
         str(os.environ.get("CUDA_VISIBLE_DEVICES", None)),
     )
 
-    dataset = get_dataset(cfg.dataset.name, cfg.dataset.config)
+    # Load (and augment) dataset
+    feature_column = None  # will be set by augmentation. Otherwise use dataset-specific defaults
+    if cfg.augmentation.augment and cfg.augmentation.augmenter == "langtest":
+        log.info("Augmenting training data with langtest")
+        aug = cfg.augmentation
+        harness, path_to_augmented_train_data = augment_data_langtest(
+            OmegaConf.to_object(aug.dataset.train),
+            OmegaConf.to_object(aug.dataset.train),  # val?
+            OmegaConf.to_object(aug.model),
+            OmegaConf.to_object(aug.tests),
+            aug.output_dir,
+            seed=aug.seed,
+            export_mode=aug.export_mode,
+        )
+        data_files = {"train": path_to_augmented_train_data}
+        hf_dataset = repsim.nlp.get_dataset(cfg.dataset.path, cfg.dataset.name)
+        for key in hf_dataset.keys():
+            if key == "train":
+                key = "train_original"
+            path = Path(aug.output_dir, f"{key}.csv")
+            hf_dataset[key].to_csv(path)
+            data_files |= {key: str(path)}
+        dataset = repsim.nlp.get_dataset("csv", data_files=data_files)
+    elif cfg.augmentation.augment and cfg.augmentation.augmenter == "textattack":
+        augmenter = hydra.utils.instantiate(cfg.augmentation.recipe)
+        dataset = repsim.nlp.get_dataset(cfg.dataset.path, cfg.dataset.name)
+        # dataset["train"] = dataset["train"].select(range(20))
+        # dataset["test"] = dataset["test"].select(range(20))
+        # dataset["validation"] = dataset["validation"].select(range(20))
+        log.info("Augmenting text...")
+        dataset = dataset.map(
+            lambda x: {"augmented": [x[0] for x in augmenter.augment_many(x["sentence"])]}, batched=True
+        )
+        feature_column = "augmented"
+
+        log.info("Saving augmented dataset to disk...")
+        dataset.save_to_disk(cfg.output_dir)
+    else:
+        dataset = repsim.nlp.get_dataset(
+            cfg.dataset.path,
+            cfg.dataset.name,
+            # data_files=(
+            #     OmegaConf.to_container(cfg.dataset.data_files) if cfg.dataset.data_files else None
+            # ),  # type:ignore
+        )
+    log.info("First train sample: %s", str(dataset["train"][0]))
+    log.info("Last train sample: %s", str(dataset["train"][-1]))
+    log.info("First validation sample: %s", str(dataset["validation"][0]))
+    log.info("Last validation sample: %s", str(dataset["validation"][-1]))
+    log.info("Using %s as text input.", str(feature_column))
+
+    # Prepare dataset
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.kwargs.tokenizer_name)
-    dataset_name = (
-        cfg.dataset.name + "__" + cfg.dataset.config if cfg.dataset.config is not None else cfg.dataset.name
-    )
+    dataset_name = cfg.dataset.path + "__" + cfg.dataset.name if cfg.dataset.name is not None else cfg.dataset.path
     tokenized_dataset = dataset.map(
-        partial(tokenize_function, tokenizer=tokenizer, dataset_name=dataset_name),
+        partial(tokenize_function, tokenizer=tokenizer, dataset_name=dataset_name, feature_column=feature_column),
         batched=True,
     )
+
+    # Prepare model
     model = AutoModelForSequenceClassification.from_pretrained(
         cfg.model.name, num_labels=cfg.dataset.finetuning.num_labels
     )
-    metric = evaluate.load("accuracy")
 
+    # Prepare huggingface Trainer
+    metric = evaluate.load("accuracy")
     eval_dataset = (
         {key: tokenized_dataset[key] for key in cfg.dataset.finetuning.eval_dataset}
         if len(cfg.dataset.finetuning.eval_dataset) > 1
@@ -89,6 +163,16 @@ def main(cfg: DictConfig) -> None:
     trainer.train()
     trainer.evaluate()
     trainer.save_model(trainer.args.output_dir)
+
+    # if cfg.augmentation.augment:
+    #     # Do an updated robustness evaluation with finetuned model
+    #     assert isinstance(harness, langtest.Harness)  # type:ignore
+    #     harness.model.model.model = trainer.model.cpu()  # type:ignore
+    #     harness.run().report().to_csv(Path(cfg.augmentation.output_dir, "report_finetuned_model.csv"))
+    #     harness._testcases = None
+    #     harness.generate(cfg.augmentation.seed + 1).run().report().to_csv(
+    #         Path(cfg.augmentation.output_dir, "report_finetuned_model_new_cases.csv")
+    #     )
 
 
 if __name__ == "__main__":
