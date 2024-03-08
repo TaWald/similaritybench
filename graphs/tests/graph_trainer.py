@@ -226,7 +226,7 @@ class LabelTestTrainer(GraphTrainer):
         if setting != STANDARD_SETTING:
             old_labels = self.data.y.detach().clone()
             shuffle_frac = int(setting.split("_")[-1]) / 100.0
-            setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac)
+            setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac, seed=self.seed)
 
         return setting_data
 
@@ -263,9 +263,13 @@ class ShortCutTestTrainer(GraphTrainer):
         setting_data = self.data.clone()
 
         if setting != STANDARD_SETTING:
+            train_idx, val_idx, test_idx = self.split_idx["train"], self.split_idx["val"], self.split_idx["test"]
+
             old_labels = self.data.y.detach().clone()
-            shuffle_frac = int(setting.split("_")[-1]) / 100.0
-            setting_data.y = shuffle_labels(old_labels, frac=shuffle_frac)
+            shuffle_frac = 1.0 - int(setting.split("_")[-1]) / 100.0
+            setting_data.y[train_idx] = shuffle_labels(old_labels[train_idx], frac=shuffle_frac, seed=self.seed)
+            setting_data.y[val_idx] = shuffle_labels(old_labels[val_idx], frac=shuffle_frac, seed=self.seed)
+            setting_data.y[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=2024)
 
         return setting_data
 
