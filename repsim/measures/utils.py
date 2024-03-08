@@ -1,5 +1,10 @@
 import functools
 import logging
+import os
+from abc import ABC
+from abc import abstractmethod
+from dataclasses import dataclass
+from typing import Any
 from typing import Callable
 from typing import List
 from typing import Literal
@@ -14,6 +19,33 @@ log = logging.getLogger(__name__)
 
 
 SHAPE_TYPE = Literal["ntd", "nchw", "nd"]
+
+NUM_CPU_CORES = len(os.sched_getaffinity(0))
+
+
+@dataclass
+class SimilarityMeasure(ABC):
+    larger_is_more_similar: bool
+    is_metric: bool
+    is_symmetric: bool
+
+    invariant_to_affine: bool
+    invariant_to_invertible_linear: bool
+    invariant_to_ortho: bool
+    invariant_to_permutation: bool
+    invariant_to_isotropic_scaling: bool
+    invariant_to_translation: bool
+
+    @abstractmethod
+    @staticmethod
+    def __call__(
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+        *args: Any,
+        **kwds: Any,
+    ) -> float:
+        pass
 
 
 def to_numpy_if_needed(*args: Union[torch.Tensor, npt.NDArray]) -> List[npt.NDArray]:
