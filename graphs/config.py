@@ -1,4 +1,3 @@
-import multiprocessing
 import os
 
 from repsim.benchmark.types_globals import ARXIV_DATASET
@@ -53,8 +52,6 @@ def TRAIN_LOG_FILE_NAME_SEED(sd: GRAPH_EXPERIMENT_SEED):
 def TRAIN_LOG_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: GRAPH_EXPERIMENT_SEED):
     return f"train_results_{st}_s{sd}.csv"
 
-
-NUM_CORES = multiprocessing.cpu_count()
 
 MEASURE_DICT_FUNC_KEY = "func"
 MEASURE_DICT_PREP_KEY = "prep"

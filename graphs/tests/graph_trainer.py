@@ -19,9 +19,7 @@ from graphs.config import GNN_PARAMS_DEFAULT_N_EPOCHS
 from graphs.config import GNN_PARAMS_DEFAULT_N_LAYERS
 from graphs.config import GNN_PARAMS_DEFAULT_NORM
 from graphs.config import LAYER_TEST_N_LAYERS
-from graphs.config import LAYER_TEST_NAME
 from graphs.config import MODEL_DIR
-from graphs.config import NN_TESTS_LIST
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
 from graphs.gnn import get_representations
@@ -34,7 +32,11 @@ from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_TEST_NAME
+from repsim.benchmark.types_globals import LAYER_TEST_NAME
+from repsim.benchmark.types_globals import NN_TESTS_LIST
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
+from repsim.benchmark.types_globals import SHORTCUT_TEST_NAME
+from repsim.benchmark.types_globals import SHORTCUT_TEST_SEED
 from repsim.benchmark.types_globals import STANDARD_SETTING
 from torch_geometric import transforms as t
 
@@ -268,14 +270,13 @@ class ShortCutTestTrainer(GraphTrainer):
 
         setting_data = self.data.clone()
 
-        if setting != STANDARD_SETTING:
-            train_idx, val_idx, test_idx = self.split_idx["train"], self.split_idx["val"], self.split_idx["test"]
+        train_idx, val_idx, test_idx = self.split_idx["train"], self.split_idx["val"], self.split_idx["test"]
 
-            old_labels = self.data.y.detach().clone()
-            shuffle_frac = 1.0 - int(setting.split("_")[-1]) / 100.0
-            setting_data.y[train_idx] = shuffle_labels(old_labels[train_idx], frac=shuffle_frac, seed=self.seed)
-            setting_data.y[val_idx] = shuffle_labels(old_labels[val_idx], frac=shuffle_frac, seed=self.seed)
-            setting_data.y[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=2024)
+        old_labels = self.data.y.detach().clone()
+        shuffle_frac = 1.0 - int(setting.split("_")[-1]) / 100.0
+        setting_data.y[train_idx] = shuffle_labels(old_labels[train_idx], frac=shuffle_frac, seed=self.seed)
+        setting_data.y[val_idx] = shuffle_labels(old_labels[val_idx], frac=shuffle_frac, seed=self.seed)
+        setting_data.y[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=SHORTCUT_TEST_SEED)
 
         return setting_data
 
@@ -332,7 +333,11 @@ def parse_args():
     return parser.parse_args()
 
 
-GNN_TRAINER_DICT = {LAYER_TEST_NAME: LayerTestTrainer, LABEL_TEST_NAME: LabelTestTrainer}
+GNN_TRAINER_DICT = {
+    LAYER_TEST_NAME: LayerTestTrainer,
+    LABEL_TEST_NAME: LabelTestTrainer,
+    SHORTCUT_TEST_NAME: ShortCutTestTrainer,
+}
 
 if __name__ == "__main__":
     args = parse_args()

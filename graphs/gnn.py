@@ -138,7 +138,6 @@ def validate(model, data, train_idx, val_idx):
         multiclass_accuracy(train_pred.squeeze(1), data.y[train_idx].squeeze(1)).detach().cpu().numpy(),
         multiclass_accuracy(val_pred.squeeze(1), data.y[val_idx].squeeze(1)).detach().cpu().numpy(),
     )
-    print(train_acc)
 
     return train_acc, val_acc
 
