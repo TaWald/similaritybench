@@ -5,6 +5,7 @@ import numpy as np
 import numpy.typing as npt
 import sklearn.metrics
 import torch
+from loguru import logger
 from repsim.measures.utils import double_center
 from repsim.measures.utils import flatten
 from repsim.measures.utils import NxNRsmSimilarityMeasure
@@ -21,8 +22,10 @@ def distance_correlation(
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
+    logger.info(f"Starting RSMs with {n_jobs=}")
     S = sklearn.metrics.pairwise_distances(R, metric="euclidean", n_jobs=n_jobs)
     Sp = sklearn.metrics.pairwise_distances(Rp, metric="euclidean", n_jobs=n_jobs)
+    logger.info("Done with RSMs")
 
     S = double_center(S)
     Sp = double_center(Sp)

@@ -9,6 +9,7 @@ from typing import Callable
 from typing import List
 from typing import Literal
 from typing import Optional
+from typing import Protocol
 from typing import Tuple
 from typing import Union
 
@@ -24,9 +25,18 @@ SHAPE_TYPE = Literal["ntd", "nchw", "nd"]
 NUM_CPU_CORES = len(os.sched_getaffinity(0))
 
 
+class SimilarityFunction(Protocol):
+    def __call__(  # noqa: E704
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+    ) -> float: ...
+
+
 @dataclass
 class SimilarityMeasure(ABC):
-    sim_func: Callable[[torch.Tensor | npt.NDArray, torch.Tensor | npt.NDArray, SHAPE_TYPE], float]
+    sim_func: SimilarityFunction
 
     larger_is_more_similar: bool
     is_metric: bool
