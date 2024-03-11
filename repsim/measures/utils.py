@@ -8,6 +8,7 @@ from typing import Any
 from typing import Callable
 from typing import List
 from typing import Literal
+from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -25,6 +26,8 @@ NUM_CPU_CORES = len(os.sched_getaffinity(0))
 
 @dataclass
 class SimilarityMeasure(ABC):
+    sim_func: Callable[[torch.Tensor | npt.NDArray, torch.Tensor | npt.NDArray, SHAPE_TYPE], float]
+
     larger_is_more_similar: bool
     is_metric: bool
     is_symmetric: bool
@@ -37,8 +40,8 @@ class SimilarityMeasure(ABC):
     invariant_to_translation: bool
 
     @abstractmethod
-    @staticmethod
     def __call__(
+        self,
         R: torch.Tensor | npt.NDArray,
         Rp: torch.Tensor | npt.NDArray,
         shape: SHAPE_TYPE,
@@ -46,6 +49,46 @@ class SimilarityMeasure(ABC):
         **kwds: Any,
     ) -> float:
         pass
+
+
+class RSMSimilarityMeasure(SimilarityMeasure):
+    sim_func: Callable[[torch.Tensor | npt.NDArray, torch.Tensor | npt.NDArray, SHAPE_TYPE, int], float]
+
+    @staticmethod
+    @abstractmethod
+    def estimate_good_number_of_jobs(R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray) -> int:
+        pass
+
+    def __call__(
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+        n_jobs: Optional[int] = None,
+    ) -> float:
+        if n_jobs is None:
+            n_jobs = self.estimate_good_number_of_jobs(R, Rp)
+        return self.sim_func(R, Rp, shape, n_jobs)
+
+
+class NxNRsmSimilarityMeasure(RSMSimilarityMeasure):
+    @staticmethod
+    def estimate_good_number_of_jobs(R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray) -> int:
+        # RSMs in this measure are NxN, so the number of jobs should roughly scale quadratically with increase in N
+        base_N = 2000
+        jobs_at_base_N = 1
+        actual_N = R.shape[0]
+        return min(max(1, int(jobs_at_base_N * (actual_N / base_N) ** 2)), NUM_CPU_CORES)
+
+
+class DxDRsmSimilarityMeasure(RSMSimilarityMeasure):
+    @staticmethod
+    def estimate_good_number_of_jobs(R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray) -> int:
+        # RSMs in this measure are DxD, so the number of jobs should roughly scale quadratically with increase in dimension D
+        base_D = 1000
+        jobs_at_base_D = 8
+        actual_D = max(R.shape[1], Rp.shape[1])
+        return min(max(1, int(jobs_at_base_D * (actual_D / base_D) ** 2)), NUM_CPU_CORES)
 
 
 def to_numpy_if_needed(*args: Union[torch.Tensor, npt.NDArray]) -> List[npt.NDArray]:
