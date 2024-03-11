@@ -71,8 +71,8 @@ class GraphTrainer(ABC):
         self.setting_paths = dict()
         for setting in self.settings:
             setting_path = os.path.join(self.models_path, setting)
-            if not os.path.isdir(self.models_path):
-                os.mkdir(self.models_path)
+            if not os.path.isdir(setting_path):
+                os.mkdir(setting_path)
             self.setting_paths[setting] = setting_path
 
     # TODO: set up way to read in params which may be determined by graphgym
