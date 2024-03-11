@@ -1,13 +1,17 @@
 import argparse
 import itertools
 import time
+from functools import partial
+from pathlib import Path
 from typing import Callable
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import repsim.benchmark.paths
 import repsim.measures
+import repsim.measures_sklearn
 import torch
 from loguru import logger
 from repsim.measures.utils import SHAPE_TYPE
@@ -29,30 +33,14 @@ def wakeup_device(device: torch.device) -> None:
         x @ x  # type:ignore
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--cuda", metavar="N", type=int, default=0, help="index of cuda device to use")
-    parser.add_argument(
-        "--n-repeat",
-        metavar="N",
-        type=int,
-        default=1,
-        help="number of repetitions of operations",
-    )
-    parser.add_argument("--max_inputs", type=int, default=1000)
-    parser.add_argument("--min_inputs", type=int, default=100)
-    parser.add_argument("--max_features", type=int, default=1000)
-    parser.add_argument("--min_features", type=int, default=100)
-    parser.add_argument("--num_steps", type=int, default=5)
-
-    return parser.parse_args()
-
-
 def _get_func_name(func: Callable) -> str:
     if hasattr(func, "__name__"):  # repsim.measures.utils.Pipeline
         name = func.__name__
     elif hasattr(func, "func"):  # functools.partial
-        name = func.func.__name__
+        if hasattr(func.func, "__name__"):  # on a pure function
+            name = func.func.__name__
+        else:  # on a callable class instance
+            name = str(func.func)
     else:
         name = str(func)
     return name
@@ -63,7 +51,7 @@ def bench_cpu(
     matrix_sizes: list[tuple[int, int]],
     funcs: list[Callable[[torch.Tensor | npt.NDArray, torch.Tensor | npt.NDArray, SHAPE_TYPE], float]],
     n_repeat: int,
-) -> list[tuple[str, float]]:
+) -> list[tuple[str, int, int, float]]:
     wakeup_device(torch.device("cpu"))
     times = []
     for n_instances, n_features in tqdm(matrix_sizes):
@@ -119,37 +107,125 @@ def bench_cuda(
     return times
 
 
+class RuntimeBenchmark:
+
+    def __init__(
+        self,
+        save_dir: Optional[Path] = None,
+        seed: int = 100,
+        overwrite_columns: Optional[list[str]] = None,
+        n_repeat: int = 1,
+    ) -> None:
+        self.save_dir = repsim.benchmark.paths.EXPERIMENT_RESULTS_PATH / "runtime" if save_dir is None else save_dir
+        self.save_dir.mkdir(parents=True, exist_ok=True)
+
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
+        self.n_repeat = n_repeat
+
+        self.columns = (
+            ["Function", "N_instances", "N_features", "Time"] if overwrite_columns is None else overwrite_columns
+        )
+
+    def run(
+        self,
+        n_instances_range: tuple[int, int],
+        n_features_range: tuple[int, int],
+        n_instances_steps: int,
+        n_features_steps: int,
+        functions_to_bench: list[Callable],
+        n_jobs: Optional[tuple[int, ...]] = None,
+        fname: str = "benchmark_results.csv",
+    ):
+        logger.add(self.save_dir / "{time}.log")
+
+        matrix_sizes = list(
+            itertools.product(
+                np.linspace(*n_instances_range, dtype=int, num=n_instances_steps),
+                np.linspace(*n_features_range, dtype=int, num=n_features_steps),
+            )
+        )
+        logger.info(f"Benchmark will use matrix sizes: {matrix_sizes}")
+
+        if n_jobs is None:
+            records = bench_cpu(self.rng, matrix_sizes, functions_to_bench, self.n_repeat)
+            self.df = pd.DataFrame.from_records(records, columns=self.columns)
+        else:
+            self.columns.append("N_Jobs")
+            self.df = pd.DataFrame(columns=self.columns)
+            for job_count in n_jobs:
+                logger.info(f"Running with {job_count} jobs")
+                funcs = [
+                    partial(f, n_jobs=job_count) for f in functions_to_bench
+                ]  # assumes n_jobs is accepted by function
+                records = bench_cpu(self.rng, matrix_sizes, funcs, self.n_repeat)
+                records = [(*record, job_count) for record in records]
+                self.df = pd.concat((self.df, pd.DataFrame.from_records(records, columns=self.columns)), axis=0)
+
+        self.df["Device"] = "CPU"
+        self.df.to_csv(self.save_dir / fname)
+
+
 if __name__ == "__main__":
-    args = parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cuda", metavar="N", type=int, default=0, help="index of cuda device to use")
+    parser.add_argument(
+        "--n-repeat",
+        metavar="N",
+        type=int,
+        default=1,
+        help="number of repetitions of operations",
+    )
+    parser.add_argument("--max-inputs", type=int, default=20000)
+    parser.add_argument("--min-inputs", type=int, default=4000)
+    parser.add_argument("--max-features", type=int, default=1000)
+    parser.add_argument("--min-features", type=int, default=1000)
+    parser.add_argument("--inputs-steps", type=int, default=5)
+    parser.add_argument("--features-steps", type=int, default=1)
+    parser.add_argument("--jobs", type=int, nargs="+", default=None)
+    parser.add_argument("--fname", type=str, default="benchmark_results.csv")
+    args = parser.parse_args()
+
     cuda_device = torch.device(f"cuda:{args.cuda}")
     n_repeat = args.n_repeat
+    n_instances_range = (args.min_inputs, args.max_inputs)
+    n_features_range = (args.min_features, args.max_features)
 
-    save_dir = repsim.benchmark.paths.EXPERIMENT_RESULTS_PATH / "runtime"
-    save_dir.mkdir(parents=True, exist_ok=True)
-    logger.add(save_dir / "{time}.log")
-
-    functions_to_bench_cpu = repsim.measures.SYMMETRIC_MEASURES
-    # functions_to_bench_cuda = (partial(centered_kernel_alignment_cuda, device=cuda_device),)
-
-    seed: int = 100
-    matrix_sizes = list(
-        itertools.product(
-            np.linspace(args.min_inputs, args.max_inputs, dtype=int, num=args.num_steps),
-            np.linspace(args.min_features, args.max_features, dtype=int, num=args.num_steps),
-        )
+    # functions_to_bench_cpu = repsim.measures.SYMMETRIC_MEASURES
+    # lib = repsim.measures
+    lib = repsim.measures_sklearn
+    functions_to_bench_cpu = [
+        # lib.magnitude_difference,
+        # lib.concentricity_difference,
+        # lib.uniformity_difference,
+        # lib.rsm_norm_diff,
+        # lib.eigenspace_overlap_score,
+        # lib.aligned_cossim,
+        # lib.procrustes_size_and_shape_distance,
+        # lib.orthogonal_procrustes_centered_and_normalized,
+        # lib.permutation_procrustes,
+        # lib.representational_similarity_analysis,
+        # lib.centered_kernel_alignment,
+        # lib.hard_correlation_match,
+        # lib.soft_correlation_match,
+        lib.DistanceCorrelation(),
+        lib.HardCorrelationMatch(),
+        # lib.orthogonal_angular_shape_metric_centered,
+        # lib.jaccard_similarity,
+        # lib.second_order_cosine_similarity,
+        # lib.rank_similarity,
+        # # repsim.measures.geometry_score,
+        # # repsim.measures.imd_score,
+        # lib.gulp,
+        # lib.svcca,
+    ]
+    benchmark = RuntimeBenchmark(n_repeat=args.n_repeat)
+    benchmark.run(
+        functions_to_bench=functions_to_bench_cpu,
+        n_instances_range=n_instances_range,
+        n_features_range=n_features_range,
+        n_instances_steps=args.inputs_steps,
+        n_features_steps=args.features_steps,
+        n_jobs=args.jobs,
+        fname=args.fname,
     )
-    logger.info(f"Benchmark will use matrix sizes: {matrix_sizes}")
-    rng = np.random.default_rng(seed)
-
-    cpu_times = bench_cpu(rng, matrix_sizes, functions_to_bench_cpu, n_repeat)
-    # cuda_times = bench_cuda(rng, matrix_sizes, functions_to_bench_cuda, cuda_device, n_repeat)
-
-    columns = ["Function", "N_instances", "N_features", "Time"]
-    df_cpu = pd.DataFrame.from_records(cpu_times, columns=columns)
-    # df_cuda = pd.DataFrame.from_records(cuda_times, columns=columns)
-    df_cpu["Device"] = "CPU"
-    # df_cuda["Device"] = "CUDA"
-    # df = pd.concat((df_cpu, df_cuda))
-    df = df_cpu
-    print(df.groupby(["Function", "N_instances", "N_features", "Device"]).agg([np.mean, np.std]))
-    df.to_csv(save_dir / "benchmark_results.csv")
