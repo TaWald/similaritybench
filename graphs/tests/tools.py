@@ -4,7 +4,10 @@ import numpy as np
 import torch
 
 
-def shuffle_labels(y, frac=0.5):
+def shuffle_labels(y, frac=0.5, seed=None):
+
+    if seed is not None:
+        random.seed(seed)
 
     b_tensor = torch.is_tensor(y)
 
@@ -20,6 +23,6 @@ def shuffle_labels(y, frac=0.5):
         y[i] = new_label
 
     if b_tensor:
-        return torch.from_numpy(np.reshape(y, (n_instances, 1)))
+        return torch.from_numpy(np.reshape(y, newshape=(n_instances, 1)))
 
     return y

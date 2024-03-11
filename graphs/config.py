@@ -1,17 +1,17 @@
 import multiprocessing
 import os
 
-from graphs.gnn import GCN
-from graphs.gnn import SAGE
 from repsim.benchmark.types_globals import ARXIV_DATASET
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_TEST_NAME
 from repsim.benchmark.types_globals import LAYER_TEST_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
+from torch_geometric.nn.models import GAT
+from torch_geometric.nn.models import GCN
+from torch_geometric.nn.models import GraphSAGE
 
-# from torch_geometric.nn.models import GAT
-# from torch_geometric.nn.models import GCN
-# from torch_geometric.nn.models import GraphSAGE
+# from graphs.gnn import GCN
+# from graphs.gnn import SAGE
 
 # ----------------------------------------------------------------------------------------------------------------------
 # GENERAL PATH-RELATED VARIABLES
@@ -70,7 +70,7 @@ GNN_PARAMS_DEFAULT_N_EPOCHS = 500
 GNN_PARAMS_DEFAULT_NORM = "BatchNorm"
 
 # GNN_DICT = {"gcn": GCN, "sage": GraphSAGE, "gat": GAT}
-GNN_DICT = {"GCN": GCN, "GraphSAGE": SAGE}
+GNN_DICT = {"GCN": GCN, "GraphSAGE": GraphSAGE, "GAT": GAT}
 
 GNN_LIST = list(GNN_DICT.keys())
 

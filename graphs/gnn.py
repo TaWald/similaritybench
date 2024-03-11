@@ -4,84 +4,71 @@ from typing import Dict
 import numpy as np
 import torch
 from torch.nn import functional as func
-from torch_geometric.nn.conv import GCNConv
-from torch_geometric.nn.conv import SAGEConv
 from torcheval.metrics.functional import multiclass_accuracy
 from tqdm import tqdm
 
 
-class GCN(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout):
-        super(GCN, self).__init__()
-
-        self.convs = torch.nn.ModuleList()
-        self.convs.append(GCNConv(in_channels, hidden_channels, cached=True))
-        self.bns = torch.nn.ModuleList()
-        self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-        for _ in range(num_layers - 2):
-            self.convs.append(GCNConv(hidden_channels, hidden_channels, cached=True))
-            self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-        self.convs.append(GCNConv(hidden_channels, out_channels, cached=True))
-
-        self.dropout = dropout
-
-    def reset_parameters(self):
-        for conv in self.convs:
-            conv.reset_parameters()
-        for bn in self.bns:
-            bn.reset_parameters()
-
-    def forward(self, x, adj_t):
-        for i, conv in enumerate(self.convs[:-1]):
-            x = conv(x, adj_t)
-            x = self.bns[i](x)
-            x = func.relu(x)
-            x = func.dropout(x, p=self.dropout, training=self.training)
-        x = self.convs[-1](x, adj_t)
-        return x.log_softmax(dim=-1)
-
-
-class SAGE(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout):
-        super(SAGE, self).__init__()
-
-        self.convs = torch.nn.ModuleList()
-        self.convs.append(SAGEConv(in_channels, hidden_channels))
-        self.bns = torch.nn.ModuleList()
-        self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-        for _ in range(num_layers - 2):
-            self.convs.append(SAGEConv(hidden_channels, hidden_channels))
-            self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-        self.convs.append(SAGEConv(hidden_channels, out_channels))
-
-        self.dropout = dropout
-
-    def reset_parameters(self):
-        for conv in self.convs:
-            conv.reset_parameters()
-        for bn in self.bns:
-            bn.reset_parameters()
-
-    def forward(self, x, adj_t):
-        for i, conv in enumerate(self.convs[:-1]):
-            x = conv(x, adj_t)
-            x = self.bns[i](x)
-            x = func.relu(x)
-            x = func.dropout(x, p=self.dropout, training=self.training)
-        x = self.convs[-1](x, adj_t)
-        return x.log_softmax(dim=-1)
-
-
-def train(model, data, train_idx, optimizer):
-    model.train()
-
-    optimizer.zero_grad()
-    out = model(data.x, data.adj_t)[train_idx]
-    loss = func.nll_loss(out, data.y.squeeze(1)[train_idx])
-    loss.backward()
-    optimizer.step()
-
-    return loss.item()
+# class GCN(torch.nn.Module):
+#     def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout):
+#         super(GCN, self).__init__()
+#
+#         self.convs = torch.nn.ModuleList()
+#         self.convs.append(GCNConv(in_channels, hidden_channels, cached=True))
+#         self.bns = torch.nn.ModuleList()
+#         self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
+#
+#         for _ in range(num_layers - 2):
+#             self.convs.append(GCNConv(hidden_channels, hidden_channels, cached=True))
+#             self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
+#         self.convs.append(GCNConv(hidden_channels, out_channels, cached=True))
+#
+#         self.dropout = dropout
+#
+#     def reset_parameters(self):
+#         for conv in self.convs:
+#             conv.reset_parameters()
+#         for bn in self.bns:
+#             bn.reset_parameters()
+#
+#     def forward(self, x, adj_t):
+#         for i, conv in enumerate(self.convs[:-1]):
+#             x = conv(x, adj_t)
+#             x = self.bns[i](x)
+#             x = func.relu(x)
+#             x = func.dropout(x, p=self.dropout, training=self.training)
+#         x = self.convs[-1](x, adj_t)
+#         return x    # .log_softmax(dim=-1)
+#
+#
+# class SAGE(torch.nn.Module):
+#     def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout):
+#         super(SAGE, self).__init__()
+#
+#         self.convs = torch.nn.ModuleList()
+#         self.convs.append(SAGEConv(in_channels, hidden_channels))
+#         self.bns = torch.nn.ModuleList()
+#         self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
+#         for _ in range(num_layers - 2):
+#             self.convs.append(SAGEConv(hidden_channels, hidden_channels))
+#             self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
+#         self.convs.append(SAGEConv(hidden_channels, out_channels))
+#
+#         self.dropout = dropout
+#
+#     def reset_parameters(self):
+#         for conv in self.convs:
+#             conv.reset_parameters()
+#         for bn in self.bns:
+#             bn.reset_parameters()
+#
+#     def forward(self, x, adj_t):
+#         for i, conv in enumerate(self.convs[:-1]):
+#             x = conv(x, adj_t)
+#             x = self.bns[i](x)
+#             x = func.relu(x)
+#             x = func.dropout(x, p=self.dropout, training=self.training)
+#         x = self.convs[-1](x, adj_t)
+#         return x    # .log_softmax(dim=-1)
 
 
 def train_model(model, data, split_idx, seed: int, optimizer_params: Dict, save_path: str, b_test: bool = False):
@@ -95,7 +82,7 @@ def train_model(model, data, split_idx, seed: int, optimizer_params: Dict, save_
     model = model.to(device)
     data = data.to(device)
 
-    # TODO: maybe rearrange this, data passing currently quite messy
+    # TODO: maybe rearrange this, data passing is currently quite messy
     train_idx = split_idx["train"].to(device)
     val_idx = split_idx["valid"]
 
@@ -109,6 +96,7 @@ def train_model(model, data, split_idx, seed: int, optimizer_params: Dict, save_
         train_acc, val_acc = validate(model, data, train_idx, val_idx)
 
         epoch_res = [epoch, loss, train_acc, val_acc]
+
         if b_test:
             test_acc = test(model, data, test_idx=split_idx["test"])
             epoch_res.append(test_acc)
@@ -128,7 +116,8 @@ def train_epoch(model, data, train_idx, optimizer):
 
     optimizer.zero_grad()
     out = model(data.x, data.adj_t)[train_idx]
-    loss = func.nll_loss(out, data.y.squeeze(1)[train_idx])
+    # loss = func.nll_loss(out, data.y.squeeze(1)[train_idx])
+    loss = func.cross_entropy(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
 

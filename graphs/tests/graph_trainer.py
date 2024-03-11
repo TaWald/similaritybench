@@ -17,6 +17,7 @@ from graphs.config import GNN_PARAMS_DEFAULT_DROPOUT
 from graphs.config import GNN_PARAMS_DEFAULT_LR
 from graphs.config import GNN_PARAMS_DEFAULT_N_EPOCHS
 from graphs.config import GNN_PARAMS_DEFAULT_N_LAYERS
+from graphs.config import GNN_PARAMS_DEFAULT_NORM
 from graphs.config import LAYER_TEST_N_LAYERS
 from graphs.config import LAYER_TEST_NAME
 from graphs.config import MODEL_DIR
@@ -181,7 +182,7 @@ class LayerTestTrainer(GraphTrainer):
             "hidden_channels": GNN_PARAMS_DEFAULT_DIMENSION,
             "dropout": GNN_PARAMS_DEFAULT_DROPOUT,
             "out_channels": self.n_classes,
-            # "norm": GNN_PARAMS_DEFAULT_NORM,
+            "norm": GNN_PARAMS_DEFAULT_NORM,
         }
         optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
 
@@ -213,7 +214,7 @@ class LabelTestTrainer(GraphTrainer):
             "hidden_channels": GNN_PARAMS_DEFAULT_DIMENSION,
             "dropout": GNN_PARAMS_DEFAULT_DROPOUT,
             "out_channels": self.n_classes,
-            # "norm": GNN_PARAMS_DEFAULT_NORM,
+            "norm": GNN_PARAMS_DEFAULT_NORM,
         }
         optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
 
@@ -252,7 +253,7 @@ class ShortCutTestTrainer(GraphTrainer):
             "hidden_channels": GNN_PARAMS_DEFAULT_DIMENSION,
             "dropout": GNN_PARAMS_DEFAULT_DROPOUT,
             "out_channels": self.n_classes,
-            # "norm": GNN_PARAMS_DEFAULT_NORM,
+            "norm": GNN_PARAMS_DEFAULT_NORM,
         }
         optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
 

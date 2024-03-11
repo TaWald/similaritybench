@@ -5,14 +5,20 @@ from graphs.tests.graph_trainer import GRAPH_EXPERIMENT_SEED
 from graphs.tests.graph_trainer import LabelTestTrainer
 from graphs.tests.graph_trainer import LayerTestTrainer
 from graphs.tests.graph_trainer import SETTING_IDENTIFIER
+from graphs.tests.graph_trainer import ShortCutTestTrainer
 from repsim.benchmark.types_globals import LABEL_TEST_NAME
 from repsim.benchmark.types_globals import LAYER_TEST_NAME
+from repsim.benchmark.types_globals import SHORTCUT_TEST_NAME
 from repsim.measures.utils import ND_SHAPE
 from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
 
 
-GRAPH_TEST_TRAINER_DICT = {LABEL_TEST_NAME: LabelTestTrainer, LAYER_TEST_NAME: LayerTestTrainer}
+GRAPH_TEST_TRAINER_DICT = {
+    LABEL_TEST_NAME: LabelTestTrainer,
+    LAYER_TEST_NAME: LayerTestTrainer,
+    SHORTCUT_TEST_NAME: ShortCutTestTrainer,
+}
 
 
 def get_graph_representations(
