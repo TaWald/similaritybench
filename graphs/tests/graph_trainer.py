@@ -249,14 +249,18 @@ class ShortCutTestTrainer(GraphTrainer):
     ):
         self.n_layers = LAYER_TEST_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
-            self, architecture_type=architecture_type, dataset_name=dataset_name, seed=seed, test_name=LABEL_TEST_NAME
+            self,
+            architecture_type=architecture_type,
+            dataset_name=dataset_name,
+            seed=seed,
+            test_name=SHORTCUT_TEST_NAME,
         )
 
     def _get_gnn_params(self):
 
         gnn_params = {
             "num_layers": GNN_PARAMS_DEFAULT_N_LAYERS,
-            "in_channels": self.data.num_features,
+            "in_channels": self.data.num_features + 1,
             "hidden_channels": GNN_PARAMS_DEFAULT_DIMENSION,
             "dropout": GNN_PARAMS_DEFAULT_DROPOUT,
             "out_channels": self.n_classes,
@@ -270,13 +274,17 @@ class ShortCutTestTrainer(GraphTrainer):
 
         setting_data = self.data.clone()
 
-        train_idx, val_idx, test_idx = self.split_idx["train"], self.split_idx["val"], self.split_idx["test"]
+        train_idx, val_idx, test_idx = self.split_idx["train"], self.split_idx["valid"], self.split_idx["test"]
 
         old_labels = self.data.y.detach().clone()
+        y_feature = self.data.y.detach().clone()
         shuffle_frac = 1.0 - int(setting.split("_")[-1]) / 100.0
-        setting_data.y[train_idx] = shuffle_labels(old_labels[train_idx], frac=shuffle_frac, seed=self.seed)
-        setting_data.y[val_idx] = shuffle_labels(old_labels[val_idx], frac=shuffle_frac, seed=self.seed)
-        setting_data.y[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=SHORTCUT_TEST_SEED)
+
+        y_feature[train_idx] = shuffle_labels(old_labels[train_idx], frac=shuffle_frac, seed=self.seed)
+        y_feature[val_idx] = shuffle_labels(old_labels[val_idx], frac=shuffle_frac, seed=self.seed)
+        y_feature[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=SHORTCUT_TEST_SEED)
+
+        setting_data.x = torch.cat(tensors=(self.data.x.cpu().detach(), y_feature), dim=1)
 
         return setting_data
 
