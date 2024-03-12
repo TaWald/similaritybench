@@ -60,6 +60,9 @@ class GraphTrainer(ABC):
         self.models = dict()
         self.settings = EXPERIMENT_DICT[test_name]
 
+        dev_str = f"cuda:0" if torch.cuda.is_available() else "cpu"
+        self.device = torch.device(dev_str)
+
         self.gnn_params, self.optimizer_params = self._get_gnn_params()
 
         model_dataset_path = os.path.join(MODEL_DIR, self.dataset_name)
@@ -100,7 +103,7 @@ class GraphTrainer(ABC):
         if not os.path.isfile(model_file):
             raise FileNotFoundError(f"Model File for seed {self.seed} does not exist")
 
-        model.load_state_dict(torch.load(model_file))
+        model.load_state_dict(torch.load(model_file, map_location=self.device))
 
         return model
 
@@ -146,7 +149,9 @@ class GraphTrainer(ABC):
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
         save_path = os.path.join(self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SEED(self.seed))
-        train_results = train_model(model, setting_data, self.split_idx, self.seed, self.optimizer_params, save_path)
+        train_results = train_model(
+            model, setting_data, self.split_idx, self.device, self.seed, self.optimizer_params, save_path
+        )
 
         if log_results:
             self._log_train_results(train_results, setting)

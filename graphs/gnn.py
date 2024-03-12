@@ -8,13 +8,12 @@ from torcheval.metrics.functional import multiclass_accuracy
 from tqdm import tqdm
 
 
-def train_model(model, data, split_idx, seed: int, optimizer_params: Dict, save_path: str, b_test: bool = False):
+def train_model(
+    model, data, split_idx, device, seed: int, optimizer_params: Dict, save_path: str, b_test: bool = False
+):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-
-    device = f"cuda:0" if torch.cuda.is_available() else "cpu"
-    device = torch.device(device)
 
     model = model.to(device)
     data = data.to(device)
