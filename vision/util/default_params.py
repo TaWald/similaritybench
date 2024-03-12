@@ -14,6 +14,11 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
         ds.Dataset.CDOT75,
         ds.Dataset.CDOT0,
         ds.Dataset.CDOT25,
+        ds.Dataset.GaussMAX,
+        ds.Dataset.GaussL,
+        ds.Dataset.GaussM,
+        ds.Dataset.GaussS,
+        ds.Dataset.GaussOff,
     ]:
         params = ds.Params(
             architecture_name=architecture_name,
@@ -124,6 +129,11 @@ def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
         ds.Dataset.CDOT75,
         ds.Dataset.CDOT0,
         ds.Dataset.CDOT25,
+        ds.Dataset.GaussMAX,
+        ds.Dataset.GaussL,
+        ds.Dataset.GaussM,
+        ds.Dataset.GaussS,
+        ds.Dataset.GaussOff,
     ]:
         output_classes = 10
         in_ch = 3

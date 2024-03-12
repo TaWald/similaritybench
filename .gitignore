@@ -15,6 +15,7 @@ nlp/outputs
 nlp/results
 
 *.env
+*.png
 ._.DS_Store
 .DS_Store
 
