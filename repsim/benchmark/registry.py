@@ -4,12 +4,11 @@ from typing import get_args
 from graphs.get_reps import get_graph_representations
 from repsim.benchmark.types_globals import DOMAIN_TYPE
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
-from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
-from repsim.benchmark.types_globals import LABEL_TEST_NAME
-from repsim.benchmark.types_globals import LAYER_TEST_NAME
+from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import NLP_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import NLP_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
@@ -35,8 +34,7 @@ class TrainedModel:
     domain: DOMAIN_TYPE
     architecture: VISION_ARCHITECTURE_TYPE | NLP_ARCHITECTURE_TYPE | GRAPH_ARCHITECTURE_TYPE
     train_dataset: VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
-    experiment_identifier: EXPERIMENT_IDENTIFIER | None
-    setting_identifier: SETTING_IDENTIFIER
+    identifier: SETTING_IDENTIFIER
     additional_kwargs: dict  # Maybe one can remove this to make it more general
 
     def get_representation(self, representation_dataset: str, **kwargs) -> ModelRepresentations:
@@ -48,7 +46,7 @@ class TrainedModel:
                 architecture_name=self.architecture,
                 train_dataset=self.train_dataset,
                 seed_id=self.additional_kwargs["seed_id"],
-                setting_identifier=self.setting_identifier,
+                setting_identifier=self.identifier,
                 representation_dataset=representation_dataset,
             )
         # elif self.domain == "NLP":
@@ -73,7 +71,7 @@ class TrainedModel:
         #         kwargs["token_pos"],
         #     )
         #     return ModelRepresentations(
-        #         setting_identifier=self.setting_identifier,
+        #         EXPERIMENT_IDENTIFIER=self.EXPERIMENT_IDENTIFIER,
         #         architecture_name=self.architecture,
         #         train_dataset=self.train_dataset,
         #         seed_id=None,
@@ -85,8 +83,7 @@ class TrainedModel:
                 architecture_name=self.architecture,
                 train_dataset=self.train_dataset,
                 seed_id=self.additional_kwargs["seed_id"],
-                experiment_identifier=self.experiment_identifier,
-                setting_identifier=self.setting_identifier,
+                setting_identifier=self.identifier,
                 representation_dataset=representation_dataset,
             )
         else:
@@ -113,9 +110,8 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             domain="VISION",
                             architecture=arch,
                             train_dataset=dataset,
-                            experiment_identifier=None,
-                            setting_identifier=identifier,
-                            additional_kwargs={"seed_id": i, "setting_identifier": None},
+                            identifier=identifier,
+                            additional_kwargs={"seed_id": i, "EXPERIMENT_IDENTIFIER": None},
                         )
                     )
     return all_trained_vision_models
@@ -127,8 +123,7 @@ def all_trained_nlp_models() -> list[TrainedModel]:
             domain="NLP",
             architecture="BERT",
             train_dataset="SST2",
-            experiment_identifier=None,
-            setting_identifier=STANDARD_SETTING,
+            identifier=STANDARD_SETTING,
             additional_kwargs={
                 "human_name": "multibert-0-sst2",
                 "model_path": "/root/LLM-comparison/outputs/2024-01-31/13-12-49",
@@ -145,15 +140,14 @@ def all_trained_graph_models() -> list[TrainedModel]:
     for i in get_args(GRAPH_EXPERIMENT_SEED):
         for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
-                for experiment in [LAYER_TEST_NAME, LABEL_TEST_NAME]:
+                for experiment in [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME]:
                     for setting in EXPERIMENT_DICT[experiment]:
                         all_trained_models.append(
                             TrainedModel(
                                 domain="GRAPHS",
                                 architecture=arch,
                                 train_dataset=dataset,
-                                experiment_identifier=experiment,
-                                setting_identifier=setting,
+                                identifier=setting,
                                 additional_kwargs={"seed_id": i},
                             )
                         )

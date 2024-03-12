@@ -1,23 +1,24 @@
-from graphs.tests.graph_trainer import EXPERIMENT_IDENTIFIER
-from graphs.tests.graph_trainer import GRAPH_ARCHITECTURE_TYPE
-from graphs.tests.graph_trainer import GRAPH_DATASET_TRAINED_ON
-from graphs.tests.graph_trainer import GRAPH_EXPERIMENT_SEED
 from graphs.tests.graph_trainer import LabelTestTrainer
 from graphs.tests.graph_trainer import LayerTestTrainer
-from graphs.tests.graph_trainer import SETTING_IDENTIFIER
 from graphs.tests.graph_trainer import ShortCutTestTrainer
-from repsim.benchmark.types_globals import LABEL_TEST_NAME
-from repsim.benchmark.types_globals import LAYER_TEST_NAME
-from repsim.benchmark.types_globals import SHORTCUT_TEST_NAME
+from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
+from repsim.benchmark.types_globals import EXPERIMENT_DICT
+from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
+from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
+from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import SETTING_IDENTIFIER
+from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.measures.utils import ND_SHAPE
 from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
 
 
-GRAPH_TEST_TRAINER_DICT = {
-    LABEL_TEST_NAME: LabelTestTrainer,
-    LAYER_TEST_NAME: LayerTestTrainer,
-    SHORTCUT_TEST_NAME: ShortCutTestTrainer,
+GRAPH_EXPERIMENT_TRAINER_DICT = {
+    LABEL_EXPERIMENT_NAME: LabelTestTrainer,
+    LAYER_EXPERIMENT_NAME: LayerTestTrainer,
+    SHORTCUT_EXPERIMENT_NAME: ShortCutTestTrainer,
 }
 
 
@@ -25,7 +26,6 @@ def get_graph_representations(
     architecture_name: GRAPH_ARCHITECTURE_TYPE,
     train_dataset: GRAPH_DATASET_TRAINED_ON,
     seed_id: GRAPH_EXPERIMENT_SEED,
-    experiment_identifier: EXPERIMENT_IDENTIFIER,
     setting_identifier: SETTING_IDENTIFIER,
     representation_dataset: GRAPH_DATASET_TRAINED_ON,
 ) -> ModelRepresentations:
@@ -39,7 +39,14 @@ def get_graph_representations(
     :param representation_dataset:
     """
 
-    graph_trainer = GRAPH_TEST_TRAINER_DICT[experiment_identifier](
+    experiment_identifier = ""
+
+    for exp in BENCHMARK_EXPERIMENTS_LIST:
+        if setting_identifier in EXPERIMENT_DICT[exp]:
+            experiment_identifier = exp
+            break
+
+    graph_trainer = GRAPH_EXPERIMENT_TRAINER_DICT[experiment_identifier](
         architecture_type=architecture_name, dataset_name=train_dataset, seed=seed_id
     )
     plain_reps = graph_trainer.get_test_representations(setting=setting_identifier)

@@ -2,8 +2,8 @@ import os
 
 from repsim.benchmark.types_globals import ARXIV_DATASET
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
-from repsim.benchmark.types_globals import LABEL_TEST_NAME
-from repsim.benchmark.types_globals import LAYER_TEST_NAME
+from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from torch_geometric.nn.models import GAT
 from torch_geometric.nn.models import GCN
@@ -34,7 +34,7 @@ if not os.path.isdir(RES_DIR):
     os.mkdir(RES_DIR)
 
 SIMILARITIES_FILE_NAME = "similarities.pkl"
-TEST_RESULTS_JSON_NAME = "results.json"
+EXPERIMENTRESULTS_JSON_NAME = "results.json"
 
 
 def TORCH_STATE_DICT_FILE_NAME_SEED(sd: GRAPH_EXPERIMENT_SEED):
@@ -73,6 +73,6 @@ GNN_LIST = list(GNN_DICT.keys())
 
 DATASET_LIST = [ARXIV_DATASET]
 
-LAYER_TEST_N_LAYERS = 10
+LAYER_EXPERIMENT_N_LAYERS = 10
 
-NN_TESTS_LIST = [LAYER_TEST_NAME, LABEL_TEST_NAME]
+NN_TESTS_LIST = [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME]

@@ -18,7 +18,7 @@ from graphs.config import GNN_PARAMS_DEFAULT_LR
 from graphs.config import GNN_PARAMS_DEFAULT_N_EPOCHS
 from graphs.config import GNN_PARAMS_DEFAULT_N_LAYERS
 from graphs.config import GNN_PARAMS_DEFAULT_NORM
-from graphs.config import LAYER_TEST_N_LAYERS
+from graphs.config import LAYER_EXPERIMENT_N_LAYERS
 from graphs.config import MODEL_DIR
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
@@ -26,17 +26,17 @@ from graphs.gnn import get_representations
 from graphs.gnn import train_model
 from graphs.tests.tools import shuffle_labels
 from ogb.nodeproppred import PygNodePropPredDataset
+from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
-from repsim.benchmark.types_globals import LABEL_TEST_NAME
-from repsim.benchmark.types_globals import LAYER_TEST_NAME
-from repsim.benchmark.types_globals import NN_TESTS_LIST
+from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
-from repsim.benchmark.types_globals import SHORTCUT_TEST_NAME
-from repsim.benchmark.types_globals import SHORTCUT_TEST_SEED
+from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import STANDARD_SETTING
 from torch_geometric import transforms as t
 
@@ -175,10 +175,14 @@ class LayerTestTrainer(GraphTrainer):
         seed: GRAPH_EXPERIMENT_SEED,
         n_layers: int = None,
     ):
-        self.n_layers = LAYER_TEST_N_LAYERS if n_layers is None else n_layers
+        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
 
         GraphTrainer.__init__(
-            self, architecture_type=architecture_type, dataset_name=dataset_name, seed=seed, test_name=LAYER_TEST_NAME
+            self,
+            architecture_type=architecture_type,
+            dataset_name=dataset_name,
+            seed=seed,
+            test_name=LAYER_EXPERIMENT_NAME,
         )
 
     def _get_gnn_params(self):
@@ -208,9 +212,13 @@ class LabelTestTrainer(GraphTrainer):
         seed: GRAPH_EXPERIMENT_SEED,
         n_layers: int = None,
     ):
-        self.n_layers = LAYER_TEST_N_LAYERS if n_layers is None else n_layers
+        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
-            self, architecture_type=architecture_type, dataset_name=dataset_name, seed=seed, test_name=LABEL_TEST_NAME
+            self,
+            architecture_type=architecture_type,
+            dataset_name=dataset_name,
+            seed=seed,
+            test_name=LABEL_EXPERIMENT_NAME,
         )
 
     def _get_gnn_params(self):
@@ -247,13 +255,13 @@ class ShortCutTestTrainer(GraphTrainer):
         seed: GRAPH_EXPERIMENT_SEED,
         n_layers: int = None,
     ):
-        self.n_layers = LAYER_TEST_N_LAYERS if n_layers is None else n_layers
+        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
             self,
             architecture_type=architecture_type,
             dataset_name=dataset_name,
             seed=seed,
-            test_name=SHORTCUT_TEST_NAME,
+            test_name=SHORTCUT_EXPERIMENT_NAME,
         )
 
     def _get_gnn_params(self):
@@ -282,7 +290,7 @@ class ShortCutTestTrainer(GraphTrainer):
 
         y_feature[train_idx] = shuffle_labels(old_labels[train_idx], frac=shuffle_frac, seed=self.seed)
         y_feature[val_idx] = shuffle_labels(old_labels[val_idx], frac=shuffle_frac, seed=self.seed)
-        y_feature[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=SHORTCUT_TEST_SEED)
+        y_feature[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=SHORTCUT_EXPERIMENT_SEED)
 
         setting_data.x = torch.cat(tensors=(self.data.x.cpu().detach(), y_feature), dim=1)
 
@@ -312,8 +320,8 @@ def parse_args():
         "-t",
         "--test",
         type=str,
-        choices=NN_TESTS_LIST,
-        default=LAYER_TEST_NAME,
+        choices=BENCHMARK_EXPERIMENTS_LIST,
+        default=LAYER_EXPERIMENT_NAME,
         help="Tests to run.",
     )
     parser.add_argument(
@@ -342,9 +350,9 @@ def parse_args():
 
 
 GNN_TRAINER_DICT = {
-    LAYER_TEST_NAME: LayerTestTrainer,
-    LABEL_TEST_NAME: LabelTestTrainer,
-    SHORTCUT_TEST_NAME: ShortCutTestTrainer,
+    LAYER_EXPERIMENT_NAME: LayerTestTrainer,
+    LABEL_EXPERIMENT_NAME: LabelTestTrainer,
+    SHORTCUT_EXPERIMENT_NAME: ShortCutTestTrainer,
 }
 
 if __name__ == "__main__":

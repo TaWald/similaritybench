@@ -11,10 +11,10 @@ from repsim.benchmark.types_globals import DOMAIN_TYPE
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import GRAPH_DOMAIN
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
-from repsim.benchmark.types_globals import LABEL_TEST_NAME
+from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import NN_ARCHITECTURE_TYPE
 from repsim.benchmark.utils import Result
-from repsim.measures.cka import centered_kernel_alignment
+from repsim.measures import SYMMETRIC_MEASURES
 from scipy.stats import spearmanr
 
 
@@ -33,15 +33,14 @@ class LabelExperiment:
         self.dataset = dataset
         self.architecture_type = architecture_type
         self.kwargs = kwargs
-        self.results = Result(LABEL_TEST_NAME)
+        self.results = Result(LABEL_EXPERIMENT_NAME)
         logger.add(self.results.basedir / "{time}.log")  # Not sure where this needs to go...
 
         self.models = [
             m
             for m in ALL_TRAINED_MODELS
             if (m.domain == self.domain)
-            and (m.experiment_identifier == LABEL_TEST_NAME)
-            and (m.setting_identifier in EXPERIMENT_DICT[LABEL_TEST_NAME])
+            and (m.identifier in EXPERIMENT_DICT[LABEL_EXPERIMENT_NAME])
             and (m.architecture == self.architecture_type)
             and (m.train_dataset == self.dataset)
         ]
@@ -92,15 +91,15 @@ class LabelExperiment:
     def run(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
 
-        label_test_settings = EXPERIMENT_DICT[LABEL_TEST_NAME]
-        setting_map = {i: setting for (i, setting) in zip(range(len(label_test_settings)), label_test_settings)}
+        label_EXP_settings = EXPERIMENT_DICT[LABEL_EXPERIMENT_NAME]
+        setting_map = {i: setting for (i, setting) in zip(range(len(label_EXP_settings)), label_EXP_settings)}
 
         for seed in get_args(GRAPH_EXPERIMENT_SEED):
 
             curr_models = [model for model in self.models if model.additional_kwargs["seed_id"] == seed]
             reps = dict()
             for model in curr_models:
-                curr_setting = model.setting_identifier
+                curr_setting = model.identifier
                 reps[curr_setting] = model.get_representation(representation_dataset=self.dataset)
 
                 start_time = time.perf_counter()
@@ -161,14 +160,17 @@ if __name__ == "__main__":
     # subset_of_graph_models = [m
     #     for m in ALL_TRAINED_MODELS
     #     if (m.domain == GRAPH_DOMAIN)
-    #     and (m.setting_identifier in EXPERIMENT_DICT[LABEL_TEST_NAME])
+    #     and (m.setting_identifier in EXPERIMENT_DICT[LABEL_EXP_NAME])
     # ]
-    experiment = LabelExperiment(
-        domain=GRAPH_DOMAIN,
-        measures=[centered_kernel_alignment],
-        dataset=ARXIV_DATASET,
-        architecture_type="GraphSAGE",
-    )
+
+    for architecture in ["GCN", "GraphSAGE"]:
+
+        experiment = LabelExperiment(
+            domain=GRAPH_DOMAIN,
+            measures=SYMMETRIC_MEASURES,
+            dataset=ARXIV_DATASET,
+            architecture_type="GraphSAGE",
+        )
 
     # experiment = SameLayerExperiment(subset_of_graph_models, [centered_kernel_alignment], "CIFAR10")
     result = experiment.run()
