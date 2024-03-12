@@ -2,23 +2,19 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import repsim
-
-if TYPE_CHECKING:
-    from repsim.benchmark.registry_types import (
-        DOMAIN_TYPE,
-        EXPERIMENT_IDENTIFIER,
-        GRAPH_ARCHITECTURE_TYPE,
-        GRAPH_DATASET_TRAINED_ON,
-        NLP_ARCHITECTURE_TYPE,
-        NLP_DATASET_TRAINED_ON,
-        VISION_ARCHITECTURE_TYPE,
-        VISION_DATASET_TRAINED_ON,
-    )
-
-# import repsim.nlp
+from repsim.benchmark.registry_types import DOMAIN_TYPE
+from repsim.benchmark.registry_types import EXPERIMENT_IDENTIFIER
+from repsim.benchmark.registry_types import GRAPH_ARCHITECTURE_TYPE
+from repsim.benchmark.registry_types import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.registry_types import NLP_ARCHITECTURE_TYPE
+from repsim.benchmark.registry_types import NLP_DATASET_TRAINED_ON
+from repsim.benchmark.registry_types import VISION_ARCHITECTURE_TYPE
+from repsim.benchmark.registry_types import VISION_DATASET_TRAINED_ON
 from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
 from vision.get_reps import get_vision_representations
+
+# import repsim.nlp
 
 
 # ---------------------------- SIMILARITY_METRICS --------------------------- #
