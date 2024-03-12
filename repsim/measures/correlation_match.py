@@ -23,8 +23,10 @@ def hard_correlation_match(
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = center_columns(R), center_columns(Rp)
 
-    # cdist computes the correlation _distance_ matrix (1 - corr)
-    corr_matrix = 1 - sklearn.metrics.pairwise_distances(R.T, Rp.T, metric="correlation", n_jobs=n_jobs)
+    # n_jobs only works if metric is in PAIRWISE_DISTANCES as defined in sklearn, i.e., not for correlation.
+    # But correlation = 1 - cosine dist of row-centered data. Since we are using R^T, Rp^T, the columns of R, Rp must
+    # be centered. This is already true from the above preprocessing.
+    corr_matrix = 1 - sklearn.metrics.pairwise_distances(R.T, Rp.T, metric="cosine", n_jobs=n_jobs)
 
     # Let D = R.shape[1], Dp = Rp.shape[1] (the number of neurons).
     # Wlog, let D < Dp. Then all neurons of R get matched to a neuron of Rp, but
@@ -46,8 +48,11 @@ def soft_correlation_match(
     R, Rp = to_numpy_if_needed(R, Rp)
     R, Rp = center_columns(R), center_columns(Rp)
 
-    # cdist computes the correlation _distance_ matrix (1 - corr)
-    corr_matrix = 1 - sklearn.metrics.pairwise_distances(R.T, Rp.T, metric="correlation", n_jobs=n_jobs)
+    # n_jobs only works if metric is in PAIRWISE_DISTANCES as defined in sklearn, i.e., not for correlation.
+    # But correlation = 1 - cosine dist of row-centered data. Since we are using R^T, Rp^T, the columns of R, Rp must
+    # be centered. This is already true from the above preprocessing.
+    corr_matrix = 1 - sklearn.metrics.pairwise_distances(R.T, Rp.T, metric="cosine", n_jobs=n_jobs)
+
     # Different to "hard" mode, all neurons of the first representation R are
     # considered, i.e., they will have a match with some neuron of Rp, but not
     # necessarily do all Rp neurons have a match. This means that this raw score is

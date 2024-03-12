@@ -4,6 +4,7 @@ import numpy.typing as npt
 import torch
 from repsim.measures.utils import flatten
 from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_torch_if_needed
 
 
@@ -35,3 +36,22 @@ def hsic(S: torch.Tensor, Sp: torch.Tensor) -> torch.Tensor:  # noqa: E741
     S = S - S.mean(dim=0)[:, None]
     Sp = Sp - Sp.mean(dim=0)[:, None]  # noqa: E741
     return torch.trace(S @ Sp) / (S.size(0) - 1) ** 2
+
+
+class CKA(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=centered_kernel_alignment,
+            larger_is_more_similar=True,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=True,
+        )
+
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        return self.sim_func(R, Rp, shape)

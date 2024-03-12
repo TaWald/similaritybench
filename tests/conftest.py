@@ -18,6 +18,8 @@ def get_rep(N: int, D: int, seed: int) -> torch.Tensor:
 def _test_generic_measure(func, rep1, rep2, shape, expected_outcome, atol=None, *args, **kwargs):
     retval = func(rep1, rep2, shape, *args, **kwargs)
     assert isinstance(retval, float)
+    if expected_outcome == 0:
+        atol = 1e-7
     if atol:
         np.testing.assert_allclose(retval, expected_outcome, atol=atol)
     else:

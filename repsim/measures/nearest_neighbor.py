@@ -1,4 +1,3 @@
-from typing import Any
 from typing import List
 from typing import Protocol
 from typing import Set
@@ -7,6 +6,7 @@ from typing import Union
 import numpy as np
 import numpy.typing as npt
 import scipy.spatial.distance
+import sklearn.metrics
 import sklearn.neighbors
 import torch
 from repsim.measures.utils import flatten
@@ -61,24 +61,25 @@ def second_order_cosine_similarity(
     shape: SHAPE_TYPE,
     k: int = 10,
     n_jobs: int = 8,
+    n_jobs_neighbors: int = 8,
 ) -> float:
     inner = "cosine"
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
-    nns_R = top_k_neighbors(R, k, inner, n_jobs)
-    nns_Rp = top_k_neighbors(Rp, k, inner, n_jobs)
+    nns_R = top_k_neighbors(R, k, inner, n_jobs_neighbors)
+    nns_Rp = top_k_neighbors(Rp, k, inner, n_jobs_neighbors)
 
     union_nns = [list(set(nns_Ri).union(set(nns_Rpi))) for nns_Ri, nns_Rpi in zip(nns_R, nns_Rp)]
 
-    dists_R = scipy.spatial.distance.pdist(R, inner)
-    dists_Rp = scipy.spatial.distance.pdist(Rp, inner)
+    dists_R = sklearn.metrics.pairwise_distances(R, metric=inner, n_jobs=n_jobs)
+    dists_Rp = sklearn.metrics.pairwise_distances(Rp, metric=inner, n_jobs=n_jobs)
 
     return float(
         np.mean(
             [
-                1 - scipy.spatial.distance.cosine(dists_R[union_nns_i], dists_Rp[union_nns_i])
-                for union_nns_i in union_nns
+                1 - scipy.spatial.distance.cosine(dists_R[i, union_nns_i], dists_Rp[i, union_nns_i])
+                for i, union_nns_i in enumerate(union_nns)
             ]
         )
     )
@@ -159,7 +160,7 @@ class NearestNeighborSimilarityFunction(Protocol):
         k: int,
         inner: str,
         n_jobs: int,
-    ) -> Any: ...
+    ) -> float: ...
 
 
 class JaccardSimilarity(SimilarityMeasure):
