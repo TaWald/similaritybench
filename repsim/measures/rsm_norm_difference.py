@@ -6,7 +6,7 @@ import numpy.typing as npt
 import sklearn.metrics
 import torch
 from repsim.measures.utils import flatten
-from repsim.measures.utils import NxNRsmSimilarityMeasure
+from repsim.measures.utils import RSMSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
 from repsim.measures.utils import to_numpy_if_needed
 
@@ -25,7 +25,7 @@ def rsm_norm_diff(
     return float(np.linalg.norm(S - Sp, ord=2))  # ord=2 because pdist gives vectorized lower triangle of RSM
 
 
-class RSMNormDifference(NxNRsmSimilarityMeasure):
+class RSMNormDifference(RSMSimilarityMeasure):
     def __init__(self):
         # inner is fixed to euclidean, so these value should not be changed
         super().__init__(

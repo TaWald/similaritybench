@@ -65,9 +65,13 @@ class RSMSimilarityMeasure(SimilarityMeasure):
     sim_func: Callable[[torch.Tensor | npt.NDArray, torch.Tensor | npt.NDArray, SHAPE_TYPE, int], float]
 
     @staticmethod
-    @abstractmethod
     def estimate_good_number_of_jobs(R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray) -> int:
-        pass
+        # RSMs in are NxN (or DxD) so the number of jobs should roughly scale quadratically with increase in N (or D).
+        # False! As long as sklearn-native metrics are used, they will use parallel implementations regardless of job
+        # count. Each job would spawn their own threads, which leads to oversubscription of cores and thus slowdown.
+        # This seems to be not fully correct (n_jobs=2 seems to actually use two cores), but using n_jobs=1 seems the
+        # fastest.
+        return 1
 
     def __call__(
         self,
@@ -79,26 +83,6 @@ class RSMSimilarityMeasure(SimilarityMeasure):
         if n_jobs is None:
             n_jobs = self.estimate_good_number_of_jobs(R, Rp)
         return self.sim_func(R, Rp, shape, n_jobs)
-
-
-class NxNRsmSimilarityMeasure(RSMSimilarityMeasure):
-    @staticmethod
-    def estimate_good_number_of_jobs(R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray) -> int:
-        # RSMs in this measure are NxN, so the number of jobs should roughly scale quadratically with increase in N
-        base_N = 2000
-        jobs_at_base_N = 1
-        actual_N = R.shape[0]
-        return min(max(1, int(jobs_at_base_N * (actual_N / base_N) ** 2)), NUM_CPU_CORES)
-
-
-class DxDRsmSimilarityMeasure(RSMSimilarityMeasure):
-    @staticmethod
-    def estimate_good_number_of_jobs(R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray) -> int:
-        # RSMs in this measure are DxD, so the number of jobs should roughly scale quadratically with increase in dimension D
-        base_D = 1000
-        jobs_at_base_D = 8
-        actual_D = max(R.shape[1], Rp.shape[1])
-        return min(max(1, int(jobs_at_base_D * (actual_D / base_D) ** 2)), NUM_CPU_CORES)
 
 
 def to_numpy_if_needed(*args: Union[torch.Tensor, npt.NDArray]) -> List[npt.NDArray]:

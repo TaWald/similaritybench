@@ -60,7 +60,7 @@ def second_order_cosine_similarity(
     Rp: Union[torch.Tensor, npt.NDArray],
     shape: SHAPE_TYPE,
     k: int = 10,
-    n_jobs: int = 8,
+    n_jobs: int = 1,
     n_jobs_neighbors: int = 8,
 ) -> float:
     inner = "cosine"
@@ -216,7 +216,7 @@ class SecondOrderCosineSimilarity(SimilarityMeasure):
         Rp: torch.Tensor | npt.NDArray,
         shape: SHAPE_TYPE,
         k: int = 10,
-        n_jobs: int = 8,  # TODO: are these default values good?
+        n_jobs: int = 1,
     ) -> float:
         return self.sim_func(R, Rp, shape, k=k, n_jobs=n_jobs)  # type: ignore
 

@@ -6,7 +6,7 @@ import numpy.typing as npt
 import sklearn.metrics
 import torch
 from repsim.measures.utils import flatten
-from repsim.measures.utils import NxNRsmSimilarityMeasure
+from repsim.measures.utils import RSMSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
 from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
@@ -122,7 +122,7 @@ class MagnitudeDifference(SimilarityMeasure):
         return self.sim_func(R, Rp, shape)
 
 
-class UniformityDifference(NxNRsmSimilarityMeasure):
+class UniformityDifference(RSMSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=uniformity_difference,
@@ -138,7 +138,7 @@ class UniformityDifference(NxNRsmSimilarityMeasure):
         )
 
 
-class ConcentricityDifference(NxNRsmSimilarityMeasure):
+class ConcentricityDifference(RSMSimilarityMeasure):
     def __init__(self):
         # different choice of inner/outer in __call__ should change these values...
         super().__init__(

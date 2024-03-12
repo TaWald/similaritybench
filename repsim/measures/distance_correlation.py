@@ -8,7 +8,7 @@ import torch
 from loguru import logger
 from repsim.measures.utils import double_center
 from repsim.measures.utils import flatten
-from repsim.measures.utils import NxNRsmSimilarityMeasure
+from repsim.measures.utils import RSMSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
 from repsim.measures.utils import to_numpy_if_needed
 
@@ -36,7 +36,7 @@ def distance_correlation(
     return float(np.sqrt(dCov2(S, Sp) / np.sqrt(dCov2(S, S) * dCov2(Sp, Sp))))
 
 
-class DistanceCorrelation(NxNRsmSimilarityMeasure):
+class DistanceCorrelation(RSMSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=distance_correlation,

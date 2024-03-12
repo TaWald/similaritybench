@@ -8,7 +8,7 @@ import scipy.stats
 import sklearn.metrics
 import torch
 from repsim.measures.utils import flatten
-from repsim.measures.utils import NxNRsmSimilarityMeasure
+from repsim.measures.utils import RSMSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
 from repsim.measures.utils import to_numpy_if_needed
 
@@ -69,7 +69,7 @@ def representational_similarity_analysis(
         raise ValueError(f"Unknown outer similarity function: {outer}")
 
 
-class RSA(NxNRsmSimilarityMeasure):
+class RSA(RSMSimilarityMeasure):
     def __init__(self):
         # choice of inner/outer in __call__ if fixed to default values, so these values are always the same
         super().__init__(

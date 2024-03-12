@@ -7,8 +7,8 @@ import scipy.spatial.distance
 import sklearn.metrics
 import torch
 from repsim.measures.utils import center_columns
-from repsim.measures.utils import DxDRsmSimilarityMeasure
 from repsim.measures.utils import flatten
+from repsim.measures.utils import RSMSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
 from repsim.measures.utils import to_numpy_if_needed
 
@@ -62,7 +62,7 @@ def soft_correlation_match(
     return (score1 + score2) / 2
 
 
-class HardCorrelationMatch(DxDRsmSimilarityMeasure):
+class HardCorrelationMatch(RSMSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=hard_correlation_match,
@@ -78,7 +78,7 @@ class HardCorrelationMatch(DxDRsmSimilarityMeasure):
         )
 
 
-class SoftCorrelationMatch(DxDRsmSimilarityMeasure):
+class SoftCorrelationMatch(RSMSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=soft_correlation_match,
