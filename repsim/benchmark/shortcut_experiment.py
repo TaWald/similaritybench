@@ -2,11 +2,12 @@ import time
 from itertools import combinations
 from typing import Callable
 
+import git
 import numpy as np
 from loguru import logger
 from registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
-from repsim.benchmark.utils import Result
+from repsim.benchmark.utils import ExperimentStorer
 from repsim.measures import distance_correlation
 from repsim.measures.cca import pwcca
 from repsim.measures.cca import svcca
@@ -16,6 +17,7 @@ from repsim.measures.gulp import gulp
 from repsim.measures.procrustes import orthogonal_procrustes
 from repsim.measures.procrustes import permutation_procrustes
 from repsim.measures.rsa import representational_similarity_analysis
+from repsim.utils import SingleLayerRepresentation
 from scipy.stats import spearmanr
 from vision.util.file_io import save_json
 
@@ -41,23 +43,16 @@ class OrdinalGroupSeparationExperiment:
         self.measures = measures
         self.representation_dataset = representation_dataset
         self.kwargs = kwargs
-        self.results = Result(experiment_identifier)
-
-        logger.add(self.results.basedir / "{time}.log")  # Not sure where this needs to go...
 
     def run(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
-        measure_index_json = {cnt: k.__class__.__name__ for cnt, k in enumerate(self.measures)}
-        save_json(
-            measure_index_json,
-            self.results.basedir / "measure_index.json",
-        )
         flat_models = flatten(self.groups_of_models)
         all_sims = np.full(
             (len(flat_models), len(flat_models), len(self.measures)),
             fill_value=np.nan,
             dtype=np.float32,
         )
+
         # ToDo: Pass "SingleLayerRepresentation" objects to the metrics instead of the raw representations
         # ToDo: Issues during development
         #  - Choice of shortcut (how many different groups, how many seeds)
@@ -65,35 +60,43 @@ class OrdinalGroupSeparationExperiment:
         #   Maybe saving intermediate things would make sense?
         #  - Saving and loading of results!
 
-        #   Would allow for more flexibility in dynamic saving and loading of representations?
-        for cnt_a, model_a in enumerate(flat_models):
-            model_reps_a = model_a.get_representation(self.representation_dataset, **self.kwargs)
-            reps_a = model_reps_a.representations[-1].representation  # Only use the last layer
-            shape_a = model_reps_a.representations[-1].shape
+        with ExperimentStorer() as storer:
+            for cnt_a, model_a in enumerate(flat_models):
+                model_reps_a = model_a.get_representation(self.representation_dataset, **self.kwargs)
+                sngl_rep_a: SingleLayerRepresentation = model_reps_a.representations[-1]
 
-            for cnt_b, model_b in enumerate(flat_models):
-                if cnt_a > cnt_b:
-                    continue
-                model_reps_b = model_b.get_representation(self.representation_dataset, **self.kwargs)
-                reps_b = model_reps_b.representations[-1].representation  # Only use the last layer
+                for cnt_b, model_b in enumerate(flat_models):
+                    if cnt_a > cnt_b:
+                        continue
+                    model_reps_b = model_b.get_representation(self.representation_dataset, **self.kwargs)
+                    sngl_rep_b = model_reps_b.representations[-1]
 
-                for cnt_m, measure in enumerate(self.measures):
-                    start_time = time.perf_counter()
-                    try:
-                        sim = measure(reps_a, reps_b, shape_a)
+                    for cnt_m, measure in enumerate(self.measures):
+                        if storer.comparison_exists(sngl_rep_a, sngl_rep_b, measure.__name__):
+                            # ---------------------------- Just read from file --------------------------- #
+                            logger.info(f"Found {measure.__name__} loaded rep.")
+
+                            sim = storer.get_comp_result(sngl_rep_a, sngl_rep_b, measure.__name__)
+                        else:
+                            try:
+                                start_time = time.perf_counter()
+                                sim = measure(sngl_rep_a.representation, sngl_rep_b.representation, sngl_rep_a.shape)
+                                runtime = time.perf_counter() - start_time
+                                storer.add_results(sngl_rep_a, sngl_rep_b, measure.__name__, sim, runtime)
+                                logger.info(
+                                    f"Similarity '{sim:.02f}', measure '{measure.__name__}' comparison for '{str(model_a)}' and"
+                                    + f" '{str(model_b)}' completed in {time.perf_counter() - start_time:.1f} seconds."
+                                )
+
+                            except Exception as e:
+                                sim = np.nan
+                                logger.error(
+                                    f"'{measure.__name__}' comparison for '{str(model_a)}' and '{str(model_b)}' failed."
+                                )
+                                logger.error(e)
+
                         all_sims[cnt_a, cnt_b, cnt_m] = sim
                         all_sims[cnt_b, cnt_a, cnt_m] = sim
-                        logger.info(
-                            f"'{measure.__name__}' comparison for '{str(model_a)}' and '{str(model_b)}' completed in {time.perf_counter() - start_time:.1f} seconds."
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f"'{measure.__name__}' comparison for '{str(model_a)}' and '{str(model_b)}' failed."
-                        )
-                        logger.error(e)
-
-        np.save(self.results.basedir / "all_sims.npy", all_sims)
-
         return all_sims
 
 
@@ -170,7 +173,7 @@ if __name__ == "__main__":
         measures=[
             centered_kernel_alignment,  # 2.4 seconds
             # orthogonal_procrustes,  # 77.2 seconds
-            # permutation_procrustes,  # 16.2 seconds
+            permutation_procrustes,  # 16.2 seconds
             # eigenspace_overlap_score,  # 245 seconds for one comp! -- 4 minutes
             # gulp,  # failed
             # svcca,  #  157.5/129.7 seconds

@@ -27,10 +27,12 @@ class SingleLayerRepresentation:
             A string representing the unique identifier.
         """
         assert all(
-            self._setting_identifier is not None,
-            self._architecture_name is not None,
-            self._train_dataset is not None,
-            self._seed_id is not None,
+            [
+                self._setting_identifier is not None,
+                self._architecture_name is not None,
+                self._train_dataset is not None,
+                self._seed_id is not None,
+            ],
         ), "SingleLayerRepresentation has not been set with the necessary information."
         setting = "None" if self._setting_identifier is None else self._setting_identifier
         return "__".join(
