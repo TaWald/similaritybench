@@ -40,3 +40,13 @@ class RSMNormDifference(RSMSimilarityMeasure):
             invariant_to_isotropic_scaling=False,
             invariant_to_translation=False,
         )
+
+    def __call__(
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+        inner: str = "euclidean",
+        n_jobs: int = 1,
+    ) -> float:
+        return self.sim_func(R, Rp, shape, inner=inner, n_jobs=n_jobs)  # type:ignore

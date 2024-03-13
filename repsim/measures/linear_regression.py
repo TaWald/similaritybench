@@ -32,7 +32,7 @@ class LinearRegression(SimilarityMeasure):
             sim_func=linear_reg,
             larger_is_more_similar=False,
             is_metric=False,
-            is_symmetric=True,
+            is_symmetric=False,
             invariant_to_affine=False,  # because default lambda=0
             invariant_to_invertible_linear=False,
             invariant_to_ortho=True,

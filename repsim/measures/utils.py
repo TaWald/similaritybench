@@ -32,6 +32,12 @@ class SimilarityFunction(Protocol):
     ) -> float: ...
 
 
+class RSMSimilarityFunction(Protocol):
+    def __call__(  # noqa: E704
+        self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE, n_jobs: int
+    ) -> float: ...
+
+
 @dataclass
 class SimilarityMeasure(ABC):
     sim_func: SimilarityFunction
@@ -57,7 +63,7 @@ class SimilarityMeasure(ABC):
 
 
 class RSMSimilarityMeasure(SimilarityMeasure):
-    sim_func: Callable[[torch.Tensor | npt.NDArray, torch.Tensor | npt.NDArray, SHAPE_TYPE, int], float]
+    sim_func: RSMSimilarityFunction
 
     @staticmethod
     def estimate_good_number_of_jobs(R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray) -> int:
@@ -77,7 +83,7 @@ class RSMSimilarityMeasure(SimilarityMeasure):
     ) -> float:
         if n_jobs is None:
             n_jobs = self.estimate_good_number_of_jobs(R, Rp)
-        return self.sim_func(R, Rp, shape, n_jobs)
+        return self.sim_func(R, Rp, shape, n_jobs=n_jobs)
 
 
 def to_numpy_if_needed(*args: Union[torch.Tensor, npt.NDArray]) -> List[npt.NDArray]:

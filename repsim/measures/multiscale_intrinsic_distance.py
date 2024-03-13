@@ -48,3 +48,13 @@ class IMDScore(SimilarityMeasure):
             invariant_to_isotropic_scaling=True,
             invariant_to_translation=True,
         )
+
+    def __call__(
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+        approximation_steps: int = 8000,
+        n_repeat: int = 5,
+    ) -> float:
+        return self.sim_func(R, Rp, shape, approximation_steps, n_repeat)  # type:ignore
