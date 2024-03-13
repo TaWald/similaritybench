@@ -11,7 +11,6 @@ import torch
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 from torch.utils.tensorboard.writer import SummaryWriter
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
-
 from vision.losses.dummy_loss import DummyLoss
 from vision.metrics.ke_metrics import single_output_metrics
 from vision.util import data_structs as ds
@@ -169,7 +168,7 @@ class BaseLightningModule(pl.LightningModule, ABC):
                 self.y_hat = torch.cat([self.y_hat, detached_y_hat], dim=0)
 
         if y_out is not None:
-            detached_y_out = y_hat.detach()
+            detached_y_out = y_out.detach()
             if self.y_out is None:
                 self.y_out = detached_y_out
             else:
@@ -178,16 +177,14 @@ class BaseLightningModule(pl.LightningModule, ABC):
     def validation_step(self, batch, batch_idx):
         x, y = batch  # ["data"], batch["label"]
         with torch.no_grad():
-            y_hat = self(x)
+            y_out = self(x)
+            y_hat = torch.argmax(y_out, dim=1)  # Fix: Create the argmax of the probabilities
             self.save_validation_values(
-                old_intermediate_reps=None,
-                new_intermediate_reps=None,
+                y_hat=y_hat,
+                y_out=y_out,
                 groundtruths=y,
-                old_y_hats=None,
-                new_y_hat=y_hat,
-                transferred_y_hats=None,
             )
-            return self.loss.forward(label=y, y_out=y_hat)
+            return self.loss.forward(label=y, y_out=y_out)
 
     def validation_epoch_end(self, outputs):
         loss_dict = self.loss.on_epoch_end(outputs)
