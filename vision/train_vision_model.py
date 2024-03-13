@@ -1,4 +1,7 @@
+from argparse import ArgumentParser
 from functools import partial
+
+from loguru import logger
 from vision.arch.arch_loading import load_model_from_info_file
 from vision.losses.dummy_loss import DummyLoss
 from vision.training.ke_train_modules.base_training_module import BaseLightningModule
@@ -6,13 +9,11 @@ from vision.training.ke_train_modules.shortcut_lightning_module import ShortcutL
 from vision.training.trainers.base_trainer import BaseTrainer
 from vision.training.trainers.shortcut_trainer import ShortcutTrainer
 from vision.util import data_structs as ds
+from vision.util import default_params as dp
 from vision.util import find_architectures as fa
 from vision.util import find_datamodules as fd
-from vision.util import default_params as dp
 from vision.util.default_parser_args import add_vision_training_params
 from vision.util.file_io import get_vision_model_info
-from loguru import logger
-from argparse import ArgumentParser
 
 SHORTCUT_DATAMODULES = [
     ds.Dataset.CDOT100,
@@ -20,6 +21,14 @@ SHORTCUT_DATAMODULES = [
     ds.Dataset.CDOT50,
     ds.Dataset.CDOT25,
     ds.Dataset.CDOT0,
+]
+
+AUGMENTATION_DATAMODULES = [
+    ds.Dataset.GaussMAX,
+    ds.Dataset.GaussL,
+    ds.Dataset.GaussM,
+    ds.Dataset.GaussS,
+    ds.Dataset.GaussOff,
 ]
 
 
