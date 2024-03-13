@@ -5,6 +5,7 @@ import numpy.typing as npt
 import torch
 from repsim.measures.utils import flatten
 from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -31,3 +32,29 @@ def imd_score(
     # about the variance of the score (TODO: report variance)
     scores = [msid.msid_score(R, Rp, niters=approximation_steps) for _ in range(n_repeat)]
     return float(np.mean(scores))
+
+
+class IMDScore(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=imd_score,
+            larger_is_more_similar=False,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,  # because default lambda=0
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=True,
+        )
+
+    def __call__(
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+        approximation_steps: int = 8000,
+        n_repeat: int = 5,
+    ) -> float:
+        return self.sim_func(R, Rp, shape, approximation_steps, n_repeat)  # type:ignore

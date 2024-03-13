@@ -6,6 +6,7 @@ import numpy.typing as npt
 import torch
 from repsim.measures.utils import flatten
 from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -75,3 +76,19 @@ def gulp(
     rep2 = math.sqrt(n) * rep2 / np.linalg.norm(rep2)
 
     return predictor_dist(rep1, rep2, lmbda=lmbda)  # type:ignore
+
+
+class Gulp(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=gulp,
+            larger_is_more_similar=False,
+            is_metric=True,
+            is_symmetric=True,
+            invariant_to_affine=True,  # because default lambda=0
+            invariant_to_invertible_linear=True,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=True,
+        )

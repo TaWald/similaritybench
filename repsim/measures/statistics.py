@@ -1,11 +1,14 @@
+from typing import Optional
 from typing import Union
 
 import numpy as np
 import numpy.typing as npt
-import scipy.spatial.distance
+import sklearn.metrics
 import torch
 from repsim.measures.utils import flatten
+from repsim.measures.utils import RSMSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -51,19 +54,20 @@ def uniformity_difference(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
     shape: SHAPE_TYPE,
+    n_jobs: Optional[int] = None,
 ) -> float:
     R, Rp = flatten(R, Rp, shape=shape)
 
     def uniformity(x, t=2):
-        pdist = scipy.spatial.distance.pdist(x, metric="sqeuclidean")
-        pdist = scipy.spatial.distance.squareform(pdist)
+        # TODO: sqeuclidean does not have a fast sklearn implementation. Is using euclidean and then squaring faster?
+        pdist = sklearn.metrics.pairwise_distances(x, metric="sqeuclidean", n_jobs=n_jobs)
         return np.log(np.exp(-t * pdist).sum() / x.shape[0] ** 2)
 
     return float(abs(uniformity(R) - uniformity(Rp)))
 
 
 def concentricity(x):
-    return 1 - scipy.spatial.distance.cdist(x, x.mean(axis=0, keepdims=True), metric="cosine")
+    return 1 - sklearn.metrics.pairwise_distances(x, x.mean(axis=0, keepdims=True), metric="cosine")
 
 
 def concentricity_difference(
@@ -97,3 +101,52 @@ def concentricity_nrmse(
     per_instance_nrmse = rmse / normalization
     per_instance_nrmse[np.isnan(per_instance_nrmse)] = 0
     return float(per_instance_nrmse.mean())
+
+
+class MagnitudeDifference(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=magnitude_difference,
+            larger_is_more_similar=False,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=False,
+            invariant_to_translation=False,
+        )
+
+
+class UniformityDifference(RSMSimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=uniformity_difference,
+            larger_is_more_similar=False,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=False,
+            invariant_to_translation=True,
+        )
+
+
+class ConcentricityDifference(RSMSimilarityMeasure):
+    def __init__(self):
+        # different choice of inner/outer in __call__ should change these values...
+        super().__init__(
+            sim_func=uniformity_difference,
+            larger_is_more_similar=False,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=False,
+        )

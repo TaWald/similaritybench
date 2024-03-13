@@ -1,14 +1,17 @@
 from typing import List
+from typing import Protocol
 from typing import Set
 from typing import Union
 
 import numpy as np
 import numpy.typing as npt
 import scipy.spatial.distance
+import sklearn.metrics
 import sklearn.neighbors
 import torch
 from repsim.measures.utils import flatten
 from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -57,25 +60,26 @@ def second_order_cosine_similarity(
     Rp: Union[torch.Tensor, npt.NDArray],
     shape: SHAPE_TYPE,
     k: int = 10,
-    n_jobs: int = 8,
+    n_jobs: int = 1,
+    n_jobs_neighbors: int = 8,
 ) -> float:
     inner = "cosine"
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
 
-    nns_R = top_k_neighbors(R, k, inner, n_jobs)
-    nns_Rp = top_k_neighbors(Rp, k, inner, n_jobs)
+    nns_R = top_k_neighbors(R, k, inner, n_jobs_neighbors)
+    nns_Rp = top_k_neighbors(Rp, k, inner, n_jobs_neighbors)
 
     union_nns = [list(set(nns_Ri).union(set(nns_Rpi))) for nns_Ri, nns_Rpi in zip(nns_R, nns_Rp)]
 
-    dists_R = scipy.spatial.distance.pdist(R, inner)
-    dists_Rp = scipy.spatial.distance.pdist(Rp, inner)
+    dists_R = sklearn.metrics.pairwise_distances(R, metric=inner, n_jobs=n_jobs)
+    dists_Rp = sklearn.metrics.pairwise_distances(Rp, metric=inner, n_jobs=n_jobs)
 
     return float(
         np.mean(
             [
-                1 - scipy.spatial.distance.cosine(dists_R[union_nns_i], dists_Rp[union_nns_i])
-                for union_nns_i in union_nns
+                1 - scipy.spatial.distance.cosine(dists_R[i, union_nns_i], dists_Rp[i, union_nns_i])
+                for i, union_nns_i in enumerate(union_nns)
             ]
         )
     )
@@ -145,3 +149,103 @@ def joint_rank_jaccard_similarity(
             ]
         )
     )
+
+
+class NearestNeighborSimilarityFunction(Protocol):
+    def __call__(  # noqa:E704
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+        k: int,
+        inner: str,
+        n_jobs: int,
+    ) -> float: ...
+
+
+class JaccardSimilarity(SimilarityMeasure):
+    sim_func: NearestNeighborSimilarityFunction
+
+    def __init__(self):
+        super().__init__(
+            sim_func=jaccard_similarity,
+            larger_is_more_similar=True,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=False,
+        )
+
+    def __call__(
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+        k: int = 10,
+        inner: str = "cosine",
+        n_jobs: int = 8,
+    ) -> float:
+        # TODO: If inner != "cosine", the invariances change
+        return self.sim_func(R, Rp, shape, k=k, inner=inner, n_jobs=n_jobs)
+
+
+class SecondOrderCosineSimilarity(SimilarityMeasure):
+    sim_func: NearestNeighborSimilarityFunction
+
+    def __init__(self):
+        super().__init__(
+            sim_func=second_order_cosine_similarity,
+            larger_is_more_similar=True,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=False,
+        )
+
+    def __call__(
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+        k: int = 10,
+        n_jobs: int = 1,
+    ) -> float:
+        return self.sim_func(R, Rp, shape, k=k, n_jobs=n_jobs)  # type: ignore
+
+
+class RankSimilarity(SimilarityMeasure):
+    sim_func: NearestNeighborSimilarityFunction
+
+    def __init__(self):
+        super().__init__(
+            sim_func=rank_similarity,
+            larger_is_more_similar=True,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=False,
+        )
+
+    def __call__(
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+        k: int = 10,
+        inner: str = "cosine",
+        n_jobs: int = 8,
+    ) -> float:
+        # TODO: If inner != "cosine", the invariances change
+        return self.sim_func(R, Rp, shape, k=k, inner=inner, n_jobs=n_jobs)

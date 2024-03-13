@@ -1,8 +1,13 @@
 import functools
 import logging
+import os
+from abc import ABC
+from dataclasses import dataclass
 from typing import Callable
 from typing import List
 from typing import Literal
+from typing import Optional
+from typing import Protocol
 from typing import Tuple
 from typing import Union
 
@@ -14,6 +19,71 @@ log = logging.getLogger(__name__)
 
 
 SHAPE_TYPE = Literal["ntd", "nchw", "nd"]
+
+NUM_CPU_CORES = len(os.sched_getaffinity(0))
+
+
+class SimilarityFunction(Protocol):
+    def __call__(  # noqa: E704
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+    ) -> float: ...
+
+
+class RSMSimilarityFunction(Protocol):
+    def __call__(  # noqa: E704
+        self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE, n_jobs: int
+    ) -> float: ...
+
+
+@dataclass
+class SimilarityMeasure(ABC):
+    sim_func: SimilarityFunction
+
+    larger_is_more_similar: bool
+    is_metric: bool
+    is_symmetric: bool
+
+    invariant_to_affine: bool
+    invariant_to_invertible_linear: bool
+    invariant_to_ortho: bool
+    invariant_to_permutation: bool
+    invariant_to_isotropic_scaling: bool
+    invariant_to_translation: bool
+
+    def __call__(
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+    ) -> float:
+        return self.sim_func(R, Rp, shape)
+
+
+class RSMSimilarityMeasure(SimilarityMeasure):
+    sim_func: RSMSimilarityFunction
+
+    @staticmethod
+    def estimate_good_number_of_jobs(R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray) -> int:
+        # RSMs in are NxN (or DxD) so the number of jobs should roughly scale quadratically with increase in N (or D).
+        # False! As long as sklearn-native metrics are used, they will use parallel implementations regardless of job
+        # count. Each job would spawn their own threads, which leads to oversubscription of cores and thus slowdown.
+        # This seems to be not fully correct (n_jobs=2 seems to actually use two cores), but using n_jobs=1 seems the
+        # fastest.
+        return 1
+
+    def __call__(
+        self,
+        R: torch.Tensor | npt.NDArray,
+        Rp: torch.Tensor | npt.NDArray,
+        shape: SHAPE_TYPE,
+        n_jobs: Optional[int] = None,
+    ) -> float:
+        if n_jobs is None:
+            n_jobs = self.estimate_good_number_of_jobs(R, Rp)
+        return self.sim_func(R, Rp, shape, n_jobs=n_jobs)
 
 
 def to_numpy_if_needed(*args: Union[torch.Tensor, npt.NDArray]) -> List[npt.NDArray]:
