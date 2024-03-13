@@ -7,6 +7,7 @@ import torch
 from repsim.measures.utils import center_columns
 from repsim.measures.utils import flatten
 from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -23,3 +24,19 @@ def linear_reg(
         scipy.linalg.sqrtm(Rp.T @ Rp)  # type:ignore
     )
     return float((np.linalg.norm(Rp_orthonormal_base.T @ R, ord="fro") ** 2) / (np.linalg.norm(R, ord="fro") ** 2))
+
+
+class LinearRegression(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=linear_reg,
+            larger_is_more_similar=False,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,  # because default lambda=0
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=False,
+        )

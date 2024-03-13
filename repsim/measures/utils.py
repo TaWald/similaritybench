@@ -2,9 +2,7 @@ import functools
 import logging
 import os
 from abc import ABC
-from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any
 from typing import Callable
 from typing import List
 from typing import Literal
@@ -49,16 +47,13 @@ class SimilarityMeasure(ABC):
     invariant_to_isotropic_scaling: bool
     invariant_to_translation: bool
 
-    @abstractmethod
     def __call__(
         self,
         R: torch.Tensor | npt.NDArray,
         Rp: torch.Tensor | npt.NDArray,
         shape: SHAPE_TYPE,
-        *args: Any,
-        **kwds: Any,
     ) -> float:
-        pass
+        return self.sim_func(R, Rp, shape)
 
 
 class RSMSimilarityMeasure(SimilarityMeasure):

@@ -118,9 +118,6 @@ class MagnitudeDifference(SimilarityMeasure):
             invariant_to_translation=False,
         )
 
-    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
-        return self.sim_func(R, Rp, shape)
-
 
 class UniformityDifference(RSMSimilarityMeasure):
     def __init__(self):

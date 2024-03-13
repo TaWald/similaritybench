@@ -13,6 +13,7 @@ from repsim.measures.utils import center_columns
 from repsim.measures.utils import flatten
 from repsim.measures.utils import normalize_matrix_norm
 from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -160,3 +161,83 @@ def permutation_aligned_cossim(R: Union[torch.Tensor, npt.NDArray], Rp: Union[to
     for r, rp in zip(R_aligned, Rp_aligned):
         sum_cossim += r.dot(rp) / (np.linalg.norm(r) * np.linalg.norm(rp))
     return sum_cossim / R.shape[0]
+
+
+class ProcrustesSizeAndShapeDistance(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=procrustes_size_and_shape_distance,
+            larger_is_more_similar=False,
+            is_metric=True,
+            is_symmetric=True,
+            invariant_to_affine=False,  # because default lambda=0
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=False,
+            invariant_to_translation=True,
+        )
+
+
+class OrthogonalProcrustesCenteredAndNormalized(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=orthogonal_procrustes_centered_and_normalized,
+            larger_is_more_similar=False,
+            is_metric=True,
+            is_symmetric=True,
+            invariant_to_affine=False,  # because default lambda=0
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=True,
+        )
+
+
+class PermutationProcrustes(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=permutation_procrustes,
+            larger_is_more_similar=False,
+            is_metric=True,
+            is_symmetric=True,
+            invariant_to_affine=False,  # because default lambda=0
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=False,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=False,
+            invariant_to_translation=False,
+        )
+
+
+class OrthogonalAngularShapeMetricCentered(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=orthogonal_angular_shape_metric_centered,
+            larger_is_more_similar=False,
+            is_metric=True,
+            is_symmetric=True,
+            invariant_to_affine=False,  # because default lambda=0
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=True,
+        )
+
+
+class AlignedCosineSimilarity(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=aligned_cossim,
+            larger_is_more_similar=True,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,  # because default lambda=0
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=False,
+            invariant_to_translation=False,
+        )
