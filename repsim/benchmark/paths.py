@@ -22,5 +22,7 @@ def get_experiments_path() -> Path:
 BASE_PATH = get_experiments_path()
 VISION_MODEL_PATH = Path(BASE_PATH, "models", "vision")
 VISION_DATA_PATH = Path(BASE_PATH, "datasets", "vision")
+NLP_MODEL_PATH = Path(BASE_PATH, "models", "nlp")
+NLP_DATA_PATH = Path(BASE_PATH, "datasets", "nlp")
 VISION_TAR_PATH = Path(VISION_MODEL_PATH, "vissimbench.tar.gz")
 EXPERIMENT_RESULTS_PATH = Path(BASE_PATH, "results")
