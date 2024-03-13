@@ -34,6 +34,7 @@ class OrdinalGroupSeparationExperiment:
         group_splitting_func: Callable,
         measures: list[Callable],
         representation_dataset: str,
+        storage_path: str | None = None,
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
@@ -43,6 +44,7 @@ class OrdinalGroupSeparationExperiment:
         self.measures = measures
         self.representation_dataset = representation_dataset
         self.kwargs = kwargs
+        self.storage_path = storage_path
 
     def run(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
@@ -60,7 +62,7 @@ class OrdinalGroupSeparationExperiment:
         #   Maybe saving intermediate things would make sense?
         #  - Saving and loading of results!
 
-        with ExperimentStorer() as storer:
+        with ExperimentStorer(self.storage_path) as storer:
             for cnt_a, model_a in enumerate(flat_models):
                 model_reps_a = model_a.get_representation(self.representation_dataset, **self.kwargs)
                 sngl_rep_a: SingleLayerRepresentation = model_reps_a.representations[-1]
