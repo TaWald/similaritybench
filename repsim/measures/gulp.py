@@ -1,3 +1,4 @@
+import math
 from typing import Union
 
 import numpy as np
@@ -5,6 +6,7 @@ import numpy.typing as npt
 import torch
 from repsim.measures.utils import flatten
 from repsim.measures.utils import SHAPE_TYPE
+from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -63,4 +65,30 @@ def gulp(
     R, Rp = to_numpy_if_needed(R, Rp)
 
     # The GULP paper assumes DxN matrices; we have NxD matrices.
-    return predictor_dist(R.T, Rp.T, lmbda=lmbda)  # type:ignore
+    n = R.shape[0]
+    rep1 = R.T
+    rep2 = Rp.T
+    # They further assume certain normalization (taken from https://github.com/sgstepaniants/GULP/blob/d572663911cf8724ed112ee566ca956089bfe678/cifar_experiments/compute_dists.py#L82C5-L89C54)
+    rep1 = rep1 - rep1.mean(axis=1, keepdims=True)
+    rep1 = math.sqrt(n) * rep1 / np.linalg.norm(rep1)
+    # center and normalize
+    rep2 = rep2 - rep2.mean(axis=1, keepdims=True)
+    rep2 = math.sqrt(n) * rep2 / np.linalg.norm(rep2)
+
+    return predictor_dist(rep1, rep2, lmbda=lmbda)  # type:ignore
+
+
+class Gulp(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=gulp,
+            larger_is_more_similar=False,
+            is_metric=True,
+            is_symmetric=True,
+            invariant_to_affine=True,  # because default lambda=0
+            invariant_to_invertible_linear=True,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=True,
+        )

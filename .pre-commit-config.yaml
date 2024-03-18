@@ -22,7 +22,7 @@ repos:
     rev: 3.9.2
     hooks:
       - id: flake8
-        args: [--ignore=E203 E741 W503 E501 F541 E402]
+        args: [--ignore=E203 E741 W503 E501 F541 E402 F401]
         exclude: ^vision/
         language_version: python3
 

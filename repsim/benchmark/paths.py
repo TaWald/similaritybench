@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
-from warnings import warn
+
+from loguru import logger
 
 
 def get_experiments_path() -> Path:
@@ -13,7 +14,7 @@ def get_experiments_path() -> Path:
         EXPERIMENTS_ROOT_PATH = os.environ["REP_SIM"]  # To be renamed to ones liking
         return Path(EXPERIMENTS_ROOT_PATH)
     except KeyError:
-        warn("Could not find 'DATA_RESULTS_FOLDER' -- Defaulting to '<project_root>/experiments' .")
+        logger.warn("No 'DATA_RESULTS_FOLDER' Env variable -- Defaulting to '<project_root>/experiments' .")
         exp_pth = Path(__file__).parent.parent.parent / "experiments"
         exp_pth.mkdir(exist_ok=True)
         return exp_pth

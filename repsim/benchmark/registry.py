@@ -1,36 +1,21 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import TYPE_CHECKING
 
-import repsim.nlp
+import repsim
+from repsim.benchmark.registry_types import DOMAIN_TYPE
+from repsim.benchmark.registry_types import EXPERIMENT_IDENTIFIER
+from repsim.benchmark.registry_types import GRAPH_ARCHITECTURE_TYPE
+from repsim.benchmark.registry_types import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.registry_types import NLP_ARCHITECTURE_TYPE
+from repsim.benchmark.registry_types import NLP_DATASET_TRAINED_ON
+from repsim.benchmark.registry_types import VISION_ARCHITECTURE_TYPE
+from repsim.benchmark.registry_types import VISION_DATASET_TRAINED_ON
 from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
 from vision.get_reps import get_vision_representations
 
-# -------------------- All categories  trained model that can -------------------- #
-DOMAIN_TYPE = Literal["VISION", "NLP", "GRAPHS"]
-# ----------------------------- All Architectures ---------------------------- #
-VISION_ARCHITECTURE_TYPE = Literal["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19", "ViT-b19"]
-NLP_ARCHITECTURE_TYPE = Literal["BERT"]
-GRAPH_ARCHITECTURE_TYPE = Literal["GCN", "GAT", "GraphSAGE"]
+# import repsim.nlp
 
-# ----------------------------- Datasets trained on ---------------------------- #
-VISION_DATASET_TRAINED_ON = Literal["CIFAR10", "CIFAR100", "ImageNet"]
-NLP_DATASET_TRAINED_ON = Literal["MNLI", "SST2"]
-GRAPH_DATASET_TRAINED_ON = Literal["Cora", "CiteSeer", "PubMed"]
-
-# ---------------------------- Identifier_settings --------------------------- #
-# These are shared across domains and datasets
-EXPERIMENT_IDENTIFIER = Literal[
-    "Normal",
-    "RandomInit",
-    "RandomLabels_25",
-    "RandomLabels_50",
-    "RandomLabels_75",
-    "RandomLabels_100",
-    "Shortcut_25",
-    "Shortcut_50",
-    "Shortcut_75",
-]
 
 # ---------------------------- SIMILARITY_METRICS --------------------------- #
 # Maybe only?
@@ -95,6 +80,12 @@ class TrainedModel:
         else:
             raise ValueError("Unknown domain type")
 
+    def _get_unique_model_identifier(self) -> str:
+        """
+        This function should return a unique identifier for the model.
+        """
+        return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.additional_kwargs}"
+
 
 @dataclass
 class TrainedModelRep(TrainedModel):
@@ -120,6 +111,26 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             additional_kwargs={"seed_id": i, "setting_identifier": None},
                         )
                     )
+    for i in range(2):
+        for arch in ["ResNet18"]:
+            for dataset in [
+                "ColorDot_100_CIFAR10DataModule",
+                "ColorDot_75_CIFAR10DataModule",
+                "ColorDot_50_CIFAR10DataModule",
+                "ColorDot_25_CIFAR10DataModule",
+                "ColorDot_0_CIFAR10DataModule",
+            ]:
+                for identifier in ["Shortcut_ColorDot"]:
+                    all_trained_vision_models.append(
+                        TrainedModel(
+                            domain="VISION",
+                            architecture=arch,
+                            train_dataset=dataset,
+                            identifier=identifier,
+                            additional_kwargs={"seed_id": i, "setting_identifier": identifier},
+                        )
+                    )
+
     return all_trained_vision_models
 
 

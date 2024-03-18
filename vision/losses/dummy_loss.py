@@ -11,8 +11,8 @@ class DummyLoss(nn.Module):
         self.ce_weight = ce_weight
         self.ce_loss = nn.CrossEntropyLoss()
 
-    def forward(self, label: torch.Tensor, new_out: torch.Tensor) -> dict:
-        l_ce = self.ce_loss(new_out, label) * self.ce_weight
+    def forward(self, label: torch.Tensor, y_out: torch.Tensor) -> dict:
+        l_ce = self.ce_loss(y_out, label) * self.ce_weight
         return {
             "loss": l_ce,
             "loss_info": {
