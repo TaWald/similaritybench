@@ -165,7 +165,7 @@ class GraphTrainer(ABC):
             model=model,
             data=setting_data,
             test_idx=self.split_idx["test"],
-            layer_ids=list(range(self.gnn_params["num_layers"])),
+            layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
         )
 
         return reps
