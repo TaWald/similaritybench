@@ -31,9 +31,12 @@ def tokenize_function(
     # original BERT repo. Truncation also removes token from the longest sequence one by one
     tokenization_kwargs = dict(max_length=max_length, padding="max_length", truncation=True)
     if dataset_name == "glue__mnli":
-        if feature_column:
-            warnings.warn(f"{feature_column=}, but will not be used!")
-        return tokenizer(text=examples["premise"], text_pair=examples["hypothesis"], **tokenization_kwargs)
+        # TODO: assumption that only the premise is augmented
+        return tokenizer(
+            text=examples["premise" if not feature_column else feature_column],
+            text_pair=examples["hypothesis"],
+            **tokenization_kwargs,
+        )
     elif dataset_name == "sst2":
         tokenization_kwargs["max_length"] = 64  # The longest sst2 samples has 52 words (in test)
         return tokenizer(text=examples["sentence" if not feature_column else feature_column], **tokenization_kwargs)
@@ -113,7 +116,8 @@ def main(cfg: DictConfig) -> None:
         # dataset["validation"] = dataset["validation"].select(range(20))
         log.info("Augmenting text...")
         dataset = dataset.map(
-            lambda x: {"augmented": [x[0] for x in augmenter.augment_many(x["sentence"])]}, batched=True
+            lambda x: {"augmented": [x[0] for x in augmenter.augment_many(x[cfg.dataset.feature_column[0]])]},
+            batched=True,
         )
         feature_column = "augmented"
 

@@ -2,6 +2,9 @@ path: glue # huggingface load_dataset argument: path
 name: mnli # huggingface load_dataset argument: name
 split: test_matched
 prompt_template: # promptsource template name
+feature_column:
+  - "premise"
+  - "hypothesis"
 
 # Hyperparameters for the finetuning of BERT on this dataset
 finetuning:
@@ -15,9 +18,13 @@ finetuning:
       warmup_ratio: 0.1
       evaluation_strategy: steps
       eval_steps: 1000
+      save_steps: 1000
       per_device_train_batch_size: 128
       per_device_eval_batch_size: 128
       seed: 123456789
+      num_train_epochs: 10
+      save_total_limit: 2
+      load_best_model_at_end: true
   eval_dataset:
     - "validation_matched"
     - "validation_mismatched"
