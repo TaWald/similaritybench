@@ -20,6 +20,8 @@ from vision.get_reps import get_vision_representations
 
 # from repsim.nlp import get_representations
 
+
+
 # ---------------------------- SIMILARITY_METRICS --------------------------- #
 # Maybe only?
 
@@ -71,7 +73,7 @@ class TrainedModel:
         #         kwargs["token_pos"],
         #     )
         #     return ModelRepresentations(
-        #         EXPERIMENT_IDENTIFIER=self.EXPERIMENT_IDENTIFIER,
+        #         setting_identifier=self.identifier,
         #         architecture_name=self.architecture,
         #         train_dataset=self.train_dataset,
         #         seed_id=None,
@@ -88,6 +90,12 @@ class TrainedModel:
             )
         else:
             raise ValueError("Unknown domain type")
+
+    def _get_unique_model_identifier(self) -> str:
+        """
+        This function should return a unique identifier for the model.
+        """
+        return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.additional_kwargs}"
 
 
 @dataclass
@@ -111,9 +119,29 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
-                            additional_kwargs={"seed_id": i, "EXPERIMENT_IDENTIFIER": None},
+                            additional_kwargs={"seed_id": i, "setting_identifier": None},
                         )
                     )
+    for i in range(2):
+        for arch in ["ResNet18"]:
+            for dataset in [
+                "ColorDot_100_CIFAR10DataModule",
+                "ColorDot_75_CIFAR10DataModule",
+                "ColorDot_50_CIFAR10DataModule",
+                "ColorDot_25_CIFAR10DataModule",
+                "ColorDot_0_CIFAR10DataModule",
+            ]:
+                for identifier in ["Shortcut_ColorDot"]:
+                    all_trained_vision_models.append(
+                        TrainedModel(
+                            domain="VISION",
+                            architecture=arch,
+                            train_dataset=dataset,
+                            identifier=identifier,
+                            additional_kwargs={"seed_id": i, "setting_identifier": identifier},
+                        )
+                    )
+
     return all_trained_vision_models
 
 

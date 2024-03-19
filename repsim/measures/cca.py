@@ -504,7 +504,7 @@ from typing import Union  # noqa:e402
 import numpy.typing as npt  # noqa:e402
 import torch  # noqa:e402
 
-from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed  # noqa:e402
+from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed, SimilarityMeasure  # noqa:e402
 
 
 def svcca(
@@ -525,3 +525,38 @@ def pwcca(
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     return compute_pwcca(R.T, Rp.T)[0]
+
+
+class SVCCA(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=svcca,
+            larger_is_more_similar=True,
+            is_metric=False,
+            is_symmetric=True,
+            invariant_to_affine=False,
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=True,
+        )
+
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        return self.sim_func(R, Rp, shape)
+
+
+class PWCCA(SimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=pwcca,
+            larger_is_more_similar=True,
+            is_metric=False,
+            is_symmetric=False,
+            invariant_to_affine=False,
+            invariant_to_invertible_linear=False,
+            invariant_to_ortho=False,
+            invariant_to_permutation=False,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=True,
+        )
