@@ -9,7 +9,7 @@ def shuffle_labels(y, frac=0.5, seed=None):
     if seed is not None:
         random.seed(seed)
 
-    b_tensor = torch.is_tensor(y)
+   is_tensor = torch.is_tensor(y)
 
     if b_tensor:
         y = y.numpy().flatten()
