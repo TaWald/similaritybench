@@ -53,3 +53,4 @@ Cython
 gudhi
 evaluate
 accelerate
+albumentations

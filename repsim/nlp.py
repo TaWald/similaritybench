@@ -1,4 +1,3 @@
-import logging
 from collections.abc import Sequence
 from typing import Any
 from typing import Callable
@@ -12,9 +11,8 @@ from typing import Union
 import datasets
 import torch
 import transformers
+from loguru import logger
 from tqdm import tqdm
-
-log = logging.getLogger(__name__)
 
 
 def get_dataset(
@@ -144,7 +142,7 @@ def to_ntxd_shape(reps: List[Tuple[torch.Tensor, ...]]) -> Tuple[torch.Tensor, .
                 dim=0,
             )
         )
-        log.debug("Layer: %d, Shape: %s", layer_idx, concated_reps[layer_idx].size())
+        logger.debug(f"Layer: {layer_idx}, Shape: {concated_reps[layer_idx].size()}")
     return tuple(concated_reps)
 
 
@@ -154,7 +152,7 @@ def get_representations(
     model_type: Literal["sequence-classification"],
     tokenizer_name: str,
     dataset_path: str,
-    dataset_config: str,
+    dataset_config: str | None,
     dataset_split: str,
     device: str,
     token_pos: Optional[int] = None,
@@ -164,7 +162,7 @@ def get_representations(
     tokenizer = get_tokenizer(tokenizer_name)
     with torch.device(device):
         model = get_model(model_path, model_type)
-    return extract_representations(
+    reps = extract_representations(
         model,
         tokenizer,
         dataset,
@@ -172,3 +170,5 @@ def get_representations(
         device,
         token_pos_to_extract=token_pos,
     )
+    logger.info(f"Shape of representations: {[rep.shape for rep in reps]}")
+    return reps

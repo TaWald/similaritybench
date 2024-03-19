@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
-import repsim
+import repsim.nlp
 from repsim.benchmark.registry_types import DOMAIN_TYPE
 from repsim.benchmark.registry_types import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.registry_types import GRAPH_ARCHITECTURE_TYPE
