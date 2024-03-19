@@ -31,11 +31,11 @@ class Dataset:
     path: str
     config: Optional[str] = None
     split: str = "train"
+    augmentation: Optional[Augmentation] = None
 
 
 @dataclass
 class MyModel(TrainedModel):
-    augmentation: Augmentation
     train_dataset: Dataset
     token_pos: int | None = None
 
@@ -93,21 +93,42 @@ AUGMENTATIONS = {
 
 TRAIN_DATASETS = {
     "sst2": Dataset(name="sst2", path="sst2"),
-    "sst2_eda_05": Dataset(name="sst2_eda_05", path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_05")),
-    "sst2_eda_08": Dataset(name="sst2_eda_08", path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_08")),
-    "sst2_eda_10": Dataset(name="sst2_eda_10", path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_10")),
+    "sst2_eda_05": Dataset(
+        name="sst2_eda_05",
+        path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_05"),
+        augmentation=AUGMENTATIONS["EasyDataAugment_05"],
+    ),
+    "sst2_eda_08": Dataset(
+        name="sst2_eda_08",
+        path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_08"),
+        augmentation=AUGMENTATIONS["EasyDataAugment_08"],
+    ),
+    "sst2_eda_10": Dataset(
+        name="sst2_eda_10",
+        path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_10"),
+        augmentation=AUGMENTATIONS["EasyDataAugment_10"],
+    ),
 }
 
 REPRESENTATION_DATASETS = {
     "sst2": Dataset(name="sst2", path="sst2", split="validation"),
     "sst2_eda_05": Dataset(
-        name="sst2_eda_05", path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_05"), split="validation"
+        name="sst2_eda_05",
+        path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_05"),
+        split="validation",
+        augmentation=AUGMENTATIONS["EasyDataAugment_05"],
     ),
     "sst2_eda_08": Dataset(
-        name="sst2_eda_08", path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_08"), split="validation"
+        name="sst2_eda_08",
+        path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_08"),
+        split="validation",
+        augmentation=AUGMENTATIONS["EasyDataAugment_08"],
     ),
     "sst2_eda_10": Dataset(
-        name="sst2_eda_10", path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_10"), split="validation"
+        name="sst2_eda_10",
+        path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_10"),
+        split="validation",
+        augmentation=AUGMENTATIONS["EasyDataAugment_10"],
     ),
 }
 
@@ -123,7 +144,6 @@ MODELS = {
             "model_type": "sequence-classification",
             "tokenizer_name": "google/multiberts-seed_0",
         },
-        augmentation=AUGMENTATIONS["None"],
         token_pos=0,
     ),
     "bert_sst2_eda_05": MyModel(
@@ -137,7 +157,6 @@ MODELS = {
             "model_type": "sequence-classification",
             "tokenizer_name": "google/multiberts-seed_0",
         },
-        augmentation=AUGMENTATIONS["EasyDataAugment_05"],
         token_pos=0,
     ),
     "bert_sst2_eda_08": MyModel(
@@ -151,7 +170,6 @@ MODELS = {
             "model_type": "sequence-classification",
             "tokenizer_name": "google/multiberts-seed_0",
         },
-        augmentation=AUGMENTATIONS["EasyDataAugment_08"],
         token_pos=0,
     ),
     "bert_sst2_eda_10": MyModel(
@@ -165,7 +183,6 @@ MODELS = {
             "model_type": "sequence-classification",
             "tokenizer_name": "google/multiberts-seed_0",
         },
-        augmentation=AUGMENTATIONS["EasyDataAugment_10"],
         token_pos=0,
     ),
 }
@@ -202,10 +219,9 @@ CONFIGS = {
 }
 
 
-class FeatureTest:
+class AugmentationTest:
     def __init__(
         self,
-        ground_truth_attribute: str,
         models: list[MyModel],
         measures: list[SimilarityMeasure],
         representation_dataset_id: str,
@@ -261,7 +277,7 @@ class FeatureTest:
                         except ValueError as e:
                             sim = np.nan
                             logger.error(
-                                f"'{measure.__name__}' comparison for '{str(model_i)}' and '{str(model_j)}' failed."
+                                f"'{measure_name}' comparison for '{str(model_i)}' and '{str(model_j)}' failed."
                             )
                             logger.error(e)
                             continue
@@ -274,8 +290,7 @@ class FeatureTest:
 if __name__ == "__main__":
     logger.add(str(paths.EXPERIMENT_RESULTS_PATH / "augmentation" / "{time}.log"))
 
-    test = FeatureTest(
-        "percent_words_changed",
+    test = AugmentationTest(
         CONFIGS["nlp"][0]["models"],
         [m() for m in repsim.measures.CLASSES if m().is_symmetric],
         # "sst2",
