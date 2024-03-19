@@ -15,6 +15,11 @@ nlp/outputs
 nlp/results
 nlp/saved_test_configurations
 
+graphs/data*
+graphs/output*
+
+jobs*
+
 *.env
 *.png
 ._.DS_Store

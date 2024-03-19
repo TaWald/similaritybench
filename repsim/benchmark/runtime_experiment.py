@@ -11,7 +11,6 @@ import numpy.typing as npt
 import pandas as pd
 import repsim.benchmark.paths
 import repsim.measures
-import repsim.measures_sklearn
 import torch
 from loguru import logger
 from repsim.measures.utils import SHAPE_TYPE
