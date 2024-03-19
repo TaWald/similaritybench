@@ -3,6 +3,7 @@ scipy
 torch==2.0.1
 torchvision
 pytorch-lightning==1.9.5
+pyarrow
 pandas
 
 pytest
@@ -16,7 +17,8 @@ black==24.1.1
 geometry-score @ git+https://github.com/KhrulkovV/geometry-score
 msid @ git+https://github.com/xgfs/imd
 
-
+torch_geometric
+ogb
 
 six
 tensorboard
@@ -38,4 +40,5 @@ Pillow
 plotly
 loguru
 hug
+huggingface_hub
 jsonlines

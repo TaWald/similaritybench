@@ -46,6 +46,25 @@ class SameLayerExperiment:
 
         return np.nanmean(forward_corrs + backward_corrs)
 
+    def _meta_accuracy(self, sim: np.ndarray) -> float:
+        """Calculate the rate at which similarity is lower for layers further apart"""
+
+        n_rows, n_cols = sim.shape
+
+        n_violations = 0
+        n_comb_count = 0
+
+        for i in range(n_rows):
+            for j in range(i + 1, n_cols):
+
+                for k in range(i, j):
+                    for l in range(k + 1, j + 1):
+                        n_comb_count += 1
+                        if sim[i, j] < sim[k, l]:
+                            n_violations += 1
+
+        return 1 - n_violations / n_comb_count
+
     def run(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
         for model in self.models:
@@ -70,6 +89,7 @@ class SameLayerExperiment:
                         # All metrics should be symmetric
                         if j > i:
                             continue
+
                         ret = measure(first.representation, second.representation, first.shape)
                         vals[i, j] = ret
                         vals[j, i] = vals[i, j]
@@ -80,6 +100,7 @@ class SameLayerExperiment:
                     numpy_vals=vals,
                     model=model,
                     spearman_rank_corr=self._layerwise_forward_sim(vals),
+                    meta_accuracy=self._meta_accuracy(vals),
                     measure=measure.__name__,
                 )
         self.results.save()
