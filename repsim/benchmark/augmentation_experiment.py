@@ -2,8 +2,6 @@ import itertools
 import time
 from dataclasses import dataclass
 from dataclasses import field
-from pathlib import Path
-from typing import Callable
 from typing import Optional
 
 import numpy as np
@@ -15,6 +13,7 @@ from loguru import logger
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import name_of_measure
+from repsim.measures.utils import SimilarityMeasure
 from repsim.utils import ModelRepresentations
 
 
@@ -167,6 +166,7 @@ MODELS = {
             "tokenizer_name": "google/multiberts-seed_0",
         },
         augmentation=AUGMENTATIONS["EasyDataAugment_10"],
+        token_pos=0,
     ),
 }
 
@@ -207,15 +207,15 @@ class FeatureTest:
         self,
         ground_truth_attribute: str,
         models: list[MyModel],
-        measures: list[Callable],
+        measures: list[SimilarityMeasure],
         representation_dataset_id: str,
-        storage_path: Path | str | None,
+        storage_path: str | None,
         device: str,
     ) -> None:
         self.models = models
         self.measures = measures
         self.representation_dataset_id = representation_dataset_id
-        self.storage_path = str(storage_path)
+        self.storage_path = storage_path
         self.device = device
 
     def _final_layer_representation(self, model: MyModel) -> repsim.utils.SingleLayerRepresentation:
@@ -278,9 +278,10 @@ if __name__ == "__main__":
         "percent_words_changed",
         CONFIGS["nlp"][0]["models"],
         [m() for m in repsim.measures.CLASSES if m().is_symmetric],
-        "sst2",
+        # "sst2",
+        representation_dataset_id="sst2_eda_10",
         # paths.EXPERIMENT_RESULTS_PATH / "augmentation",
-        None,
-        "cuda:0",
+        storage_path=None,
+        device="cuda:0",
     )
     test.run()

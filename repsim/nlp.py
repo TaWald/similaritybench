@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -22,6 +23,8 @@ def get_dataset(
 ) -> datasets.dataset_dict.DatasetDict:
     if dataset_path == "csv":
         ds = datasets.load_dataset(dataset_path, data_files=data_files)
+    elif Path(dataset_path).exists():
+        ds = datasets.load_from_disk(dataset_path)
     else:
         ds = datasets.load_dataset(dataset_path, name)
     assert isinstance(ds, datasets.dataset_dict.DatasetDict)
@@ -63,6 +66,11 @@ def get_prompt_creator(
 
         def create_prompt(example: Dict[str, Any]) -> str:
             return example["sentence"]
+
+    elif Path(dataset_path).exists() and "sst2" in dataset_path:
+
+        def create_prompt(example: Dict[str, Any]) -> str:
+            return example["augmented"]
 
     else:
         raise ValueError(
