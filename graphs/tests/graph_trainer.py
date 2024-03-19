@@ -58,7 +58,6 @@ class GraphTrainer(ABC):
         self.dataset_name: str = dataset_name
         self.data, self.n_classes, self.split_idx = self._get_data()
         self.models = dict()
-        self.settings = EXPERIMENT_DICT[test_name]
 
         dev_str = f"cuda:0" if torch.cuda.is_available() else "cpu"
         self.device = torch.device(dev_str)
