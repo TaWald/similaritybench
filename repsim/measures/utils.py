@@ -4,6 +4,7 @@ import os
 from abc import ABC
 from dataclasses import dataclass
 from typing import Callable
+from typing import get_args
 from typing import List
 from typing import Literal
 from typing import Optional
@@ -18,7 +19,9 @@ import torch
 log = logging.getLogger(__name__)
 
 
-SHAPE_TYPE = Literal["ntd", "nchw", "nd"]
+SHAPE_TYPE = Literal["nd", "ntd", "nchw"]
+
+ND_SHAPE, NTD_SHAPE, NCHW_SHAPE = get_args(SHAPE_TYPE)[0], get_args(SHAPE_TYPE)[1], get_args(SHAPE_TYPE)[2]
 
 NUM_CPU_CORES = len(os.sched_getaffinity(0))
 
