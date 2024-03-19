@@ -47,7 +47,7 @@ class SameLayerExperiment:
         return np.nanmean(forward_corrs + backward_corrs)
 
     def _meta_accuracy(self, sim: np.ndarray) -> float:
-        """Calculate the spearman rank correlation of the similarity to the layers"""
+        """Calculate the rate at which similarity is lower for layers further apart"""
 
         n_rows, n_cols = sim.shape
 
