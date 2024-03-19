@@ -1,6 +1,5 @@
 import functools
 import logging
-import os
 from abc import ABC
 from dataclasses import dataclass
 from typing import Callable
@@ -22,8 +21,6 @@ log = logging.getLogger(__name__)
 SHAPE_TYPE = Literal["nd", "ntd", "nchw"]
 
 ND_SHAPE, NTD_SHAPE, NCHW_SHAPE = get_args(SHAPE_TYPE)[0], get_args(SHAPE_TYPE)[1], get_args(SHAPE_TYPE)[2]
-
-NUM_CPU_CORES = len(os.sched_getaffinity(0))
 
 
 class SimilarityFunction(Protocol):
