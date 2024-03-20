@@ -1,6 +1,7 @@
 import argparse
 import copy
 import os
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -13,11 +14,10 @@ from graphs.gnn import train_model
 from ogb.nodeproppred import PygNodePropPredDataset
 from torch_geometric import transforms as t
 
-
 SEEDS = [1, 2, 3, 4, 5]
 
 
-def benchmark_models(n_layers: int):
+def benchmark_models(n_layers: int, architecture_list: List[str]):
 
     dev_str = f"cuda:0" if torch.cuda.is_available() else "cpu"
     device = torch.device(dev_str)
@@ -31,7 +31,7 @@ def benchmark_models(n_layers: int):
     gnn_params = {
         "num_layers": n_layers,
         "in_channels": data.num_features,
-        "hidden_channels": 128,
+        "hidden_channels": 256,
         "dropout": 0.5,
         "out_channels": n_classes,
         "norm": "BatchNorm",
@@ -42,7 +42,7 @@ def benchmark_models(n_layers: int):
     }
     optimizer_params = {"epochs": 2000, "lr": 0.002}
 
-    for gnn in GNN_LIST:
+    for gnn in architecture_list:
 
         test_accs = []
         curr_params = copy.deepcopy(gnn_params)
@@ -92,7 +92,7 @@ def parse_args():
 
     # Test parameters
     parser.add_argument(
-        "-a", "--architecture", type=str, nargs="+", default=GNN_LIST, choices=GNN_LIST, help="GNN type to benchmark"
+        "-a", "--architectures", type=str, nargs="+", default=GNN_LIST, choices=GNN_LIST, help="GNN type to benchmark"
     )
     parser.add_argument("-n", "--n_layers", type=int, default=3, help="Number of Layers to benchmark")
 
@@ -102,4 +102,4 @@ def parse_args():
 if __name__ == "__main__":
 
     args = parse_args()
-    benchmark_models(args.n_layers)
+    benchmark_models(args.n_layers, args.architectures)
