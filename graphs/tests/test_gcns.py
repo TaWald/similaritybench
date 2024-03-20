@@ -50,6 +50,7 @@ def benchmark_models(n_layers: int, architecture_list: List[str]):
         if gnn == "GAT":
             for k, v in gat_kwargs.items():
                 curr_params[k] = v
+            curr_params["hidden_channels"] *= gat_kwargs["head"]
         for seed in SEEDS:
             model = GNN_DICT[gnn](**curr_params)
             benchmark_path = os.path.join(RES_DIR, "test_gnns")
