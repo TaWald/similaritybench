@@ -17,9 +17,9 @@ from torch_geometric import transforms as t
 SEEDS = [1, 2, 3, 4, 5]
 
 
-def benchmark_models(n_layers: int, architecture_list: List[str]):
+def benchmark_models(n_layers: int, architecture_list: List[str], gpu_id: int):
 
-    dev_str = f"cuda:0" if torch.cuda.is_available() else "cpu"
+    dev_str = f"cuda:{gpu_id}" if torch.cuda.is_available() else "cpu"
     device = torch.device(dev_str)
 
     dataset = PygNodePropPredDataset(
@@ -50,7 +50,7 @@ def benchmark_models(n_layers: int, architecture_list: List[str]):
         if gnn == "GAT":
             for k, v in gat_kwargs.items():
                 curr_params[k] = v
-            curr_params["hidden_channels"] *= gat_kwargs["head"]
+            curr_params["hidden_channels"] *= gat_kwargs["heads"]
         for seed in SEEDS:
             model = GNN_DICT[gnn](**curr_params)
             benchmark_path = os.path.join(RES_DIR, "test_gnns")
@@ -97,10 +97,12 @@ def parse_args():
     )
     parser.add_argument("-n", "--n_layers", type=int, default=3, help="Number of Layers to benchmark")
 
+    parser.add_argument("--device", type=int, default=0, help="Number of Layers to benchmark")
+
     return parser.parse_args()
 
 
 if __name__ == "__main__":
 
     args = parse_args()
-    benchmark_models(args.n_layers, args.architectures)
+    benchmark_models(args.n_layers, args.architectures, args.device)
