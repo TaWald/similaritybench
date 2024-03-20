@@ -186,6 +186,24 @@ MODELS = {
         token_pos=0,
     ),
 }
+MODELS = MODELS | {
+    f"bert_sst2_clean_pre{i}_ft{i}": MyModel(
+        domain="NLP",
+        architecture="BERT",
+        train_dataset=TRAIN_DATASETS["sst2"],
+        identifier="Normal",
+        additional_kwargs={
+            "human_name": f"multibert-{i}-sst2",
+            "model_path": f"/root/similaritybench/experiments/models/nlp/standard/sst2_pretrain{i}_finetune{i}",
+            "model_type": "sequence-classification",
+            "tokenizer_name": f"google/multiberts-seed_{i}",
+            "pretraining_seed": i,
+            "finetuning_seed": i,
+        },
+        token_pos=0,
+    )
+    for i in range(10)
+}
 
 
 CONFIGS = {
