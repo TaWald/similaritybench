@@ -9,9 +9,9 @@ def shuffle_labels(y, frac=0.5, seed=None):
     if seed is not None:
         random.seed(seed)
 
-   is_tensor = torch.is_tensor(y)
+    is_tensor = torch.is_tensor(y)
 
-    if b_tensor:
+    if is_tensor:
         y = y.numpy().flatten()
 
     n_instances = len(y)
@@ -22,7 +22,7 @@ def shuffle_labels(y, frac=0.5, seed=None):
         new_label = random.sample([label for label in Y if label != old_label], k=1)[0]
         y[i] = new_label
 
-    if b_tensor:
+    if is_tensor:
         return torch.from_numpy(np.reshape(y, newshape=(n_instances, 1)))
 
     return y

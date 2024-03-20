@@ -58,3 +58,6 @@ evaluate
 accelerate
 albumentations
 langtest
+torch_geometric
+torch_eval
+ogb
