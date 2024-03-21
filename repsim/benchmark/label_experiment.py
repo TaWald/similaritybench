@@ -3,6 +3,7 @@ from typing import Callable
 from typing import get_args
 
 import numpy as np
+import numpy.typing as npt
 from loguru import logger
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.types_globals import ARXIV_DATASET
@@ -14,8 +15,11 @@ from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import NN_ARCHITECTURE_TYPE
 from repsim.benchmark.utils import ExperimentStorer
+from repsim.benchmark.utils import Result
 from repsim.benchmark.utils import SingleLayerRepresentation
+from repsim.measures import CLASSES
 from repsim.measures import SYMMETRIC_MEASURES
+from repsim.measures.utils import SimilarityMeasure
 from scipy.stats import spearmanr
 
 
@@ -25,8 +29,8 @@ class LabelExperiment:
         domain: DOMAIN_TYPE,
         architecture_type: NN_ARCHITECTURE_TYPE,
         dataset: BENCHMARK_DATASET,
-        representation_dataset: BENCHMARK_DATASET | None,
-        measures: list[Callable],
+        representation_dataset: BENCHMARK_DATASET = None,
+        measures: list[SimilarityMeasure] = CLASSES,
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
@@ -40,14 +44,25 @@ class LabelExperiment:
         self.architecture_type = architecture_type
         self.kwargs = kwargs
 
+        self.experiment_name = LABEL_EXPERIMENT_NAME
+        self.settings = EXPERIMENT_DICT[self.experiment_name]
+
         self.models = [
             m
             for m in ALL_TRAINED_MODELS
             if (m.domain == self.domain)
-            and (m.identifier in EXPERIMENT_DICT[LABEL_EXPERIMENT_NAME])
+            and (m.identifier in self.settings)
             and (m.architecture == self.architecture_type)
             and (m.train_dataset == self.dataset)
         ]
+
+        self.similarities = np.full(
+            (len(self.settings), len(self.settings), len(self.measures)),
+            fill_value=np.nan,
+            dtype=np.float32,
+        )
+
+        self.results = Result(LABEL_EXPERIMENT_NAME)
 
     def _layerwise_forward_sim(self, sim: np.ndarray) -> float:
         """Calculate the spearman rank correlation of the similarity to the layers"""
@@ -146,23 +161,14 @@ class LabelExperiment:
     #             )
     #     self.results.save()
 
-    def run(self) -> None:
+    def run_measures(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
 
-        all_sims = np.full(
-            (len(self.models), len(self.models), len(self.measures)),
-            fill_value=np.nan,
-            dtype=np.float32,
-        )
-
-        # ToDo: Pass "SingleLayerRepresentation" objects to the metrics instead of the raw representations
-        # ToDo: Issues during development
-        #  - Choice of shortcut (how many different groups, how many seeds)
-        #  - Saving and loading of representations <--
-        #   Maybe saving intermediate things would make sense?
-        #  - Saving and loading of results!
-
         with ExperimentStorer() as storer:
+
+            experiment_settings = EXPERIMENT_DICT[LABEL_EXPERIMENT_NAME]
+            setting_map = {setting: i for (i, setting) in enumerate(experiment_settings)}
+
             for cnt_a, model_a in enumerate(self.models):
                 model_reps_a = model_a.get_representation(self.representation_dataset, **self.kwargs)
                 sngl_rep_a: SingleLayerRepresentation = model_reps_a.representations[-1]
@@ -174,6 +180,7 @@ class LabelExperiment:
                     sngl_rep_b = model_reps_b.representations[-1]
 
                     for cnt_m, measure in enumerate(self.measures):
+                        curr_measure = measure()
                         if storer.comparison_exists(sngl_rep_a, sngl_rep_b, measure.__name__):
                             # ---------------------------- Just read from file --------------------------- #
                             logger.info(f"Found {measure.__name__} loaded rep.")
@@ -182,7 +189,9 @@ class LabelExperiment:
                         else:
                             try:
                                 start_time = time.perf_counter()
-                                sim = measure(sngl_rep_a.representation, sngl_rep_b.representation, sngl_rep_a.shape)
+                                sim = curr_measure(
+                                    sngl_rep_a.representation, sngl_rep_b.representation, sngl_rep_a.shape
+                                )
                                 runtime = time.perf_counter() - start_time
                                 storer.add_results(sngl_rep_a, sngl_rep_b, measure.__name__, sim, runtime)
                                 logger.info(
@@ -197,9 +206,32 @@ class LabelExperiment:
                                 )
                                 logger.error(e)
 
-                        all_sims[cnt_a, cnt_b, cnt_m] = sim
-                        all_sims[cnt_b, cnt_a, cnt_m] = sim
-        return all_sims
+                        i = setting_map[model_a.identifier]
+                        j = setting_map[model_b.identifier]
+                        self.similarities[i, j, cnt_m] = sim
+
+                        # TODO: consider asymmetric measures, and what to do with diagonal values
+                        if curr_measure.is_symmetric:
+                            self.similarities[j, i, cnt_m] = sim
+
+    def eval_measures(self) -> None:
+
+        for i_m, measure in enumerate(self.measures):
+
+            vals = self.similarities[:, :, i_m]
+
+            if not np.isnan(vals).any():
+
+                self.results.add(
+                    domain=self.domain,
+                    model=self.architecture_type,
+                    dataset=self.dataset,
+                    measure=measure.__name__,
+                    spearman_rank_corr=self._layerwise_forward_sim(vals),
+                    meta_accuracy=self._meta_accuracy(vals),
+                    # seed_id=seed,
+                )
+            self.results.save()
 
 
 if __name__ == "__main__":
@@ -226,12 +258,14 @@ if __name__ == "__main__":
 
         experiment = LabelExperiment(
             domain=GRAPH_DOMAIN,
-            measures=SYMMETRIC_MEASURES,
+            measures=CLASSES,
             dataset=ARXIV_DATASET,
             architecture_type="GraphSAGE",
         )
 
     # experiment = SameLayerExperiment(subset_of_graph_models, [centered_kernel_alignment], "CIFAR10")
-    result = experiment.run()
-    print(result)
+    experiment.run_measures()
+    experiment.eval_measures()
+
+    print(experiment.results)
     print(0)
