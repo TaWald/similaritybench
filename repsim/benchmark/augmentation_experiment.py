@@ -61,7 +61,7 @@ class NLPModel(TrainedModel):
                 self.identifier,
                 self.architecture,
                 str(self.train_dataset),
-                -1,
+                self.additional_kwargs.get("finetuning_seed", "None"),
                 representation_dataset,
                 tuple(repsim.utils.SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
             )
@@ -141,7 +141,7 @@ REPRESENTATION_DATASETS = REPRESENTATION_DATASETS | {
 MODELS = {
     "bert_sst2_clean": NLPModel(
         domain="NLP",
-        architecture="BERT",
+        architecture="BERT-L",
         train_dataset=TRAIN_DATASETS["sst2"],
         identifier="Normal",
         additional_kwargs={
@@ -154,7 +154,7 @@ MODELS = {
     ),
     "bert_sst2_eda_05_v1": NLPModel(
         domain="NLP",
-        architecture="BERT",
+        architecture="BERT-L",
         train_dataset=TRAIN_DATASETS["sst2_eda_05_v1"],
         identifier="augmented_05",
         additional_kwargs={
@@ -167,7 +167,7 @@ MODELS = {
     ),
     "bert_sst2_eda_08_v1": NLPModel(
         domain="NLP",
-        architecture="BERT",
+        architecture="BERT-L",
         train_dataset=TRAIN_DATASETS["sst2_eda_08_v1"],
         identifier="augmented_08",
         additional_kwargs={
@@ -180,7 +180,7 @@ MODELS = {
     ),
     "bert_sst2_eda_10_v1": NLPModel(
         domain="NLP",
-        architecture="BERT",
+        architecture="BERT-L",
         train_dataset=TRAIN_DATASETS["sst2_eda_10_v1"],
         identifier="augmented_10",
         additional_kwargs={
@@ -195,7 +195,7 @@ MODELS = {
 MODELS = MODELS | {
     f"bert_sst2_clean_pre{i}_ft{i}": NLPModel(
         domain="NLP",
-        architecture="BERT",
+        architecture="BERT-L",
         train_dataset=TRAIN_DATASETS["sst2"],
         identifier="Normal",
         additional_kwargs={
@@ -213,8 +213,8 @@ MODELS = MODELS | {
 MODELS = MODELS | {
     f"bert_sst2_pre{i}_ft{i}_eda_strength{strength}": NLPModel(
         domain="NLP",
-        architecture="BERT",
-        train_dataset=TRAIN_DATASETS["sst2"],
+        architecture="BERT-L",
+        train_dataset=TRAIN_DATASETS[f"sst2_eda_strength{strength}"],
         identifier=f"augmented_{strength}",
         additional_kwargs={
             "human_name": f"multibert-{i}-sst2-eda-{strength}",
@@ -344,7 +344,7 @@ if __name__ == "__main__":
         [m() for m in repsim.measures.CLASSES if m().is_symmetric and not isinstance(m(), (IMDScore, GeometryScore))],
         # "sst2",
         representation_dataset_id="sst2_eda_strength10",
-        storage_path=None,
+        storage_path=str(paths.EXPERIMENT_RESULTS_PATH / "augmentation" / "results.parquet"),
         device="cuda:0",
     )
     test.run()
