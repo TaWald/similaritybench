@@ -24,8 +24,8 @@ def get_dataset(
 ) -> datasets.dataset_dict.DatasetDict:
     if dataset_path == "csv":
         ds = datasets.load_dataset(dataset_path, data_files=data_files)
-    elif local_path:
-        ds = datasets.load_from_disk(local_path)
+    elif local_path or Path(dataset_path).exists():
+        ds = datasets.load_from_disk(local_path) if local_path else datasets.load_from_disk(dataset_path)
     else:
         ds = datasets.load_dataset(dataset_path, name)
     assert isinstance(ds, datasets.dataset_dict.DatasetDict)
