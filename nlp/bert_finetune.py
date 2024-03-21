@@ -152,20 +152,19 @@ def main(cfg: DictConfig) -> None:
 
     # Prepare huggingface Trainer
     metric = evaluate.load("accuracy")
-    eval_dataset = (
-        {key: tokenized_dataset[key] for key in cfg.dataset.finetuning.eval_dataset}
-        if len(cfg.dataset.finetuning.eval_dataset) > 1
-        else tokenized_dataset[cfg.dataset.finetuning.eval_dataset[0]]
-    )
+    eval_datasets = dict({key: tokenized_dataset[key] for key in cfg.dataset.finetuning.eval_dataset})
     trainer = hydra.utils.instantiate(
         cfg.dataset.finetuning.trainer,
         model=model,
         train_dataset=tokenized_dataset["train"],
-        eval_dataset=eval_dataset,
+        # Not using the eval_dataset keyword argument with a dict, because hydra will cast it as a DictConfig, which
+        # will break the eval code of Trainer. Instead we just use the first eval dataset we find.
+        eval_dataset=eval_datasets[cfg.dataset.finetuning.eval_dataset[0]],
         compute_metrics=partial(compute_metrics, metric=metric),
     )
+    # trainer.eval_dataset = eval_dataset
     trainer.train()
-    trainer.evaluate()
+    trainer.evaluate(eval_datasets)
     trainer.save_model(trainer.args.output_dir)
 
     # if cfg.augmentation.augment:
