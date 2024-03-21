@@ -35,7 +35,7 @@ class Dataset:
 
 
 @dataclass
-class MyModel(TrainedModel):
+class NLPModel(TrainedModel):
     train_dataset: Dataset
     token_pos: int | None = None
 
@@ -69,71 +69,77 @@ class MyModel(TrainedModel):
             raise NotImplementedError(f"{self.domain=}")
 
 
-AUGMENTATIONS = {
-    "None": Augmentation(name="No augmentation", strength=0.0, strength_variable=""),
-    "EasyDataAugment_05": Augmentation(
+# ---------------------------------- Augmentation Configs -------------------------------------------
+AUGMENTATIONS = {"None": Augmentation(name="No augmentation", strength=0.0, strength_variable="")}
+AUGMENTATIONS = AUGMENTATIONS | {
+    f"EasyDataAugment_{str(strength).replace('.','')}": Augmentation(
         name="EasyDataAugmentation",
-        strength=0.5,
+        strength=strength,
         strength_variable="pct_words_to_swap",
         additional_info=dict(transformations_per_example=1),
-    ),
-    "EasyDataAugment_08": Augmentation(
-        name="EasyDataAugmentation",
-        strength=0.8,
-        strength_variable="pct_words_to_swap",
-        additional_info=dict(transformations_per_example=1),
-    ),
-    "EasyDataAugment_10": Augmentation(
-        name="EasyDataAugmentation",
-        strength=1.0,
-        strength_variable="pct_words_to_swap",
-        additional_info=dict(transformations_per_example=1),
-    ),
+    )
+    for strength in [0.25, 0.5, 0.75, 0.8, 1.0]
 }
 
+# ---------------------------------- Training Dataset Configs -------------------------------------------
 TRAIN_DATASETS = {
     "sst2": Dataset(name="sst2", path="sst2"),
-    "sst2_eda_05": Dataset(
-        name="sst2_eda_05",
+    "sst2_eda_05_v1": Dataset(
+        name="sst2_eda_05_v1",
         path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_05"),
         augmentation=AUGMENTATIONS["EasyDataAugment_05"],
     ),
-    "sst2_eda_08": Dataset(
-        name="sst2_eda_08",
+    "sst2_eda_08_v1": Dataset(
+        name="sst2_eda_08_v1",
         path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_08"),
         augmentation=AUGMENTATIONS["EasyDataAugment_08"],
     ),
-    "sst2_eda_10": Dataset(
-        name="sst2_eda_10",
+    "sst2_eda_10_v1": Dataset(
+        name="sst2_eda_10_v1",
         path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_10"),
         augmentation=AUGMENTATIONS["EasyDataAugment_10"],
     ),
 }
+TRAIN_DATASETS = TRAIN_DATASETS | {
+    f"sst2_eda_strength{strength}": Dataset(
+        name=f"sst2_eda_strength{strength}",
+        path=str(paths.NLP_DATA_PATH / "robustness" / f"sst2_eda_strength{strength}"),
+        augmentation=AUGMENTATIONS[f"EasyDataAugment_{strength}"],
+    )
+    for strength in ["025", "05", "075", "10"]
+}
 
+# ---------------------------------- Representation Dataset Configs -------------------------------------------
 REPRESENTATION_DATASETS = {
     "sst2": Dataset(name="sst2", path="sst2", split="validation"),
-    "sst2_eda_05": Dataset(
-        name="sst2_eda_05",
+    "sst2_eda_05_v1": Dataset(
+        name="sst2_eda_05_v1",
         path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_05"),
         split="validation",
         augmentation=AUGMENTATIONS["EasyDataAugment_05"],
     ),
-    "sst2_eda_08": Dataset(
-        name="sst2_eda_08",
+    "sst2_eda_08_v1": Dataset(
+        name="sst2_eda_08_v1",
         path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_08"),
         split="validation",
         augmentation=AUGMENTATIONS["EasyDataAugment_08"],
     ),
-    "sst2_eda_10": Dataset(
-        name="sst2_eda_10",
+    "sst2_eda_10_v1": Dataset(
+        name="sst2_eda_10_v1",
         path=str(paths.NLP_DATA_PATH / "robustness/sst2_augmented_eda_10"),
         split="validation",
         augmentation=AUGMENTATIONS["EasyDataAugment_10"],
     ),
 }
+REPRESENTATION_DATASETS = REPRESENTATION_DATASETS | {
+    key: Dataset(ds.name, ds.path, split="validation", augmentation=ds.augmentation)
+    for key, ds in TRAIN_DATASETS.items()
+    if "strength" in key
+}
 
+# ---------------------------------- Model Configs -------------------------------------------
 MODELS = {
-    "bert_sst2_clean": MyModel(
+    "bert_sst2_clean": NLPModel(
         domain="NLP",
         architecture="BERT",
         train_dataset=TRAIN_DATASETS["sst2"],
@@ -146,39 +152,39 @@ MODELS = {
         },
         token_pos=0,
     ),
-    "bert_sst2_eda_05": MyModel(
+    "bert_sst2_eda_05_v1": NLPModel(
         domain="NLP",
         architecture="BERT",
-        train_dataset=TRAIN_DATASETS["sst2_eda_05"],
+        train_dataset=TRAIN_DATASETS["sst2_eda_05_v1"],
         identifier="augmented_05",
         additional_kwargs={
-            "human_name": "multibert-0-sst2_eda_05",
+            "human_name": "multibert-0-sst2_eda_05_v1",
             "model_path": paths.NLP_MODEL_PATH / "robustness" / "sst2_augmented_eda_05",
             "model_type": "sequence-classification",
             "tokenizer_name": "google/multiberts-seed_0",
         },
         token_pos=0,
     ),
-    "bert_sst2_eda_08": MyModel(
+    "bert_sst2_eda_08_v1": NLPModel(
         domain="NLP",
         architecture="BERT",
-        train_dataset=TRAIN_DATASETS["sst2_eda_08"],
+        train_dataset=TRAIN_DATASETS["sst2_eda_08_v1"],
         identifier="augmented_08",
         additional_kwargs={
-            "human_name": "multibert-0-sst2_eda_08",
+            "human_name": "multibert-0-sst2_eda_08_v1",
             "model_path": paths.NLP_MODEL_PATH / "robustness" / "sst2_augmented_eda_08",
             "model_type": "sequence-classification",
             "tokenizer_name": "google/multiberts-seed_0",
         },
         token_pos=0,
     ),
-    "bert_sst2_eda_10": MyModel(
+    "bert_sst2_eda_10_v1": NLPModel(
         domain="NLP",
         architecture="BERT",
-        train_dataset=TRAIN_DATASETS["sst2_eda_10"],
+        train_dataset=TRAIN_DATASETS["sst2_eda_10_v1"],
         identifier="augmented_10",
         additional_kwargs={
-            "human_name": "multibert-0-sst2_eda_10",
+            "human_name": "multibert-0-sst2_eda_10_v1",
             "model_path": paths.NLP_MODEL_PATH / "robustness" / "sst2_augmented_eda_10",
             "model_type": "sequence-classification",
             "tokenizer_name": "google/multiberts-seed_0",
@@ -187,7 +193,7 @@ MODELS = {
     ),
 }
 MODELS = MODELS | {
-    f"bert_sst2_clean_pre{i}_ft{i}": MyModel(
+    f"bert_sst2_clean_pre{i}_ft{i}": NLPModel(
         domain="NLP",
         architecture="BERT",
         train_dataset=TRAIN_DATASETS["sst2"],
@@ -204,27 +210,50 @@ MODELS = MODELS | {
     )
     for i in range(10)
 }
+MODELS = MODELS | {
+    f"bert_sst2_pre{i}_ft{i}_eda_strength{strength}": NLPModel(
+        domain="NLP",
+        architecture="BERT",
+        train_dataset=TRAIN_DATASETS["sst2"],
+        identifier=f"augmented_{strength}",
+        additional_kwargs={
+            "human_name": f"multibert-{i}-sst2-eda-{strength}",
+            "model_path": f"/root/similaritybench/experiments/models/nlp/augmentation/sst2_pre{i}_ft{i}_eda_strength{strength}",
+            "model_type": "sequence-classification",
+            "tokenizer_name": f"google/multiberts-seed_{i}",
+            "pretraining_seed": i,
+            "finetuning_seed": i,
+        },
+        token_pos=0,
+    )
+    for i, strength in itertools.product(range(10), ["025", "05", "075", "10"])
+}
 
 
+# ---------------------------------- Experiment Configs -------------------------------------------
 CONFIGS = {
     "nlp": [
         {
             "representation_dataset": REPRESENTATION_DATASETS["sst2"],
             "models": [
                 MODELS["bert_sst2_clean"],
-                MODELS["bert_sst2_eda_05"],
-                MODELS["bert_sst2_eda_08"],
-                MODELS["bert_sst2_eda_10"],
+                MODELS["bert_sst2_eda_05_v1"],
+                MODELS["bert_sst2_eda_08_v1"],
+                MODELS["bert_sst2_eda_10_v1"],
             ],
         },
         {
-            "representation_dataset": REPRESENTATION_DATASETS["sst2_eda_10"],
+            "representation_dataset": REPRESENTATION_DATASETS["sst2_eda_10_v1"],
             "models": [
                 MODELS["bert_sst2_clean"],
-                MODELS["bert_sst2_eda_05"],
-                MODELS["bert_sst2_eda_08"],
-                MODELS["bert_sst2_eda_10"],
+                MODELS["bert_sst2_eda_05_v1"],
+                MODELS["bert_sst2_eda_08_v1"],
+                MODELS["bert_sst2_eda_10_v1"],
             ],
+        },
+        {
+            "representation_dataset": REPRESENTATION_DATASETS["sst2_eda_strength10"],
+            "models": [MODELS[k] for k in MODELS.keys() if "pre" in k],
         },
         # then other datasets
         {
@@ -240,7 +269,7 @@ CONFIGS = {
 class AugmentationTest:
     def __init__(
         self,
-        models: list[MyModel],
+        models: list[NLPModel],
         measures: list[SimilarityMeasure],
         representation_dataset_id: str,
         storage_path: str | None,
@@ -252,11 +281,9 @@ class AugmentationTest:
         self.storage_path = storage_path
         self.device = device
 
-    def _final_layer_representation(self, model: MyModel) -> repsim.utils.SingleLayerRepresentation:
+    def _final_layer_representation(self, model: NLPModel) -> repsim.utils.SingleLayerRepresentation:
         start_time = time.perf_counter()
-        reps = model.get_representation(
-            self.representation_dataset_id, self.device
-        )  # TODO: make this work with Dataset and MyModel
+        reps = model.get_representation(self.representation_dataset_id, self.device)
         logger.info(
             f"Representation extraction for '{str(model)}' completed in {time.perf_counter() - start_time:.1f} seconds."
         )
@@ -308,12 +335,15 @@ class AugmentationTest:
 if __name__ == "__main__":
     logger.add(str(paths.EXPERIMENT_RESULTS_PATH / "augmentation" / "{time}.log"))
 
+    from repsim.measures import IMDScore, GeometryScore
+
+    config_id = 2
+    cfg = CONFIGS["nlp"][config_id]
     test = AugmentationTest(
-        CONFIGS["nlp"][0]["models"],
-        [m() for m in repsim.measures.CLASSES if m().is_symmetric],
+        cfg["models"],
+        [m() for m in repsim.measures.CLASSES if m().is_symmetric and not isinstance(m(), (IMDScore, GeometryScore))],
         # "sst2",
-        representation_dataset_id="sst2_eda_10",
-        # paths.EXPERIMENT_RESULTS_PATH / "augmentation",
+        representation_dataset_id="sst2_eda_strength10",
         storage_path=None,
         device="cuda:0",
     )
