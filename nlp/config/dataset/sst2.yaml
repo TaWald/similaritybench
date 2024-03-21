@@ -1,10 +1,12 @@
 path: sst2 # huggingface load_dataset argument: path
 name: # huggingface load_dataset argument: name
 split: test
+validation_split: "validation"
 prompt_template: # promptsource template name
 feature_column:
   - "sentence"
 target_column: label
+local_path:
 
 # Hyperparameters for the finetuning of BERT on this dataset
 finetuning:

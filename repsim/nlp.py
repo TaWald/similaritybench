@@ -19,12 +19,13 @@ from tqdm import tqdm
 def get_dataset(
     dataset_path: str,
     name: Optional[str] = None,
+    local_path: Optional[str] = None,
     data_files: Optional[str | list[str] | dict[str, str] | dict[str, list[str]]] = None,
 ) -> datasets.dataset_dict.DatasetDict:
     if dataset_path == "csv":
         ds = datasets.load_dataset(dataset_path, data_files=data_files)
-    elif Path(dataset_path).exists():
-        ds = datasets.load_from_disk(dataset_path)
+    elif local_path:
+        ds = datasets.load_from_disk(local_path)
     else:
         ds = datasets.load_dataset(dataset_path, name)
     assert isinstance(ds, datasets.dataset_dict.DatasetDict)

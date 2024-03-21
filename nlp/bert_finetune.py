@@ -1,6 +1,5 @@
 import logging
 import os
-import warnings
 from functools import partial
 from pathlib import Path
 from typing import Literal
@@ -86,7 +85,7 @@ def main(cfg: DictConfig) -> None:
     )
 
     # Load (and augment) dataset
-    feature_column = None  # will be set by augmentation. Otherwise use dataset-specific defaults
+    feature_column = cfg.dataset.feature_column[0]
     if cfg.augmentation.augment and cfg.augmentation.augmenter == "langtest":
         log.info("Augmenting training data with langtest")
         aug = cfg.augmentation
@@ -116,7 +115,7 @@ def main(cfg: DictConfig) -> None:
         # dataset["validation"] = dataset["validation"].select(range(20))
         log.info("Augmenting text...")
         dataset = dataset.map(
-            lambda x: {"augmented": [x[0] for x in augmenter.augment_many(x[cfg.dataset.feature_column[0]])]},
+            lambda x: {"augmented": [x[0] for x in augmenter.augment_many(x[feature_column])]},
             batched=True,
         )
         feature_column = "augmented"
@@ -127,14 +126,15 @@ def main(cfg: DictConfig) -> None:
         dataset = repsim.nlp.get_dataset(
             cfg.dataset.path,
             cfg.dataset.name,
+            local_path=cfg.dataset.local_path,
             # data_files=(
             #     OmegaConf.to_container(cfg.dataset.data_files) if cfg.dataset.data_files else None
             # ),  # type:ignore
         )
     log.info("First train sample: %s", str(dataset["train"][0]))
     log.info("Last train sample: %s", str(dataset["train"][-1]))
-    log.info("First validation sample: %s", str(dataset["validation"][0]))
-    log.info("Last validation sample: %s", str(dataset["validation"][-1]))
+    log.info("First validation sample: %s", str(dataset[cfg.dataset.validation_split][0]))
+    log.info("Last validation sample: %s", str(dataset[cfg.dataset.validation_split][-1]))
     log.info("Using %s as text input.", str(feature_column))
 
     # Prepare dataset
