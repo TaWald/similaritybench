@@ -1,6 +1,5 @@
 import functools
 import logging
-from abc import ABC
 from dataclasses import dataclass
 from typing import Callable
 from typing import get_args
@@ -39,7 +38,7 @@ class RSMSimilarityFunction(Protocol):
 
 
 @dataclass
-class SimilarityMeasure(ABC):
+class SimilarityMeasure:
     sim_func: SimilarityFunction
 
     larger_is_more_similar: bool

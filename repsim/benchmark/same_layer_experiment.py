@@ -1,3 +1,4 @@
+import argparse
 import time
 from typing import Callable
 
@@ -6,7 +7,7 @@ from loguru import logger
 from registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import Result
-from repsim.measures.cka import centered_kernel_alignment
+from repsim.measures import SYMMETRIC_MEASURES
 from scipy.stats import spearmanr
 
 
@@ -75,6 +76,7 @@ class SameLayerExperiment:
             )
 
             for measure in self.measures:
+                logger.info(f"Starting with '{measure.__name__}'.")
                 vals = np.full(
                     (len(reps.representations), len(reps.representations)),
                     fill_value=np.nan,
@@ -89,10 +91,12 @@ class SameLayerExperiment:
                         # All metrics should be symmetric
                         if j > i:
                             continue
-
-                        ret = measure(first.representation, second.representation, first.shape)
-                        vals[i, j] = ret
-                        vals[j, i] = vals[i, j]
+                        try:
+                            ret = measure(first.representation, second.representation, first.shape)
+                            vals[i, j] = ret
+                            vals[j, i] = vals[i, j]
+                        except ValueError as e:
+                            logger.exception(e)
                 logger.info(
                     f"Comparisons for '{measure.__name__}' completed in {time.perf_counter() - start_time:.1f} seconds."
                 )
@@ -103,7 +107,7 @@ class SameLayerExperiment:
                     meta_accuracy=self._meta_accuracy(vals),
                     measure=measure.__name__,
                 )
-        self.results.save()
+                self.results.save()
 
 
 def monotonicity_test():
@@ -114,32 +118,66 @@ def monotonicity_test():
 
 
 if __name__ == "__main__":
-    subset_of_vision_models = [
-        m
-        for m in ALL_TRAINED_MODELS
-        if (m.domain == "VISION")
-        and (m.architecture == "ResNet18")
-        and (m.train_dataset == "CIFAR10")
-        and (m.additional_kwargs["seed_id"] <= 1)
-    ]
-    subset_of_nlp_models = [
-        m
-        for m in ALL_TRAINED_MODELS
-        if (m.domain == "NLP") and (m.architecture == "BERT") and (m.train_dataset == "SST2")
-    ]
-    subset_of_graph_models = []
-    # experiment = SameLayerExperiment(subset_of_vision_models, [centered_kernel_alignment], "CIFAR10")
-    experiment = SameLayerExperiment(
-        subset_of_nlp_models,
-        [centered_kernel_alignment],
-        "SST2",
-        dataset_path="sst2",
-        dataset_config=None,
-        dataset_split="test",
-        device="cuda:0",
-        token_pos=None,
+    measures_to_use = SYMMETRIC_MEASURES
+    measure_name_to_func = {f.__name__: f for f in measures_to_use}
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--domain", choices=["all", "vision", "nlp", "graph"], default="all")
+    parser.add_argument(
+        "--exclude-measures",
+        dest="exclude_measures",
+        action="extend",
+        nargs="+",
+        choices=measure_name_to_func.keys(),
+        default=["uniformity_difference"],
+        help="These measures will not be used in the experiment.",
     )
-    # experiment = SameLayerExperiment(subset_of_graph_models, [centered_kernel_alignment], "CIFAR10")
-    result = experiment.run()
-    print(result)
-    print(0)
+    parser.add_argument(
+        "--select-measures",
+        dest="selected_measures",
+        action="extend",
+        nargs="+",
+        choices=measure_name_to_func.keys(),
+        help="If specified, only the measures specified will be used.",
+    )
+    args = parser.parse_args()
+
+    # Filter models, measures, and datasets
+    if args.exclude_measures:
+        measures_to_use = [measure for measure in measures_to_use if measure.__name__ not in args.exclude_measures]
+    if args.selected_measures:
+        measures_to_use = [measure for measure in measures_to_use if measure.__name__ in args.selected_measures]
+
+    # Run experiments
+    if args.domain == "vision" or args.domain == "all":
+        subset_of_vision_models = [
+            m
+            for m in ALL_TRAINED_MODELS
+            if (m.domain == "VISION")
+            and (m.architecture == "ResNet18")
+            and (m.train_dataset == "CIFAR10")
+            and (m.additional_kwargs["seed_id"] <= 1)
+        ]
+        # experiment = SameLayerExperiment(subset_of_vision_models, [centered_kernel_alignment], "CIFAR10")
+
+    if args.domain == "nlp" or args.domain == "all":
+        subset_of_nlp_models = [
+            m
+            for m in ALL_TRAINED_MODELS
+            if (m.domain == "NLP") and (m.architecture == "BERT") and (m.train_dataset == "SST2")
+        ]
+        experiment = SameLayerExperiment(
+            subset_of_nlp_models,
+            measures_to_use,
+            "SST2",
+            dataset_path="sst2",
+            dataset_config=None,
+            dataset_split="test",
+            device="cuda:0",
+            token_pos=None,
+        )
+        experiment.run()
+
+    if args.domain == "vision" or args.domain == "all":
+        subset_of_graph_models = []
+        # experiment = SameLayerExperiment(subset_of_graph_models, [centered_kernel_alignment], "CIFAR10")

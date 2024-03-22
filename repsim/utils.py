@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 from dataclasses import field
 
@@ -36,7 +35,7 @@ class SingleLayerRepresentation:
         ), "SingleLayerRepresentation has not been set with the necessary information."
         setting = "None" if self._setting_identifier is None else self._setting_identifier
         return "__".join(
-            [
+            [  # type:ignore
                 setting,
                 self._architecture_name,
                 self._train_dataset,
@@ -61,7 +60,7 @@ class ModelRepresentations:
         if self.representations is not None:
             self._set_single_layer_infos()
         else:
-            logger.warn(
+            logger.warning(
                 """ModelRepresentations has not been set with the necessary information. Make sure to call `_set_single_layer_infos` or saving will fail!"""
             )
 
@@ -72,9 +71,6 @@ class ModelRepresentations:
             rep._train_dataset = self.train_dataset
             rep._seed_id = self.seed_id
             rep._representation_dataset = self.representation_dataset
-
-
-log = logging.getLogger(__name__)
 
 
 def convert_to_path_compatible(s: str) -> str:
