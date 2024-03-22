@@ -16,10 +16,10 @@ from repsim.benchmark.types_globals import STANDARD_SETTING
 from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
 from repsim.utils import ModelRepresentations
-from vision.get_reps import get_vision_representations
+
+# from vision.get_reps import get_vision_representations
 
 # from repsim.nlp import get_representations
-
 
 
 # ---------------------------- SIMILARITY_METRICS --------------------------- #
@@ -38,19 +38,24 @@ class TrainedModel:
     train_dataset: VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
     identifier: SETTING_IDENTIFIER
     additional_kwargs: dict  # Maybe one can remove this to make it more general
+    seed: int
 
-    def get_representation(self, representation_dataset: str, **kwargs) -> ModelRepresentations:
+    def get_representation(self, representation_dataset: str = None, **kwargs) -> ModelRepresentations:
         """
         This function should return the representation of the model.
         """
-        if self.domain == "VISION":
-            return get_vision_representations(
-                architecture_name=self.architecture,
-                train_dataset=self.train_dataset,
-                seed_id=self.additional_kwargs["seed_id"],
-                setting_identifier=self.identifier,
-                representation_dataset=representation_dataset,
-            )
+
+        if representation_dataset is None:
+            representation_dataset = self.train_dataset
+
+        # if self.domain == "VISION":
+        #     return get_vision_representations(
+        #         architecture_name=self.architecture,
+        #         train_dataset=self.train_dataset,
+        #         seed_id=self.additional_kwargs["seed_id"],
+        #         setting_identifier=self.identifier,
+        #         representation_dataset=representation_dataset,
+        #     )
         # elif self.domain == "NLP":
         #     # TODO: this requires so many additional arguments. We should likely have some specialized classes for the
         #     #  different domains
@@ -80,11 +85,11 @@ class TrainedModel:
         #         representation_dataset=kwargs["dataset_path"] + kwargs["dataset_config"] + kwargs["dataset_split"],
         #         representations=tuple(SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
         #     )
-        elif self.domain == "GRAPHS":
+        if self.domain == "GRAPHS":
             return get_graph_representations(
                 architecture_name=self.architecture,
                 train_dataset=self.train_dataset,
-                seed_id=self.additional_kwargs["seed_id"],
+                seed=self.seed,
                 setting_identifier=self.identifier,
                 representation_dataset=representation_dataset,
             )
@@ -176,7 +181,8 @@ def all_trained_graph_models() -> list[TrainedModel]:
                                 architecture=arch,
                                 train_dataset=dataset,
                                 identifier=setting,
-                                additional_kwargs={"seed_id": i},
+                                seed=i,
+                                additional_kwargs={},
                             )
                         )
     return all_trained_models

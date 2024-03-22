@@ -166,8 +166,7 @@ class LabelExperiment:
 
         with ExperimentStorer() as storer:
 
-            experiment_settings = EXPERIMENT_DICT[LABEL_EXPERIMENT_NAME]
-            setting_map = {setting: i for (i, setting) in enumerate(experiment_settings)}
+            setting_map = {setting: i for (i, setting) in enumerate(self.settings)}
 
             for cnt_a, model_a in enumerate(self.models):
                 model_reps_a = model_a.get_representation(self.representation_dataset, **self.kwargs)

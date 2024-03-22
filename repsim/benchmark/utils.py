@@ -9,6 +9,7 @@ import pandas as pd
 from loguru import logger
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.registry import TrainedModelRep
+from repsim.measures.utils import SimilarityMeasure
 from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
 
@@ -220,3 +221,22 @@ class Result:
         self.data["dataset"].append(dataset)
         self.data["measure"].append(measure)
         self.data["jsonable"].append({str(key): str(val) for key, val in others.items()})
+
+
+def name_of_measure(obj):
+    if isinstance(obj, SimilarityMeasure):
+        return name_of_measure(obj.sim_func)
+    elif hasattr(obj, "__name__"):
+        # repsim.measures.utils.Pipeline
+        return obj.__name__
+    elif hasattr(obj, "func"):
+        # functools.partial
+        if hasattr(obj.func, "__name__"):
+            # pure function
+            return obj.func.__name__
+        else:
+            # TODO: Not sure this still works. Remove?
+            # on a callable class instance
+            return str(obj.func)
+    else:
+        return str(obj)
