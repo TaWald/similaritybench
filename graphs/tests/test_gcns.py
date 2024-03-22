@@ -40,7 +40,7 @@ def benchmark_models(n_layers: int, architecture_list: List[str], gpu_id: int):
         "heads": 3,
         "dropout": 0.05,
     }
-    optimizer_params = {"epochs": 2000, "lr": 0.002}
+    optimizer_params = {"epochs": 500, "lr": 0.01}
 
     for gnn in architecture_list:
 
