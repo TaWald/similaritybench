@@ -1,5 +1,5 @@
-import logging
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -12,13 +12,22 @@ from typing import Union
 import datasets
 import torch
 import transformers
+from loguru import logger
 from tqdm import tqdm
 
-log = logging.getLogger(__name__)
 
-
-def get_dataset(dataset_name: str, config: Optional[str] = None) -> datasets.dataset_dict.DatasetDict:
-    ds = datasets.load_dataset(dataset_name, config)
+def get_dataset(
+    dataset_path: str,
+    name: Optional[str] = None,
+    local_path: Optional[str] = None,
+    data_files: Optional[str | list[str] | dict[str, str] | dict[str, list[str]]] = None,
+) -> datasets.dataset_dict.DatasetDict:
+    if dataset_path == "csv":
+        ds = datasets.load_dataset(dataset_path, data_files=data_files)
+    elif local_path or Path(dataset_path).exists():
+        ds = datasets.load_from_disk(local_path) if local_path else datasets.load_from_disk(dataset_path)
+    else:
+        ds = datasets.load_dataset(dataset_path, name)
     assert isinstance(ds, datasets.dataset_dict.DatasetDict)
     return ds
 
@@ -58,6 +67,11 @@ def get_prompt_creator(
 
         def create_prompt(example: Dict[str, Any]) -> str:
             return example["sentence"]
+
+    elif Path(dataset_path).exists() and "sst2" in dataset_path:
+
+        def create_prompt(example: Dict[str, Any]) -> str:
+            return example["augmented"]
 
     else:
         raise ValueError(
@@ -137,7 +151,7 @@ def to_ntxd_shape(reps: List[Tuple[torch.Tensor, ...]]) -> Tuple[torch.Tensor, .
                 dim=0,
             )
         )
-        log.debug("Layer: %d, Shape: %s", layer_idx, concated_reps[layer_idx].size())
+        logger.debug(f"Layer: {layer_idx}, Shape: {concated_reps[layer_idx].size()}")
     return tuple(concated_reps)
 
 
@@ -147,7 +161,7 @@ def get_representations(
     model_type: Literal["sequence-classification"],
     tokenizer_name: str,
     dataset_path: str,
-    dataset_config: str,
+    dataset_config: str | None,
     dataset_split: str,
     device: str,
     token_pos: Optional[int] = None,
@@ -157,7 +171,7 @@ def get_representations(
     tokenizer = get_tokenizer(tokenizer_name)
     with torch.device(device):
         model = get_model(model_path, model_type)
-    return extract_representations(
+    reps = extract_representations(
         model,
         tokenizer,
         dataset,
@@ -165,3 +179,5 @@ def get_representations(
         device,
         token_pos_to_extract=token_pos,
     )
+    logger.info(f"Shape of representations: {[rep.shape for rep in reps]}")
+    return reps
