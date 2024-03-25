@@ -6,18 +6,52 @@ from typing import Any
 from typing import Literal
 from typing import Optional
 
+import datasets
 import evaluate
 import hydra
 import langtest
 import numpy as np
 import repsim.nlp
 import torch
+from datasets import DatasetDict
 from omegaconf import DictConfig
 from omegaconf import OmegaConf
 from transformers import AutoModelForSequenceClassification
 from transformers import AutoTokenizer
 
 log = logging.getLogger(__name__)
+
+
+class MemorizableLabelAdder:
+    def __init__(
+        self, dataset: DatasetDict, p: float, new_n_labels: int, label_column: str, seed: int = 1234567890
+    ) -> None:
+        self.dataset = dataset
+        self.p = p
+        self.new_n_labels = new_n_labels
+        self.label_column = label_column
+        self.new_label_column = "label"
+
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
+
+    def add_labels(self):
+        for key, ds in self.dataset.items():
+            n_existing_labels = len(np.unique(ds[self.label_column]))
+            new_labels = np.arange(n_existing_labels, n_existing_labels + self.new_n_labels)
+            idxs = np.arange(len(ds))
+            idxs_new_labels = self.rng.choice(idxs, size=int(self.p * len(ds)))
+
+            def _new_labels(example: dict[str, Any]):
+                curr_label = example[self.label_column]
+                if example["idx"] in idxs_new_labels:
+                    new_label = self.rng.choice(new_labels)
+                else:
+                    new_label = curr_label
+                return {self.new_label_column: new_label}
+
+            self.dataset[key] = ds.map(_new_labels)
+        return self.dataset
 
 
 class ShortcutAdder:
@@ -98,11 +132,6 @@ def augment_data_langtest(
     return harness, path_to_augmented_data
 
 
-def augment_textattack():
-    """See augment_textattack.ipynb for CLI commands instead"""
-    pass
-
-
 @hydra.main(config_path="config", config_name="finetune", version_base=None)
 def main(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
@@ -175,6 +204,22 @@ def main(cfg: DictConfig) -> None:
         )
     else:
         tokenizer = AutoTokenizer.from_pretrained(cfg.model.kwargs.tokenizer_name)
+
+    if cfg.memorization_rate:
+        new_n_labels = cfg.dataset.finetuning.num_labels + cfg.memorization_n_new_labels
+        cfg.dataset.finetuning.num_labels = new_n_labels
+        new_label_col = datasets.ClassLabel(num_classes=new_n_labels)
+        dataset = dataset.cast_column("label", new_label_col)
+        adder = MemorizableLabelAdder(
+            dataset,
+            cfg.memorization_rate,
+            cfg.memorization_n_new_labels,
+            cfg.dataset.target_column,
+            seed=cfg.memorization_seed,
+        )
+        dataset = adder.add_labels()
+        log.info("Saving augmented dataset to disk...")
+        dataset.save_to_disk(cfg.output_dir)
 
     # Prepare dataset
     log.info("First train sample: %s", str(dataset["train"][0]))
