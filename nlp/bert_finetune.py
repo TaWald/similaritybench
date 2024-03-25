@@ -218,7 +218,7 @@ def main(cfg: DictConfig) -> None:
             seed=cfg.memorization_seed,
         )
         dataset = adder.add_labels()
-        log.info("Saving augmented dataset to disk...")
+        log.info("Saving dataset with new labels to disk...")
         dataset.save_to_disk(cfg.output_dir)
 
     # Prepare dataset
