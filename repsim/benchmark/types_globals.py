@@ -25,6 +25,7 @@ GRAPH_DATASET_TRAINED_ON = Literal["ogbn-arxiv"]
 ARXIV_DATASET = get_args(GRAPH_DATASET_TRAINED_ON)[0]
 
 BENCHMARK_DATASET = VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
+BENCHMARK_DATASETS_LIST = list(get_args(BENCHMARK_DATASET))
 
 # ---------------------------- Identifier_settings --------------------------- #
 # These are shared across domains and datasets
@@ -83,5 +84,6 @@ EXPERIMENT_DICT: Dict[EXPERIMENT_IDENTIFIER, List[SETTING_IDENTIFIER]] = dict(
     }
 )
 
-GRAPH_EXPERIMENT_SEED = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+EXPERIMENT_SEED = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+GRAPH_EXPERIMENT_SEED = EXPERIMENT_SEED
 SHORTCUT_EXPERIMENT_SEED = 2024

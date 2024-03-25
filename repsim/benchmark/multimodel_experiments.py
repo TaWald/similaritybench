@@ -1,7 +1,9 @@
+import argparse
 import itertools
 import time
 from typing import Callable
 from typing import Dict
+from typing import get_args
 
 import numpy as np
 import repsim.utils
@@ -10,10 +12,15 @@ from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.types_globals import ARXIV_DATASET
 from repsim.benchmark.types_globals import BENCHMARK_DATASET
+from repsim.benchmark.types_globals import BENCHMARK_DATASETS_LIST
+from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
+from repsim.benchmark.types_globals import DOMAIN_TYPE
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
+from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_DOMAIN
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import NN_ARCHITECTURE_TYPE
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import name_of_measure
 from repsim.measures import CLASSES
@@ -121,17 +128,77 @@ class MultiModelExperiment:
         return results
 
 
+def parse_args():
+    """Parses arguments given to script
+
+    Returns:
+        dict-like object -- Dict-like object containing all given arguments
+    """
+    parser = argparse.ArgumentParser()
+
+    # Test parameters
+    parser.add_argument(
+        "-e",
+        "--experiments",
+        type=EXPERIMENT_IDENTIFIER,
+        default=BENCHMARK_EXPERIMENTS_LIST,
+        help="Tests to run.",
+    )
+    # TODO: consider argument for measures, but that would require additional name index for these.
+    #  Might not be necessary here due to experiment storer, but sometimes it might be desirable to
+    #  just apply single individual measures
+    # parser.add_argument(
+    #     "-m",
+    #     "--measures",
+    #     type=SimilarityMeasure,
+    #     default=CLASSES,
+    #     help="Tests to run.",
+    # )
+    # TODO: consider whether domain argument may be desirable for easier filtering of models
+    # parser.add_argument(
+    #     "-dom",
+    #     "--domains",
+    #     type=DOMAIN_TYPE,
+    #     default=list(get_args(DOMAIN_TYPE)),
+    #     help="Tests to run.",
+    # )
+    parser.add_argument(
+        "-a",
+        "--architectures",
+        nargs="*",
+        type=NN_ARCHITECTURE_TYPE,
+        default=list(get_args(NN_ARCHITECTURE_TYPE)),
+        help="NN architectures that should be compared",
+    )
+    parser.add_argument(
+        "-d",
+        "--datasets",
+        nargs="*",
+        type=BENCHMARK_DATASET,
+        default=BENCHMARK_DATASETS_LIST,
+        help="Datasets used in evaluation.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+
+    args = parse_args()
 
     measures = [m() for m in CLASSES]
 
-    models = [
-        m
-        for m in ALL_TRAINED_MODELS
-        if (m.domain == GRAPH_DOMAIN) and (m.architecture == "GraphSAGE") and (m.train_dataset == ARXIV_DATASET)
-    ]
+    for curr_experiment in args.experiments:
 
-    experiment = MultiModelExperiment(
-        experiment_name=LABEL_EXPERIMENT_NAME, models=models, measures=measures, device="cuda:0"
-    )
-    experiment.run_measures()
+        for architecture, dataset in itertools.product(args.architectures, args.datasets):
+
+            curr_models = [
+                m for m in ALL_TRAINED_MODELS if (m.architecture == architecture) and (m.train_dataset == dataset)
+            ]
+
+            # curr_models can only contain actual models if there is no domain mismatch
+            if len(curr_models) > 0:
+
+                experiment = MultiModelExperiment(
+                    experiment_name=curr_experiment, models=curr_models, measures=measures, device="cuda:0"
+                )
+                experiment.run_measures()
