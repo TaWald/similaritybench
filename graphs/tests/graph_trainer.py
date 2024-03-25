@@ -204,8 +204,8 @@ class LayerTestTrainer(GraphTrainer):
         optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
 
         if self.architecture_type == "GAT":
-            gnn_params["heads"] = (GAT_PARAMS_DEFAULT_N_HEADS,)
-            gnn_params["dropout"] = (GAT_PARAMS_DEFAULT_ATT_DROPOUT,)
+            gnn_params["heads"] = GAT_PARAMS_DEFAULT_N_HEADS
+            gnn_params["dropout"] = GAT_PARAMS_DEFAULT_ATT_DROPOUT
             gnn_params["hidden_channels"] *= gnn_params["heads"]
 
         return gnn_params, optimizer_params
@@ -244,8 +244,8 @@ class LabelTestTrainer(GraphTrainer):
         }
 
         if self.architecture_type == "GAT":
-            gnn_params["heads"] = (GAT_PARAMS_DEFAULT_N_HEADS,)
-            gnn_params["dropout"] = (GAT_PARAMS_DEFAULT_ATT_DROPOUT,)
+            gnn_params["heads"] = GAT_PARAMS_DEFAULT_N_HEADS
+            gnn_params["dropout"] = GAT_PARAMS_DEFAULT_ATT_DROPOUT
             gnn_params["hidden_channels"] *= gnn_params["heads"]
 
         optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
@@ -293,8 +293,8 @@ class ShortCutTestTrainer(GraphTrainer):
         }
 
         if self.architecture_type == "GAT":
-            gnn_params["heads"] = (GAT_PARAMS_DEFAULT_N_HEADS,)
-            gnn_params["dropout"] = (GAT_PARAMS_DEFAULT_ATT_DROPOUT,)
+            gnn_params["heads"] = GAT_PARAMS_DEFAULT_N_HEADS
+            gnn_params["dropout"] = GAT_PARAMS_DEFAULT_ATT_DROPOUT
             gnn_params["hidden_channels"] *= gnn_params["heads"]
 
         optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
