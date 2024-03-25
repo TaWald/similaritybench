@@ -16,8 +16,7 @@ from repsim.benchmark.types_globals import STANDARD_SETTING
 from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
 from repsim.utils import ModelRepresentations
-
-# from vision.get_reps import get_vision_representations
+from vision.get_reps import get_vision_representations
 
 # from repsim.nlp import get_representations
 
@@ -48,14 +47,14 @@ class TrainedModel:
         if representation_dataset is None:
             representation_dataset = self.train_dataset
 
-        # if self.domain == "VISION":
-        #     return get_vision_representations(
-        #         architecture_name=self.architecture,
-        #         train_dataset=self.train_dataset,
-        #         seed_id=self.additional_kwargs["seed_id"],
-        #         setting_identifier=self.identifier,
-        #         representation_dataset=representation_dataset,
-        #     )
+        if self.domain == "VISION":
+            return get_vision_representations(
+                architecture_name=self.architecture,
+                train_dataset=self.train_dataset,
+                seed_id=self.seed,
+                setting_identifier=self.identifier,
+                representation_dataset=representation_dataset,
+            )
         # elif self.domain == "NLP":
         #     # TODO: this requires so many additional arguments. We should likely have some specialized classes for the
         #     #  different domains
@@ -124,7 +123,8 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
-                            additional_kwargs={"seed_id": i, "setting_identifier": None},
+                            seed=i,
+                            additional_kwargs={},
                         )
                     )
     for i in range(2):
@@ -143,7 +143,8 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
-                            additional_kwargs={"seed_id": i, "setting_identifier": identifier},
+                            seed=i,
+                            additional_kwargs={},
                         )
                     )
 
@@ -157,6 +158,7 @@ def all_trained_nlp_models() -> list[TrainedModel]:
             architecture="BERT",
             train_dataset="SST2",
             identifier=STANDARD_SETTING,
+            seed=0,
             additional_kwargs={
                 "human_name": "multibert-0-sst2",
                 "model_path": "/root/LLM-comparison/outputs/2024-01-31/13-12-49",
