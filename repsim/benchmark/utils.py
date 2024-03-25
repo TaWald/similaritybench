@@ -1,5 +1,6 @@
 import os
 from dataclasses import asdict
+from typing import Callable
 
 import git
 import numpy as np
@@ -7,6 +8,7 @@ import pandas as pd
 from loguru import logger
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.registry import TrainedModelRep
+from repsim.measures.utils import SimilarityMeasure
 from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
 
@@ -16,7 +18,7 @@ class TwoGroupExperiment:
         self,
         models_group_a: list[TrainedModelRep] | None,
         models_group_b: list[TrainedModelRep] | None,
-        measures: list[callable] | None,
+        measures: list[Callable] | None,
     ) -> None:
         """
         Experiment where the goal is that the each member of group A is more similar to each other than to any member of group B.
@@ -37,13 +39,13 @@ class TwoGroupExperiment:
         assert self.measures is not None and len(self.measures) > 0
         return
 
-    def _measure_acc(in_group: list[float], cross_group: list[float]) -> float:
+    def _measure_acc(self, in_group: list[float], cross_group: list[float]) -> float:
         """
         Measure the accuracy of the separation of the groups.
         """
         in_group_mean = np.mean(in_group)
         cross_group_mean = np.mean(cross_group)
-        return (in_group_mean - cross_group_mean) / (in_group_mean + cross_group_mean)
+        return float((in_group_mean - cross_group_mean) / (in_group_mean + cross_group_mean))
 
     def run(self) -> dict[str, dict]:
         """
@@ -84,7 +86,7 @@ class TwoGroupExperiment:
 
 class ExperimentStorer:
 
-    def __init__(self, path_to_store: str = None) -> None:
+    def __init__(self, path_to_store: str | None = None) -> None:
         if path_to_store is None:
             path_to_store = os.path.join(EXPERIMENT_RESULTS_PATH, "experiments.parquet")
         self.path_to_store = path_to_store
@@ -96,7 +98,7 @@ class ExperimentStorer:
         single_rep_b: SingleLayerRepresentation,
         metric_name: str,
         metric_value: float,
-        runtime: float = None,
+        runtime: float | None = None,
         overwrite: bool = False,
     ) -> None:
         """
@@ -122,7 +124,7 @@ class ExperimentStorer:
         self,
         single_rep_a: SingleLayerRepresentation,
         single_rep_b: SingleLayerRepresentation,
-    ) -> tuple[ModelRepresentations, ModelRepresentations]:
+    ) -> tuple[SingleLayerRepresentation, SingleLayerRepresentation]:
         """Return the SingeLayerRepresentations in a sorted order, to avoid permutation issues."""
         id_a, id_b = single_rep_a.unique_identifier(), single_rep_b.unique_identifier()
         if id_a < id_b:
@@ -189,3 +191,22 @@ class ExperimentStorer:
         self.save_to_file()
         self.experiments = None
         return False
+
+
+def name_of_measure(obj):
+    if isinstance(obj, SimilarityMeasure):
+        return name_of_measure(obj.sim_func)
+    elif hasattr(obj, "__name__"):
+        # repsim.measures.utils.Pipeline
+        return obj.__name__
+    elif hasattr(obj, "func"):
+        # functools.partial
+        if hasattr(obj.func, "__name__"):
+            # pure function
+            return obj.func.__name__
+        else:
+            # TODO: Not sure this still works. Remove?
+            # on a callable class instance
+            return str(obj.func)
+    else:
+        return str(obj)

@@ -21,7 +21,6 @@ from vision.get_reps import get_vision_representations
 # from repsim.nlp import get_representations
 
 
-
 # ---------------------------- SIMILARITY_METRICS --------------------------- #
 # Maybe only?
 

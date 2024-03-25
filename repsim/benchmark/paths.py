@@ -14,7 +14,7 @@ def get_experiments_path() -> Path:
         EXPERIMENTS_ROOT_PATH = os.environ["REP_SIM"]  # To be renamed to ones liking
         return Path(EXPERIMENTS_ROOT_PATH)
     except KeyError:
-        logger.warn("No 'DATA_RESULTS_FOLDER' Env variable -- Defaulting to '<project_root>/experiments' .")
+        logger.warning("No 'DATA_RESULTS_FOLDER' Env variable -- Defaulting to '<project_root>/experiments' .")
         exp_pth = Path(__file__).parent.parent.parent / "experiments"
         exp_pth.mkdir(exist_ok=True)
         return exp_pth
@@ -23,5 +23,7 @@ def get_experiments_path() -> Path:
 BASE_PATH = get_experiments_path()
 VISION_MODEL_PATH = Path(BASE_PATH, "models", "vision")
 VISION_DATA_PATH = Path(BASE_PATH, "datasets", "vision")
+NLP_MODEL_PATH = Path(BASE_PATH, "models", "nlp")
+NLP_DATA_PATH = Path(BASE_PATH, "datasets", "nlp")
 VISION_TAR_PATH = Path(VISION_MODEL_PATH, "vissimbench.tar.gz")
 EXPERIMENT_RESULTS_PATH = Path(BASE_PATH, "results")
