@@ -109,6 +109,9 @@ class MultiModelExperiment:
 
                     self.similarities[i, j, seed_index, cnt_m] = sim
 
+                    # TODO: make sure all measures are symmetric, otherwise we may need an additional comparison
+                    self.similarities[j, i, seed_index, cnt_m] = sim
+
     def eval_measures(self, meta_measure: Callable) -> Dict[str, float]:
 
         results = dict()
@@ -145,9 +148,6 @@ def parse_args():
         choices=list(get_args(MULTIMODEL_EXPERIMENT_IDENTIFIER)),
         help="Experiments to run.",
     )
-    # TODO: consider argument for measures, but that would require additional name index for these.
-    #  Might not be necessary here due to experiment storer, but sometimes it might be desirable to
-    #  just apply single individual measures
     parser.add_argument(
         "-m",
         "--measures",
