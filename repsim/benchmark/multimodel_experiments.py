@@ -72,8 +72,8 @@ class MultiModelExperiment:
         )
         return reps.representations[-1]
 
-    def run_measures(self) -> None:
-        """Run the experiment. Results can be accessed afterwards via the .results attribute"""
+    def run(self) -> None:
+        """Run the experiment. """
 
         with ExperimentStorer() as storer:
 
