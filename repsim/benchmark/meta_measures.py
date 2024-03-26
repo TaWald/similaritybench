@@ -3,7 +3,7 @@ import numpy.typing as npt
 from scipy.stats import spearmanr
 
 
-def layerwise_forward_sim(sim: npt.NDArray) -> float:
+def layerwise_backward_forward_sim(sim: npt.NDArray) -> float:
     """Calculate the spearman rank correlation of the similarity to the layers"""
     aranged_1 = np.arange(sim.shape[0])[:, None]
     aranged_2 = np.arange(sim.shape[0])[None, :]
@@ -28,7 +28,7 @@ def layerwise_forward_sim(sim: npt.NDArray) -> float:
     return np.nanmean(forward_corrs + backward_corrs)
 
 
-def intra_group_meta_accuracy(sim: np.ndarray, higher_value_more_similar: bool = True) -> float:
+def inter_setting_accuracy(sim: np.ndarray, higher_value_more_similar: bool = True) -> float:
     """Calculate the spearman rank correlation of the similarity to the layers"""
 
     def _x_more_similar_than_y(x, y):
