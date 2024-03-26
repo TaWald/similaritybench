@@ -46,7 +46,7 @@ class MultiModelExperiment:
 
         self.seeds = np.unique([m.seed for m in self.models])
         self._seed_map = dict(
-            {f"{st[0]}-{st[1]}": i for i, st in enumerate(list(itertools.product(self.seeds, self.seeds)))}
+            {f"{seed1}-{seed2}": i for i, (seed1, seed2) in enumerate(itertools.product(self.seeds, self.seeds))}
         )
 
         self.similarities = np.full(
