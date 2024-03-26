@@ -122,6 +122,11 @@ class MultiModelExperiment:
         return results
 
 
+# TODO: this could likely be moved somewhere else
+MEASURE_DICT = {m.__name__: m() for m in CLASSES}
+MEASURE_LIST = list(MEASURE_DICT.keys())
+
+
 def parse_args():
     """Parses arguments given to script
 
@@ -143,14 +148,15 @@ def parse_args():
     # TODO: consider argument for measures, but that would require additional name index for these.
     #  Might not be necessary here due to experiment storer, but sometimes it might be desirable to
     #  just apply single individual measures
-    # parser.add_argument(
-    #     "-m",
-    #     "--measures",
-    #     type=Callable,
-    #     default=CLASSES,
-    #     choices=CLASSES,
-    #     help="Tests to run.",
-    # )
+    parser.add_argument(
+        "-m",
+        "--measures",
+        type=str,
+        nargs="*",
+        default=MEASURE_LIST,
+        choices=MEASURE_LIST,
+        help="Tests to run.",
+    )
     # TODO: consider whether domain argument may be desirable for easier filtering of models
     # parser.add_argument(
     #     "-dom",
@@ -184,7 +190,7 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    measures = [m() for m in CLASSES]
+    measures = [MEASURE_DICT[m] for m in args.measures]
 
     for curr_experiment in args.experiments:
 
