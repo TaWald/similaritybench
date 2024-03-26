@@ -10,17 +10,11 @@ import repsim.utils
 from loguru import logger
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
-from repsim.benchmark.types_globals import ARXIV_DATASET
 from repsim.benchmark.types_globals import BENCHMARK_DATASET
 from repsim.benchmark.types_globals import BENCHMARK_DATASETS_LIST
-from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
-from repsim.benchmark.types_globals import DOMAIN_TYPE
+from repsim.benchmark.types_globals import BENCHMARK_NN_ARCHITECTURES
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
-from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
-from repsim.benchmark.types_globals import EXPERIMENT_SEED
-from repsim.benchmark.types_globals import GRAPH_DOMAIN
-from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
-from repsim.benchmark.types_globals import NN_ARCHITECTURE_TYPE
+from repsim.benchmark.types_globals import MULTIMODEL_EXPERIMENT_IDENTIFIER
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import name_of_measure
 from repsim.measures import CLASSES
@@ -30,7 +24,7 @@ from repsim.measures.utils import SimilarityMeasure
 class MultiModelExperiment:
     def __init__(
         self,
-        experiment_name: EXPERIMENT_IDENTIFIER,
+        experiment_name: MULTIMODEL_EXPERIMENT_IDENTIFIER,
         models: list[TrainedModel],
         measures: list[SimilarityMeasure],
         device: str,
@@ -73,7 +67,7 @@ class MultiModelExperiment:
         return reps.representations[-1]
 
     def run(self) -> None:
-        """Run the experiment. """
+        """Run the experiment."""
 
         with ExperimentStorer() as storer:
 
@@ -140,9 +134,11 @@ def parse_args():
     parser.add_argument(
         "-e",
         "--experiments",
-        type=EXPERIMENT_IDENTIFIER,
-        default=BENCHMARK_EXPERIMENTS_LIST,
-        help="Tests to run.",
+        type=str,
+        nargs="*",
+        default=list(get_args(MULTIMODEL_EXPERIMENT_IDENTIFIER)),
+        choices=list(get_args(MULTIMODEL_EXPERIMENT_IDENTIFIER)),
+        help="Experiments to run.",
     )
     # TODO: consider argument for measures, but that would require additional name index for these.
     #  Might not be necessary here due to experiment storer, but sometimes it might be desirable to
@@ -150,8 +146,9 @@ def parse_args():
     # parser.add_argument(
     #     "-m",
     #     "--measures",
-    #     type=SimilarityMeasure,
+    #     type=Callable,
     #     default=CLASSES,
+    #     choices=CLASSES,
     #     help="Tests to run.",
     # )
     # TODO: consider whether domain argument may be desirable for easier filtering of models
@@ -166,17 +163,19 @@ def parse_args():
         "-a",
         "--architectures",
         nargs="*",
-        type=NN_ARCHITECTURE_TYPE,
-        default=list(get_args(NN_ARCHITECTURE_TYPE)),
+        type=str,
+        default=BENCHMARK_NN_ARCHITECTURES,
+        choices=BENCHMARK_NN_ARCHITECTURES,
         help="NN architectures that should be compared",
     )
     parser.add_argument(
         "-d",
         "--datasets",
         nargs="*",
-        type=BENCHMARK_DATASET,
+        type=str,
         default=BENCHMARK_DATASETS_LIST,
-        help="Datasets used in evaluation.",
+        choices=BENCHMARK_DATASETS_LIST,
+        help="Datasets to be used in evaluation.",
     )
     return parser.parse_args()
 
@@ -201,4 +200,4 @@ if __name__ == "__main__":
                 experiment = MultiModelExperiment(
                     experiment_name=curr_experiment, models=curr_models, measures=measures, device="cuda:0"
                 )
-                experiment.run_measures()
+                experiment.run()
