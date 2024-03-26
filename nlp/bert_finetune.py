@@ -114,7 +114,7 @@ def main(cfg: DictConfig) -> None:
     )
 
     # Load (and augment) dataset
-    feature_column = None  # will be set by augmentation. Otherwise use dataset-specific defaults
+    feature_column = cfg.dataset.feature_column[0]
     if cfg.augmentation.augment and cfg.augmentation.augmenter == "langtest":
         log.info("Augmenting training data with langtest")
         aug = cfg.augmentation
@@ -144,7 +144,7 @@ def main(cfg: DictConfig) -> None:
         # dataset["validation"] = dataset["validation"].select(range(20))
         log.info("Augmenting text...")
         dataset = dataset.map(
-            lambda x: {"augmented": [x[0] for x in augmenter.augment_many(x[cfg.dataset.feature_column[0]])]},
+            lambda x: {"augmented": [x[0] for x in augmenter.augment_many(x[feature_column])]},
             batched=True,
         )
         feature_column = "augmented"
@@ -198,20 +198,19 @@ def main(cfg: DictConfig) -> None:
 
     # Prepare huggingface Trainer
     metric = evaluate.load("accuracy")
-    eval_dataset = (
-        {key: tokenized_dataset[key] for key in cfg.dataset.finetuning.eval_dataset}
-        if len(cfg.dataset.finetuning.eval_dataset) > 1
-        else tokenized_dataset[cfg.dataset.finetuning.eval_dataset[0]]
-    )
+    eval_datasets = dict({key: tokenized_dataset[key] for key in cfg.dataset.finetuning.eval_dataset})
     trainer = hydra.utils.instantiate(
         cfg.dataset.finetuning.trainer,
         model=model,
         train_dataset=tokenized_dataset["train"],
-        eval_dataset=eval_dataset,
+        # Not using the eval_dataset keyword argument with a dict, because hydra will cast it as a DictConfig, which
+        # will break the eval code of Trainer. Instead we just use the first eval dataset we find.
+        eval_dataset=eval_datasets[cfg.dataset.finetuning.eval_dataset[0]],
         compute_metrics=partial(compute_metrics, metric=metric),
     )
+    # trainer.eval_dataset = eval_dataset
     trainer.train()
-    trainer.evaluate()
+    trainer.evaluate(eval_datasets)
     trainer.save_model(trainer.args.output_dir)
 
     # if cfg.augmentation.augment:
