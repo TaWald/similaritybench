@@ -202,6 +202,6 @@ def all_trained_graph_models() -> list[TrainedModel]:
 
 
 ALL_TRAINED_MODELS: list[TrainedModel] = []
-# ALL_TRAINED_MODELS.extend(all_trained_vision_models())
+ALL_TRAINED_MODELS.extend(all_trained_vision_models())
 # ALL_TRAINED_MODELS.extend(all_trained_nlp_models())
 ALL_TRAINED_MODELS.extend(all_trained_graph_models())
