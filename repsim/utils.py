@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Callable
 
 import numpy as np
 import torch
@@ -10,13 +11,30 @@ from repsim.measures.utils import SHAPE_TYPE
 @dataclass
 class SingleLayerRepresentation:
     layer_id: int
-    representation: torch.Tensor | np.ndarray
+    _representation: torch.Tensor | np.ndarray | None = None
     shape: SHAPE_TYPE
+    _extract_representation: Callable | None = None
     _setting_identifier: str | None = field(default=None, init=False)
     _architecture_name: str | None = field(default=None, init=False)
     _train_dataset: str | None = field(default=None, init=False)
     _seed_id: int | None = field(default=None, init=False)
     _representation_dataset: str | None = field(default=None, init=False)
+
+    @property
+    def representation(self) -> torch.Tensor | np.ndarray:
+        """
+        Allows omission of setting representations when creating, and creating on demand.
+        """
+        if self._representation is None:
+            assert self._extract_representation is not None, "No extraction function provided."
+            self._representation = self._extract_representation()
+        return self._representation
+
+    @representation.setter
+    def representation(self, v: torch.Tensor | np.ndarray) -> None:
+        """Allow setting the representation as before"""
+        self._representation = v
+        return self._representation
 
     def unique_identifier(self) -> str:
         """
