@@ -16,6 +16,7 @@ from repsim.benchmark.types_globals import STANDARD_SETTING
 from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
 from repsim.utils import ModelRepresentations
+from vision.get_reps import get_vision_representation_on_demand
 from vision.get_reps import get_vision_representations
 
 # from repsim.nlp import get_representations
@@ -43,7 +44,7 @@ class TrainedModel:
         This function should return the representation of the model.
         """
         if self.domain == "VISION":
-            return get_vision_representations(
+            return get_vision_representation_on_demand(
                 architecture_name=self.architecture,
                 train_dataset=self.train_dataset,
                 seed_id=self.additional_kwargs["seed_id"],
@@ -131,6 +132,25 @@ def all_trained_vision_models() -> list[TrainedModel]:
                 "ColorDot_0_CIFAR10DataModule",
             ]:
                 for identifier in ["Shortcut_ColorDot"]:
+                    all_trained_vision_models.append(
+                        TrainedModel(
+                            domain="VISION",
+                            architecture=arch,
+                            train_dataset=dataset,
+                            identifier=identifier,
+                            additional_kwargs={"seed_id": i, "setting_identifier": identifier},
+                        )
+                    )
+    for i in range(2):
+        for arch in ["ResNet18"]:
+            for dataset in [
+                "Gauss_Max_CIFAR10DataModule",
+                "Gauss_L_CIFAR10DataModule",
+                "Gauss_M_CIFAR10DataModule",
+                "Gauss_S_CIFAR10DataModule",
+                "ColorDot_Off_CIFAR10DataModule",  # N
+            ]:
+                for identifier in ["GaussNoise"]:
                     all_trained_vision_models.append(
                         TrainedModel(
                             domain="VISION",
