@@ -8,6 +8,7 @@ from typing import get_args
 import numpy as np
 import repsim.utils
 from loguru import logger
+from repsim.benchmark.meta_measures import inter_setting_3D_accuracy
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.types_globals import BENCHMARK_DATASET
@@ -112,7 +113,7 @@ class MultiModelExperiment:
                     # TODO: make sure all measures are symmetric, otherwise we may need an additional comparison
                     self.similarities[j, i, seed_index, cnt_m] = sim
 
-    def eval_measures(self, meta_measure: Callable) -> Dict[str, float]:
+    def eval_measures(self, meta_measure: Callable = inter_setting_3D_accuracy) -> Dict[str, float]:
 
         results = dict()
 
@@ -120,7 +121,9 @@ class MultiModelExperiment:
 
             vals = self.similarities[:, :, :, i_m]
 
-            results[name_of_measure(measure)] = meta_measure(vals)
+            results[name_of_measure(measure)] = meta_measure(
+                vals, higher_value_more_similar=measure.larger_is_more_similar
+            )
 
         return results
 
