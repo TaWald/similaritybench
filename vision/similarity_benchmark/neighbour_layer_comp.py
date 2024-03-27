@@ -4,7 +4,7 @@ from torch import nn
 from tqdm import tqdm
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
 from vision.data.base_datamodule import BaseDataModule
-from vision.toy_examples.rel_rep_to_jsd import extract_representations
+from vision.util.vision_rep_extraction import extract_representations
 
 
 # ToDo: Wrap the metric result into a more general result dataclass object
