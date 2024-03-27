@@ -3,12 +3,12 @@ import os
 from abc import ABC
 from abc import abstractmethod
 from itertools import product
+from pathlib import Path
 from typing import get_args
 from typing import List
 
 import pandas as pd
 import torch
-from graphs.config import DATA_DIR
 from graphs.config import DATASET_LIST
 from graphs.config import GNN_DICT
 from graphs.config import GNN_LIST
@@ -19,13 +19,14 @@ from graphs.config import GNN_PARAMS_DEFAULT_N_EPOCHS
 from graphs.config import GNN_PARAMS_DEFAULT_N_LAYERS
 from graphs.config import GNN_PARAMS_DEFAULT_NORM
 from graphs.config import LAYER_EXPERIMENT_N_LAYERS
-from graphs.config import MODEL_DIR
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
 from graphs.gnn import get_representations
 from graphs.gnn import train_model
 from graphs.tests.tools import shuffle_labels
 from ogb.nodeproppred import PygNodePropPredDataset
+from repsim.benchmark.paths import GRAPHS_DATA_PATH
+from repsim.benchmark.paths import GRAPHS_MODEL_PATH
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
@@ -65,19 +66,16 @@ class GraphTrainer(ABC):
 
         self.gnn_params, self.optimizer_params = self._get_gnn_params()
 
-        model_dataset_path = os.path.join(MODEL_DIR, self.dataset_name)
-        if not os.path.isdir(model_dataset_path):
-            os.mkdir(model_dataset_path)
+        model_dataset_path = GRAPHS_MODEL_PATH / self.dataset_name
+        Path(model_dataset_path).mkdir(parents=True, exist_ok=True)
 
-        self.models_path = os.path.join(model_dataset_path, self.architecture_type)
-        if not os.path.isdir(self.models_path):
-            os.mkdir(self.models_path)
+        self.models_path = model_dataset_path / self.architecture_type
+        Path(self.models_path).mkdir(parents=True, exist_ok=True)
 
         self.setting_paths = dict()
         for setting in self.settings:
-            setting_path = os.path.join(self.models_path, setting)
-            if not os.path.isdir(setting_path):
-                os.mkdir(setting_path)
+            setting_path = self.models_path / setting
+            Path(setting_path).mkdir(parents=True, exist_ok=True)
             self.setting_paths[setting] = setting_path
 
     # TODO: set up way to read in params which may be determined by graphgym
@@ -88,19 +86,17 @@ class GraphTrainer(ABC):
     def _check_pretrained(self, settings):
         missing_settings = []
         for setting in settings:
-            if not os.path.exists(
-                os.path.join(self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SEED(self.seed))
-            ):
+            if not Path(self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)).exists():
                 missing_settings.append(setting)
 
         return missing_settings
 
     def _load_model(self, setting):
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
-        model_file = os.path.join(self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SEED(self.seed))
+        model_file = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
 
         print(model_file)
-        if not os.path.isfile(model_file):
+        if not model_file.is_file():
             raise FileNotFoundError(f"Model File for seed {self.seed} does not exist")
 
         model.load_state_dict(torch.load(model_file, map_location=self.device))
@@ -111,7 +107,9 @@ class GraphTrainer(ABC):
         # TODO: This is assuming an OGB dataset, consider multiple cases if non-obg data is used
 
         pyg_dataset = PygNodePropPredDataset(
-            name=str(self.dataset_name), transform=t.Compose([t.ToUndirected(), t.ToSparseTensor()]), root=DATA_DIR
+            name=str(self.dataset_name),
+            transform=t.Compose([t.ToUndirected(), t.ToSparseTensor()]),
+            root=GRAPHS_DATA_PATH,
         )
 
         return pyg_dataset[0], pyg_dataset.num_classes, pyg_dataset.get_idx_split()
@@ -119,7 +117,7 @@ class GraphTrainer(ABC):
     def _log_train_results(self, train_results, setting):
         df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
         df_train.to_csv(
-            os.path.join(self.setting_paths[setting], TRAIN_LOG_FILE_NAME_SEED(self.seed)),
+            self.setting_paths[setting] / TRAIN_LOG_FILE_NAME_SEED(self.seed),
             index=False,
         )
 
@@ -148,7 +146,7 @@ class GraphTrainer(ABC):
         setting_data = self._get_setting_data(setting)
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
-        save_path = os.path.join(self.setting_paths[setting], TORCH_STATE_DICT_FILE_NAME_SEED(self.seed))
+        save_path = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
         train_results = train_model(
             model, setting_data, self.split_idx, self.device, self.seed, self.optimizer_params, save_path
         )
