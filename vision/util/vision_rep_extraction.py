@@ -107,7 +107,3 @@ def extract_representations(
         out_reps["y_hat"] = torch.cat(pred_cls, dim=0)
         out_reps["gt"] = torch.cat(labels, dim=0)
     return out_reps
-
-
-if __name__ == "__main__":
-    main()
