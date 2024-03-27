@@ -12,7 +12,7 @@ from repsim.measures.utils import SHAPE_TYPE
 class SingleLayerRepresentation:
     layer_id: int
     _representation: torch.Tensor | np.ndarray | None = None
-    shape: SHAPE_TYPE
+    _shape: SHAPE_TYPE | None = None
     _extract_representation: Callable | None = None
     _setting_identifier: str | None = field(default=None, init=False)
     _architecture_name: str | None = field(default=None, init=False)
@@ -35,6 +35,27 @@ class SingleLayerRepresentation:
         """Allow setting the representation as before"""
         self._representation = v
         return self._representation
+
+    @property
+    def shape(self) -> SHAPE_TYPE:
+        if self._shape is None:
+            if len(self.representation.shape) == 4:
+                shape = "nchw"
+            elif len(self.representation.shape) == 3:
+                shape = "ntd"
+            elif len(self.representation.shape) == 2:
+                shape = "nc"
+            else:
+                raise ValueError(f"Unknown shape of representations: {self.representation.shape}")
+        else:
+            shape = self._shape
+        return shape
+
+    @shape.setter
+    def shape(self, v: SHAPE_TYPE) -> None:
+        """Allow setting the shape as before"""
+        self._shape = v
+        return self._shape
 
     def unique_identifier(self) -> str:
         """
