@@ -3,8 +3,8 @@ from typing import Callable
 
 import numpy as np
 from loguru import logger
-from repsim.benchmark.quality_metrics import auprc
-from repsim.benchmark.quality_metrics import violation_rate
+from repsim.benchmark.measure_quality_metrics import auprc
+from repsim.benchmark.measure_quality_metrics import violation_rate
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import ExperimentStorer
