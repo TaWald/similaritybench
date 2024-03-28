@@ -14,11 +14,33 @@ from repsim.measures import distance_correlation
 from repsim.measures.cca import pwcca
 from repsim.measures.cca import svcca
 from repsim.measures.cka import centered_kernel_alignment
+from repsim.measures.correlation_match import hard_correlation_match
+from repsim.measures.correlation_match import soft_correlation_match
 from repsim.measures.eigenspace_overlap import eigenspace_overlap_score
+from repsim.measures.geometry_score import geometry_score
 from repsim.measures.gulp import gulp
+from repsim.measures.linear_regression import linear_reg
+from repsim.measures.multiscale_intrinsic_distance import imd_score
+from repsim.measures.nearest_neighbor import jaccard_similarity
+from repsim.measures.nearest_neighbor import joint_rank_jaccard_similarity
+from repsim.measures.nearest_neighbor import rank_similarity
+from repsim.measures.nearest_neighbor import second_order_cosine_similarity
+from repsim.measures.procrustes import aligned_cossim
+from repsim.measures.procrustes import orthogonal_angular_shape_metric
+from repsim.measures.procrustes import orthogonal_angular_shape_metric_centered
 from repsim.measures.procrustes import orthogonal_procrustes
+from repsim.measures.procrustes import orthogonal_procrustes_centered_and_normalized
+from repsim.measures.procrustes import permutation_aligned_cossim
+from repsim.measures.procrustes import permutation_angular_shape_metric
 from repsim.measures.procrustes import permutation_procrustes
+from repsim.measures.procrustes import procrustes_size_and_shape_distance
 from repsim.measures.rsa import representational_similarity_analysis
+from repsim.measures.rsm_norm_difference import rsm_norm_diff
+from repsim.measures.statistics import concentricity_difference
+from repsim.measures.statistics import concentricity_nrmse
+from repsim.measures.statistics import magnitude_difference
+from repsim.measures.statistics import magnitude_nrmse
+from repsim.measures.statistics import uniformity_difference
 from repsim.utils import SingleLayerRepresentation
 from scipy.stats import spearmanr
 from sklearn.metrics import average_precision_score
@@ -133,13 +155,17 @@ class OrdinalGroupSeparationExperiment:
                             sim = storer.get_comp_result(sngl_rep_a, sngl_rep_b, measure.__name__)
                         else:
                             try:
+                                reps_a = sngl_rep_a.representation
+                                reps_b = sngl_rep_b.representation
+                                shape = sngl_rep_a.shape
+                                logger.info(f"'{measure.__name__}' calculation starting ...")
                                 start_time = time.perf_counter()
-                                sim = measure(sngl_rep_a.representation, sngl_rep_b.representation, sngl_rep_a.shape)
+                                sim = measure(reps_a, reps_b, shape)
                                 runtime = time.perf_counter() - start_time
                                 storer.add_results(sngl_rep_a, sngl_rep_b, measure.__name__, sim, runtime)
                                 logger.info(
-                                    f"Similarity '{sim:.02f}', measure '{measure.__name__}' comparison for '{str(model_a)}' and"
-                                    + f" '{str(model_b)}' completed in {time.perf_counter() - start_time:.1f} seconds."
+                                    f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s for '{str(model_a)}' and"
+                                    + f" '{str(model_b)}'."
                                 )
 
                             except Exception as e:
@@ -225,19 +251,64 @@ if __name__ == "__main__":
         models=subset_of_vision_models,
         group_splitting_func=vision_group_split_func,
         measures=[
-            centered_kernel_alignment,  # 2.4 seconds
+            # centered_kernel_alignment,  # 2.4 seconds
             # orthogonal_procrustes,  # 77.2 seconds
-            permutation_procrustes,  # 16.2 seconds
+            # permutation_procrustes,  # 16.2 seconds
             # eigenspace_overlap_score,  # 245 seconds for one comp! -- 4 minutes
             # gulp,  # failed
             # svcca,  #  157.5/129.7 seconds
             # pwcca,  # failed?
             # representational_similarity_analysis, # 94.5 seconds
             # distance_correlation,  # 75.2
+            # cca
+            svcca,
+            pwcca,
+            # cka
+            centered_kernel_alignment,
+            # correlation_match
+            hard_correlation_match,
+            soft_correlation_match,
+            # distance_correlation
+            distance_correlation,
+            # eigenspace_overlap
+            eigenspace_overlap_score,
+            # geometry_score
+            geometry_score,
+            # gulp
+            gulp,
+            # linear regression
+            linear_reg,
+            # multiscale_intrinsic_distance
+            imd_score,
+            # nearest_neighbor
+            jaccard_similarity,
+            second_order_cosine_similarity,
+            rank_similarity,
+            joint_rank_jaccard_similarity,
+            # Procrustes
+            orthogonal_procrustes,
+            procrustes_size_and_shape_distance,
+            orthogonal_procrustes_centered_and_normalized,
+            permutation_procrustes,
+            permutation_angular_shape_metric,
+            orthogonal_angular_shape_metric,
+            orthogonal_angular_shape_metric_centered,
+            aligned_cossim,
+            permutation_aligned_cossim,
+            # rsa
+            representational_similarity_analysis,
+            # rsm_norm_diff
+            rsm_norm_diff,
+            # statistics
+            magnitude_difference,
+            magnitude_nrmse,
+            uniformity_difference,
+            concentricity_difference,
+            concentricity_nrmse,
         ],
         representation_dataset="ColorDot_0_CIFAR10DataModule",
     )
-    # result = experiment.run()
+    result = experiment.run()
     eval = experiment.eval()
     # print(result)
     print(0)
