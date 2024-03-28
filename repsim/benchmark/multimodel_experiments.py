@@ -7,11 +7,11 @@ from typing import get_args
 
 import numpy as np
 import repsim.utils
+import torch
 from loguru import logger
 from repsim.benchmark.meta_measures import inter_setting_3D_accuracy
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
-from repsim.benchmark.types_globals import BENCHMARK_DATASET
 from repsim.benchmark.types_globals import BENCHMARK_DATASETS_LIST
 from repsim.benchmark.types_globals import BENCHMARK_NN_ARCHITECTURES
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
@@ -28,9 +28,8 @@ class MultiModelExperiment:
         experiment_name: MULTIMODEL_EXPERIMENT_IDENTIFIER,
         models: list[TrainedModel],
         measures: list[SimilarityMeasure],
-        device: str,
+        device: int = None,
         storage_path: str | None = None,
-        representation_dataset: BENCHMARK_DATASET = None,
     ) -> None:
 
         self.experiment_name = experiment_name
@@ -51,17 +50,19 @@ class MultiModelExperiment:
         )
 
         self.storage_path = storage_path
-        self.device = device
-
-        # TODO: find consensus on whether or not this attribute is required, same for potential device attribute
-        self.representation_dataset = representation_dataset
+        if device is not None:
+            dev_str = f"cuda:{device}" if torch.cuda.is_available() else "cpu"
+            self.device = torch.device(dev_str)
+        else:
+            self.device = None
 
     def get_seed_index(self, s1, s2):
         return self._seed_map[f"{s1}-{s2}"]
 
+    # TODO: this can be moved or replaced by Tilos on-demand extraction
     def _final_layer_representation(self, model: TrainedModel) -> repsim.utils.SingleLayerRepresentation:
         start_time = time.perf_counter()
-        reps = model.get_representation(representation_dataset=self.representation_dataset)
+        reps = model.get_representation(device=self.device)
         logger.info(
             f"Representation extraction for '{str(model)}' completed in {time.perf_counter() - start_time:.1f} seconds."
         )
@@ -110,7 +111,7 @@ class MultiModelExperiment:
 
                     self.similarities[i, j, seed_index, cnt_m] = sim
 
-                    # TODO: make sure all measures are symmetric, otherwise we may need an additional comparison
+                    # TODO: verify that all measures are symmetric, otherwise we may need an additional comparison
                     self.similarities[j, i, seed_index, cnt_m] = sim
 
     def eval_measures(self, meta_measure: Callable = inter_setting_3D_accuracy) -> Dict[str, float]:
@@ -121,6 +122,7 @@ class MultiModelExperiment:
 
             vals = self.similarities[:, :, :, i_m]
 
+            # TODO: add nicer way to save results
             results[name_of_measure(measure)] = meta_measure(
                 vals, higher_value_more_similar=measure.larger_is_more_similar
             )
@@ -186,6 +188,12 @@ def parse_args():
         choices=BENCHMARK_DATASETS_LIST,
         help="Datasets to be used in evaluation.",
     )
+    parser.add_argument(
+        "--device",
+        type=int,
+        default=0,
+        help="GPU identifier.",
+    )
     return parser.parse_args()
 
 
@@ -207,6 +215,6 @@ if __name__ == "__main__":
             if len(curr_models) > 0:
 
                 experiment = MultiModelExperiment(
-                    experiment_name=curr_experiment, models=curr_models, measures=measures, device="cuda:0"
+                    experiment_name=curr_experiment, models=curr_models, measures=measures, device=args.device
                 )
                 experiment.run()

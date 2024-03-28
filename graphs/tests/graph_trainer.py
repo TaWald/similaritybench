@@ -50,7 +50,7 @@ class GraphTrainer(ABC):
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         test_name: EXPERIMENT_IDENTIFIER,
         seed: GRAPH_EXPERIMENT_SEED,
-        device: int = 0,
+        device: int | str = 0,
     ):
 
         self.test_name = test_name
@@ -61,8 +61,11 @@ class GraphTrainer(ABC):
         self.data, self.n_classes, self.split_idx = self._get_data()
         self.models = dict()
 
-        dev_str = f"cuda:{device}" if torch.cuda.is_available() else "cpu"
-        self.device = torch.device(dev_str)
+        if isinstance(device, str):
+            self.device = torch.device(device)
+        else:
+            dev_str = f"cuda:{device}" if torch.cuda.is_available() else "cpu"
+            self.device = torch.device(dev_str)
 
         self.gnn_params, self.optimizer_params = self._get_gnn_params()
 
