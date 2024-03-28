@@ -1,5 +1,8 @@
 import os
 from dataclasses import asdict
+from itertools import chain
+from itertools import combinations
+from itertools import product
 from typing import Callable
 
 import git
@@ -7,7 +10,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
-from repsim.benchmark.registry import TrainedModelRep
+from repsim.benchmark.registry import TrainedModel
 from repsim.measures.utils import SimilarityMeasure
 from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
@@ -120,6 +123,51 @@ class ExperimentStorer:
         self.save_to_file()
         self.experiments = None
         return False
+
+
+def get_in_group_cross_group_sims(in_group_slrs, out_group_slrs, measure_name: str, storer: ExperimentStorer):
+    """
+    Get the in-group and cross-group similarities for a given measure.
+    Args:
+        in_group_slrs: List of SingleLayerRepresentations of the in-group models.
+        out_group_slrs: List of SingleLayerRepresentations of the out-group models.
+        measure_name: Name of the measure to be used.
+        storer: ExperimentStorer object to store and retrieve the results.
+        Returns:
+        in_group_sims: List of in-group similarities.
+        cross_group_sims: List of cross-group similarities.
+    """
+    in_group_comps = combinations(in_group_slrs, 2)
+    cross_group_comps = product(in_group_slrs, out_group_slrs)
+    assert all(
+        [storer.comparison_exists(slr1, slr2, measure_name) for slr1, slr2 in in_group_comps]
+    ), "Not all in-group comparisons exist."
+    assert all(
+        [storer.comparison_exists(slr1, slr2, measure_name) for slr1, slr2 in cross_group_comps]
+    ), "Not all cross-group comparisons exist."
+    # Redo to not have empty iterable
+    in_group_comps = combinations(in_group_slrs, 2)
+    cross_group_comps = product(in_group_slrs, out_group_slrs)
+    in_group_sims = [storer.get_comp_result(slr1, slr2, measure_name) for slr1, slr2 in in_group_comps]
+    cross_group_sims = [storer.get_comp_result(slr1, slr2, measure_name) for slr1, slr2 in cross_group_comps]
+    return in_group_sims, cross_group_sims
+
+
+def get_ingroup_outgroup_SLRs(
+    groups_of_models: tuple[list[TrainedModel]], in_group_id: int, rep_layer_id: int, representation_dataset: str
+) -> tuple[list[SingleLayerRepresentation], list[SingleLayerRepresentation]]:
+    n_groups = set(range(len(groups_of_models)))
+
+    out_group_ids = n_groups - {in_group_id}
+    in_group_models = [
+        m.get_representation(representation_dataset).representations[rep_layer_id]
+        for m in groups_of_models[in_group_id]
+    ]
+    out_group_models = [
+        m.get_representation(representation_dataset).representations[rep_layer_id]
+        for m in chain(*[groups_of_models[out_id] for out_id in out_group_ids])
+    ]
+    return in_group_models, out_group_models
 
 
 def name_of_measure(obj):

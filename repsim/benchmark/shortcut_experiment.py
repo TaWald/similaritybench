@@ -1,13 +1,15 @@
 import time
-from itertools import combinations
 from typing import Callable
 
-import git
 import numpy as np
 from loguru import logger
-from registry import ALL_TRAINED_MODELS
+from repsim.benchmark.quality_metrics import auprc
+from repsim.benchmark.quality_metrics import violation_rate
+from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import ExperimentStorer
+from repsim.benchmark.utils import get_in_group_cross_group_sims
+from repsim.benchmark.utils import get_ingroup_outgroup_SLRs
 from repsim.measures import distance_correlation
 from repsim.measures.cca import pwcca
 from repsim.measures.cca import svcca
@@ -19,6 +21,7 @@ from repsim.measures.procrustes import permutation_procrustes
 from repsim.measures.rsa import representational_similarity_analysis
 from repsim.utils import SingleLayerRepresentation
 from scipy.stats import spearmanr
+from sklearn.metrics import average_precision_score
 from vision.util.file_io import save_json
 
 
@@ -46,6 +49,62 @@ class OrdinalGroupSeparationExperiment:
         self.kwargs = kwargs
         self.storage_path = storage_path
 
+    def measure_violation_rate(self, measure: Callable) -> float:
+        n_groups = len(self.groups_of_models)
+        group_violations = []
+        with ExperimentStorer(self.storage_path) as storer:
+            for i in range(n_groups):
+                in_group_slrs, out_group_slrs = get_ingroup_outgroup_SLRs(
+                    self.groups_of_models,
+                    i,
+                    rep_layer_id=-1,
+                    representation_dataset=self.representation_dataset,
+                )
+
+                in_group_sims, cross_group_sims = get_in_group_cross_group_sims(
+                    in_group_slrs,
+                    out_group_slrs,
+                    measure.__name__,
+                    storer,
+                )
+                # Calculate the violations, i.e. the number of times the in-group similarity is lower than the cross-group similarity
+                group_violations.append(violation_rate(in_group_sims, cross_group_sims))
+
+        return float(np.mean(group_violations))
+
+    def auprc(self, measure: Callable) -> float:
+        """Calculate the mean auprc for the in-group and cross-group similarities"""
+        n_groups = len(self.groups_of_models)
+        group_auprcs = []
+        with ExperimentStorer(self.storage_path) as storer:
+            for i in range(n_groups):
+                in_group_slrs, out_group_slrs = get_ingroup_outgroup_SLRs(
+                    self.groups_of_models,
+                    i,
+                    rep_layer_id=-1,
+                    representation_dataset=self.representation_dataset,
+                )
+                in_group_sims, cross_group_sims = get_in_group_cross_group_sims(
+                    in_group_slrs,
+                    out_group_slrs,
+                    measure.__name__,
+                    storer,
+                )
+                # Calculate the area under the precision-recall curve for the in-group and cross-group similarities
+                group_auprcs.append(auprc(in_group_sims, cross_group_sims))
+
+        return float(np.mean(group_auprcs))
+
+    def eval(self) -> dict:
+        """Evaluate the results of the experiment"""
+        measure_wise_results = {}
+        for measure in self.measures:
+            violation_rate = self.measure_violation_rate(measure)
+            auprc = self.auprc(measure)
+            measure_wise_results[measure.__name__] = {"violation_rate": violation_rate, "auprc": auprc}
+        # Still gotta debate what to do with these values actually. Very preference dependent!
+        return measure_wise_results
+
     def run(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
         flat_models = flatten(self.groups_of_models)
@@ -54,13 +113,6 @@ class OrdinalGroupSeparationExperiment:
             fill_value=np.nan,
             dtype=np.float32,
         )
-
-        # ToDo: Pass "SingleLayerRepresentation" objects to the metrics instead of the raw representations
-        # ToDo: Issues during development
-        #  - Choice of shortcut (how many different groups, how many seeds)
-        #  - Saving and loading of representations <--
-        #   Maybe saving intermediate things would make sense?
-        #  - Saving and loading of results!
 
         with ExperimentStorer(self.storage_path) as storer:
             for cnt_a, model_a in enumerate(flat_models):
@@ -185,6 +237,7 @@ if __name__ == "__main__":
         ],
         representation_dataset="ColorDot_0_CIFAR10DataModule",
     )
-    result = experiment.run()
-    print(result)
+    # result = experiment.run()
+    eval = experiment.eval()
+    # print(result)
     print(0)
