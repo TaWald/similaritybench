@@ -56,6 +56,7 @@ def train_vision_model(
     )
 
     if model_info.has_checkpoint() and not overwrite:
+        logger.info("Model already trained, skipping.")
         return  # No need to train the model again if it exists
 
     loaded_model, datamodule, params, arch_params = load_model_and_datamodule(model_info)
