@@ -27,7 +27,7 @@ def extract_single_layer_representations(
     model.eval()
     model.cuda()
     with torch.no_grad():
-        for cnt, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
+        for cnt, batch in tqdm(enumerate(dataloader), total=len(dataloader), desc="Extracting Representations"):
             if cnt > 50:
                 continue
             im, lbl = batch[0], batch[1]
