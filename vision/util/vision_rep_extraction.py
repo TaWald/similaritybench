@@ -30,7 +30,7 @@ def extract_single_layer_representations(
         for cnt, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
             if cnt > 50:
                 continue
-            im, lbl = batch
+            im, lbl = batch[0], batch[1]
             y_logit = model(im.cuda())
             y_probs = torch.softmax(y_logit, dim=1)
             y_hat = torch.argmax(y_probs, dim=1)
