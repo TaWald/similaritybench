@@ -74,6 +74,14 @@ class ExperimentStorer:
                     "runtime": runtime,
                     "id": comp_id,
                     "is_symmetric": metric.is_symmetric,
+                    "larger_is_more_similar": metric.larger_is_more_similar,
+                    "is_metric": metric.is_metric,
+                    "invariant_to_affine": metric.invariant_to_affine,
+                    "invariant_to_invertible_linear": metric.invariant_to_invertible_linear,
+                    "invariant_to_ortho": metric.invariant_to_ortho,
+                    "invariant_to_permutation": metric.invariant_to_permutation,
+                    "invariant_to_isotropic_scaling": metric.invariant_to_isotropic_scaling,
+                    "invariant_to_translation": metric.invariant_to_translation,
                 }
             )
             content.update({"hash": sha, "date": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")})
@@ -116,10 +124,30 @@ class ExperimentStorer:
         return joint_id
 
     def get_comp_result(
-        self, src_single_rep: SingleLayerRepresentation, tgt_single_rep: SingleLayerRepresentation, metric_name: str
+        self,
+        src_single_rep: SingleLayerRepresentation,
+        tgt_single_rep: SingleLayerRepresentation,
+        metric: SimilarityMeasure,
     ) -> dict:
-        """Return the result of the comparison"""
-        comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric_name)
+        """
+        Return the result of the comparison
+        Arsg:
+            src_single_rep: SingleLayerRepresentation
+            tgt_single_rep: SingleLayerRepresentation
+            metric: SimilarityMeasure
+        Returns:
+            dict: The result of the comparison
+        Raises:
+            ValueError: If the comparison does not exist in the dataframe.
+        """
+        comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric.name)
+        if comp_id not in self.experiments.index:
+            if metric.is_symmetric:
+                comp_id = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
+
+        if comp_id not in self.experiments.index:
+            raise ValueError(f"Comparison {comp_id} does not exist in the dataframe.")
+
         res = self.experiments.loc[comp_id]
         sim_value = res["metric_value"]
         return sim_value
@@ -128,10 +156,22 @@ class ExperimentStorer:
         self,
         src_single_rep: SingleLayerRepresentation,
         tgt_single_rep: SingleLayerRepresentation,
-        metric_name: str,
+        metric: SimilarityMeasure,
     ) -> bool:
-        """Check if the comparison already exists in the dataframe"""
-        comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric_name)
+        """
+        Check if the comparison (or if symmetrict the inverse) already exists in the dataframe.
+        Args:
+            src_single_rep: SingleLayerRepresentation  # Represents the source model that in non-symmetric cases
+            tgt_single_rep: SingleLayerRepresentation  # represents the target in non-symmetric cases
+            metric: SimilarityMeasure
+        Returns:
+            bool: True if the comparison exists, False otherwise.
+        """
+        comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric.name)
+        # If it exists we just continue, otherwise we check for the symmetric one
+        if comp_id not in self.experiments.index:
+            if metric.is_symmetric:
+                comp_id = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
         return comp_id in self.experiments.index
 
     def save_to_file(self) -> None:
