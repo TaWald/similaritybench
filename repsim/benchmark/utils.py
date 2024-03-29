@@ -1,4 +1,5 @@
 import os
+from collections.abc import Sequence
 from dataclasses import asdict
 from itertools import chain
 from itertools import combinations
@@ -45,8 +46,16 @@ class ExperimentStorer:
         repo = git.Repo(search_parent_directories=True)
         sha = repo.head.object.hexsha
 
-        content = {"first_" + k: v for k, v in asdict(first_rep).items() if k != "representation"}
-        content.update({"second_" + k: v for k, v in asdict(second_rep).items() if k != "representation"})
+        ids_of_interest = [
+            "layer_id",
+            "_setting_identifier",
+            "_architecture_name",
+            "_train_dataset",
+            "_representation_dataset",
+            "_seed_id",
+        ]
+        content = {"first_" + k: v for k, v in asdict(first_rep).items() if k in ids_of_interest}
+        content.update({"second_" + k: v for k, v in asdict(second_rep).items() if k in ids_of_interest})
         content.update({"metric": metric_name, "metric_value": metric_value, "runtime": runtime, "id": comp_id})
         content.update({"hash": sha, "date": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")})
         content_df = pd.DataFrame(content, index=[comp_id])
@@ -125,7 +134,9 @@ class ExperimentStorer:
         return False
 
 
-def get_in_group_cross_group_sims(in_group_slrs, out_group_slrs, measure_name: str, storer: ExperimentStorer):
+def get_in_group_cross_group_sims(
+    in_group_slrs, out_group_slrs, measure: SimilarityMeasure, storer: ExperimentStorer
+):
     """
     Get the in-group and cross-group similarities for a given measure.
     Args:
@@ -140,16 +151,16 @@ def get_in_group_cross_group_sims(in_group_slrs, out_group_slrs, measure_name: s
     in_group_comps = combinations(in_group_slrs, 2)
     cross_group_comps = product(in_group_slrs, out_group_slrs)
     assert all(
-        [storer.comparison_exists(slr1, slr2, measure_name) for slr1, slr2 in in_group_comps]
+        [storer.comparison_exists(slr1, slr2, measure.name) for slr1, slr2 in in_group_comps]
     ), "Not all in-group comparisons exist."
     assert all(
-        [storer.comparison_exists(slr1, slr2, measure_name) for slr1, slr2 in cross_group_comps]
+        [storer.comparison_exists(slr1, slr2, measure.name) for slr1, slr2 in cross_group_comps]
     ), "Not all cross-group comparisons exist."
     # Redo to not have empty iterable
     in_group_comps = combinations(in_group_slrs, 2)
     cross_group_comps = product(in_group_slrs, out_group_slrs)
-    in_group_sims = [storer.get_comp_result(slr1, slr2, measure_name) for slr1, slr2 in in_group_comps]
-    cross_group_sims = [storer.get_comp_result(slr1, slr2, measure_name) for slr1, slr2 in cross_group_comps]
+    in_group_sims = [storer.get_comp_result(slr1, slr2, measure.name) for slr1, slr2 in in_group_comps]
+    cross_group_sims = [storer.get_comp_result(slr1, slr2, measure.name) for slr1, slr2 in cross_group_comps]
     return in_group_sims, cross_group_sims
 
 
@@ -168,6 +179,26 @@ def get_ingroup_outgroup_SLRs(
         for m in chain(*[groups_of_models[out_id] for out_id in out_group_ids])
     ]
     return in_group_models, out_group_models
+
+
+def create_pivot_excel_table(
+    eval_result: pd.DataFrame,
+    row_index: str | Sequence[str],
+    columns: str | Sequence[str],
+    value_key: str,
+    file_path: str,
+    sheet_name: str,
+) -> None:
+    """
+    Convert the evaluation result to a pandas dataframe
+    Args:
+        eval_result: Dictionary of evaluation results.
+    Returns:
+        None, but writes out a table to disk.
+    """
+    pivoted_result = eval_result.pivot(index=row_index, columns=columns, values=value_key)
+    with pd.ExcelWriter(file_path) as writer:
+        pivoted_result.to_excel(writer, sheet_name=sheet_name)
 
 
 def name_of_measure(obj):
