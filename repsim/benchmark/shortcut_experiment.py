@@ -2,52 +2,74 @@ import time
 from typing import Callable
 
 import numpy as np
+import pandas as pd
 from loguru import logger
 from repsim.benchmark.measure_quality_metrics import auprc
 from repsim.benchmark.measure_quality_metrics import violation_rate
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
+from repsim.benchmark.utils import create_pivot_excel_table
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import get_in_group_cross_group_sims
 from repsim.benchmark.utils import get_ingroup_outgroup_SLRs
-from repsim.measures import distance_correlation
-from repsim.measures.cca import pwcca
-from repsim.measures.cca import svcca
+from repsim.measures.cca import PWCCA
+from repsim.measures.cca import SVCCA
 from repsim.measures.cka import centered_kernel_alignment
+from repsim.measures.cka import CKA
 from repsim.measures.correlation_match import hard_correlation_match
+from repsim.measures.correlation_match import HardCorrelationMatch
 from repsim.measures.correlation_match import soft_correlation_match
+from repsim.measures.correlation_match import SoftCorrelationMatch
+from repsim.measures.distance_correlation import DistanceCorrelation
 from repsim.measures.eigenspace_overlap import eigenspace_overlap_score
+from repsim.measures.eigenspace_overlap import EigenspaceOverlapScore
 from repsim.measures.geometry_score import geometry_score
+from repsim.measures.geometry_score import GeometryScore
+from repsim.measures.gulp import Gulp
 from repsim.measures.gulp import gulp
 from repsim.measures.linear_regression import linear_reg
+from repsim.measures.linear_regression import LinearRegression
 from repsim.measures.multiscale_intrinsic_distance import imd_score
+from repsim.measures.multiscale_intrinsic_distance import IMDScore
 from repsim.measures.nearest_neighbor import jaccard_similarity
+from repsim.measures.nearest_neighbor import JaccardSimilarity
 from repsim.measures.nearest_neighbor import joint_rank_jaccard_similarity
+from repsim.measures.nearest_neighbor import NearestNeighborSimilarityFunction
 from repsim.measures.nearest_neighbor import rank_similarity
+from repsim.measures.nearest_neighbor import RankSimilarity
 from repsim.measures.nearest_neighbor import second_order_cosine_similarity
+from repsim.measures.nearest_neighbor import SecondOrderCosineSimilarity
 from repsim.measures.procrustes import aligned_cossim
+from repsim.measures.procrustes import AlignedCosineSimilarity
 from repsim.measures.procrustes import orthogonal_angular_shape_metric
 from repsim.measures.procrustes import orthogonal_angular_shape_metric_centered
 from repsim.measures.procrustes import orthogonal_procrustes
 from repsim.measures.procrustes import orthogonal_procrustes_centered_and_normalized
+from repsim.measures.procrustes import OrthogonalAngularShapeMetricCentered
+from repsim.measures.procrustes import OrthogonalProcrustesCenteredAndNormalized
 from repsim.measures.procrustes import permutation_aligned_cossim
 from repsim.measures.procrustes import permutation_angular_shape_metric
 from repsim.measures.procrustes import permutation_procrustes
+from repsim.measures.procrustes import PermutationProcrustes
 from repsim.measures.procrustes import procrustes_size_and_shape_distance
-from repsim.measures.rsa import representational_similarity_analysis
-from repsim.measures.rsm_norm_difference import rsm_norm_diff
-from repsim.measures.statistics import concentricity_difference
+from repsim.measures.procrustes import ProcrustesSizeAndShapeDistance
+from repsim.measures.rsa import RSA
+from repsim.measures.rsm_norm_difference import RSMNormDifference
 from repsim.measures.statistics import concentricity_nrmse
-from repsim.measures.statistics import magnitude_difference
+from repsim.measures.statistics import ConcentricityDifference
 from repsim.measures.statistics import magnitude_nrmse
-from repsim.measures.statistics import uniformity_difference
+from repsim.measures.statistics import MagnitudeDifference
+from repsim.measures.statistics import UniformityDifference
+from repsim.measures.utils import flatten
+from repsim.measures.utils import SimilarityMeasure
 from repsim.utils import SingleLayerRepresentation
 from scipy.stats import spearmanr
 from sklearn.metrics import average_precision_score
+from tqdm import tqdm
 from vision.util.file_io import save_json
 
 
-def flatten(xss):
+def flatten_nested_list(xss):
     return [x for xs in xss for x in xs]
 
 
@@ -57,12 +79,13 @@ class OrdinalGroupSeparationExperiment:
         experiment_identifier: str,
         models: list[TrainedModel],
         group_splitting_func: Callable,
-        measures: list[Callable],
+        measures: list[SimilarityMeasure],
         representation_dataset: str,
         storage_path: str | None = None,
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
+        self.experiment_identifier: str = experiment_identifier
         self.groups_of_models: tuple[list[TrainedModel]] = group_splitting_func(
             models
         )  # Expects lists of models ordered by expected ordinality
@@ -71,7 +94,7 @@ class OrdinalGroupSeparationExperiment:
         self.kwargs = kwargs
         self.storage_path = storage_path
 
-    def measure_violation_rate(self, measure: Callable) -> float:
+    def measure_violation_rate(self, measure: SimilarityMeasure) -> float:
         n_groups = len(self.groups_of_models)
         group_violations = []
         with ExperimentStorer(self.storage_path) as storer:
@@ -90,11 +113,16 @@ class OrdinalGroupSeparationExperiment:
                     storer,
                 )
                 # Calculate the violations, i.e. the number of times the in-group similarity is lower than the cross-group similarity
-                group_violations.append(violation_rate(in_group_sims, cross_group_sims))
+                group_violations.append(
+                    violation_rate(
+                        in_group_sims,
+                        cross_group_sims,
+                    )
+                )
 
         return float(np.mean(group_violations))
 
-    def auprc(self, measure: Callable) -> float:
+    def auprc(self, measure: SimilarityMeasure) -> float:
         """Calculate the mean auprc for the in-group and cross-group similarities"""
         n_groups = len(self.groups_of_models)
         group_auprcs = []
@@ -117,19 +145,50 @@ class OrdinalGroupSeparationExperiment:
 
         return float(np.mean(group_auprcs))
 
-    def eval(self) -> dict:
+    def eval(self) -> pd.DataFrame:
         """Evaluate the results of the experiment"""
-        measure_wise_results = {}
-        for measure in self.measures:
+        measure_wise_results: list[dict] = []
+        examplary_model = self.groups_of_models[0][0]
+        meta_data = {
+            "domain": examplary_model.domain,
+            "architecture": examplary_model.architecture,
+            "representation_dataset": self.representation_dataset,
+            "identifier": examplary_model.identifier,
+            "experiment_identifier": self.experiment_identifier,
+        }
+        for measure in tqdm(self.measures, desc=f"Evaluating quality of measures"):
             violation_rate = self.measure_violation_rate(measure)
+            measure_wise_results.append(
+                {
+                    "similarity_measure": measure.__name__,
+                    "quality_measure": "violation_rate",
+                    "value": violation_rate,
+                    **meta_data,
+                }
+            )
             auprc = self.auprc(measure)
-            measure_wise_results[measure.__name__] = {"violation_rate": violation_rate, "auprc": auprc}
-        # Still gotta debate what to do with these values actually. Very preference dependent!
-        return measure_wise_results
+            measure_wise_results.append(
+                {
+                    "similarity_measure": measure.__name__,
+                    "quality_measure": "AUPRC",
+                    "value": auprc,
+                    **meta_data,
+                }
+            )
+        pd_df = pd.DataFrame(measure_wise_results)
+        create_pivot_excel_table(
+            pd_df,
+            row_index="similarity_measure",
+            columns=["quality_measure", "architecture"],
+            value_key="value",
+            file_path="results.xlsx",
+            sheet_name="shortcut_results",
+        )
+        return
 
     def run(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
-        flat_models = flatten(self.groups_of_models)
+        flat_models = flatten_nested_list(self.groups_of_models)
         all_sims = np.full(
             (len(flat_models), len(flat_models), len(self.measures)),
             fill_value=np.nan,
@@ -150,7 +209,7 @@ class OrdinalGroupSeparationExperiment:
                     for cnt_m, measure in enumerate(self.measures):
                         if storer.comparison_exists(sngl_rep_a, sngl_rep_b, measure.__name__):
                             # ---------------------------- Just read from file --------------------------- #
-                            logger.info(f"Found {measure.__name__} loaded rep.")
+                            logger.info(f"Found previous {measure.__name__} comparison.")
 
                             sim = storer.get_comp_result(sngl_rep_a, sngl_rep_b, measure.__name__)
                         else:
@@ -158,6 +217,7 @@ class OrdinalGroupSeparationExperiment:
                                 reps_a = sngl_rep_a.representation
                                 reps_b = sngl_rep_b.representation
                                 shape = sngl_rep_a.shape
+                                # reps_a, reps_b = flatten(reps_a, reps_b, shape=shape)
                                 logger.info(f"'{measure.__name__}' calculation starting ...")
                                 start_time = time.perf_counter()
                                 sim = measure(reps_a, reps_b, shape)
@@ -251,60 +311,55 @@ if __name__ == "__main__":
         models=subset_of_vision_models,
         group_splitting_func=vision_group_split_func,
         measures=[
-            # centered_kernel_alignment,  # 2.4 seconds
-            # orthogonal_procrustes,  # 77.2 seconds
-            # permutation_procrustes,  # 16.2 seconds
-            # eigenspace_overlap_score,  # 245 seconds for one comp! -- 4 minutes
-            # gulp,  # failed
-            # svcca,  #  157.5/129.7 seconds
-            # pwcca,  # failed?
-            # representational_similarity_analysis, # 94.5 seconds
-            # distance_correlation,  # 75.2
-            # cca
-            svcca,
-            pwcca,
-            # cka
-            centered_kernel_alignment,
-            # correlation_match
-            hard_correlation_match,
-            soft_correlation_match,
+            # cka,
+            CKA,
+            # correlation_match,
+            HardCorrelationMatch,
+            SoftCorrelationMatch,
             # distance_correlation
-            distance_correlation,
+            DistanceCorrelation,
             # eigenspace_overlap
-            eigenspace_overlap_score,
+            EigenspaceOverlapScore,
             # geometry_score
-            geometry_score,
+            GeometryScore,
             # gulp
-            gulp,
+            Gulp,
             # linear regression
-            linear_reg,
+            LinearRegression,
             # multiscale_intrinsic_distance
-            imd_score,
+            IMDScore,
             # nearest_neighbor
-            jaccard_similarity,
-            second_order_cosine_similarity,
-            rank_similarity,
-            joint_rank_jaccard_similarity,
+            NearestNeighborSimilarityFunction,
+            JaccardSimilarity,
+            SecondOrderCosineSimilarity,
+            RankSimilarity,
             # Procrustes
-            orthogonal_procrustes,
-            procrustes_size_and_shape_distance,
-            orthogonal_procrustes_centered_and_normalized,
-            permutation_procrustes,
-            permutation_angular_shape_metric,
-            orthogonal_angular_shape_metric,
-            orthogonal_angular_shape_metric_centered,
-            aligned_cossim,
-            permutation_aligned_cossim,
+            # procrustes_size_and_shape_distance,
+            ProcrustesSizeAndShapeDistance,
+            # orthogonal_procrustes_centered_and_normalized,
+            OrthogonalProcrustesCenteredAndNormalized,
+            # permutation_procrustes,
+            PermutationProcrustes,
+            #  permutation_angular_shape_metric, <-- No Class?
+            # orthogonal_angular_shape_metric_centered,
+            OrthogonalAngularShapeMetricCentered,
+            # aligned_cossim,
+            AlignedCosineSimilarity,
+            # permutation_aligned_cossim, <-- No Class?
             # rsa
-            representational_similarity_analysis,
+            RSA,
+            # representational_similarity_analysis,
             # rsm_norm_diff
-            rsm_norm_diff,
+            RSMNormDifference,
             # statistics
-            magnitude_difference,
-            magnitude_nrmse,
-            uniformity_difference,
-            concentricity_difference,
-            concentricity_nrmse,
+            MagnitudeDifference,
+            # magnitude_nrmse,
+            UniformityDifference,
+            ConcentricityDifference,
+            # concentricity_nrmse,
+            # cca
+            SVCCA,
+            PWCCA,
         ],
         representation_dataset="ColorDot_0_CIFAR10DataModule",
     )
