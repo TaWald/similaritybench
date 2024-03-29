@@ -191,10 +191,12 @@ class OrdinalGroupSeparationExperiment:
     def run(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
         flat_models = flatten_nested_list(self.groups_of_models)
-        combos = product(flat_models, 2)  # Necessary for non-symmetric values
+        combos = product(flat_models, flat_models)  # Necessary for non-symmetric values
 
         with ExperimentStorer(self.storage_path) as storer:
             for model_src, model_tgt in combos:
+                if model_src == model_tgt:
+                    continue  # Skip self-comparisons
                 model_reps_src = model_src.get_representation(self.representation_dataset, **self.kwargs)
                 sngl_rep_src: SingleLayerRepresentation = model_reps_src.representations[-1]
                 model_reps_tgt = model_tgt.get_representation(self.representation_dataset, **self.kwargs)
