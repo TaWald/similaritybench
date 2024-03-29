@@ -52,7 +52,7 @@ class SimilarityMeasure:
     invariant_to_permutation: bool
     invariant_to_isotropic_scaling: bool
     invariant_to_translation: bool
-    name: str = field(str, init=False)
+    name: str = field(init=False)
 
     def __call__(
         self,
