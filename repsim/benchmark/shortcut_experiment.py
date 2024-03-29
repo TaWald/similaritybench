@@ -1,4 +1,6 @@
 import time
+from itertools import combinations
+from itertools import product
 from typing import Callable
 
 import numpy as np
@@ -189,55 +191,44 @@ class OrdinalGroupSeparationExperiment:
     def run(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
         flat_models = flatten_nested_list(self.groups_of_models)
-        all_sims = np.full(
-            (len(flat_models), len(flat_models), len(self.measures)),
-            fill_value=np.nan,
-            dtype=np.float32,
-        )
+        combos = product(flat_models, 2)  # Necessary for non-symmetric values
 
         with ExperimentStorer(self.storage_path) as storer:
-            for cnt_a, model_a in enumerate(flat_models):
-                model_reps_a = model_a.get_representation(self.representation_dataset, **self.kwargs)
-                sngl_rep_a: SingleLayerRepresentation = model_reps_a.representations[-1]
+            for model_src, model_tgt in combos:
+                model_reps_src = model_src.get_representation(self.representation_dataset, **self.kwargs)
+                sngl_rep_src: SingleLayerRepresentation = model_reps_src.representations[-1]
+                model_reps_tgt = model_tgt.get_representation(self.representation_dataset, **self.kwargs)
+                sngl_rep_tgt: SingleLayerRepresentation = model_reps_tgt.representations[-1]
 
-                for cnt_b, model_b in enumerate(flat_models):
-                    if cnt_a > cnt_b:
-                        continue
-                    model_reps_b = model_b.get_representation(self.representation_dataset, **self.kwargs)
-                    sngl_rep_b = model_reps_b.representations[-1]
+                for measure in self.measures:
+                    if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure.__name__):
+                        # ---------------------------- Just read from file --------------------------- #
+                        logger.info(f"Found previous {measure.__name__} comparison.")
 
-                    for cnt_m, measure in enumerate(self.measures):
-                        if storer.comparison_exists(sngl_rep_a, sngl_rep_b, measure.__name__):
-                            # ---------------------------- Just read from file --------------------------- #
-                            logger.info(f"Found previous {measure.__name__} comparison.")
+                        sim = storer.get_comp_result(sngl_rep_src, sngl_rep_tgt, measure.__name__)
+                    else:
+                        try:
+                            reps_a = sngl_rep_src.representation
+                            reps_b = sngl_rep_tgt.representation
+                            shape = sngl_rep_src.shape
+                            # reps_a, reps_b = flatten(reps_a, reps_b, shape=shape)
+                            logger.info(f"'{measure.__name__}' calculation starting ...")
+                            start_time = time.perf_counter()
+                            sim = measure(reps_a, reps_b, shape)
+                            runtime = time.perf_counter() - start_time
+                            storer.add_results(sngl_rep_src, model_reps_tgt, measure.__name__, sim, runtime)
+                            logger.info(
+                                f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s for '{str(model_reps_src)}' and"
+                                + f" '{str(model_reps_tgt)}'."
+                            )
 
-                            sim = storer.get_comp_result(sngl_rep_a, sngl_rep_b, measure.__name__)
-                        else:
-                            try:
-                                reps_a = sngl_rep_a.representation
-                                reps_b = sngl_rep_b.representation
-                                shape = sngl_rep_a.shape
-                                # reps_a, reps_b = flatten(reps_a, reps_b, shape=shape)
-                                logger.info(f"'{measure.__name__}' calculation starting ...")
-                                start_time = time.perf_counter()
-                                sim = measure(reps_a, reps_b, shape)
-                                runtime = time.perf_counter() - start_time
-                                storer.add_results(sngl_rep_a, sngl_rep_b, measure.__name__, sim, runtime)
-                                logger.info(
-                                    f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s for '{str(model_a)}' and"
-                                    + f" '{str(model_b)}'."
-                                )
-
-                            except Exception as e:
-                                sim = np.nan
-                                logger.error(
-                                    f"'{measure.__name__}' comparison for '{str(model_a)}' and '{str(model_b)}' failed."
-                                )
-                                logger.error(e)
-
-                        all_sims[cnt_a, cnt_b, cnt_m] = sim
-                        all_sims[cnt_b, cnt_a, cnt_m] = sim
-        return all_sims
+                        except Exception as e:
+                            sim = np.nan
+                            logger.error(
+                                f"'{measure.__name__}' comparison for '{str(model_reps_src)}' and '{str(model_reps_tgt)}' failed."
+                            )
+                            logger.error(e)
+        return
 
 
 """
