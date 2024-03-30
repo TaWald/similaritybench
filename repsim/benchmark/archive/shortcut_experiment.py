@@ -234,9 +234,7 @@ class GroupSeparationExperiment:
 
                         except Exception as e:
                             sim = np.nan
-                            logger.error(
-                                f"'{measure.name}' comparison for '{str(model_reps_src)}' and '{str(model_reps_tgt)}' failed."
-                            )
+                            logger.error(f"'{measure.name}' comparison failed.")
                             logger.error(e)
         return
 
