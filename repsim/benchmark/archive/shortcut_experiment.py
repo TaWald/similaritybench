@@ -1,4 +1,8 @@
+import os
 import time
+from collections.abc import Sequence
+from contextlib import contextmanager
+from contextlib import redirect_stdout
 from itertools import combinations
 from itertools import product
 from typing import Callable
@@ -71,26 +75,30 @@ from tqdm import tqdm
 from vision.util.file_io import save_json
 
 
+@contextmanager
+def suppress():
+    with open(os.devnull, "w") as null:
+        with redirect_stdout(null):
+            yield
+
+
 def flatten_nested_list(xss):
     return [x for xs in xss for x in xs]
 
 
-class OrdinalGroupSeparationExperiment:
+class GroupSeparationExperiment:
     def __init__(
         self,
-        experiment_identifier: str,
-        models: list[TrainedModel],
-        group_splitting_func: Callable,
+        grouped_models: list[Sequence[TrainedModel]],
         measures: list[SimilarityMeasure],
         representation_dataset: str,
         storage_path: str | None = None,
+        meta_data: dict | None = None,
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
-        self.experiment_identifier: str = experiment_identifier
-        self.groups_of_models: tuple[list[TrainedModel]] = group_splitting_func(
-            models
-        )  # Expects lists of models ordered by expected ordinality
+        self.meta_data: dict = meta_data
+        self.groups_of_models: tuple[list[TrainedModel]] = grouped_models
         self.measures = measures
         self.representation_dataset = representation_dataset
         self.kwargs = kwargs
@@ -156,8 +164,10 @@ class OrdinalGroupSeparationExperiment:
             "architecture": examplary_model.architecture,
             "representation_dataset": self.representation_dataset,
             "identifier": examplary_model.identifier,
-            "experiment_identifier": self.experiment_identifier,
         }
+        if self.meta_data is not None:
+            meta_data.update(self.meta_data)
+
         for measure in tqdm(self.measures, desc=f"Evaluating quality of measures"):
             violation_rate = self.measure_violation_rate(measure)
             measure_wise_results.append(
@@ -203,31 +213,29 @@ class OrdinalGroupSeparationExperiment:
                 sngl_rep_tgt: SingleLayerRepresentation = model_reps_tgt.representations[-1]
 
                 for measure in self.measures:
-                    if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure.__name__):
+                    if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
                         # ---------------------------- Just read from file --------------------------- #
-                        logger.info(f"Found previous {measure.__name__} comparison.")
-
-                        sim = storer.get_comp_result(sngl_rep_src, sngl_rep_tgt, measure.__name__)
+                        logger.info(f"Found previous {measure.name} comparison.")
+                        sim = storer.get_comp_result(sngl_rep_src, sngl_rep_tgt, measure)
                     else:
                         try:
                             reps_a = sngl_rep_src.representation
                             reps_b = sngl_rep_tgt.representation
                             shape = sngl_rep_src.shape
                             # reps_a, reps_b = flatten(reps_a, reps_b, shape=shape)
-                            logger.info(f"'{measure.__name__}' calculation starting ...")
+
+                            logger.info(f"'{measure.name}' calculation starting ...")
                             start_time = time.perf_counter()
-                            sim = measure(reps_a, reps_b, shape)
+                            with suppress():  # Mute printouts of the measures
+                                sim = measure(reps_a, reps_b, shape)
                             runtime = time.perf_counter() - start_time
-                            storer.add_results(sngl_rep_src, model_reps_tgt, measure.__name__, sim, runtime)
-                            logger.info(
-                                f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s for '{str(model_reps_src)}' and"
-                                + f" '{str(model_reps_tgt)}'."
-                            )
+                            storer.add_results(sngl_rep_src, sngl_rep_tgt, measure, sim, runtime)
+                            logger.info(f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s.")
 
                         except Exception as e:
                             sim = np.nan
                             logger.error(
-                                f"'{measure.__name__}' comparison for '{str(model_reps_src)}' and '{str(model_reps_tgt)}' failed."
+                                f"'{measure.name}' comparison for '{str(model_reps_src)}' and '{str(model_reps_tgt)}' failed."
                             )
                             logger.error(e)
         return
@@ -280,7 +288,7 @@ if __name__ == "__main__":
                 "ColorDot_0_CIFAR10DataModule",
             ]
         )
-        and (m.additional_kwargs["seed_id"] <= 1)
+        and (m.additional_kwargs["seed"] <= 1)
     ]
     subset_of_nlp_models = [
         m
@@ -299,7 +307,7 @@ if __name__ == "__main__":
             model_groups.append(group)
         return tuple(model_groups)
 
-    experiment = OrdinalGroupSeparationExperiment(
+    experiment = GroupSeparationExperiment(
         experiment_identifier="Vision_ColorDot_Separation",
         models=subset_of_vision_models,
         group_splitting_func=vision_group_split_func,
