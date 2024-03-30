@@ -80,7 +80,7 @@ def get_vision_representation_on_demand(
     model_rep = ModelRepresentations(
         setting_identifier=model_info.setting_identifier,
         architecture_name=model_info.architecture,
-        seed_id=model_info.seed_id,
+        seed=model_info.seed,
         train_dataset=model_info.dataset,
         representation_dataset=representation_dataset,
         representations=tuple(all_single_layer_reps),
@@ -91,7 +91,7 @@ def get_vision_representation_on_demand(
 def get_vision_representations(
     architecture_name: str,
     train_dataset: str,
-    seed_id: int,
+    seed: int,
     setting_identifier: str | None,
     representation_dataset: str,
 ) -> ModelRepresentations:
@@ -106,13 +106,13 @@ def get_vision_representations(
         model_info: ds.ModelInfo = get_vision_model_info(
             architecture_name=architecture_name,
             dataset=train_dataset,
-            seed_id=seed_id,
+            seed_id=seed,
         )
     else:
         model_info: ds.ModelInfo = get_vision_model_info(
             architecture_name=architecture_name,
             dataset=train_dataset,
-            seed_id=seed_id,
+            seed_id=seed,
             setting_identifier=setting_identifier,
         )
 
@@ -129,7 +129,7 @@ def get_vision_representations(
     model_reps = ModelRepresentations(
         setting_identifier=model_info.setting_identifier,
         architecture_name=model_info.architecture,
-        seed=model_info.seed_id,
+        seed=model_info.seed,
         train_dataset=model_info.dataset,
         representation_dataset=representation_dataset,
         representations=tuple(all_single_layer_reps),
