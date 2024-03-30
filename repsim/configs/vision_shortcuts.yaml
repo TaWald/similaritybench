@@ -1,0 +1,23 @@
+
+domain: VISION
+experiment: shortcut_test
+# measures:
+#   - "CKA"
+representation_dataset: "ColorDot_0_CIFAR10DataModule"
+filter_key_vals:
+  train_dataset:
+    - ColorDot_100_CIFAR10DataModule
+    - ColorDot_75_CIFAR10DataModule
+    - ColorDot_50_CIFAR10DataModule
+    - ColorDot_25_CIFAR10DataModule
+    - ColorDot_0_CIFAR10DataModule
+  seed:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+  architecture: ResNet18
+  domain: VISION
+differentiation_keys:
+  - train_dataset
