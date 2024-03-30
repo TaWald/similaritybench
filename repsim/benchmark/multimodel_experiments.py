@@ -18,6 +18,7 @@ from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import MULTIMODEL_EXPERIMENT_IDENTIFIER
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import name_of_measure
+from repsim.measures import ALL_MEASURES
 from repsim.measures import CLASSES
 from repsim.measures.utils import SimilarityMeasure
 
@@ -158,8 +159,8 @@ def parse_args():
         "--measures",
         type=str,
         nargs="*",
-        default=MEASURE_LIST,
-        choices=MEASURE_LIST,
+        default=ALL_MEASURES.keys(),
+        choices=ALL_MEASURES.keys(),
         help="Tests to run.",
     )
     # TODO: consider whether domain argument may be desirable for easier filtering of models
