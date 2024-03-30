@@ -14,7 +14,6 @@ class SingleLayerRepresentation:
     _representation: torch.Tensor | np.ndarray | None = None
     _shape: SHAPE_TYPE | None = None
     _extract_representation: Callable | None = None
-    _setting_identifier: str | None = field(default=None, init=False)
     _architecture_name: str | None = field(default=None, init=False)
     _train_dataset: str | None = field(default=None, init=False)
     _seed: int | None = field(default=None, init=False)
@@ -66,16 +65,13 @@ class SingleLayerRepresentation:
         """
         assert all(
             [
-                self._setting_identifier is not None,
                 self._architecture_name is not None,
                 self._train_dataset is not None,
                 self._seed is not None,
             ],
         ), "SingleLayerRepresentation has not been set with the necessary information."
-        setting = "None" if self._setting_identifier is None else self._setting_identifier
         return "__".join(
             [  # type:ignore
-                setting,
                 self._architecture_name,
                 self._train_dataset,
                 str(self._seed),
