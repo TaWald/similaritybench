@@ -33,7 +33,6 @@ class ExperimentStorer:
         tgt_single_rep: SingleLayerRepresentation,
         metric: SimilarityMeasure,
         metric_value: float,
-        is_symmetric: bool = False,
         runtime: float | None = None,
         overwrite: bool = False,
     ) -> None:
@@ -41,10 +40,10 @@ class ExperimentStorer:
         Add a comparison result of the experiments to disk.
         Serializes all the information into a unique identifier and stores the results in a pandas dataframe.
         """
-        if self.comparison_exists(src_single_rep, tgt_single_rep, metric.name) and not overwrite:
+        if self.comparison_exists(src_single_rep, tgt_single_rep, metric) and not overwrite:
             logger.info("Comparison already exists and Overwrite is False. Skipping.")
 
-        if is_symmetric:
+        if metric.is_symmetric:
             reps = [(src_single_rep, tgt_single_rep), (tgt_single_rep, src_single_rep)]
         else:
             reps = [(src_single_rep, tgt_single_rep)]
@@ -61,7 +60,6 @@ class ExperimentStorer:
 
             ids_of_interest = [
                 "layer_id",
-                "_setting_identifier",
                 "_architecture_name",
                 "_train_dataset",
                 "_representation_dataset",
@@ -212,10 +210,10 @@ def get_in_group_cross_group_sims(
     in_group_comps = combinations(in_group_slrs, 2)
     cross_group_comps = product(in_group_slrs, out_group_slrs)
     assert all(
-        [storer.comparison_exists(slr1, slr2, measure.name) for slr1, slr2 in in_group_comps]
+        [storer.comparison_exists(slr1, slr2, measure) for slr1, slr2 in in_group_comps]
     ), "Not all in-group comparisons exist."
     assert all(
-        [storer.comparison_exists(slr1, slr2, measure.name) for slr1, slr2 in cross_group_comps]
+        [storer.comparison_exists(slr1, slr2, measure) for slr1, slr2 in cross_group_comps]
     ), "Not all cross-group comparisons exist."
     # Redo to not have empty iterable
     in_group_comps = combinations(in_group_slrs, 2)
