@@ -38,16 +38,21 @@ class TrainedModel:
     train_dataset: VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
     identifier: SETTING_IDENTIFIER
     additional_kwargs: dict  # Maybe one can remove this to make it more general
+    seed: int
 
-    def get_representation(self, representation_dataset: str, **kwargs) -> ModelRepresentations:
+    def get_representation(self, representation_dataset: str = None, **kwargs) -> ModelRepresentations:
         """
         This function should return the representation of the model.
         """
+
+        if representation_dataset is None:
+            representation_dataset = self.train_dataset
+
         if self.domain == "VISION":
             return get_vision_representation_on_demand(
                 architecture_name=self.architecture,
                 train_dataset=self.train_dataset,
-                seed_id=self.additional_kwargs["seed_id"],
+                seed_id=self.seed,
                 setting_identifier=self.identifier,
                 representation_dataset=representation_dataset,
             )
@@ -80,11 +85,11 @@ class TrainedModel:
         #         representation_dataset=kwargs["dataset_path"] + kwargs["dataset_config"] + kwargs["dataset_split"],
         #         representations=tuple(SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
         #     )
-        elif self.domain == "GRAPHS":
+        if self.domain == "GRAPHS":
             return get_graph_representations(
                 architecture_name=self.architecture,
                 train_dataset=self.train_dataset,
-                seed_id=self.additional_kwargs["seed_id"],
+                seed=self.seed,
                 setting_identifier=self.identifier,
                 representation_dataset=representation_dataset,
             )
@@ -119,7 +124,8 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
-                            additional_kwargs={"seed_id": i, "setting_identifier": None},
+                            seed=i,
+                            additional_kwargs={},
                         )
                     )
     for i in range(2):
@@ -138,7 +144,8 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
-                            additional_kwargs={"seed_id": i, "setting_identifier": identifier},
+                            seed=i,
+                            additional_kwargs={},
                         )
                     )
     for i in range(2):
@@ -171,6 +178,7 @@ def all_trained_nlp_models() -> list[TrainedModel]:
             architecture="BERT",
             train_dataset="SST2",
             identifier=STANDARD_SETTING,
+            seed=0,
             additional_kwargs={
                 "human_name": "multibert-0-sst2",
                 "model_path": "/root/LLM-comparison/outputs/2024-01-31/13-12-49",
@@ -195,7 +203,8 @@ def all_trained_graph_models() -> list[TrainedModel]:
                                 architecture=arch,
                                 train_dataset=dataset,
                                 identifier=setting,
-                                additional_kwargs={"seed_id": i},
+                                seed=i,
+                                additional_kwargs={},
                             )
                         )
     return all_trained_models

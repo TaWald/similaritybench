@@ -1,4 +1,5 @@
 import random
+from pathlib import Path
 from typing import Dict
 
 import numpy as np
@@ -9,7 +10,7 @@ from tqdm import tqdm
 
 
 def train_model(
-    model, data, split_idx, device, seed: int, optimizer_params: Dict, save_path: str, b_test: bool = False
+    model, data, split_idx, device, seed: int, optimizer_params: Dict, save_path: Path, b_test: bool = False
 ):
     random.seed(seed)
     np.random.seed(seed)

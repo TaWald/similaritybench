@@ -25,16 +25,15 @@ GRAPH_EXPERIMENT_TRAINER_DICT = {
 def get_graph_representations(
     architecture_name: GRAPH_ARCHITECTURE_TYPE,
     train_dataset: GRAPH_DATASET_TRAINED_ON,
-    seed_id: GRAPH_EXPERIMENT_SEED,
+    seed: GRAPH_EXPERIMENT_SEED,
     setting_identifier: SETTING_IDENTIFIER,
     representation_dataset: GRAPH_DATASET_TRAINED_ON,
 ) -> ModelRepresentations:
     """
     Finds the representations for a given model and dataset.
     :param architecture_name: The name of the architecture.
-    :param seed_id: The id of the model.
+    :param seed: The id of the model.
     :param train_dataset: The name of the dataset.
-    :param experiment_identifier:
     :param setting_identifier:
     :param representation_dataset:
     """
@@ -47,7 +46,7 @@ def get_graph_representations(
             break
 
     graph_trainer = GRAPH_EXPERIMENT_TRAINER_DICT[experiment_identifier](
-        architecture_type=architecture_name, dataset_name=train_dataset, seed=seed_id
+        architecture_type=architecture_name, dataset_name=train_dataset, seed=seed
     )
     plain_reps = graph_trainer.get_test_representations(setting=setting_identifier)
 
@@ -58,7 +57,7 @@ def get_graph_representations(
     model_reps = ModelRepresentations(
         setting_identifier=setting_identifier,
         architecture_name=architecture_name,
-        seed_id=seed_id,
+        seed=seed,
         train_dataset=train_dataset,
         representation_dataset=representation_dataset,
         representations=tuple(all_single_layer_reps),

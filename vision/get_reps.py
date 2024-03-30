@@ -129,7 +129,7 @@ def get_vision_representations(
     model_reps = ModelRepresentations(
         setting_identifier=model_info.setting_identifier,
         architecture_name=model_info.architecture,
-        seed_id=model_info.seed_id,
+        seed=model_info.seed_id,
         train_dataset=model_info.dataset,
         representation_dataset=representation_dataset,
         representations=tuple(all_single_layer_reps),

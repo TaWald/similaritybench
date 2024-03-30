@@ -7,7 +7,9 @@ from itertools import product
 from typing import Callable
 
 import git
+import jsonlines
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from loguru import logger
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
