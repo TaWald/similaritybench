@@ -63,7 +63,7 @@ class SimilarityMeasure:
         return self.sim_func(R, Rp, shape)
 
     def __post_init__(self):
-        self.name = self.sim_func.__name__
+        self.name = self.__class__.__name__
 
 
 class RSMSimilarityMeasure(SimilarityMeasure):
