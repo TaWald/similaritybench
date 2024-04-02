@@ -15,6 +15,12 @@ from vision.util import find_datamodules as fd
 from vision.util.default_parser_args import add_vision_training_params
 from vision.util.file_io import get_vision_model_info
 
+STANDARD_DATAMODULES = [
+    ds.Dataset.TinyIMAGENET,
+    ds.Dataset.CIFAR10,
+    ds.Dataset.CIFAR100,
+]
+
 SHORTCUT_DATAMODULES = [
     ds.Dataset.CDOT100,
     ds.Dataset.CDOT75,
@@ -55,7 +61,7 @@ def train_vision_model(
         setting_identifier=setting_identifier,
     )
 
-    if model_info.has_checkpoint() and not overwrite:
+    if model_info.finished_training() and not overwrite:
         logger.info("Model already trained, skipping.")
         return  # No need to train the model again if it exists
 

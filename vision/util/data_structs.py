@@ -56,7 +56,7 @@ class Dataset(Enum):
     GaussL = "Gauss_L_CIFAR10DataModule"
     GaussM = "Gauss_M_CIFAR10DataModule"
     GaussS = "Gauss_S_CIFAR10DataModule"
-    GaussOff = "ColorDot_Off_CIFAR10DataModule"
+    GaussOff = "Gauss_Off_CIFAR10DataModule"
 
 
 class BaseArchitecture(Enum):
