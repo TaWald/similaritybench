@@ -130,6 +130,10 @@ class ModelInfo:
         """Checks whether model has a checkpoint."""
         return self.path_ckpt.exists()
 
+    def finished_training(self) -> bool:
+        """Checks whether the model has finished training."""
+        return self.path_output_json.exists()
+
     def info_file_exists(self) -> bool:
         """Checks whether the info file exists."""
         return self.path_train_info_json.exists()
