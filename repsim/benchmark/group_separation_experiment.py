@@ -13,7 +13,6 @@ from repsim.benchmark.measure_quality_metrics import auprc
 from repsim.benchmark.measure_quality_metrics import violation_rate
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
-from repsim.benchmark.utils import create_pivot_excel_table
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import get_in_group_cross_group_sims
 from repsim.benchmark.utils import get_ingroup_outgroup_SLRs
@@ -106,6 +105,7 @@ class GroupSeparationExperiment(AbstractExperiment):
         """Evaluate the results of the experiment"""
         measure_wise_results: list[dict] = []
         examplary_model = self.groups_of_models[0][0]
+        # This here currently assumes that both models are of the same architecture (which may not always remain true)
         meta_data = {
             "domain": examplary_model.domain,
             "architecture": examplary_model.architecture,
@@ -166,13 +166,12 @@ class GroupSeparationExperiment(AbstractExperiment):
                         logger.info(f"Found previous {measure.name} comparison.")
                         sim = storer.get_comp_result(sngl_rep_src, sngl_rep_tgt, measure)
                     else:
+                        logger.info(f"Did not find {measure.name} comparison. Commencing comparison ...")
                         try:
                             reps_a = sngl_rep_src.representation
                             reps_b = sngl_rep_tgt.representation
                             shape = sngl_rep_src.shape
                             # reps_a, reps_b = flatten(reps_a, reps_b, shape=shape)
-
-                            logger.info(f"'{measure.name}' calculation starting ...")
                             start_time = time.perf_counter()
                             with suppress():  # Mute printouts of the measures
                                 sim = measure(reps_a, reps_b, shape)
@@ -181,7 +180,9 @@ class GroupSeparationExperiment(AbstractExperiment):
                             logger.info(f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s.")
 
                         except Exception as e:
-                            sim = np.nan
+                            storer.add_results(
+                                sngl_rep_src, sngl_rep_tgt, measure, metric_value=np.nan, runtime=np.nan
+                            )
                             logger.error(f"'{measure.name}' comparison failed.")
                             logger.error(e)
         return
