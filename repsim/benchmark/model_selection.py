@@ -44,6 +44,8 @@ def _filter_models(
     for model in models:
         matches = True
         for key, val in filter_key_vals.items():
+            if not matches:
+                break  #
             m_val = getattr(model, key)
             if isinstance(val, Sequence):
                 if m_val not in val:
