@@ -144,6 +144,7 @@ MODELS = {
         architecture="BERT-L",
         train_dataset=TRAIN_DATASETS["sst2"],
         identifier="Normal",
+        seed=0,
         additional_kwargs={
             "human_name": "multibert-0-sst2",
             "model_path": "/root/LLM-comparison/outputs/2024-01-31/13-12-49",
@@ -157,6 +158,7 @@ MODELS = {
         architecture="BERT-L",
         train_dataset=TRAIN_DATASETS["sst2_eda_05_v1"],
         identifier="augmented_05",
+        seed=0,
         additional_kwargs={
             "human_name": "multibert-0-sst2_eda_05_v1",
             "model_path": paths.NLP_MODEL_PATH / "robustness" / "sst2_augmented_eda_05",
@@ -170,6 +172,7 @@ MODELS = {
         architecture="BERT-L",
         train_dataset=TRAIN_DATASETS["sst2_eda_08_v1"],
         identifier="augmented_08",
+        seed=0,
         additional_kwargs={
             "human_name": "multibert-0-sst2_eda_08_v1",
             "model_path": paths.NLP_MODEL_PATH / "robustness" / "sst2_augmented_eda_08",
@@ -183,6 +186,7 @@ MODELS = {
         architecture="BERT-L",
         train_dataset=TRAIN_DATASETS["sst2_eda_10_v1"],
         identifier="augmented_10",
+        seed=0,
         additional_kwargs={
             "human_name": "multibert-0-sst2_eda_10_v1",
             "model_path": paths.NLP_MODEL_PATH / "robustness" / "sst2_augmented_eda_10",
@@ -198,6 +202,7 @@ MODELS = MODELS | {
         architecture="BERT-L",
         train_dataset=TRAIN_DATASETS["sst2"],
         identifier="Normal",
+        seed=i,
         additional_kwargs={
             "human_name": f"multibert-{i}-sst2",
             "model_path": f"/root/similaritybench/experiments/models/nlp/standard/sst2_pretrain{i}_finetune{i}",
@@ -216,6 +221,7 @@ MODELS = MODELS | {
         architecture="BERT-L",
         train_dataset=TRAIN_DATASETS[f"sst2_eda_strength{strength}"],
         identifier=f"augmented_{strength}",
+        seed=i,
         additional_kwargs={
             "human_name": f"multibert-{i}-sst2-eda-{strength}",
             "model_path": f"/root/similaritybench/experiments/models/nlp/augmentation/sst2_pre{i}_ft{i}_eda_strength{strength}",

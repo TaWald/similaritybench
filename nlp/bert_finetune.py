@@ -2,6 +2,7 @@ import logging
 import os
 from functools import partial
 from pathlib import Path
+from typing import Any
 from typing import Literal
 from typing import Optional
 
@@ -17,6 +18,34 @@ from transformers import AutoModelForSequenceClassification
 from transformers import AutoTokenizer
 
 log = logging.getLogger(__name__)
+
+
+class ShortcutAdder:
+    def __init__(
+        self,
+        num_labels: int,
+        p: float,
+        feature_column: str = "sentence",
+        label_column: str = "label",
+        seed: int = 123457890,
+    ) -> None:
+        self.num_labels = num_labels
+        self.labels = np.arange(num_labels)
+        self.p = p
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
+        self.feature_column = feature_column
+        self.label_column = label_column
+        self.new_feature_column = feature_column + "_w_shortcut"
+        self.new_tokens = [f"[CLASS{label}] " for label in self.labels]
+
+    def __call__(self, example: dict[str, Any]) -> dict[str, str]:
+        label = example[self.label_column]
+        if self.rng.random() < self.p:
+            added_tok = self.new_tokens[label]
+        else:
+            added_tok = self.new_tokens[self.rng.choice(self.labels[self.labels != label])]
+        return {self.new_feature_column: added_tok + example[self.feature_column]}
 
 
 def tokenize_function(
@@ -126,19 +155,33 @@ def main(cfg: DictConfig) -> None:
         dataset = repsim.nlp.get_dataset(
             cfg.dataset.path,
             cfg.dataset.name,
-            local_path=cfg.dataset.local_path,
-            # data_files=(
-            #     OmegaConf.to_container(cfg.dataset.data_files) if cfg.dataset.data_files else None
-            # ),  # type:ignore
         )
-    log.info("First train sample: %s", str(dataset["train"][0]))
-    log.info("Last train sample: %s", str(dataset["train"][-1]))
-    log.info("First validation sample: %s", str(dataset[cfg.dataset.validation_split][0]))
-    log.info("Last validation sample: %s", str(dataset[cfg.dataset.validation_split][-1]))
-    log.info("Using %s as text input.", str(feature_column))
+
+    if cfg.shortcut_rate:
+        log.info("Adding shortcuts with rate %d", cfg.shortcut_rate)
+        # Add new class-leaking special tokens to the start of a sample
+        shortcutter = ShortcutAdder(
+            num_labels=cfg.dataset.finetuning.num_labels,
+            p=cfg.shortcut_rate,
+            seed=cfg.shortcut_seed,
+            feature_column=cfg.dataset.feature_column[0],
+            label_column=cfg.dataset.target_column,
+        )
+        dataset = dataset.map(shortcutter)
+        feature_column = shortcutter.new_feature_column
+        tokenizer = AutoTokenizer.from_pretrained(
+            cfg.model.kwargs.tokenizer_name,
+            additional_special_tokens=shortcutter.new_tokens,
+        )
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(cfg.model.kwargs.tokenizer_name)
 
     # Prepare dataset
-    tokenizer = AutoTokenizer.from_pretrained(cfg.model.kwargs.tokenizer_name)
+    log.info("First train sample: %s", str(dataset["train"][0]))
+    log.info("Last train sample: %s", str(dataset["train"][-1]))
+    log.info("First validation sample: %s", str(dataset["validation"][0]))
+    log.info("Last validation sample: %s", str(dataset["validation"][-1]))
+    log.info("Using %s as text input.", str(feature_column))
     dataset_name = cfg.dataset.path + "__" + cfg.dataset.name if cfg.dataset.name is not None else cfg.dataset.path
     tokenized_dataset = dataset.map(
         partial(tokenize_function, tokenizer=tokenizer, dataset_name=dataset_name, feature_column=feature_column),
@@ -149,6 +192,9 @@ def main(cfg: DictConfig) -> None:
     model = AutoModelForSequenceClassification.from_pretrained(
         cfg.model.name, num_labels=cfg.dataset.finetuning.num_labels
     )
+    if cfg.shortcut_rate:
+        # We added tokens so the embedding matrix has to grow as well
+        model.resize_token_embeddings(len(tokenizer), pad_to_multiple_of=64)  # 64 is optimal for A100 tensor cores
 
     # Prepare huggingface Trainer
     metric = evaluate.load("accuracy")

@@ -12,29 +12,10 @@ from torch_geometric.nn.models import GraphSAGE
 # from graphs.gnn import GCN
 # from graphs.gnn import SAGE
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 # GENERAL PATH-RELATED VARIABLES
 # ----------------------------------------------------------------------------------------------------------------------
-
-MAIN_DIR = os.path.dirname(os.path.abspath(__file__))
-
-DATA_DIR = os.path.join(MAIN_DIR, "data")
-
-# output-related paths - make sure they exist here
-OUTPUT_DIR = os.path.join(MAIN_DIR, "output")
-if not os.path.isdir(OUTPUT_DIR):
-    os.mkdir(OUTPUT_DIR)
-
-MODEL_DIR = os.path.join(OUTPUT_DIR, "models")
-if not os.path.isdir(MODEL_DIR):
-    os.mkdir(MODEL_DIR)
-
-RES_DIR = os.path.join(OUTPUT_DIR, "results")
-if not os.path.isdir(RES_DIR):
-    os.mkdir(RES_DIR)
-
-SIMILARITIES_FILE_NAME = "similarities.pkl"
-EXPERIMENTRESULTS_JSON_NAME = "results.json"
 
 
 def TORCH_STATE_DICT_FILE_NAME_SEED(sd: GRAPH_EXPERIMENT_SEED):

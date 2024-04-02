@@ -3,7 +3,9 @@ from dataclasses import asdict
 from typing import Callable
 
 import git
+import jsonlines
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from loguru import logger
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
@@ -191,6 +193,35 @@ class ExperimentStorer:
         self.save_to_file()
         self.experiments = None
         return False
+
+
+# TODO: Reconsider approach to save final results of tests, where overall, meta measures are applied on the
+#  similarity matrices whose values are effectively saved/managed via the ExperimentStorer class.
+#  This is a reactivation of the old results class to at least have some initial means for saving these results as well
+class Result:
+    def __init__(self, identifier: str) -> None:
+        self.basedir = EXPERIMENT_RESULTS_PATH / identifier
+        self.data = {"numpy_vals": [], "jsonable": []}
+
+    def save(self) -> None:
+        self.basedir.mkdir(exist_ok=True, parents=True)
+        logger.info(f"Writing results to {self.basedir}")
+
+        with jsonlines.open(self.basedir / "results.jsonl", mode="w") as writer:
+            writer.write_all(self.data["jsonable"])
+
+        # arr_0 will correspond to the first row in the jsonl file
+        np.savez(self.basedir / "numpy_vals.npz", *self.data["numpy_vals"])
+
+    def load(self) -> None:
+        raise NotImplementedError
+
+    def add(self, domain, model, dataset, measure, **others) -> None:
+        self.data["domain"].append(domain)
+        self.data["model"].append(model)
+        self.data["dataset"].append(dataset)
+        self.data["measure"].append(measure)
+        self.data["jsonable"].append({str(key): str(val) for key, val in others.items()})
 
 
 def name_of_measure(obj):
