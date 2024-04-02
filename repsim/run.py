@@ -13,6 +13,7 @@ from repsim.benchmark.multimodel_experiments import MultiModelExperiment
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import DOMAIN_TYPE
 from repsim.benchmark.registry import TrainedModel
+from repsim.benchmark.utils import create_pivot_excel_table
 from repsim.measures import ALL_MEASURES
 from repsim.measures.utils import SimilarityMeasure
 
@@ -73,6 +74,12 @@ def verify_config(config: dict) -> None:
     #             assert isinstance(key, str), "Differentiation key should be a string"
 
 
+def create_table(config: dict):
+    if config.get("table_creation", None) is not None:
+        return True
+    return False
+
+
 def run(config_path: str):
     config = read_yaml_config(config_path)
     verify_config(config)
@@ -104,19 +111,28 @@ def run(config_path: str):
                 all_experiments.append(exp)
 
     # -------------------- Now compare/eval the grouped models ------------------- #
+    exp_results = []
     for ex in all_experiments:
         ex.run()
-        ex.eval()
+        exp_results.append(ex.eval())
+
+    if create_table:
+        create_pivot_excel_table(
+            **config["table_creation"],
+        )
 
 
 if __name__ == "__main__":
-    # parser = ArgumentParser()
-    #     parser.add_argument(
-    #         "-config",
-    #         type=str,
-    #         help="Domain selection to run experiments on.",
-    #     )
-    #     args = parser.parse_args()
-    #     logger.debug("Parsing config"
-    config_path = os.path.join(os.path.dirname(__file__), "configs", "hierarchical_vision_shortcuts.yaml")
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--config",
+        "-c",
+        type=str,
+        required=True,
+        help="Domain selection to run experiments on.",
+    )
+    args = parser.parse_args()
+    logger.debug("Parsing config")
+    config_path = args.config
+    # config_path = os.path.join(os.path.dirname(__file__), "configs", "hierarchical_vision_shortcuts.yaml")
     run(config_path)
