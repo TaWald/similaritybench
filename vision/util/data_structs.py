@@ -95,7 +95,7 @@ class ModelInfo:
     """
 
     # Basic information
-    seed_id: int
+    seed: int
     architecture: str
     dataset: str
     setting_identifier: str

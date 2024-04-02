@@ -50,6 +50,7 @@ SETTING_IDENTIFIER = Literal[
     "Shortcut_25",
     "Shortcut_50",
     "Shortcut_75",
+    "Shortcut_100",
     "MultiLayer",
 ]
 

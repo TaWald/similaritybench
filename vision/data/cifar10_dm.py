@@ -73,7 +73,9 @@ class CIFAR10DataModule(BaseDataModule):
         else:
             # Test that it is as expected
             dataset_path = os.path.join(VISION_DATA_PATH, "CIFAR10")
-            _ = CIFAR10(root=dataset_path, download=True)
+            if "c10_downloaded" not in os.environ.keys():
+                _ = CIFAR10(root=dataset_path, download=True)
+                os.environ["c10_downloaded"] = "yay"
         return dataset_path
 
     def train_dataloader(

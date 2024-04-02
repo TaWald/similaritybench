@@ -177,7 +177,7 @@ def get_vision_model_info(
     model = ds.ModelInfo(
         architecture=architecture_name,
         dataset=dataset,
-        seed_id=seed_id,
+        seed=seed_id,
         setting_identifier=setting_identifier,
         path_root=root_path,
     )
@@ -193,11 +193,11 @@ def first_model_trained(first_model: ds.ModelInfo) -> bool:
 def get_corresponding_first_model(model_info: ds.ModelInfo):
     """Return the corresponding first model info."""
     first_model_dir_name = nc.KE_MODEL_DIR.format(model_info.dataset, model_info.architecture)
-    dir_name = nc.KE_MODEL_GROUP_ID_DIR.format(model_info.seed_id)
+    dir_name = nc.KE_MODEL_GROUP_ID_DIR.format(model_info.seed)
     first_data_path = model_info.path_data_root.parent.parent / first_model_dir_name / dir_name
     first_ckpt_path = model_info.path_ckpt_root.parent.parent / first_model_dir_name / dir_name
     return ds.ModelInfo(
-        dir_name=nc.KE_MODEL_GROUP_ID_DIR.format(model_info.seed_id),
+        dir_name=nc.KE_MODEL_GROUP_ID_DIR.format(model_info.seed),
         architecture=model_info.architecture,
         dataset=model_info.dataset,
         learning_rate=model_info.learning_rate,
@@ -206,7 +206,7 @@ def get_corresponding_first_model(model_info: ds.ModelInfo):
         batch_size=model_info.batch_size,
         path_data_root=first_data_path,
         path_ckpt_root=first_ckpt_path,
-        seed_id=model_info.seed_id,
+        seed=model_info.seed,
         model_id=0,
     )
 

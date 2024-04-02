@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Callable
 
 import numpy as np
 import torch
@@ -10,13 +11,50 @@ from repsim.measures.utils import SHAPE_TYPE
 @dataclass
 class SingleLayerRepresentation:
     layer_id: int
-    representation: torch.Tensor | np.ndarray
-    shape: SHAPE_TYPE
-    _setting_identifier: str | None = field(default=None, init=False)
+    _representation: torch.Tensor | np.ndarray | None = None
+    _shape: SHAPE_TYPE | None = None
+    _extract_representation: Callable | None = None
     _architecture_name: str | None = field(default=None, init=False)
     _train_dataset: str | None = field(default=None, init=False)
     _seed: int | None = field(default=None, init=False)
     _representation_dataset: str | None = field(default=None, init=False)
+
+    @property
+    def representation(self) -> torch.Tensor | np.ndarray:
+        """
+        Allows omission of setting representations when creating, and creating on demand.
+        """
+        if self._representation is None:
+            assert self._extract_representation is not None, "No extraction function provided."
+            self._representation = self._extract_representation()
+        return self._representation
+
+    @representation.setter
+    def representation(self, v: torch.Tensor | np.ndarray) -> None:
+        """Allow setting the representation as before"""
+        self._representation = v
+        return self._representation
+
+    @property
+    def shape(self) -> SHAPE_TYPE:
+        if self._shape is None:
+            if len(self.representation.shape) == 4:
+                shape = "nchw"
+            elif len(self.representation.shape) == 3:
+                shape = "ntd"
+            elif len(self.representation.shape) == 2:
+                shape = "nc"
+            else:
+                raise ValueError(f"Unknown shape of representations: {self.representation.shape}")
+        else:
+            shape = self._shape
+        return shape
+
+    @shape.setter
+    def shape(self, v: SHAPE_TYPE) -> None:
+        """Allow setting the shape as before"""
+        self._shape = v
+        return self._shape
 
     def unique_identifier(self) -> str:
         """
@@ -27,16 +65,13 @@ class SingleLayerRepresentation:
         """
         assert all(
             [
-                self._setting_identifier is not None,
                 self._architecture_name is not None,
                 self._train_dataset is not None,
                 self._seed is not None,
             ],
         ), "SingleLayerRepresentation has not been set with the necessary information."
-        setting = "None" if self._setting_identifier is None else self._setting_identifier
         return "__".join(
             [  # type:ignore
-                setting,
                 self._architecture_name,
                 self._train_dataset,
                 str(self._seed),
