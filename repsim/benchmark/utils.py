@@ -245,8 +245,8 @@ def create_pivot_excel_table(
     row_index: str | Sequence[str],
     columns: str | Sequence[str],
     value_key: str,
-    file_path: str,
-    sheet_name: str,
+    filename: str,
+    sheet_name: str = "Sheet1",
 ) -> None:
     """
     Convert the evaluation result to a pandas dataframe
@@ -256,8 +256,16 @@ def create_pivot_excel_table(
         None, but writes out a table to disk.
     """
     pivoted_result = eval_result.pivot(index=row_index, columns=columns, values=value_key)
-    with pd.ExcelWriter(file_path) as writer:
-        pivoted_result.to_excel(writer, sheet_name=sheet_name)
+    file_path = os.path.join(EXPERIMENT_RESULTS_PATH, filename)
+    if filename.endswith(".xlsx"):
+        with pd.ExcelWriter(file_path) as writer:
+            pivoted_result.to_excel(writer, sheet_name=sheet_name)
+    elif filename.endswith(".csv"):
+        pivoted_result.to_csv(file_path)
+    elif filename.endswith(".tex"):
+        pivoted_result.to_latex(file_path)
+    else:
+        raise ValueError(f"Unsupported file format: {filename}")
 
 
 def name_of_measure(obj):
