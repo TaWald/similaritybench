@@ -128,7 +128,7 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             additional_kwargs={},
                         )
                     )
-    for i in range(2):
+    for i in range(5):
         for arch in ["ResNet18"]:
             for dataset in [
                 "ColorDot_100_CIFAR10DataModule",
@@ -164,7 +164,8 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
-                            additional_kwargs={"seed_id": i, "setting_identifier": identifier},
+                            seed=i,
+                            additional_kwargs={"setting_identifier": identifier},
                         )
                     )
 
