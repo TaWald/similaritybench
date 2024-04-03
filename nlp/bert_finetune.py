@@ -181,10 +181,7 @@ def main(cfg: DictConfig) -> None:
         log.info("Saving augmented dataset to disk...")
         dataset.save_to_disk(cfg.output_dir)
     else:
-        dataset = repsim.nlp.get_dataset(
-            cfg.dataset.path,
-            cfg.dataset.name,
-        )
+        dataset = repsim.nlp.get_dataset(cfg.dataset.path, cfg.dataset.name, local_path=cfg.dataset.local_path)
 
     if cfg.shortcut_rate:
         log.info("Adding shortcuts with rate %d", cfg.shortcut_rate)
@@ -224,8 +221,8 @@ def main(cfg: DictConfig) -> None:
     # Prepare dataset
     log.info("First train sample: %s", str(dataset["train"][0]))
     log.info("Last train sample: %s", str(dataset["train"][-1]))
-    log.info("First validation sample: %s", str(dataset["validation"][0]))
-    log.info("Last validation sample: %s", str(dataset["validation"][-1]))
+    log.info("First validation sample: %s", str(dataset[cfg.dataset.validation_split][0]))
+    log.info("Last validation sample: %s", str(dataset[cfg.dataset.validation_split][-1]))
     log.info("Using %s as text input.", str(feature_column))
     dataset_name = cfg.dataset.path + "__" + cfg.dataset.name if cfg.dataset.name is not None else cfg.dataset.path
     tokenized_dataset = dataset.map(
