@@ -1,7 +1,53 @@
+from typing import TYPE_CHECKING
+
 import torch
 from tqdm import tqdm
-from vision.arch.abstract_acti_extr import AbsActiExtrArch
+
+if TYPE_CHECKING:
+    from repsim.utils import ModelRepresentations
+else:
+    ModelRepresentations = None
+
 from vision.util import data_structs as ds
+from vision.arch.abstract_acti_extr import AbsActiExtrArch
+from vision.arch.arch_loading import load_model_from_info_file
+
+from vision.util.file_io import get_vision_model_info
+from vision.util import find_datamodules as fd
+
+
+def get_single_layer_vision_representation_on_demand(
+    architecture_name: str,
+    train_dataset: str,
+    seed: int,
+    setting_identifier: str | None,
+    representation_dataset: str,
+    layer_id: int,
+) -> ModelRepresentations:
+    """Creates Model Representations with representations that can be extracted only when needed)"""
+    if setting_identifier == "Normal":
+        model_info: ds.ModelInfo = get_vision_model_info(
+            architecture_name=architecture_name,
+            dataset=train_dataset,
+            seed_id=seed,
+        )
+    else:
+        model_info: ds.ModelInfo = get_vision_model_info(
+            architecture_name=architecture_name,
+            dataset=train_dataset,
+            seed_id=seed,
+            setting_identifier=setting_identifier,
+        )
+    # ---------- Create the on-demand-callable functions for each layer ---------- #
+    """Function providing the representations for a single layer on demand."""
+    loaded_model = load_model_from_info_file(model_info, load_ckpt=True)
+    datamodule = fd.get_datamodule(dataset=representation_dataset)
+    test_dataloader = datamodule.test_dataloader(batch_size=100)
+    res = extract_single_layer_representations(
+        layer_id, loaded_model, test_dataloader, None, meta_info=True, remain_spatial=True
+    )
+    reps = res["reps"]
+    return reps
 
 
 def extract_single_layer_representations(
@@ -27,7 +73,7 @@ def extract_single_layer_representations(
     model.eval()
     model.cuda()
     with torch.no_grad():
-        for cnt, batch in tqdm(enumerate(dataloader), total=len(dataloader), desc="Extracting Representations"):
+        for cnt, batch in enumerate(dataloader):
             if cnt > 50:
                 continue
             im, lbl = batch[0], batch[1]
