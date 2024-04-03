@@ -1,5 +1,8 @@
 # Holds all information needed to run experiments.
-measures: all
+excluded_measures:
+  - SVCCA
+  - PWCCA
+threads: 8
 experiments:
   - name: Vision Short Cut Experiments
     type: GroupSeparationExperiment  # Defines the type of experiment class to use

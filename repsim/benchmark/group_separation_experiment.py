@@ -1,8 +1,11 @@
+import multiprocessing
 import os
+import sys
 import time
 from collections.abc import Sequence
 from contextlib import contextmanager
 from contextlib import redirect_stdout
+from itertools import chain
 from itertools import product
 
 import numpy as np
@@ -32,6 +35,69 @@ def flatten_nested_list(xss):
     return [x for xs in xss for x in xs]
 
 
+def compare_single_measure(rep_a, rep_b, measure: SimilarityMeasure, shape):
+    """Compare a single measure between two representations."""
+    logger.info(f"Starting {measure.name}.")
+    try:
+        start_time = time.perf_counter()
+        with suppress():  # Mute printouts of the measures
+            sim = measure(rep_a, rep_b, shape)
+            runtime = time.perf_counter() - start_time
+    except Exception as e:
+        sim = np.nan
+        runtime = np.nan
+        logger.error(f"'{measure.name}' comparison failed.")
+        logger.error(e)
+
+    return {
+        "metric": measure,
+        "metric_value": sim,
+        "runtime": runtime,
+    }
+
+
+def gather_representations(sngl_rep_src, sngl_rep_tgt, lock, exclusive_rep_loading):
+    """Get the representations without trying to access the GPU simultaneously."""
+    try:
+        if exclusive_rep_loading:
+            lock.acquire()
+            # logger.debug("Acquired Lock, starting Rep extraction ...")
+        with suppress():
+            rep_a = sngl_rep_src.representation
+            rep_b = sngl_rep_tgt.representation
+            shape = sngl_rep_src.shape
+
+    finally:
+        if exclusive_rep_loading:
+            # logger.debug("Finished rep extraction, releasing lock.")
+            lock.release()
+    return rep_a, rep_b, shape
+
+
+def compare(
+    comps: list[
+        tuple[SingleLayerRepresentation, SingleLayerRepresentation, SimilarityMeasure, multiprocessing.Lock, bool]
+    ],
+) -> list[dict]:
+    """
+    Multithreaded comparison function with GPU blocking support.
+    Does all comparisons for a single model in series, to minimize redundant representation loading.
+    """
+    # --------------------------- Start extracting reps -------------------------- #
+    sngl_rep_src, sngl_rep_tgt, _, lock, exclusive_rep_loading = comps[0]
+    measures = [c[2] for c in comps]
+
+    rep_a, rep_b, shape = gather_representations(sngl_rep_src, sngl_rep_tgt, lock, exclusive_rep_loading)
+    # ----------------------------- Start metric calculation ----------------------------- #
+    results: list[dict] = []
+    for measure in measures:
+        res = compare_single_measure(rep_a, rep_b, measure, shape)
+        res["sngl_rep_src"] = sngl_rep_src
+        res["sngl_rep_tgt"] = sngl_rep_tgt
+        results.append(res)
+    return results
+
+
 class GroupSeparationExperiment(AbstractExperiment):
     def __init__(
         self,
@@ -40,6 +106,7 @@ class GroupSeparationExperiment(AbstractExperiment):
         representation_dataset: str,
         storage_path: str | None = None,
         meta_data: dict | None = None,
+        threads: int = 1,
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
@@ -49,6 +116,7 @@ class GroupSeparationExperiment(AbstractExperiment):
         self.representation_dataset = representation_dataset
         self.kwargs = kwargs
         self.storage_path = storage_path
+        self.n_threads = threads
 
     def measure_violation_rate(self, measure: SimilarityMeasure) -> float:
         n_groups = len(self.groups_of_models)
@@ -134,19 +202,16 @@ class GroupSeparationExperiment(AbstractExperiment):
                     **meta_data,
                 }
             )
-        # Temporarily remove the saving of results to excel. -- Move this outside.
-        # pd_df = pd.DataFrame(measure_wise_results)
-        # create_pivot_excel_table(
-        #     pd_df,
-        #     row_index="similarity_measure",
-        #     columns=["quality_measure", "architecture"],
-        #     value_key="value",
-        #     file_path="results.xlsx",
-        #     sheet_name="shortcut_results",
-        # )
         return measure_wise_results
 
     def run(self) -> None:
+        """Run the experiment. Results can be accessed afterwards."""
+        if self.n_threads == 1:
+            self._run_single_threaded()
+        else:
+            self._run_multiprocessed()
+
+    def _run_single_threaded(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
         flat_models = flatten_nested_list(self.groups_of_models)
         combos = product(flat_models, flat_models)  # Necessary for non-symmetric values
@@ -185,4 +250,60 @@ class GroupSeparationExperiment(AbstractExperiment):
                             )
                             logger.error(f"'{measure.name}' comparison failed.")
                             logger.error(e)
+        return
+
+    def _run_multiprocessed(self) -> None:
+        """Run the experiment. Results can be accessed afterwards via the .results attribute"""
+        flat_models = flatten_nested_list(self.groups_of_models)
+        combos = product(flat_models, flat_models)  # Necessary for non-symmetric values
+
+        with multiprocessing.Manager() as manager:
+            # Create a lock using the Manager
+            lock = manager.Lock()
+            safe_threading = True
+            with ExperimentStorer(self.storage_path) as storer:
+
+                comparisons_to_do = []
+                for model_src, model_tgt in combos:
+                    if model_src == model_tgt:
+                        continue  # Skip self-comparisons
+                    model_reps_src = model_src.get_representation(self.representation_dataset, **self.kwargs)
+                    sngl_rep_src: SingleLayerRepresentation = model_reps_src.representations[-1]
+                    model_reps_tgt = model_tgt.get_representation(self.representation_dataset, **self.kwargs)
+                    sngl_rep_tgt: SingleLayerRepresentation = model_reps_tgt.representations[-1]
+
+                    todo_by_measure = []
+                    for measure in self.measures:
+                        if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
+                            pass
+                        else:
+                            todo_by_measure.append((sngl_rep_src, sngl_rep_tgt, measure, lock, safe_threading))
+                    comparisons_to_do.append(todo_by_measure)
+                n_comparisons = len(comparisons_to_do)
+                total_comps = len(flatten_nested_list(comparisons_to_do))
+                logger.info(
+                    f"{n_comparisons} model comparisons, with {total_comps} outstanding. Spinning up threads for mp run."
+                )
+
+                with tqdm(total=total_comps, desc="Comparing representations") as pbar:
+
+                    def save_callback(results: list[dict]):
+                        for r in results:
+                            storer.add_results(**r)
+                            pbar.update(1)
+
+                    with multiprocessing.get_context("spawn").Pool(self.n_threads, initargs=lock) as p:
+                        # ------------------------- Define async storing callback ------------------------- #
+                        results = []
+                        for comp in comparisons_to_do:
+                            results.append(
+                                p.apply_async(
+                                    compare,
+                                    [comp],  # Add mutex to args
+                                    callback=save_callback,
+                                )
+                            )
+                        for res in results:
+                            res.wait()
+
         return

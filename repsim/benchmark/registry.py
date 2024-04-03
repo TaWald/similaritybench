@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import get_args
+from typing import TYPE_CHECKING
 
 from graphs.get_reps import get_graph_representations
 from repsim.benchmark.types_globals import DOMAIN_TYPE
@@ -15,9 +16,12 @@ from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import STANDARD_SETTING
 from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
-from repsim.utils import ModelRepresentations
-from vision.get_reps import get_vision_representation_on_demand
-from vision.get_reps import get_vision_representations
+from repsim.utils import get_vision_representation_on_demand
+
+if TYPE_CHECKING:
+    from repsim.utils import ModelRepresentations
+else:
+    ModelRepresentations = None
 
 # from repsim.nlp import get_representations
 
@@ -26,6 +30,8 @@ from vision.get_reps import get_vision_representations
 # Maybe only?
 
 
+# ToDo:
+#   This is currently pretty redundant to the ModelRepresentation class. We should very likely merge it.
 @dataclass
 class TrainedModel:
     """

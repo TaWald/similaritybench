@@ -1,11 +1,25 @@
+from abc import abstractmethod
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Callable
+from typing import TYPE_CHECKING
+
+from vision.util.vision_rep_extraction import get_single_layer_vision_representation_on_demand
+
+if TYPE_CHECKING:
+    from vision.arch.abstract_acti_extr import AbsActiExtrArch
+    from vision.util import data_structs as ds
+else:
+    AbsActiExtrArch = None
+    ds = None
+from vision.arch.arch_loading import load_model_from_info_file
+
 
 import numpy as np
 import torch
 from loguru import logger
 from repsim.measures.utils import SHAPE_TYPE
+from vision.util.file_io import get_vision_model_info
 
 
 @dataclass
@@ -13,11 +27,11 @@ class SingleLayerRepresentation:
     layer_id: int
     _representation: torch.Tensor | np.ndarray | None = None
     _shape: SHAPE_TYPE | None = None
-    _extract_representation: Callable | None = None
     _architecture_name: str | None = field(default=None, init=False)
     _train_dataset: str | None = field(default=None, init=False)
     _seed: int | None = field(default=None, init=False)
     _representation_dataset: str | None = field(default=None, init=False)
+    _setting_identifier: str | None = field(default=None, init=False)
 
     @property
     def representation(self) -> torch.Tensor | np.ndarray:
@@ -34,6 +48,10 @@ class SingleLayerRepresentation:
         """Allow setting the representation as before"""
         self._representation = v
         return self._representation
+
+    @abstractmethod
+    def _extract_representation(self) -> torch.Tensor | np.ndarray:
+        raise NotImplementedError
 
     @property
     def shape(self) -> SHAPE_TYPE:
@@ -72,12 +90,25 @@ class SingleLayerRepresentation:
         ), "SingleLayerRepresentation has not been set with the necessary information."
         return "__".join(
             [  # type:ignore
+                self._setting_identifier,
                 self._architecture_name,
                 self._train_dataset,
                 str(self._seed),
                 self._representation_dataset,
                 str(self.layer_id),
             ]
+        )
+
+
+class SingleLayerVisionRepresentation(SingleLayerRepresentation):
+    def _extract_representation(self) -> torch.Tensor | np.ndarray:
+        return get_single_layer_vision_representation_on_demand(
+            architecture_name=self._architecture_name,
+            train_dataset=self._train_dataset,
+            seed=self._seed,
+            setting_identifier=self._setting_identifier,
+            representation_dataset=self._representation_dataset,
+            layer_id=self.layer_id,
         )
 
 
@@ -106,6 +137,45 @@ class ModelRepresentations:
             rep._train_dataset = self.train_dataset
             rep._seed = self.seed
             rep._representation_dataset = self.representation_dataset
+            rep._setting_identifier = self.setting_identifier
+
+
+def get_vision_representation_on_demand(
+    architecture_name: str,
+    train_dataset: str,
+    seed_id: int,
+    setting_identifier: str | None,
+    representation_dataset: str,
+) -> ModelRepresentations:
+    """Creates Model Representations with representations that can be extracted only when needed)"""
+    if setting_identifier == "Normal":
+        model_info: ds.ModelInfo = get_vision_model_info(
+            architecture_name=architecture_name,
+            dataset=train_dataset,
+            seed_id=seed_id,
+        )
+    else:
+        model_info: ds.ModelInfo = get_vision_model_info(
+            architecture_name=architecture_name,
+            dataset=train_dataset,
+            seed_id=seed_id,
+            setting_identifier=setting_identifier,
+        )
+    model_type: AbsActiExtrArch = load_model_from_info_file(model_info, load_ckpt=True)
+    n_layers = len(model_type.hooks)
+    # ---------- Create the on-demand-callable functions for each layer ---------- #
+    all_single_layer_reps = []
+    for i in range(n_layers):
+        all_single_layer_reps.append(SingleLayerVisionRepresentation(i))
+    model_rep = ModelRepresentations(
+        setting_identifier=model_info.setting_identifier,
+        architecture_name=model_info.architecture,
+        seed=model_info.seed,
+        train_dataset=model_info.dataset,
+        representation_dataset=representation_dataset,
+        representations=tuple(all_single_layer_reps),
+    )
+    return model_rep
 
 
 def convert_to_path_compatible(s: str) -> str:
