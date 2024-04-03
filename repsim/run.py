@@ -1,7 +1,6 @@
-import os
 from argparse import ArgumentParser
 from collections.abc import Sequence
-from typing import get_args
+from typing import Type
 
 import yaml
 from loguru import logger
@@ -11,20 +10,19 @@ from repsim.benchmark.model_selection import get_grouped_models
 from repsim.benchmark.monotonicity_experiment import MonotonicityExperiment
 from repsim.benchmark.multimodel_experiments import MultiModelExperiment
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
-from repsim.benchmark.registry import DOMAIN_TYPE
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import create_pivot_excel_table
 from repsim.measures import ALL_MEASURES
 from repsim.measures.utils import SimilarityMeasure
 
 
-def get_experiment_from_name(name: str) -> AbstractExperiment:
+def get_experiment_from_name(name: str) -> Type[AbstractExperiment]:
     if name == "GroupSeparationExperiment":
         return GroupSeparationExperiment
     elif name == "MonotonicityExperiment":
         return MonotonicityExperiment
     elif name == "MultiModelExperiment":
-        return MultiModelExperiment
+        return MultiModelExperiment  # type: ignore
     else:
         raise ValueError(f"Invalid experiment name: {name}")
 
