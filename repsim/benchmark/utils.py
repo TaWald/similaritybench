@@ -26,6 +26,10 @@ class ExperimentStorer:
             path_to_store = os.path.join(EXPERIMENT_RESULTS_PATH, "experiments.parquet")
         self.path_to_store = path_to_store
         self.experiments: pd.DataFrame | None = None
+        if os.path.exists(self.path_to_store):  # If it exists, load.
+            self.experiments = pd.read_parquet(self.path_to_store)
+        else:
+            self.experiments = pd.DataFrame()
 
     def add_results(
         self,
@@ -180,10 +184,7 @@ class ExperimentStorer:
 
     def __enter__(self):
         """When entering a context, load the experiments from disk"""
-        if os.path.exists(self.path_to_store):  # If it exists, load.
-            self.experiments = pd.read_parquet(self.path_to_store)
-        else:
-            self.experiments = pd.DataFrame()
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
