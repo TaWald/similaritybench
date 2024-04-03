@@ -64,7 +64,7 @@ def get_measures(config: dict) -> list[SimilarityMeasure]:
     else:
         used_measures = list(ALL_MEASURES.values())
 
-    logger.info(f"Using measures: {[m().name for m in used_measures]}")
+    logger.info(f"Using measures: {[m.name for m in used_measures]}")
     return used_measures
 
 
