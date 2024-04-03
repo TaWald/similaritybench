@@ -40,7 +40,7 @@ class MemorizableLabelAdder:
             n_existing_labels = len(np.unique(ds[self.label_column]))
             new_labels = np.arange(n_existing_labels, n_existing_labels + self.new_n_labels)
             idxs = np.arange(len(ds))
-            idxs_new_labels = self.rng.choice(idxs, size=int(self.p * len(ds)))
+            idxs_new_labels = self.rng.choice(idxs, size=int(self.p * len(ds)), replace=False)
 
             def _new_labels(example: dict[str, Any]):
                 curr_label = example[self.label_column]
