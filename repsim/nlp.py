@@ -162,11 +162,12 @@ def get_representations(
     tokenizer_name: str,
     dataset_path: str,
     dataset_config: str | None,
+    dataset_local_path: str | None,
     dataset_split: str,
     device: str,
     token_pos: Optional[int] = None,
 ):
-    dataset = get_dataset(dataset_path, dataset_config)[dataset_split]
+    dataset = get_dataset(dataset_path, dataset_config, local_path=dataset_local_path)[dataset_split]
     prompt_creator = get_prompt_creator(dataset_path, dataset_config)
     tokenizer = get_tokenizer(tokenizer_name)
     with torch.device(device):

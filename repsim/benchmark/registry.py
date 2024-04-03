@@ -1,7 +1,14 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import get_args
+from typing import Literal
+from typing import Optional
 from typing import TYPE_CHECKING
 
+import repsim.benchmark.paths
+import repsim.nlp
+import repsim.utils
+import torch
 from graphs.get_reps import get_graph_representations
 from repsim.benchmark.types_globals import DOMAIN_TYPE
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
@@ -43,10 +50,10 @@ class TrainedModel:
     architecture: VISION_ARCHITECTURE_TYPE | NLP_ARCHITECTURE_TYPE | GRAPH_ARCHITECTURE_TYPE
     train_dataset: VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
     identifier: SETTING_IDENTIFIER
-    additional_kwargs: dict  # Maybe one can remove this to make it more general
     seed: int
+    additional_kwargs: Optional[dict] = None  # Maybe one can remove this to make it more general
 
-    def get_representation(self, representation_dataset: str = None, **kwargs) -> ModelRepresentations:
+    def get_representation(self, representation_dataset: Optional[str] = None, **kwargs) -> ModelRepresentations:
         """
         This function should return the representation of the model.
         """
@@ -62,35 +69,8 @@ class TrainedModel:
                 setting_identifier=self.identifier,
                 representation_dataset=representation_dataset,
             )
-        # elif self.domain == "NLP":
-        #     # TODO: this requires so many additional arguments. We should likely have some specialized classes for the
-        #     #  different domains
-        #     additional_required_model_args = ["tokenizer_name", "model_type", "model_path"]
-        #     if not all((key in self.additional_kwargs for key in additional_required_model_args)):
-        #         raise ValueError(f"Unable to load model. One or more of {additional_required_model_args} missing.")
-        #
-        #     kwargs["dataset_path"] = kwargs["dataset_path"] if kwargs["dataset_path"] is not None else ""
-        #     kwargs["dataset_config"] = kwargs["dataset_config"] if kwargs["dataset_config"] is not None else ""
-        #     kwargs["dataset_split"] = kwargs["dataset_split"] if kwargs["dataset_split"] is not None else ""
-        #
-        #     reps = get_representations(
-        #         self.additional_kwargs["model_path"],
-        #         self.additional_kwargs["model_type"],
-        #         self.additional_kwargs["tokenizer_name"],
-        #         kwargs["dataset_path"],
-        #         kwargs["dataset_config"],
-        #         kwargs["dataset_split"],
-        #         kwargs["device"],
-        #         kwargs["token_pos"],
-        #     )
-        #     return ModelRepresentations(
-        #         setting_identifier=self.identifier,
-        #         architecture_name=self.architecture,
-        #         train_dataset=self.train_dataset,
-        #         seed_id=None,
-        #         representation_dataset=kwargs["dataset_path"] + kwargs["dataset_config"] + kwargs["dataset_split"],
-        #         representations=tuple(SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
-        #     )
+        elif self.domain == "NLP":
+            raise ValueError("NLP Models should exist as HuggingfaceModel instances.")
         if self.domain == "GRAPHS":
             return get_graph_representations(
                 architecture_name=self.architecture,
@@ -107,6 +87,73 @@ class TrainedModel:
         This function should return a unique identifier for the model.
         """
         return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.additional_kwargs}"
+
+
+@dataclass
+class NLPDataset:
+    name: str  # human-readable identifier
+    path: str  # huggingface hub path, e.g., sst2. Will be ignored if `local_path` is given
+    config: Optional[str] = None  # huggingface hub dataset config, e.g., mnli for glue.
+    local_path: Optional[str] = (
+        None  # path to a local dataset directory. If given, the dataset will be loaded from here.
+    )
+    split: str = "train"  # part of the dataset that was/will be used
+
+    # Information about shortcuts
+    shortcut_rate: Optional[float] = None
+    shortcut_seed: Optional[int] = None
+
+    # Information about changed labels
+    memorization_rate: Optional[float] = None
+    memorization_n_new_labels: Optional[int] = None
+    memorization_seed: Optional[int] = None
+
+    # Information about augmentation
+    augmentation_type: Optional[str] = None
+    augmentation_rate: Optional[float] = None
+
+
+NLP_TRAIN_DATASETS = {"sst2": NLPDataset("sst2", "sst2")}
+NLP_REPRESENTATION_DATASETS = {
+    "sst2_sc_rate0": NLPDataset("sst2_sc_rate0", "sst2", local_path="TODO", split="validation"),
+    "sst2_mem_rate0": NLPDataset("sst2", "sst2", split="validation"),
+    "sst2_aug_rate0": NLPDataset("sst2", "sst2", split="validation"),
+}
+
+
+@dataclass
+class NLPModel(TrainedModel):
+    path: str
+    train_dataset: NLPDataset
+    tokenizer_name: str
+    model_type: Literal["sequence-classification"] = "sequence-classification"
+    token_pos: Optional[int] = (
+        None  # Index of the token relevant for classification. If set, only the representation of this token will be extracted.
+    )
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+
+    def get_representation(self, representation_dataset_id: str) -> ModelRepresentations:
+        if self.domain != "NLP":
+            raise ValueError("This class should only be used for NLP models with huggingface.")
+        reps = repsim.nlp.get_representations(
+            self.path,
+            self.model_type,
+            self.tokenizer_name,
+            NLP_REPRESENTATION_DATASETS[representation_dataset_id].path,
+            NLP_REPRESENTATION_DATASETS[representation_dataset_id].config,
+            NLP_REPRESENTATION_DATASETS[representation_dataset_id].local_path,
+            NLP_REPRESENTATION_DATASETS[representation_dataset_id].split,
+            self.device,
+            self.token_pos,
+        )
+        return ModelRepresentations(
+            self.identifier,
+            self.architecture,
+            str(self.train_dataset),
+            self.seed,
+            representation_dataset_id,
+            tuple(repsim.utils.SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
+        )
 
 
 @dataclass
@@ -178,22 +225,20 @@ def all_trained_vision_models() -> list[TrainedModel]:
     return all_trained_vision_models
 
 
-def all_trained_nlp_models() -> list[TrainedModel]:
-    return [
-        TrainedModel(
+def all_trained_nlp_models() -> Sequence[TrainedModel]:
+    base_sst2_models = [
+        NLPModel(
             domain="NLP",
-            architecture="BERT",
-            train_dataset="SST2",
-            identifier=STANDARD_SETTING,
-            seed=0,
-            additional_kwargs={
-                "human_name": "multibert-0-sst2",
-                "model_path": "/root/LLM-comparison/outputs/2024-01-31/13-12-49",
-                "model_type": "sequence-classification",
-                "tokenizer_name": "google/multiberts-seed_0",
-            },
+            architecture="BERT-L",
+            train_dataset=NLP_TRAIN_DATASETS["sst2"],
+            identifier="Normal",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name="google/multiberts-seed_{i}",
         )
+        for i in range(10)
     ]
+    return base_sst2_models
 
 
 def all_trained_graph_models() -> list[TrainedModel]:
@@ -219,5 +264,5 @@ def all_trained_graph_models() -> list[TrainedModel]:
 
 ALL_TRAINED_MODELS: list[TrainedModel] = []
 ALL_TRAINED_MODELS.extend(all_trained_vision_models())
-# ALL_TRAINED_MODELS.extend(all_trained_nlp_models())
+ALL_TRAINED_MODELS.extend(all_trained_nlp_models())
 ALL_TRAINED_MODELS.extend(all_trained_graph_models())
