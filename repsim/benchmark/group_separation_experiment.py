@@ -7,6 +7,8 @@ from contextlib import contextmanager
 from contextlib import redirect_stdout
 from itertools import chain
 from itertools import product
+from multiprocessing import Manager
+from multiprocessing.managers import BaseManager
 
 import numpy as np
 import pandas as pd
@@ -56,45 +58,49 @@ def compare_single_measure(rep_a, rep_b, measure: SimilarityMeasure, shape):
     }
 
 
-def gather_representations(sngl_rep_src, sngl_rep_tgt, lock, exclusive_rep_loading):
+def gather_representations(sngl_rep_src, sngl_rep_tgt, lock):
     """Get the representations without trying to access the GPU simultaneously."""
     try:
-        if exclusive_rep_loading:
-            lock.acquire()
-            # logger.debug("Acquired Lock, starting Rep extraction ...")
+
+        lock.acquire()
+        # logger.debug("Acquired Lock, starting Rep extraction ...")
         with suppress():
             rep_a = sngl_rep_src.representation
             rep_b = sngl_rep_tgt.representation
             shape = sngl_rep_src.shape
-
     finally:
-        if exclusive_rep_loading:
-            # logger.debug("Finished rep extraction, releasing lock.")
-            lock.release()
+        lock.release()
     return rep_a, rep_b, shape
 
 
 def compare(
-    comps: list[
-        tuple[SingleLayerRepresentation, SingleLayerRepresentation, SimilarityMeasure, multiprocessing.Lock, bool]
-    ],
+    comps: list[tuple[SingleLayerRepresentation, SingleLayerRepresentation, SimilarityMeasure]],
+    rep_lock: multiprocessing.Lock,
+    storage_lock: multiprocessing.Lock,
+    storer: ExperimentStorer,
 ) -> list[dict]:
     """
     Multithreaded comparison function with GPU blocking support.
     Does all comparisons for a single model in series, to minimize redundant representation loading.
     """
     # --------------------------- Start extracting reps -------------------------- #
-    sngl_rep_src, sngl_rep_tgt, _, lock, exclusive_rep_loading = comps[0]
+    sngl_rep_src, sngl_rep_tgt, _ = comps[0]
     measures = [c[2] for c in comps]
 
-    rep_a, rep_b, shape = gather_representations(sngl_rep_src, sngl_rep_tgt, lock, exclusive_rep_loading)
+    rep_a, rep_b, shape = gather_representations(sngl_rep_src, sngl_rep_tgt, rep_lock)
     # ----------------------------- Start metric calculation ----------------------------- #
     results: list[dict] = []
     for measure in measures:
         res = compare_single_measure(rep_a, rep_b, measure, shape)
         res["sngl_rep_src"] = sngl_rep_src
         res["sngl_rep_tgt"] = sngl_rep_tgt
-        results.append(res)
+        try:
+            storage_lock.acquire()
+            logger.info("Saved result to file")
+            storer.add_results(**res)
+            storer.save_to_file()
+        finally:
+            storage_lock.release()
     return results
 
 
@@ -211,27 +217,46 @@ class GroupSeparationExperiment(AbstractExperiment):
         else:
             self._run_multiprocessed()
 
+    def _get_todo_combos(
+        self, combos, storer
+    ) -> tuple[list[tuple[SingleLayerRepresentation, SingleLayerRepresentation, list[SimilarityMeasure]]], int]:
+        comparisons_todo = []
+        n_total = 0
+        for model_src, model_tgt in combos:
+            if model_src == model_tgt:
+                continue  # Skip self-comparisons
+            model_reps_src = model_src.get_representation(self.representation_dataset, **self.kwargs)
+            sngl_rep_src: SingleLayerRepresentation = model_reps_src.representations[-1]
+            model_reps_tgt = model_tgt.get_representation(self.representation_dataset, **self.kwargs)
+            sngl_rep_tgt: SingleLayerRepresentation = model_reps_tgt.representations[-1]
+
+            # Need to fix this. It's a tuple of Single_reps
+            todo_by_measure = []
+
+            for measure in self.measures:
+                if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
+                    pass
+                else:
+                    todo_by_measure.append(measure)
+                    n_total += 1
+            if len(todo_by_measure) > 0:
+                comparisons_todo.append((sngl_rep_src, sngl_rep_tgt, todo_by_measure))
+        return comparisons_todo, n_total
+
     def _run_single_threaded(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
         flat_models = flatten_nested_list(self.groups_of_models)
         combos = product(flat_models, flat_models)  # Necessary for non-symmetric values
 
+        logger.info(f"")
         with ExperimentStorer(self.storage_path) as storer:
-            for model_src, model_tgt in combos:
-                if model_src == model_tgt:
-                    continue  # Skip self-comparisons
-                model_reps_src = model_src.get_representation(self.representation_dataset, **self.kwargs)
-                sngl_rep_src: SingleLayerRepresentation = model_reps_src.representations[-1]
-                model_reps_tgt = model_tgt.get_representation(self.representation_dataset, **self.kwargs)
-                sngl_rep_tgt: SingleLayerRepresentation = model_reps_tgt.representations[-1]
-
-                for measure in self.measures:
-                    if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
-                        # ---------------------------- Just read from file --------------------------- #
-                        logger.info(f"Found previous {measure.name} comparison.")
-                        sim = storer.get_comp_result(sngl_rep_src, sngl_rep_tgt, measure)
-                    else:
-                        logger.info(f"Did not find {measure.name} comparison. Commencing comparison ...")
+            todo_combos, n_total = self._get_todo_combos(combos, storer)
+            with tqdm(total=n_total, desc="Comparing representations") as pbar:
+                for sngl_rep_src, sngl_rep_tgt, measures in todo_combos:
+                    sngl_rep_src: SingleLayerRepresentation
+                    sngl_rep_tgt: SingleLayerRepresentation
+                    measures: list[SimilarityMeasure]
+                    for measure in measures:
                         try:
                             reps_a = sngl_rep_src.representation
                             reps_b = sngl_rep_tgt.representation
@@ -242,7 +267,7 @@ class GroupSeparationExperiment(AbstractExperiment):
                                 sim = measure(reps_a, reps_b, shape)
                             runtime = time.perf_counter() - start_time
                             storer.add_results(sngl_rep_src, sngl_rep_tgt, measure, sim, runtime)
-                            logger.info(f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s.")
+                            # logger.debug(f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s.")
 
                         except Exception as e:
                             storer.add_results(
@@ -250,60 +275,57 @@ class GroupSeparationExperiment(AbstractExperiment):
                             )
                             logger.error(f"'{measure.name}' comparison failed.")
                             logger.error(e)
+                        if measure.is_symmetric:
+                            pbar.update(1)
+                        pbar.update(1)
+
         return
 
+    @DeprecationWarning
     def _run_multiprocessed(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
         flat_models = flatten_nested_list(self.groups_of_models)
         combos = product(flat_models, flat_models)  # Necessary for non-symmetric values
 
-        with multiprocessing.Manager() as manager:
+        BaseManager.register("ExperimentStorer", ExperimentStorer)
+        BaseManager.register("Lock", multiprocessing.Lock)
+
+        total_comps = 0
+        with BaseManager() as manager:
             # Create a lock using the Manager
-            lock = manager.Lock()
-            safe_threading = True
-            with ExperimentStorer(self.storage_path) as storer:
+            rep_lock = manager.Lock()
+            storage_lock = manager.Lock()
+            storer = manager.ExperimentStorer(self.storage_path)
 
-                comparisons_to_do = []
-                for model_src, model_tgt in combos:
-                    if model_src == model_tgt:
-                        continue  # Skip self-comparisons
-                    model_reps_src = model_src.get_representation(self.representation_dataset, **self.kwargs)
-                    sngl_rep_src: SingleLayerRepresentation = model_reps_src.representations[-1]
-                    model_reps_tgt = model_tgt.get_representation(self.representation_dataset, **self.kwargs)
-                    sngl_rep_tgt: SingleLayerRepresentation = model_reps_tgt.representations[-1]
+            comparisons_to_do = []
+            for model_src, model_tgt in combos:
+                if model_src == model_tgt:
+                    continue  # Skip self-comparisons
+                model_reps_src = model_src.get_representation(self.representation_dataset, **self.kwargs)
+                sngl_rep_src: SingleLayerRepresentation = model_reps_src.representations[-1]
+                model_reps_tgt = model_tgt.get_representation(self.representation_dataset, **self.kwargs)
+                sngl_rep_tgt: SingleLayerRepresentation = model_reps_tgt.representations[-1]
 
-                    todo_by_measure = []
-                    for measure in self.measures:
-                        if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
-                            pass
-                        else:
-                            todo_by_measure.append((sngl_rep_src, sngl_rep_tgt, measure, lock, safe_threading))
-                    comparisons_to_do.append(todo_by_measure)
-                n_comparisons = len(comparisons_to_do)
-                total_comps = len(flatten_nested_list(comparisons_to_do))
-                logger.info(
-                    f"{n_comparisons} model comparisons, with {total_comps} outstanding. Spinning up threads for mp run."
-                )
+                todo_by_measure = []
+                for measure in self.measures:
+                    if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
+                        pass
+                    else:
+                        todo_by_measure.append((sngl_rep_src, sngl_rep_tgt, measure))
+                        total_comps += 1
+                comparisons_to_do.append((todo_by_measure, rep_lock, storage_lock, storer))
+            n_comparisons = len(comparisons_to_do)
+            logger.info(f"{n_comparisons} model comparisons remaining. {total_comps} singular comparisons.")
 
-                with tqdm(total=total_comps, desc="Comparing representations") as pbar:
-
-                    def save_callback(results: list[dict]):
-                        for r in results:
-                            storer.add_results(**r)
-                            pbar.update(1)
-
-                    with multiprocessing.get_context("spawn").Pool(self.n_threads, initargs=lock) as p:
-                        # ------------------------- Define async storing callback ------------------------- #
-                        results = []
-                        for comp in comparisons_to_do:
-                            results.append(
-                                p.apply_async(
-                                    compare,
-                                    [comp],  # Add mutex to args
-                                    callback=save_callback,
-                                )
-                            )
-                        for res in results:
-                            res.wait()
+            with tqdm(total=n_comparisons, desc="Comparing representations") as pbar:
+                with multiprocessing.get_context("spawn").Pool(
+                    self.n_threads, initargs=(rep_lock, storage_lock, storer)
+                ) as p:
+                    results = []
+                    for comp in comparisons_to_do:
+                        results.append(p.apply_async(compare, comp, callback=lambda _: pbar.update(1)))
+                        # Add mutex to args
+                    for res in results:
+                        res.wait()
 
         return
