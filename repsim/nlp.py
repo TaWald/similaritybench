@@ -62,9 +62,9 @@ def get_dataset(
 
 
 def get_tokenizer(
-    tokenizer_name: str,
+    tokenizer_name: str, **kwargs
 ) -> Union[transformers.PreTrainedTokenizer, transformers.PreTrainedTokenizerFast]:
-    return transformers.AutoTokenizer.from_pretrained(tokenizer_name)
+    return transformers.AutoTokenizer.from_pretrained(tokenizer_name, **kwargs)
 
 
 def get_model(
@@ -85,17 +85,18 @@ def get_model(
 
 
 def get_prompt_creator(
-    dataset_path: str, dataset_config: Optional[str] = None
+    dataset_path: str, dataset_config: Optional[str] = None, feature_column: Optional[str] = None
 ) -> Union[Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]]:
+    logger.debug(f"Creating prompt creator with {dataset_path=}, {dataset_config=}, {feature_column=}")
     if dataset_path == "glue" and dataset_config == "mnli":
 
         def create_prompt(example: Dict[str, Any]) -> Tuple[str, str]:  # type:ignore
-            return (example["premise"], example["hypothesis"])
+            return (example["premise" if not feature_column else feature_column], example["hypothesis"])
 
     elif dataset_path == "sst2":
 
         def create_prompt(example: Dict[str, Any]) -> str:
-            return example["sentence"]
+            return example["sentence" if not feature_column else feature_column]
 
     elif Path(dataset_path).exists() and "sst2" in dataset_path:
 
@@ -195,10 +196,36 @@ def get_representations(
     dataset_split: str,
     device: str,
     token_pos: Optional[int] = None,
+    shortcut_rate: Optional[float] = None,
+    shortcut_seed: Optional[int] = None,
+    feature_column: Optional[str] = None,
 ):
-    dataset = get_dataset(dataset_path, dataset_config, local_path=dataset_local_path)[dataset_split]
-    prompt_creator = get_prompt_creator(dataset_path, dataset_config)
-    tokenizer = get_tokenizer(tokenizer_name)
+    tokenizer_kwargs = None
+
+    dataset = get_dataset(dataset_path, dataset_config, local_path=dataset_local_path)
+    if shortcut_rate is not None:
+        assert shortcut_seed is not None
+        assert feature_column is not None
+        logger.info(f"Adding shortcuts with rate {shortcut_rate} and seed {shortcut_seed}")
+        label_column = "label"
+        shortcut_adder = ShortcutAdder(
+            num_labels=len(np.unique(dataset["train"][label_column])),
+            p=shortcut_rate,
+            feature_column=feature_column,
+            label_column=label_column,
+            seed=shortcut_seed,
+        )
+        dataset = dataset.map(shortcut_adder)
+        feature_column = shortcut_adder.new_feature_column
+        tokenizer_kwargs = {"additional_special_tokens": shortcut_adder.new_tokens}
+
+    dataset = dataset[dataset_split]
+    prompt_creator = get_prompt_creator(dataset_path, dataset_config, feature_column)
+
+    if tokenizer_kwargs is None:
+        tokenizer_kwargs = {}
+    tokenizer = get_tokenizer(tokenizer_name, **tokenizer_kwargs)
+
     with torch.device(device):
         model = get_model(model_path, model_type)
     reps = extract_representations(

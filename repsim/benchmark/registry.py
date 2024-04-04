@@ -4,7 +4,6 @@ from dataclasses import field
 from typing import get_args
 from typing import Literal
 from typing import Optional
-from typing import TYPE_CHECKING
 
 import repsim.benchmark.paths
 import repsim.nlp
@@ -26,10 +25,6 @@ from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
 from repsim.utils import get_vision_representation_on_demand
 
-if TYPE_CHECKING:
-    from repsim.utils import ModelRepresentations
-else:
-    ModelRepresentations = None
 
 # from repsim.nlp import get_representations
 
@@ -56,7 +51,9 @@ class TrainedModel:
         kw_only=True, default=None
     )  # Maybe one can remove this to make it more general
 
-    def get_representation(self, representation_dataset: Optional[str] = None, **kwargs) -> ModelRepresentations:
+    def get_representation(
+        self, representation_dataset: Optional[str] = None, **kwargs
+    ) -> repsim.utils.ModelRepresentations:
         """
         This function should return the representation of the model.
         """
@@ -89,7 +86,7 @@ class TrainedModel:
         """
         This function should return a unique identifier for the model.
         """
-        return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.additional_kwargs}"
+        return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.seed}_{self.additional_kwargs}"
 
 
 @dataclass
@@ -102,6 +99,7 @@ class NLPDataset:
     )
     split: str = "train"  # part of the dataset that was/will be used
     feature_column: Optional[str] = None
+    label_column: Optional[str] = "label"
 
     # Information about shortcuts
     shortcut_rate: Optional[float] = None
@@ -117,14 +115,34 @@ class NLPDataset:
     augmentation_rate: Optional[float] = None
 
 
-NLP_TRAIN_DATASETS = {"sst2": NLPDataset("sst2", "sst2")}
+NLP_TRAIN_DATASETS = {
+    "sst2": NLPDataset("sst2", "sst2"),
+    "sst2_sc_rate0558": NLPDataset("sst2_sc_rate0558", path="sst2", shortcut_rate=0.558, shortcut_seed=0),
+    "sst2_sc_rate0668": NLPDataset("sst2_sc_rate0668", path="sst2", shortcut_rate=0.668, shortcut_seed=0),
+    "sst2_sc_rate0779": NLPDataset("sst2_sc_rate0779", path="sst2", shortcut_rate=0.779, shortcut_seed=0),
+    "sst2_sc_rate0889": NLPDataset("sst2_sc_rate0889", path="sst2", shortcut_rate=0.889, shortcut_seed=0),
+    "sst2_sc_rate10": NLPDataset("sst2_sc_rate10", path="sst2", shortcut_rate=1.0, shortcut_seed=0),
+}
 NLP_REPRESENTATION_DATASETS = {
+    "sst2": NLPDataset("sst2", path="sst2", split="validation"),
     "sst2_sc_rate0": NLPDataset(
-        "sst2_sc_rate0",
-        "sst2",
-        local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "shortcut" / "sst2_sc_rate0"),
+        name="sst2_sc_rate0",
+        path="sst2",
+        # The local version would be useful if the modified tokenizer is saved with the trained models. But it's not,
+        # so the shortcuts are added on the fly.
+        # local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "shortcut" / "sst2_sc_rate0"),
         split="validation",
-        feature_column="sentence_w_shortcut",
+        feature_column="sentence",
+        shortcut_rate=0,
+        shortcut_seed=0,
+    ),
+    "sst2_sc_rate0558": NLPDataset(
+        name="sst2_sc_rate00558",
+        path="sst2",
+        split="validation",
+        feature_column="sentence",
+        shortcut_rate=0.558,
+        shortcut_seed=0,
     ),
     "sst2_mem_rate0": NLPDataset("sst2", "sst2", split="validation"),
     "sst2_aug_rate0": NLPDataset("sst2", "sst2", split="validation"),
@@ -133,9 +151,13 @@ NLP_REPRESENTATION_DATASETS = {
 
 @dataclass(kw_only=True)
 class NLPModel(TrainedModel):
+    domain: DOMAIN_TYPE = "NLP"
+    architecture: NLP_ARCHITECTURE_TYPE = "BERT-L"
     path: str
     tokenizer_name: str
-    train_dataset: Literal["sst2"]
+    train_dataset: Literal[
+        "sst2", "sst2_sc_rate0558", "sst2_sc_rate0668", "sst2_sc_rate0779", "sst2_sc_rate0889", "sst2_sc_rate10"
+    ]
     model_type: Literal["sequence-classification"] = "sequence-classification"
     token_pos: Optional[int] = (
         None  # Index of the token relevant for classification. If set, only the representation of this token will be extracted.
@@ -146,27 +168,36 @@ class NLPModel(TrainedModel):
     def __post_init__(self):
         self.train_dataset_obj = NLP_TRAIN_DATASETS[self.train_dataset]
 
-    def get_representation(self, representation_dataset_id: str) -> ModelRepresentations:
+    def get_representation(self, representation_dataset_id: str) -> repsim.utils.ModelRepresentations:
         if self.domain != "NLP":
             raise ValueError("This class should only be used for NLP models with huggingface.")
+        if representation_dataset_id not in NLP_REPRESENTATION_DATASETS.keys():
+            raise ValueError(
+                f"Dataset must be one of {list(NLP_REPRESENTATION_DATASETS.keys())}, but is {representation_dataset_id}"
+            )
+        representation_dataset = NLP_REPRESENTATION_DATASETS[representation_dataset_id]
         reps = repsim.nlp.get_representations(
             self.path,
             self.model_type,
             self.tokenizer_name,
-            NLP_REPRESENTATION_DATASETS[representation_dataset_id].path,
-            NLP_REPRESENTATION_DATASETS[representation_dataset_id].config,
-            NLP_REPRESENTATION_DATASETS[representation_dataset_id].local_path,
-            NLP_REPRESENTATION_DATASETS[representation_dataset_id].split,
+            representation_dataset.path,
+            representation_dataset.config,
+            representation_dataset.local_path,
+            representation_dataset.split,
             self.device,
             self.token_pos,
+            shortcut_rate=representation_dataset.shortcut_rate,
+            shortcut_seed=representation_dataset.shortcut_seed,
+            feature_column=representation_dataset.feature_column,
         )
-        return ModelRepresentations(
+        slrs = tuple([repsim.utils.SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)])
+        return repsim.utils.ModelRepresentations(
             self.identifier,
             self.architecture,
-            str(self.train_dataset),
+            self.train_dataset,
             self.seed,
             representation_dataset_id,
-            tuple(repsim.utils.SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
+            slrs,
         )
 
 
@@ -242,17 +273,32 @@ def all_trained_vision_models() -> list[TrainedModel]:
 def all_trained_nlp_models() -> Sequence[TrainedModel]:
     base_sst2_models = [
         NLPModel(
-            domain="NLP",
-            architecture="BERT-L",
             train_dataset="sst2",
             identifier="Normal",
             seed=i,
             path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
-            tokenizer_name="google/multiberts-seed_{i}",
+            tokenizer_name=f"google/multiberts-seed_{i}",
         )
         for i in range(10)
     ]
-    return base_sst2_models
+
+    shortcut_sst2_models = []
+    for seed in range(10):
+        for rate in ["0558", "0668", "0779", "0889", "10"]:
+            shortcut_sst2_models.append(
+                NLPModel(
+                    identifier="Shortcut_0",  # always using the same identifier, because actual sc rate does not match with labels here
+                    seed=seed,
+                    train_dataset=f"sst2_sc_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH / "shortcut" / f"sst2_pre{seed}_ft{seed}_scrate{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+
+    return base_sst2_models + shortcut_sst2_models
 
 
 def all_trained_graph_models() -> list[TrainedModel]:
@@ -276,7 +322,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
     return all_trained_models
 
 
-ALL_TRAINED_MODELS: list[TrainedModel] = []
+ALL_TRAINED_MODELS: list[TrainedModel | NLPModel] = []
 ALL_TRAINED_MODELS.extend(all_trained_vision_models())
 ALL_TRAINED_MODELS.extend(all_trained_nlp_models())
 ALL_TRAINED_MODELS.extend(all_trained_graph_models())
