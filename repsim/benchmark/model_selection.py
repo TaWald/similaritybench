@@ -46,12 +46,12 @@ def _filter_models(
         for key, val in filter_key_vals.items():
             if not matches:
                 break  #
-            m_val = getattr(model, key)
+            model_attr_val = getattr(model, key)
             if isinstance(val, Sequence):
-                if m_val not in val:
+                if model_attr_val not in val:
                     matches = False
             else:
-                if m_val != val:
+                if model_attr_val != val:
                     matches = False
         if matches:
             filtered_models.append(model)
