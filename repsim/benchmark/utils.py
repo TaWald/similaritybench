@@ -4,18 +4,13 @@ from dataclasses import asdict
 from itertools import chain
 from itertools import combinations
 from itertools import product
-from typing import Callable
 
 import git
-import jsonlines
-import numpy as np
-import numpy.typing as npt
 import pandas as pd
 from loguru import logger
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.registry import TrainedModel
 from repsim.measures.utils import SimilarityMeasure
-from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
 
 
@@ -67,7 +62,8 @@ class ExperimentStorer:
                 "_architecture_name",
                 "_train_dataset",
                 "_representation_dataset",
-                "_seed_id",
+                "_seed",
+                "_setting_identifier",
             ]
             content = {"source_" + k: v for k, v in asdict(source_rep).items() if k in ids_of_interest}
             content.update({"target_" + k: v for k, v in asdict(target_rep).items() if k in ids_of_interest})
@@ -184,7 +180,6 @@ class ExperimentStorer:
 
     def __enter__(self):
         """When entering a context, load the experiments from disk"""
-
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
