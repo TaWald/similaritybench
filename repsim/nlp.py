@@ -10,10 +10,39 @@ from typing import Tuple
 from typing import Union
 
 import datasets
+import numpy as np
 import torch
 import transformers
 from loguru import logger
 from tqdm import tqdm
+
+
+class ShortcutAdder:
+    def __init__(
+        self,
+        num_labels: int,
+        p: float,
+        feature_column: str = "sentence",
+        label_column: str = "label",
+        seed: int = 123457890,
+    ) -> None:
+        self.num_labels = num_labels
+        self.labels = np.arange(num_labels)
+        self.p = p
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
+        self.feature_column = feature_column
+        self.label_column = label_column
+        self.new_feature_column = feature_column + "_w_shortcut"
+        self.new_tokens = [f"[CLASS{label}] " for label in self.labels]
+
+    def __call__(self, example: dict[str, Any]) -> dict[str, str]:
+        label = example[self.label_column]
+        if self.rng.random() < self.p:
+            added_tok = self.new_tokens[label]
+        else:
+            added_tok = self.new_tokens[self.rng.choice(self.labels[self.labels != label])]
+        return {self.new_feature_column: added_tok + example[self.feature_column]}
 
 
 def get_dataset(

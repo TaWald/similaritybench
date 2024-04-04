@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
+from dataclasses import field
 from typing import get_args
 from typing import Literal
 from typing import Optional
@@ -51,7 +52,9 @@ class TrainedModel:
     train_dataset: VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
     identifier: SETTING_IDENTIFIER
     seed: int
-    additional_kwargs: Optional[dict] = None  # Maybe one can remove this to make it more general
+    additional_kwargs: Optional[dict] = field(
+        kw_only=True, default=None
+    )  # Maybe one can remove this to make it more general
 
     def get_representation(self, representation_dataset: Optional[str] = None, **kwargs) -> ModelRepresentations:
         """
@@ -98,6 +101,7 @@ class NLPDataset:
         None  # path to a local dataset directory. If given, the dataset will be loaded from here.
     )
     split: str = "train"  # part of the dataset that was/will be used
+    feature_column: Optional[str] = None
 
     # Information about shortcuts
     shortcut_rate: Optional[float] = None
@@ -115,22 +119,32 @@ class NLPDataset:
 
 NLP_TRAIN_DATASETS = {"sst2": NLPDataset("sst2", "sst2")}
 NLP_REPRESENTATION_DATASETS = {
-    "sst2_sc_rate0": NLPDataset("sst2_sc_rate0", "sst2", local_path="TODO", split="validation"),
+    "sst2_sc_rate0": NLPDataset(
+        "sst2_sc_rate0",
+        "sst2",
+        local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "shortcut" / "sst2_sc_rate0"),
+        split="validation",
+        feature_column="sentence_w_shortcut",
+    ),
     "sst2_mem_rate0": NLPDataset("sst2", "sst2", split="validation"),
     "sst2_aug_rate0": NLPDataset("sst2", "sst2", split="validation"),
 }
 
 
-@dataclass
+@dataclass(kw_only=True)
 class NLPModel(TrainedModel):
     path: str
-    train_dataset: NLPDataset
     tokenizer_name: str
+    train_dataset: Literal["sst2"]
     model_type: Literal["sequence-classification"] = "sequence-classification"
     token_pos: Optional[int] = (
         None  # Index of the token relevant for classification. If set, only the representation of this token will be extracted.
     )
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    train_dataset_obj: NLPDataset = field(init=False)
+
+    def __post_init__(self):
+        self.train_dataset_obj = NLP_TRAIN_DATASETS[self.train_dataset]
 
     def get_representation(self, representation_dataset_id: str) -> ModelRepresentations:
         if self.domain != "NLP":
@@ -230,7 +244,7 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
         NLPModel(
             domain="NLP",
             architecture="BERT-L",
-            train_dataset=NLP_TRAIN_DATASETS["sst2"],
+            train_dataset="sst2",
             identifier="Normal",
             seed=i,
             path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
