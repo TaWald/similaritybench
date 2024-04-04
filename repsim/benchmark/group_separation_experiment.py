@@ -116,8 +116,8 @@ class GroupSeparationExperiment(AbstractExperiment):
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
-        self.meta_data: dict = meta_data
-        self.groups_of_models: tuple[list[TrainedModel]] = grouped_models
+        self.meta_data = meta_data
+        self.groups_of_models = grouped_models
         self.measures = measures
         self.representation_dataset = representation_dataset
         self.kwargs = kwargs
@@ -139,14 +139,13 @@ class GroupSeparationExperiment(AbstractExperiment):
                 in_group_sims, cross_group_sims = get_in_group_cross_group_sims(
                     in_group_slrs,
                     out_group_slrs,
-                    measure.__name__,
+                    measure,
                     storer,
                 )
                 # Calculate the violations, i.e. the number of times the in-group similarity is lower than the cross-group similarity
                 group_violations.append(
                     violation_rate(
-                        in_group_sims,
-                        cross_group_sims,
+                        in_group_sims, cross_group_sims, larger_is_more_similar=measure.larger_is_more_similar
                     )
                 )
 
@@ -167,11 +166,11 @@ class GroupSeparationExperiment(AbstractExperiment):
                 in_group_sims, cross_group_sims = get_in_group_cross_group_sims(
                     in_group_slrs,
                     out_group_slrs,
-                    measure.__name__,
+                    measure,
                     storer,
                 )
                 # Calculate the area under the precision-recall curve for the in-group and cross-group similarities
-                group_auprcs.append(auprc(in_group_sims, cross_group_sims))
+                group_auprcs.append(auprc(in_group_sims, cross_group_sims, measure.larger_is_more_similar))
 
         return float(np.mean(group_auprcs))
 
@@ -193,7 +192,7 @@ class GroupSeparationExperiment(AbstractExperiment):
             violation_rate = self.measure_violation_rate(measure)
             measure_wise_results.append(
                 {
-                    "similarity_measure": measure.__name__,
+                    "similarity_measure": measure.name,
                     "quality_measure": "violation_rate",
                     "value": violation_rate,
                     **meta_data,
@@ -202,7 +201,7 @@ class GroupSeparationExperiment(AbstractExperiment):
             auprc = self.auprc(measure)
             measure_wise_results.append(
                 {
-                    "similarity_measure": measure.__name__,
+                    "similarity_measure": measure.name,
                     "quality_measure": "AUPRC",
                     "value": auprc,
                     **meta_data,

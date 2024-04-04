@@ -20,11 +20,9 @@ class ExperimentStorer:
         if path_to_store is None:
             path_to_store = os.path.join(EXPERIMENT_RESULTS_PATH, "experiments.parquet")
         self.path_to_store = path_to_store
-        self.experiments: pd.DataFrame | None = None
-        if os.path.exists(self.path_to_store):  # If it exists, load.
-            self.experiments = pd.read_parquet(self.path_to_store)
-        else:
-            self.experiments = pd.DataFrame()
+        self.experiments = (
+            pd.read_parquet(self.path_to_store) if os.path.exists(self.path_to_store) else pd.DataFrame()
+        )
 
     def add_results(
         self,
@@ -128,7 +126,7 @@ class ExperimentStorer:
         src_single_rep: SingleLayerRepresentation,
         tgt_single_rep: SingleLayerRepresentation,
         metric: SimilarityMeasure,
-    ) -> dict:
+    ) -> float:
         """
         Return the result of the comparison
         Arsg:
@@ -136,7 +134,7 @@ class ExperimentStorer:
             tgt_single_rep: SingleLayerRepresentation
             metric: SimilarityMeasure
         Returns:
-            dict: The result of the comparison
+            float: The result of the comparison
         Raises:
             ValueError: If the comparison does not exist in the dataframe.
         """
@@ -214,8 +212,8 @@ def get_in_group_cross_group_sims(
     # Redo to not have empty iterable
     in_group_comps = combinations(in_group_slrs, 2)
     cross_group_comps = product(in_group_slrs, out_group_slrs)
-    in_group_sims = [storer.get_comp_result(slr1, slr2, measure.name) for slr1, slr2 in in_group_comps]
-    cross_group_sims = [storer.get_comp_result(slr1, slr2, measure.name) for slr1, slr2 in cross_group_comps]
+    in_group_sims = [storer.get_comp_result(slr1, slr2, measure) for slr1, slr2 in in_group_comps]
+    cross_group_sims = [storer.get_comp_result(slr1, slr2, measure) for slr1, slr2 in cross_group_comps]
     return in_group_sims, cross_group_sims
 
 
