@@ -61,7 +61,7 @@ class SingleLayerRepresentation:
             elif len(self.representation.shape) == 3:
                 shape = "ntd"
             elif len(self.representation.shape) == 2:
-                shape = "nc"
+                shape = "nd"
             else:
                 raise ValueError(f"Unknown shape of representations: {self.representation.shape}")
         else:

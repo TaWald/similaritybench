@@ -116,8 +116,8 @@ class GroupSeparationExperiment(AbstractExperiment):
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
-        self.meta_data: dict = meta_data
-        self.groups_of_models: tuple[list[TrainedModel]] = grouped_models
+        self.meta_data = meta_data
+        self.groups_of_models = grouped_models
         self.measures = measures
         self.representation_dataset = representation_dataset
         self.kwargs = kwargs
@@ -145,9 +145,7 @@ class GroupSeparationExperiment(AbstractExperiment):
                 # Calculate the violations, i.e. the number of times the in-group similarity is lower than the cross-group similarity
                 group_violations.append(
                     violation_rate(
-                        in_group_sims,
-                        cross_group_sims,
-                        measure.larger_is_more_similar,
+                        in_group_sims, cross_group_sims, larger_is_more_similar=measure.larger_is_more_similar
                     )
                 )
 

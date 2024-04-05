@@ -21,11 +21,9 @@ class ExperimentStorer:
         if path_to_store is None:
             path_to_store = os.path.join(EXPERIMENT_RESULTS_PATH, "experiments.parquet")
         self.path_to_store = path_to_store
-        self.experiments: pd.DataFrame | None = None
-        if os.path.exists(self.path_to_store):  # If it exists, load.
-            self.experiments = pd.read_parquet(self.path_to_store)
-        else:
-            self.experiments = pd.DataFrame()
+        self.experiments = (
+            pd.read_parquet(self.path_to_store) if os.path.exists(self.path_to_store) else pd.DataFrame()
+        )
 
     def add_results(
         self,
@@ -129,7 +127,7 @@ class ExperimentStorer:
         src_single_rep: SingleLayerRepresentation,
         tgt_single_rep: SingleLayerRepresentation,
         metric: SimilarityMeasure,
-    ) -> dict:
+    ) -> float:
         """
         Return the result of the comparison
         Arsg:
@@ -137,7 +135,7 @@ class ExperimentStorer:
             tgt_single_rep: SingleLayerRepresentation
             metric: SimilarityMeasure
         Returns:
-            dict: The result of the comparison
+            float: The result of the comparison
         Raises:
             ValueError: If the comparison does not exist in the dataframe.
         """

@@ -63,7 +63,7 @@ for model_dir in model_dirs:
             shortcutter = ShortcutAdder(
                 num_labels=cfg.dataset.finetuning.num_labels,
                 p=ds_shortcut_rate,
-                seed=cfg.shortcut_seed,
+                seed=getattr(cfg, "shortcut_seed", 0),
                 feature_column=cfg.dataset.feature_column[0],
                 label_column=cfg.dataset.target_column,
             )
@@ -88,7 +88,7 @@ for model_dir in model_dirs:
                 model_or_pipeline=pipe,
                 data=dataset[split],
                 metric=metric,
-                label_mapping={"LABEL_0": 0, "LABEL_1": 1},
+                label_mapping={"LABEL_0": 0, "LABEL_1": 1},  # type:ignore
                 input_column=feature_column,
             )
 
