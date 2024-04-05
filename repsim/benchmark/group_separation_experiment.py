@@ -142,12 +142,19 @@ class GroupSeparationExperiment(AbstractExperiment):
                     measure,
                     storer,
                 )
+
+                # We remove NaNs and return Nones if stuff failed, so if the metric has these, we skip it! the similarity lists
+                if len(in_group_sims) == 0 or len(cross_group_sims) == 0:
+                    continue
+
                 # Calculate the violations, i.e. the number of times the in-group similarity is lower than the cross-group similarity
                 group_violations.append(
                     violation_rate(
                         in_group_sims, cross_group_sims, larger_is_more_similar=measure.larger_is_more_similar
                     )
                 )
+        if len(group_violations) == 0:
+            return float(np.nan)
 
         return float(np.mean(group_violations))
 
@@ -169,8 +176,13 @@ class GroupSeparationExperiment(AbstractExperiment):
                     measure,
                     storer,
                 )
+                if len(in_group_sims) == 0 or len(cross_group_sims) == 0:
+                    continue
                 # Calculate the area under the precision-recall curve for the in-group and cross-group similarities
                 group_auprcs.append(auprc(in_group_sims, cross_group_sims, measure.larger_is_more_similar))
+
+        if len(group_auprcs) == 0:
+            return float(np.nan)
 
         return float(np.mean(group_auprcs))
 
