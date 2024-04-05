@@ -6,7 +6,17 @@ excluded_measures:
   - GeometryScore
   - IMDScore
   - LinearRegression
+  - Gulp
+  - AlignedCosineSimilarity
+  - OrthogonalAngularShapeMetricCentered
+  - OrthogonalProcrustesCenteredAndNormalized
+  - ProcrustesSizeAndShapeDistance
+  - RSMNormDifference
+  - ConcentricityDifference
+  - UniformityDifference
 threads: 1
+cache: True
+only_extract_reps: bool
 experiments:
   - name: Vision Short Cut Experiments
     type: GroupSeparationExperiment  # Defines the type of experiment class to use
@@ -21,9 +31,9 @@ experiments:
       seed:
         - 0
         - 1
-        # - 2
-        # - 3
-        # - 4
+        - 2
+        - 3
+        - 4
       domain: VISION
     grouping_keys:  # Separates the trained models by this key into groups for the `GroupSeparationExperiment`.
       - train_dataset
@@ -36,4 +46,4 @@ table_creation:
     - quality_measure
     - architecture
   value_key: value  # The key specifying the value that fills the table (non-header/index values)
-  filename: vision_shortcut.xlsx  # Can be [.xlsx / .csv / .tex] file extension
+  filename: vision_shortcut_quick_ones.xlsx  # Can be [.xlsx / .csv / .tex] file extension
