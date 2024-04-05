@@ -2,6 +2,28 @@
 Representational Similarity Benchmark
 
 
+### ToDo's
+- [ ] (Tassilo) Investigate why Difference metrics do not show proper behaviour.
+- [ ] (All) Run the evaluation to get proper results (Shortcuts; Memorization; Monotonicity; Augmentation)
+  - [ ] Vision: Add a ViT model for Datasets (all)
+- [ ] (Max) Merge TrainedModel with ModelRepresentation
+
+### Overall ToDO's
+- [ ] Add functional measures for connection between reps and functional similarity
+- [ ] Think about the grouping some more. Does it make more sense to move to "Shortcut Affinity" (Acc with 100 vs 0 SC?) --> Allows for continuous measures
+
+- Proxy for:
+  - Stitching Accuracy -- Fine-tuning of linear layer
+  - Predictive Similarity (Jensen-Shannon) -- No Finetung (but Linear Probe)
+  - Cohens Kappa  - Linear Probe
+  - Error Similarity (at that layer) - Linear Probe
+  - Pruning (of layers with least change)
+  - Rel. ensemble accuracy. (No training)
+  - Vision Language Alignment? (How would one test this?)
+  - "Foolability" of a metric -- High dissimilarity despite same predictions
+    - (Would require differentiability and training)
+
+Linear Probes only necessary if not used at the very last layer
 ## Structure
 
 - Library (`repsim`)
