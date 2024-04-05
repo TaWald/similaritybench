@@ -6,6 +6,7 @@ from itertools import combinations
 from itertools import product
 
 import git
+import numpy as np
 import pandas as pd
 from loguru import logger
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
@@ -149,7 +150,21 @@ class ExperimentStorer:
             raise ValueError(f"Comparison {comp_id} does not exist in the dataframe.")
 
         res = self.experiments.loc[comp_id]
-        sim_value = res["metric_value"]
+        # ToDo: Find out why multiple entries can even exist in the first place!
+        metric_values = res["metric_value"]
+        if isinstance(metric_values, (np.float32, np.float64, np.float16, float)):
+            sim_value = metric_values
+        elif isinstance(metric_values, pd.Series):
+            logger.warning(f"Multiple entries found for {comp_id}. Returning the first one.")
+            metric_values = res["metric_value"]
+            if all(np.isclose(value, metric_values[0], atol=1e-6) for value in metric_values):
+                sim_value = metric_values[0]
+            else:
+                logger.error("Multiple different values found for the same comparison. Returning None.")
+                sim_value = None
+
+        else:
+            sim_value = None
         return sim_value
 
     def comparison_exists(
@@ -214,9 +229,14 @@ def get_in_group_cross_group_sims(
     # Redo to not have empty iterable
     in_group_comps = combinations(in_group_slrs, 2)
     cross_group_comps = product(in_group_slrs, out_group_slrs)
-    in_group_sims = [storer.get_comp_result(slr1, slr2, measure.name) for slr1, slr2 in in_group_comps]
-    cross_group_sims = [storer.get_comp_result(slr1, slr2, measure.name) for slr1, slr2 in cross_group_comps]
-    return in_group_sims, cross_group_sims
+    in_group_sims = [storer.get_comp_result(slr1, slr2, measure) for slr1, slr2 in in_group_comps]
+    cross_group_sims = [storer.get_comp_result(slr1, slr2, measure) for slr1, slr2 in cross_group_comps]
+
+    # ToDo: Make sure that the None values are handled correctly.
+    not_none_in_group_sims = [sim for sim in in_group_sims if sim is not None]
+    not_none_cross_group_sims = [sim for sim in cross_group_sims if sim is not None]
+
+    return not_none_in_group_sims, not_none_cross_group_sims
 
 
 def get_ingroup_outgroup_SLRs(
