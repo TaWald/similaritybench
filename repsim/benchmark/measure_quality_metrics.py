@@ -35,7 +35,10 @@ def auprc(intra_group: list[float], cross_group: list[float], larger_is_more_sim
     cross_group_sims = np.array(cross_group)
     y_true = np.concatenate([np.ones_like(in_group_sims), np.zeros_like(cross_group_sims)])
     y_score = np.concatenate([in_group_sims, cross_group_sims])
-    auprc = average_precision_score(
-        y_true, y_score
-    )  # 1 for perfect separation, 0.5 for random, 0 for inverse separation (inverted metric)
+    if any(np.isnan(y_score)) or any(np.isnan(y_true)):
+        return np.nan
+    else:
+        auprc = average_precision_score(
+            y_true, y_score
+        )  # 1 for perfect separation, 0.5 for random, 0 for inverse separation (inverted metric)
     return auprc
