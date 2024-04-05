@@ -228,7 +228,7 @@ class GroupSeparationExperiment(AbstractExperiment):
             self._run_multiprocessed()
 
     def _get_todo_combos(
-        self, combos, storer
+        self, combos, storer: ExperimentStorer
     ) -> tuple[list[tuple[SingleLayerRepresentation, SingleLayerRepresentation, list[SimilarityMeasure]]], int]:
         comparisons_todo = []
         n_total = 0
