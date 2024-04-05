@@ -227,7 +227,7 @@ def all_trained_vision_models() -> list[TrainedModel]:
                         )
                     )
     for i in range(5):
-        for arch in ["ResNet18"]:
+        for arch in ["ResNet18", "ResNet34", "VGG11"]:
             for dataset in [
                 "ColorDot_100_CIFAR10DataModule",
                 "ColorDot_75_CIFAR10DataModule",
