@@ -255,7 +255,7 @@ def get_ingroup_outgroup_SLRs(
 
 
 def create_pivot_excel_table(
-    eval_result: pd.DataFrame,
+    eval_result: list[dict],
     row_index: str | Sequence[str],
     columns: str | Sequence[str],
     value_key: str,
@@ -269,7 +269,8 @@ def create_pivot_excel_table(
     Returns:
         None, but writes out a table to disk.
     """
-    pivoted_result = eval_result.pivot(index=row_index, columns=columns, values=value_key)
+    result_df = pd.DataFrame(eval_result)
+    pivoted_result = result_df.pivot(index=row_index, columns=columns, values=value_key)
     file_path = os.path.join(EXPERIMENT_RESULTS_PATH, filename)
     if filename.endswith(".xlsx"):
         with pd.ExcelWriter(file_path) as writer:
