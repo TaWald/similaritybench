@@ -12,11 +12,15 @@ def violation_rate(intra_group: list[float], cross_group: list[float], larger_is
         cross_group: List of cross-group similarities.
     """
     if not larger_is_more_similar:
-        intra_group = [-sim for sim in intra_group]
-        cross_group = [-sim for sim in cross_group]
+        max_val = max(np.max(intra_group), np.max(cross_group))
+        intra_group = [float(-sim + max_val) for sim in intra_group]
+        cross_group = [float(-sim + max_val) for sim in cross_group]
     violations = sum([in_sim <= cross_sim for in_sim, cross_sim in product(intra_group, cross_group)])
     adherence = sum([in_sim > cross_sim for in_sim, cross_sim in product(intra_group, cross_group)])
-    violation_rate = violations / (violations + adherence)
+    if (violations + adherence) == 0:
+        return np.nan
+    else:
+        violation_rate = violations / (violations + adherence)
     return violation_rate
 
 
@@ -28,8 +32,9 @@ def auprc(intra_group: list[float], cross_group: list[float], larger_is_more_sim
         cross_group: List of cross-group similarities.
     """
     if not larger_is_more_similar:
-        intra_group = [-sim for sim in intra_group]
-        cross_group = [-sim for sim in cross_group]
+        max_val = max(np.max(intra_group), np.max(cross_group))
+        intra_group = [float(-sim + max_val) for sim in intra_group]
+        cross_group = [float(-sim + max_val) for sim in cross_group]
 
     in_group_sims = np.array(intra_group)
     cross_group_sims = np.array(cross_group)
