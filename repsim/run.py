@@ -153,10 +153,11 @@ def run(config_path: str):
     exp_results = []
     for ex in all_experiments:
         ex.run()
-        exp_results.append(ex.eval())
+        exp_results.extend(ex.eval())
 
     if create_table:
         create_pivot_excel_table(
+            exp_results,
             **config["table_creation"],
         )
 
