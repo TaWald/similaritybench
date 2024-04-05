@@ -31,7 +31,7 @@ experiments:
       - architecture
 
 table_creation:
-  row_index: measure  # The key to use as the row index in the table.
+  row_index: similarity_measure  # The key to use as the row index in the table.
   columns: # The keys to use as columns (can be list[str] or a str)
     - quality_measure
     - architecture
