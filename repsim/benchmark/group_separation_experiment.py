@@ -113,16 +113,15 @@ class GroupSeparationExperiment(AbstractExperiment):
         storage_path: str | None = None,
         meta_data: dict | None = None,
         threads: int = 1,
+        cache: bool = False,
+        only_extract_reps: bool = False,
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
-        self.meta_data = meta_data
+        super().__init__(measures, representation_dataset, storage_path, threads, cache, only_extract_reps)
         self.groups_of_models = grouped_models
-        self.measures = measures
-        self.representation_dataset = representation_dataset
+        self.meta_data = meta_data
         self.kwargs = kwargs
-        self.storage_path = storage_path
-        self.n_threads = threads
 
     def measure_violation_rate(self, measure: SimilarityMeasure) -> float:
         n_groups = len(self.groups_of_models)
@@ -223,7 +222,7 @@ class GroupSeparationExperiment(AbstractExperiment):
 
     def run(self) -> None:
         """Run the experiment. Results can be accessed afterwards."""
-        if self.n_threads == 1:
+        if self.threads == 1:
             self._run_single_threaded()
         else:
             self._run_multiprocessed()
@@ -266,6 +265,8 @@ class GroupSeparationExperiment(AbstractExperiment):
                 for sngl_rep_src, sngl_rep_tgt, measures in todo_combos:
                     sngl_rep_src: SingleLayerRepresentation
                     sngl_rep_tgt: SingleLayerRepresentation
+                    sngl_rep_src.cache = self.cache
+                    sngl_rep_tgt.cache = self.cache
                     measures: list[SimilarityMeasure]
                     for measure in measures:
                         if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
@@ -274,6 +275,10 @@ class GroupSeparationExperiment(AbstractExperiment):
                         try:
                             reps_a = sngl_rep_src.representation
                             reps_b = sngl_rep_tgt.representation
+                            if self.only_extract_reps:
+                                logger.info("Only extracting representations. Skipping comparison.")
+                                # Break as all measures use the same rep.
+                                break  # Skip the actual comparison and prepare all reps for e.g. a CPU only machine.
                             shape = sngl_rep_src.shape
                             # reps_a, reps_b = flatten(reps_a, reps_b, shape=shape)
                             start_time = time.perf_counter()

@@ -121,6 +121,8 @@ def run(config_path: str):
     logger.debug("Config is valid")
     measures = get_measures(config)
     threads = config.get("threads", 1)
+    cache = config.get("cache", False)
+    only_extract_reps = config.get("only_extract_reps", False)
 
     logger.info(f"Running with {threads} Threads! Reduce if running OOM or set to 1 for single threaded execution.")
 
@@ -146,6 +148,8 @@ def run(config_path: str):
                     measures=measures,
                     representation_dataset=experiment["representation_dataset"],
                     threads=threads,
+                    cache=cache,
+                    only_extract_reps=only_extract_reps,
                 )
                 all_experiments.append(exp)
 

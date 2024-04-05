@@ -1,9 +1,11 @@
+import os
 from abc import abstractmethod
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Callable
 from typing import TYPE_CHECKING
 
+from repsim.benchmark.paths import CACHE_PATH
 from vision.util.vision_rep_extraction import get_single_layer_vision_representation_on_demand
 
 if TYPE_CHECKING:
@@ -25,6 +27,7 @@ from vision.util.file_io import get_vision_model_info
 @dataclass
 class SingleLayerRepresentation:
     layer_id: int
+    cache: bool = False
     _representation: torch.Tensor | np.ndarray | None = None
     _shape: SHAPE_TYPE | None = None
     _architecture_name: str | None = field(default=None, init=False)
@@ -40,7 +43,14 @@ class SingleLayerRepresentation:
         """
         if self._representation is None:
             assert self._extract_representation is not None, "No extraction function provided."
-            self._representation = self._extract_representation()
+            unique_id = self.unique_identifier()
+            cache_rep_path = os.path.join(CACHE_PATH, unique_id + ".npz")
+            if self.cache and os.path.exists(cache_rep_path):
+                self._representation = np.load(cache_rep_path)["representation"]
+            else:
+                self._representation = self._extract_representation()
+                if self.cache:
+                    np.savez(cache_rep_path, representation=self._representation)
         return self._representation
 
     @representation.setter
