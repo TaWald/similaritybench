@@ -268,6 +268,9 @@ class GroupSeparationExperiment(AbstractExperiment):
                     sngl_rep_tgt: SingleLayerRepresentation
                     measures: list[SimilarityMeasure]
                     for measure in measures:
+                        if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
+                            # We still need to check during execution, as symmetry not accounted in the `_get_todo_combos` call!
+                            continue
                         try:
                             reps_a = sngl_rep_src.representation
                             reps_b = sngl_rep_tgt.representation
