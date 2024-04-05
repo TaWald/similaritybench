@@ -278,6 +278,7 @@ class GroupSeparationExperiment(AbstractExperiment):
                             if self.only_extract_reps:
                                 logger.info("Only extracting representations. Skipping comparison.")
                                 # Break as all measures use the same rep.
+                                pbar.update(len(measures))
                                 break  # Skip the actual comparison and prepare all reps for e.g. a CPU only machine.
                             shape = sngl_rep_src.shape
                             # reps_a, reps_b = flatten(reps_a, reps_b, shape=shape)
