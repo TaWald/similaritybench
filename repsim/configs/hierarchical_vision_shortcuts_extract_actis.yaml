@@ -16,7 +16,7 @@ excluded_measures:
   - UniformityDifference
 threads: 1
 cache: True
-only_extract_reps: False
+only_extract_reps: True
 experiments:
   - name: Vision Short Cut Experiments
     type: GroupSeparationExperiment  # Defines the type of experiment class to use
