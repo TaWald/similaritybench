@@ -134,11 +134,15 @@ def load_model_from_info_file(model_info: ds.ModelInfo, load_ckpt: bool) -> AbsA
 
     if load_ckpt:
         try:
-            arch_instance.load_state_dict(torch.load(model_info.path_ckpt))
+            arch_instance.load_state_dict(torch.load(model_info.path_ckpt, map_location="cpu"))
         except RuntimeError:
             try:
-                arch_instance.load_state_dict(strip_state_dict_of_keys(torch.load(model_info.path_ckpt)))
+                arch_instance.load_state_dict(
+                    strip_state_dict_of_keys(torch.load(model_info.path_ckpt, map_location="cpu"))
+                )
             except RuntimeError as e1:
                 raise e1
+    if torch.cuda.is_available():
+        arch_instance = arch_instance.cuda()
 
     return arch_instance
