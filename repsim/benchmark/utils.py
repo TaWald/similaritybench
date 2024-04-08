@@ -24,7 +24,16 @@ class ExperimentStorer:
         self._old_experiments = (
             pd.read_parquet(self.path_to_store) if os.path.exists(self.path_to_store) else pd.DataFrame()
         )
+        self._sanity_check_parquett()
         self._new_experiments = pd.DataFrame()
+
+    def _sanity_check_parquett(self) -> None:
+        """
+        Check if the parquet file is corrupted.
+        """
+        indices = self._old_experiments.index
+        if len(indices) != len(set(indices)):
+            logger.error("The indices are not unique.")
 
     def add_results(
         self,
@@ -39,8 +48,6 @@ class ExperimentStorer:
         Add a comparison result of the experiments to disk.
         Serializes all the information into a unique identifier and stores the results in a pandas dataframe.
         """
-        if self.comparison_exists(src_single_rep, tgt_single_rep, metric) and not overwrite:
-            logger.info("Comparison already exists and Overwrite is False. Skipping.")
 
         if metric.is_symmetric:
             reps = [(src_single_rep, tgt_single_rep), (tgt_single_rep, src_single_rep)]
@@ -53,6 +60,9 @@ class ExperimentStorer:
                 tgt_single_rep=target_rep,
                 metric_name=metric.name,
             )
+            if self.comparison_exists(src_single_rep, tgt_single_rep, metric, ignore_symmetry=True) and not overwrite:
+                logger.info("Comparison already exists and Overwrite is False. Skipping.")
+                continue
 
             repo = git.Repo(search_parent_directories=True)
             sha = repo.head.object.hexsha
@@ -141,17 +151,38 @@ class ExperimentStorer:
             ValueError: If the comparison does not exist in the dataframe.
         """
         comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric.name)
+        symm_comp_id = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
 
-        # Checks if it exists either in old_experiments or new_experiments.
-        if not self.comparison_exists(src_single_rep, tgt_single_rep, metric):
-            raise ValueError(f"Comparison {comp_id} does not exist in the dataframe.")
+        experiment = pd.concat([self._old_experiments, self._new_experiments], ignore_index=False)
+        normal_exists = (comp_id in self._old_experiments.index) or (comp_id in self._new_experiments.index)
+        symm_exists = (symm_comp_id in self._old_experiments.index) or (symm_comp_id in self._new_experiments.index)
 
-        if self._comp_in_df(src_single_rep, tgt_single_rep, metric, self._old_experiments):
-            experiments = self._old_experiments
+        # ----------------- Read or add symmetric result to dataframe ---------------- #
+        if normal_exists and symm_exists:
+            res = experiment.loc[comp_id]
+        elif normal_exists and not symm_exists:
+            res = experiment.loc[comp_id]
+            self.add_results(
+                src_single_rep=tgt_single_rep,
+                tgt_single_rep=src_single_rep,
+                metric=metric,
+                metric_value=res["metric_value"],
+                runtime=res["runtime"],
+            )
+            self.save_to_file()
+        elif (not normal_exists) and symm_exists and metric.is_symmetric:
+            res = experiment.loc[symm_comp_id]
+            self.add_results(
+                src_single_rep=src_single_rep,
+                tgt_single_rep=tgt_single_rep,
+                metric=metric,
+                metric_value=res["metric_value"],
+                runtime=res["runtime"],
+            )
+            self.save_to_file()
         else:
-            experiments = self._new_experiments
+            raise ValueError("Comparison does not exist in the dataframe.")
 
-        res = experiments.loc[comp_id]
         metric_values = res["metric_value"]
         if isinstance(metric_values, (np.float32, np.float64, np.float16, float)):
             sim_value = metric_values
@@ -173,6 +204,7 @@ class ExperimentStorer:
         src_single_rep: SingleLayerRepresentation,
         tgt_single_rep: SingleLayerRepresentation,
         metric: SimilarityMeasure,
+        ignore_symmetry: bool = False,
     ) -> bool:
         """
         Check if the comparison (or if symmetrict the inverse) already exists in the dataframe.
@@ -183,24 +215,17 @@ class ExperimentStorer:
         Returns:
             bool: True if the comparison exists, False otherwise.
         """
-        comp_in_old = self._comp_in_df(src_single_rep, tgt_single_rep, metric, self._old_experiments)
-        comp_in_new = self._comp_in_df(src_single_rep, tgt_single_rep, metric, self._new_experiments)
-        return comp_in_old or comp_in_new
-
-    def _comp_in_df(
-        self,
-        src_single_rep: SingleLayerRepresentation,
-        tgt_single_rep: SingleLayerRepresentation,
-        metric: SimilarityMeasure,
-        exp: pd.DataFrame,
-    ) -> bool:
         comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric.name)
-        if comp_id in exp.index:
-            return True
-        if not metric.is_symmetric:
-            return False
-        comp_id = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
-        return comp_id in exp.index
+        comp_in_old = comp_id in self._old_experiments.index
+        comp_in_new = comp_id in self._new_experiments.index
+        if (not metric.is_symmetric) or ignore_symmetry:
+            return comp_in_old or comp_in_new
+
+        comp_id_symm = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
+        comp_in_old_symm = comp_id_symm in self._old_experiments.index
+        comp_in_new_symm = comp_id_symm in self._new_experiments.index
+
+        return comp_in_old or comp_in_new or comp_in_old_symm or comp_in_new_symm
 
     def save_to_file(self) -> None:
         """Save the results of the experiment to disk"""
@@ -211,6 +236,7 @@ class ExperimentStorer:
         # Read all the experiments and make sure that we do not overwrite any existing ones.
         all_experiments = pd.concat([latest_experiment_results, self._new_experiments], ignore_index=False)
         all_experiments.to_parquet(self.path_to_store)
+        self._new_experiments = pd.DataFrame()  # Empty the new experiments or duplicates will be written.
 
     def __enter__(self):
         """When entering a context, load the experiments from disk"""
