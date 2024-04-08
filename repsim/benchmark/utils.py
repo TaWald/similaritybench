@@ -21,9 +21,10 @@ class ExperimentStorer:
         if path_to_store is None:
             path_to_store = os.path.join(EXPERIMENT_RESULTS_PATH, "experiments.parquet")
         self.path_to_store = path_to_store
-        self.experiments = (
+        self._old_experiments = (
             pd.read_parquet(self.path_to_store) if os.path.exists(self.path_to_store) else pd.DataFrame()
         )
+        self._new_experiments = pd.DataFrame()
 
     def add_results(
         self,
@@ -85,7 +86,7 @@ class ExperimentStorer:
             )
             content.update({"hash": sha, "date": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")})
             content_df = pd.DataFrame(content, index=[comp_id])
-            self.experiments = self.experiments._append(content_df, ignore_index=False)
+            self._new_experiments = self._new_experiments._append(content_df, ignore_index=False)
 
     def _sort_models(
         self,
@@ -140,15 +141,17 @@ class ExperimentStorer:
             ValueError: If the comparison does not exist in the dataframe.
         """
         comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric.name)
-        if comp_id not in self.experiments.index:
-            if metric.is_symmetric:
-                comp_id = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
 
-        if comp_id not in self.experiments.index:
+        # Checks if it exists either in old_experiments or new_experiments.
+        if not self.comparison_exists(src_single_rep, tgt_single_rep, metric):
             raise ValueError(f"Comparison {comp_id} does not exist in the dataframe.")
 
-        res = self.experiments.loc[comp_id]
-        # ToDo: Find out why multiple entries can even exist in the first place!
+        if self._comp_in_df(src_single_rep, tgt_single_rep, metric, self._old_experiments):
+            experiments = self._old_experiments
+        else:
+            experiments = self._new_experiments
+
+        res = experiments.loc[comp_id]
         metric_values = res["metric_value"]
         if isinstance(metric_values, (np.float32, np.float64, np.float16, float)):
             sim_value = metric_values
@@ -160,9 +163,9 @@ class ExperimentStorer:
             else:
                 logger.error("Multiple different values found for the same comparison. Returning None.")
                 sim_value = None
-
         else:
             sim_value = None
+
         return sim_value
 
     def comparison_exists(
@@ -180,16 +183,34 @@ class ExperimentStorer:
         Returns:
             bool: True if the comparison exists, False otherwise.
         """
+        comp_in_old = self._comp_in_df(src_single_rep, tgt_single_rep, metric, self._old_experiments)
+        comp_in_new = self._comp_in_df(src_single_rep, tgt_single_rep, metric, self._new_experiments)
+        return comp_in_old or comp_in_new
+
+    def _comp_in_df(
+        self,
+        src_single_rep: SingleLayerRepresentation,
+        tgt_single_rep: SingleLayerRepresentation,
+        metric: SimilarityMeasure,
+        exp: pd.DataFrame,
+    ) -> bool:
         comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric.name)
-        # If it exists we just continue, otherwise we check for the symmetric one
-        if comp_id not in self.experiments.index:
-            if metric.is_symmetric:
-                comp_id = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
-        return comp_id in self.experiments.index
+        if comp_id in exp.index:
+            return True
+        if not metric.is_symmetric:
+            return False
+        comp_id = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
+        return comp_id in exp.index
 
     def save_to_file(self) -> None:
         """Save the results of the experiment to disk"""
-        self.experiments.to_parquet(self.path_to_store)
+        # Re-read to make sure that other processes have not written to the file in the meantime.
+        latest_experiment_results = (
+            pd.read_parquet(self.path_to_store) if os.path.exists(self.path_to_store) else pd.DataFrame()
+        )
+        # Read all the experiments and make sure that we do not overwrite any existing ones.
+        all_experiments = pd.concat([latest_experiment_results, self._new_experiments], ignore_index=False)
+        all_experiments.to_parquet(self.path_to_store)
 
     def __enter__(self):
         """When entering a context, load the experiments from disk"""
@@ -197,7 +218,8 @@ class ExperimentStorer:
 
     def __exit__(self, exc_type, exc_value, traceback):
         """When exiting a context, save the experiments to disk"""
-        self.save_to_file()
+        if len(self._new_experiments) > 0:
+            self.save_to_file()
         self.experiments = None
         return False
 
