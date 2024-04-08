@@ -11,6 +11,8 @@ def violation_rate(intra_group: list[float], cross_group: list[float], larger_is
         intra_group: List of intra-group similarities.
         cross_group: List of cross-group similarities.
     """
+    intra_group = intra_group.copy()
+    cross_group = cross_group.copy()
     if not larger_is_more_similar:
         max_val = max(np.max(intra_group), np.max(cross_group))
         intra_group = [float(-sim + max_val) for sim in intra_group]
@@ -31,10 +33,12 @@ def auprc(intra_group: list[float], cross_group: list[float], larger_is_more_sim
         intra_group: List of intra-group similarities.
         cross_group: List of cross-group similarities.
     """
+    intra_group = intra_group.copy()
+    cross_group = cross_group.copy()
     if not larger_is_more_similar:
         max_val = max(np.max(intra_group), np.max(cross_group))
-        intra_group = [float(-sim + max_val) for sim in intra_group]
-        cross_group = [float(-sim + max_val) for sim in cross_group]
+        intra_group = [float(-sim + max_val) / max_val for sim in intra_group]
+        cross_group = [float(-sim + max_val) / max_val for sim in cross_group]
 
     in_group_sims = np.array(intra_group)
     cross_group_sims = np.array(cross_group)
