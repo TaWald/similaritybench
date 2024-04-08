@@ -139,7 +139,7 @@ class ConcentricityDifference(RSMSimilarityMeasure):
     def __init__(self):
         # different choice of inner/outer in __call__ should change these values...
         super().__init__(
-            sim_func=uniformity_difference,
+            sim_func=concentricity_difference,
             larger_is_more_similar=False,
             is_metric=False,
             is_symmetric=True,
