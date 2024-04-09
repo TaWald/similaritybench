@@ -20,7 +20,7 @@ def main():
                 subprocess.run(
                     [
                         "python",
-                        "/home/tassilowald/Code/similaritybench/vision/train_vision_model.py",
+                        "/dkfz/cluster/gpu/data/OE0441/t006d/Code/similaritybench/train_vision_model.py",
                         "-a",
                         arch,
                         "-d",
