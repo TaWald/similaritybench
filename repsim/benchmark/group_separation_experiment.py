@@ -1,29 +1,29 @@
 import multiprocessing
 import os
-import sys
 import time
+import warnings
 from collections.abc import Sequence
 from contextlib import contextmanager
 from contextlib import redirect_stdout
-from itertools import chain
 from itertools import product
-from multiprocessing import Manager
 from multiprocessing.managers import BaseManager
+from multiprocessing.synchronize import Lock as LockBase
 
 import numpy as np
-import pandas as pd
+import repsim.benchmark.registry
+import repsim.utils
 from loguru import logger
 from repsim.benchmark.abstract_experiment import AbstractExperiment
 from repsim.benchmark.measure_quality_metrics import auprc
 from repsim.benchmark.measure_quality_metrics import violation_rate
-from repsim.benchmark.registry import ALL_TRAINED_MODELS
-from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import get_in_group_cross_group_sims
 from repsim.benchmark.utils import get_ingroup_outgroup_SLRs
 from repsim.measures.utils import SimilarityMeasure
-from repsim.utils import SingleLayerRepresentation
 from tqdm import tqdm
+
+# from repsim.benchmark.registry import TrainedModel
+# from repsim.utils import SingleLayerRepresentation
 
 
 @contextmanager
@@ -74,9 +74,11 @@ def gather_representations(sngl_rep_src, sngl_rep_tgt, lock):
 
 
 def compare(
-    comps: list[tuple[SingleLayerRepresentation, SingleLayerRepresentation, SimilarityMeasure]],
-    rep_lock: multiprocessing.Lock,
-    storage_lock: multiprocessing.Lock,
+    comps: list[
+        tuple[repsim.utils.SingleLayerRepresentation, repsim.utils.SingleLayerRepresentation, SimilarityMeasure]
+    ],
+    rep_lock: LockBase,
+    storage_lock: LockBase,
     storer: ExperimentStorer,
 ) -> list[dict]:
     """
@@ -107,7 +109,7 @@ def compare(
 class GroupSeparationExperiment(AbstractExperiment):
     def __init__(
         self,
-        grouped_models: list[Sequence[TrainedModel]],
+        grouped_models: list[Sequence[repsim.benchmark.registry.TrainedModel]],
         measures: list[SimilarityMeasure],
         representation_dataset: str,
         storage_path: str | None = None,
@@ -122,6 +124,7 @@ class GroupSeparationExperiment(AbstractExperiment):
         self.groups_of_models = grouped_models
         self.meta_data = meta_data
         self.kwargs = kwargs
+        self.rep_cache = {}  # lookup table for representations, so we can reuse computed representations
 
     def measure_violation_rate(self, measure: SimilarityMeasure) -> float:
         n_groups = len(self.groups_of_models)
@@ -199,7 +202,7 @@ class GroupSeparationExperiment(AbstractExperiment):
         if self.meta_data is not None:
             meta_data.update(self.meta_data)
 
-        for measure in tqdm(self.measures, desc=f"Evaluating quality of measures"):
+        for measure in tqdm(self.measures, desc="Evaluating quality of measures"):
             violation_rate = self.measure_violation_rate(measure)
             measure_wise_results.append(
                 {
@@ -227,47 +230,66 @@ class GroupSeparationExperiment(AbstractExperiment):
         else:
             self._run_multiprocessed()
 
-    def _get_todo_combos(
-        self, combos, storer: ExperimentStorer
-    ) -> tuple[list[tuple[SingleLayerRepresentation, SingleLayerRepresentation, list[SimilarityMeasure]]], int]:
+    def _get_todo_combos(self, combos, storer: ExperimentStorer) -> tuple[
+        list[
+            tuple[
+                repsim.utils.SingleLayerRepresentation,
+                repsim.utils.SingleLayerRepresentation,
+                list[SimilarityMeasure],
+            ]
+        ],
+        int,
+    ]:
+
+        def get_final_layer_representation(
+            model: repsim.benchmark.registry.TrainedModel,
+        ) -> repsim.utils.SingleLayerRepresentation:
+            final_layer_rep = self.rep_cache.get(model.id, None)
+            if final_layer_rep is None:
+                final_layer_rep = model.get_representation(
+                    self.representation_dataset, **self.kwargs
+                ).representations[-1]
+                self.rep_cache[model.id] = final_layer_rep
+            return final_layer_rep
+
         comparisons_todo = []
         n_total = 0
         for model_src, model_tgt in combos:
             if model_src == model_tgt:
                 continue  # Skip self-comparisons
-            model_reps_src = model_src.get_representation(self.representation_dataset, **self.kwargs)
-            sngl_rep_src: SingleLayerRepresentation = model_reps_src.representations[-1]
-            model_reps_tgt = model_tgt.get_representation(self.representation_dataset, **self.kwargs)
-            sngl_rep_tgt: SingleLayerRepresentation = model_reps_tgt.representations[-1]
+
+            single_layer_rep_source = get_final_layer_representation(model_src)
+            single_layer_rep_target = get_final_layer_representation(model_tgt)
 
             # Need to fix this. It's a tuple of Single_reps
             todo_by_measure = []
 
             for measure in self.measures:
-                if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
+                if storer.comparison_exists(single_layer_rep_source, single_layer_rep_target, measure):
                     pass
                 else:
                     todo_by_measure.append(measure)
                     n_total += 1
             if len(todo_by_measure) > 0:
-                comparisons_todo.append((sngl_rep_src, sngl_rep_tgt, todo_by_measure))
+                comparisons_todo.append((single_layer_rep_source, single_layer_rep_target, todo_by_measure))
         return comparisons_todo, n_total
 
     def _run_single_threaded(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
         flat_models = flatten_nested_list(self.groups_of_models)
+        logger.debug(f"Using models: {[m.id for m in flat_models]}")
         combos = product(flat_models, flat_models)  # Necessary for non-symmetric values
 
-        logger.info(f"")
+        logger.info("")
         with ExperimentStorer(self.storage_path) as storer:
             todo_combos, n_total = self._get_todo_combos(combos, storer)
             with tqdm(total=n_total, desc="Comparing representations") as pbar:
                 for sngl_rep_src, sngl_rep_tgt, measures in todo_combos:
-                    sngl_rep_src: SingleLayerRepresentation
-                    sngl_rep_tgt: SingleLayerRepresentation
+                    # sngl_rep_tgt: SingleLayerRepresentation
+                    # sngl_rep_src: SingleLayerRepresentation
                     sngl_rep_src.cache = self.cache
                     sngl_rep_tgt.cache = self.cache
-                    measures: list[SimilarityMeasure]
+                    # measures: list[SimilarityMeasure]
                     for measure in measures:
                         if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
                             # We still need to check during execution, as symmetry not accounted in the `_get_todo_combos` call!
@@ -300,14 +322,16 @@ class GroupSeparationExperiment(AbstractExperiment):
                         if measure.is_symmetric:
                             pbar.update(1)
                         pbar.update(1)
-                    sngl_rep_src.representation = None  # Clear memory
-                    sngl_rep_tgt.representation = None  # Clear memory
+                    # TODO: should be able to be removed without OOM, because self.rep_cache keeps reps more efficiently than before
+                    # sngl_rep_src.representation = None  # Clear memory
+                    # sngl_rep_tgt.representation = None  # Clear memory
 
         return
 
-    @DeprecationWarning
     def _run_multiprocessed(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
+        warnings.warn("This method should not be used. Set threads in your config to 1.", category=DeprecationWarning)
+
         flat_models = flatten_nested_list(self.groups_of_models)
         combos = product(flat_models, flat_models)  # Necessary for non-symmetric values
 
@@ -326,9 +350,9 @@ class GroupSeparationExperiment(AbstractExperiment):
                 if model_src == model_tgt:
                     continue  # Skip self-comparisons
                 model_reps_src = model_src.get_representation(self.representation_dataset, **self.kwargs)
-                sngl_rep_src: SingleLayerRepresentation = model_reps_src.representations[-1]
+                sngl_rep_src: repsim.utils.SingleLayerRepresentation = model_reps_src.representations[-1]
                 model_reps_tgt = model_tgt.get_representation(self.representation_dataset, **self.kwargs)
-                sngl_rep_tgt: SingleLayerRepresentation = model_reps_tgt.representations[-1]
+                sngl_rep_tgt: repsim.utils.SingleLayerRepresentation = model_reps_tgt.representations[-1]
 
                 todo_by_measure = []
                 for measure in self.measures:
