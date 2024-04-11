@@ -14,7 +14,7 @@ def violation_rate(intra_group: list[float], cross_group: list[float], larger_is
     intra_group = intra_group.copy()
     cross_group = cross_group.copy()
     if not larger_is_more_similar:
-        max_val = max(np.max(intra_group), np.max(cross_group))
+        max_val = max(intra_group + cross_group)
         intra_group = [float(-sim + max_val) for sim in intra_group]
         cross_group = [float(-sim + max_val) for sim in cross_group]
     violations = sum([in_sim <= cross_sim for in_sim, cross_sim in product(intra_group, cross_group)])
@@ -50,4 +50,4 @@ def auprc(intra_group: list[float], cross_group: list[float], larger_is_more_sim
         auprc = average_precision_score(
             y_true, y_score
         )  # 1 for perfect separation, 0.5 for random, 0 for inverse separation (inverted metric)
-    return auprc
+    return float(auprc)
