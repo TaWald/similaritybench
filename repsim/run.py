@@ -128,6 +128,7 @@ def run(config_path: str):
 
     all_experiments = []
     for experiment in config["experiments"]:
+        logger.debug(f"Creating experiment for {experiment}")
         if experiment["type"] == "GroupSeparationExperiment":
             filter_key_vals = experiment.get("filter_key_vals", None)
             grouping_keys = experiment.get("grouping_keys", None)
@@ -160,7 +161,7 @@ def run(config_path: str):
         if not only_extract_reps:
             exp_results.extend(ex.eval())
 
-    if create_table and (not only_extract_reps):
+    if create_table(config) and (not only_extract_reps):
         create_pivot_excel_table(
             exp_results,
             **config["table_creation"],
