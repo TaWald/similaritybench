@@ -1,7 +1,7 @@
 # Holds all information needed to run experiments.
+# included_measures:
+#   - CKA
 excluded_measures:
-  - SVCCA
-  - PWCCA
   - EigenspaceOverlapScore
   - GeometryScore
   - IMDScore
@@ -15,15 +15,20 @@ experiments:
       train_dataset:
         - "sst2_sc_rate0558"
         - "sst2_sc_rate0668"
-        # - "sst2_sc_rate0779"
-        # - "sst2_sc_rate0889"
-        # - "sst2_sc_rate10"
+        - "sst2_sc_rate0779"
+        - "sst2_sc_rate0889"
+        - "sst2_sc_rate10"
       seed:
         - 0
         - 1
-        # - 2
-        # - 3
-        # - 4
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
       domain: NLP
     grouping_keys: # Separates the trained models by this key into groups for the `GroupSeparationExperiment`.
       - train_dataset
@@ -31,9 +36,9 @@ experiments:
       - architecture
 
 table_creation:
-  row_index: measure # The key to use as the row index in the table.
+  row_index: similarity_measure # The key to use as the row index in the table.
   columns: # The keys to use as columns (can be list[str] or a str)
     - quality_measure
     - architecture
   value_key: value # The key specifying the value that fills the table (non-header/index values)
-  filename: nlp_shortcut.xlsx # Can be [.xlsx / .csv / .tex] file extension
+  filename: nlp_shortcut.csv # Can be [.xlsx / .csv / .tex] file extension
