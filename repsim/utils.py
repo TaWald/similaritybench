@@ -2,11 +2,26 @@ import os
 from abc import abstractmethod
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Callable
+from typing import Literal
+from typing import Optional
 from typing import TYPE_CHECKING
+from typing import TypeVar
 
-import repsim.nlp
+import numpy as np
+import torch
+from loguru import logger
 from repsim.benchmark.paths import CACHE_PATH
+from repsim.benchmark.types_globals import DOMAIN_TYPE
+from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
+from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import NLP_ARCHITECTURE_TYPE
+from repsim.benchmark.types_globals import NLP_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import SETTING_IDENTIFIER
+from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
+from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
+from repsim.measures.utils import SHAPE_TYPE
+from vision.arch.arch_loading import load_model_from_info_file
+from vision.util.file_io import get_vision_model_info
 from vision.util.vision_rep_extraction import get_single_layer_vision_representation_on_demand
 
 if TYPE_CHECKING:
@@ -15,27 +30,181 @@ if TYPE_CHECKING:
 else:
     AbsActiExtrArch = None
     ds = None
-from vision.arch.arch_loading import load_model_from_info_file
 
 
-import numpy as np
-import torch
-from loguru import logger
-from repsim.measures.utils import SHAPE_TYPE
-from vision.util.file_io import get_vision_model_info
+# reordering classes does not help, because of cyclical dependencies
+ModelRepresentations = TypeVar("ModelRepresentations")
+
+
+@dataclass
+class TrainedModel:
+    """
+    Class that should contain all the infos about the trained models.
+    This can be used to filter the models and categorize them into groups.
+    """
+
+    domain: DOMAIN_TYPE
+    architecture: VISION_ARCHITECTURE_TYPE | NLP_ARCHITECTURE_TYPE | GRAPH_ARCHITECTURE_TYPE
+    train_dataset: VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
+    identifier: SETTING_IDENTIFIER
+    seed: int
+    additional_kwargs: Optional[dict] = field(
+        kw_only=True, default=None
+    )  # Maybe one can remove this to make it more general
+
+    def __post_init__(self):
+        self.id = self._get_unique_model_identifier()
+
+    def get_representation(self, representation_dataset: Optional[str] = None, **kwargs) -> ModelRepresentations:
+        """
+        This function should return the representation of the model.
+        """
+
+        if representation_dataset is None:
+            representation_dataset = self.train_dataset
+
+        if self.domain == "VISION":
+            return get_vision_representation_on_demand(
+                architecture_name=self.architecture,
+                train_dataset=self.train_dataset,
+                seed_id=self.seed,
+                setting_identifier=self.identifier,
+                representation_dataset=representation_dataset,
+            )
+        elif self.domain == "NLP":
+            raise ValueError("NLP Models should exist as HuggingfaceModel instances.")
+        if self.domain == "GRAPHS":
+            from graphs.get_reps import get_graph_representations
+
+            return get_graph_representations(
+                architecture_name=self.architecture,
+                train_dataset=self.train_dataset,
+                seed=self.seed,
+                setting_identifier=self.identifier,
+                representation_dataset=representation_dataset,
+            )
+        else:
+            raise ValueError("Unknown domain type")
+
+    def _get_unique_model_identifier(self) -> str:
+        """
+        This function should return a unique identifier for the model.
+        """
+        return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.seed}_{self.additional_kwargs}"
+
+
+@dataclass
+class NLPDataset:
+    name: str  # human-readable identifier
+    path: str  # huggingface hub path, e.g., sst2. Will be ignored if `local_path` is given
+    config: Optional[str] = None  # huggingface hub dataset config, e.g., mnli for glue.
+    local_path: Optional[str] = (
+        None  # path to a local dataset directory. If given, the dataset will be loaded from here.
+    )
+    split: str = "train"  # part of the dataset that was/will be used
+    feature_column: Optional[str] = None
+    label_column: Optional[str] = "label"
+
+    # Information about shortcuts
+    shortcut_rate: Optional[float] = None
+    shortcut_seed: Optional[int] = None
+
+    # Information about changed labels
+    memorization_rate: Optional[float] = None
+    memorization_n_new_labels: Optional[int] = None
+    memorization_seed: Optional[int] = None
+
+    # Information about augmentation
+    augmentation_type: Optional[str] = None
+    augmentation_rate: Optional[float] = None
+
+
+@dataclass(kw_only=True)
+class NLPModel(TrainedModel):
+    domain: DOMAIN_TYPE = "NLP"
+    architecture: NLP_ARCHITECTURE_TYPE = "BERT-L"
+    path: str
+    tokenizer_name: str
+    train_dataset: Literal[
+        "sst2", "sst2_sc_rate0558", "sst2_sc_rate0668", "sst2_sc_rate0779", "sst2_sc_rate0889", "sst2_sc_rate10"
+    ]
+    model_type: Literal["sequence-classification"] = "sequence-classification"
+    token_pos: Optional[int] = (
+        None  # Index of the token relevant for classification. If set, only the representation of this token will be extracted.
+    )
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    train_dataset_obj: NLPDataset = field(init=False)
+
+    def __post_init__(self):
+        super().__post_init__()
+        from repsim.benchmark.registry import NLP_TRAIN_DATASETS
+
+        self.train_dataset_obj = NLP_TRAIN_DATASETS[self.train_dataset]
+
+    @property
+    def n_layers(self):
+        arch_to_layers = {"BERT-L": 13}
+        return arch_to_layers[self.architecture]
+
+    def get_representation(
+        self, representation_dataset_id: str, compute_rep_on_demand: bool = True
+    ) -> ModelRepresentations:
+        from repsim.benchmark.registry import NLP_REPRESENTATION_DATASETS
+
+        if self.domain != "NLP":
+            raise ValueError("This class should only be used for NLP models with huggingface.")
+        if representation_dataset_id not in NLP_REPRESENTATION_DATASETS.keys():
+            raise ValueError(
+                f"Dataset must be one of {list(NLP_REPRESENTATION_DATASETS.keys())}, but is {representation_dataset_id}"
+            )
+        representation_dataset = NLP_REPRESENTATION_DATASETS[representation_dataset_id]
+
+        if compute_rep_on_demand:
+            slrs = tuple([SingleLayerNLPRepresentation(layer_id=i, _shape="nd") for i in range(self.n_layers)])
+        else:
+            import repsim.nlp
+
+            reps = repsim.nlp.get_representations(
+                self.path,
+                self.model_type,
+                self.tokenizer_name,
+                representation_dataset.path,
+                representation_dataset.config,
+                representation_dataset.local_path,
+                representation_dataset.split,
+                self.device,
+                self.token_pos,
+                shortcut_rate=representation_dataset.shortcut_rate,
+                shortcut_seed=representation_dataset.shortcut_seed,
+                feature_column=representation_dataset.feature_column,
+            )
+            slrs = tuple(
+                [SingleLayerRepresentation(layer_id=i, _representation=r, _shape="nd") for i, r in enumerate(reps)]
+            )
+        return ModelRepresentations(
+            self,
+            representation_dataset_id,
+            slrs,
+        )
+
+
+@dataclass
+class TrainedModelRep(TrainedModel):
+    """
+    The same as above, just also has the ID of the layer.
+    """
+
+    layer_id: int
 
 
 @dataclass
 class SingleLayerRepresentation:
     layer_id: int
+    origin_model: TrainedModel | None = None
     cache: bool = False
     _representation: torch.Tensor | np.ndarray | None = None
     _shape: SHAPE_TYPE | None = None
-    _architecture_name: str | None = field(default=None, init=False)
-    _train_dataset: str | None = field(default=None, init=False)
-    _seed: int | None = field(default=None, init=False)
     _representation_dataset: str | None = field(default=None, init=False)
-    _setting_identifier: str | None = field(default=None, init=False)
 
     @property
     def representation(self) -> torch.Tensor | np.ndarray:
@@ -58,7 +227,6 @@ class SingleLayerRepresentation:
     def representation(self, v: torch.Tensor | np.ndarray) -> None:
         """Allow setting the representation as before"""
         self._representation = v
-        return self._representation
 
     @abstractmethod
     def _extract_representation(self) -> torch.Tensor | np.ndarray:
@@ -83,7 +251,6 @@ class SingleLayerRepresentation:
     def shape(self, v: SHAPE_TYPE) -> None:
         """Allow setting the shape as before"""
         self._shape = v
-        return self._shape
 
     def unique_identifier(self) -> str:
         """
@@ -92,19 +259,15 @@ class SingleLayerRepresentation:
         Returns:
             A string representing the unique identifier.
         """
-        assert all(
-            [
-                self._architecture_name is not None,
-                self._train_dataset is not None,
-                self._seed is not None,
-            ],
-        ), "SingleLayerRepresentation has not been set with the necessary information."
+        assert self.origin_model is not None, "origin_model is not set"
+        assert self._representation_dataset is not None, "representation_dataset not set"
+        # We could this make this nicer by using the model .id attribute, but this keeps it backwards compatible
         return "__".join(
-            [  # type:ignore
-                self._setting_identifier,
-                self._architecture_name,
-                self._train_dataset,
-                str(self._seed),
+            [
+                self.origin_model.identifier,
+                self.origin_model.architecture,
+                self.origin_model.train_dataset,
+                str(self.origin_model.seed),
                 self._representation_dataset,
                 str(self.layer_id),
             ]
@@ -114,10 +277,10 @@ class SingleLayerRepresentation:
 class SingleLayerVisionRepresentation(SingleLayerRepresentation):
     def _extract_representation(self) -> torch.Tensor | np.ndarray:
         return get_single_layer_vision_representation_on_demand(
-            architecture_name=self._architecture_name,
-            train_dataset=self._train_dataset,
-            seed=self._seed,
-            setting_identifier=self._setting_identifier,
+            architecture_name=self.origin_model.architecture,
+            train_dataset=self.origin_model.train_dataset,
+            seed=self.origin_model.seed,
+            setting_identifier=self.origin_model.identifier,
             representation_dataset=self._representation_dataset,
             layer_id=self.layer_id,
         )
@@ -125,16 +288,34 @@ class SingleLayerVisionRepresentation(SingleLayerRepresentation):
 
 class SingleLayerNLPRepresentation(SingleLayerRepresentation):
     def _extract_representation(self) -> torch.Tensor:
-        # return repsim.nlp.get_single_layer_rep_on_demand()
-        pass
+        assert isinstance(self.origin_model, NLPModel)
+        assert self._representation_dataset is not None
+
+        import repsim.benchmark.registry
+        import repsim.nlp
+
+        representation_dataset = repsim.benchmark.registry.NLP_REPRESENTATION_DATASETS[self._representation_dataset]
+
+        all_layer_reps = repsim.nlp.get_representations(
+            self.origin_model.path,
+            self.origin_model.model_type,
+            self.origin_model.tokenizer_name,
+            representation_dataset.path,
+            representation_dataset.config,
+            representation_dataset.local_path,
+            representation_dataset.split,
+            self.origin_model.device,
+            self.origin_model.token_pos,
+            shortcut_rate=representation_dataset.shortcut_rate,
+            shortcut_seed=representation_dataset.shortcut_seed,
+            feature_column=representation_dataset.feature_column,
+        )
+        return all_layer_reps[self.layer_id]
 
 
 @dataclass
 class ModelRepresentations:
-    setting_identifier: str | None
-    architecture_name: str
-    train_dataset: str
-    seed: int  # Additional identifier to distinguish between different models with the same name
+    origin_model: TrainedModel
     representation_dataset: str
     representations: tuple[SingleLayerRepresentation, ...]  # immutable to maintain ordering
 
@@ -149,12 +330,8 @@ class ModelRepresentations:
 
     def _set_single_layer_infos(self):
         for rep in self.representations:
-            rep._setting_identifier = self.setting_identifier
-            rep._architecture_name = self.architecture_name
-            rep._train_dataset = self.train_dataset
-            rep._seed = self.seed
+            rep.origin_model = self.origin_model
             rep._representation_dataset = self.representation_dataset
-            rep._setting_identifier = self.setting_identifier
 
 
 def get_vision_representation_on_demand(
