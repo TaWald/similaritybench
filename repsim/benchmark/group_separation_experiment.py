@@ -287,7 +287,8 @@ class GroupSeparationExperiment(AbstractExperiment):
                                 sim = measure(reps_a, reps_b, shape)
                             runtime = time.perf_counter() - start_time
                             storer.add_results(sngl_rep_src, sngl_rep_tgt, measure, sim, runtime)
-                            # logger.debug(f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s.")
+                            logger.debug(f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s.")
+
                         except Exception as e:
                             storer.add_results(
                                 sngl_rep_src, sngl_rep_tgt, measure, metric_value=np.nan, runtime=np.nan

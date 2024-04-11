@@ -5,6 +5,7 @@ from dataclasses import field
 from typing import Callable
 from typing import TYPE_CHECKING
 
+import repsim.nlp
 from repsim.benchmark.paths import CACHE_PATH
 from vision.util.vision_rep_extraction import get_single_layer_vision_representation_on_demand
 
@@ -120,6 +121,12 @@ class SingleLayerVisionRepresentation(SingleLayerRepresentation):
             representation_dataset=self._representation_dataset,
             layer_id=self.layer_id,
         )
+
+
+class SingleLayerNLPRepresentation(SingleLayerRepresentation):
+    def _extract_representation(self) -> torch.Tensor:
+        # return repsim.nlp.get_single_layer_rep_on_demand()
+        pass
 
 
 @dataclass

@@ -1,6 +1,11 @@
 # Holds all information needed to run experiments.
-included_measures:
-  - "CKA"
+excluded_measures:
+  - SVCCA
+  - PWCCA
+  - EigenspaceOverlapScore
+  - GeometryScore
+  - IMDScore
+  - LinearRegression
 threads: 1
 experiments:
   - name: NLP Short Cut Experiments
@@ -10,9 +15,9 @@ experiments:
       train_dataset:
         - "sst2_sc_rate0558"
         - "sst2_sc_rate0668"
-        - "sst2_sc_rate0779"
-        - "sst2_sc_rate0889"
-        - "sst2_sc_rate10"
+        # - "sst2_sc_rate0779"
+        # - "sst2_sc_rate0889"
+        # - "sst2_sc_rate10"
       seed:
         - 0
         - 1

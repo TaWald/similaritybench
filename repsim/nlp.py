@@ -16,6 +16,8 @@ import transformers
 from loguru import logger
 from tqdm import tqdm
 
+DATASETS = {}
+
 
 class ShortcutAdder:
     def __init__(
@@ -181,7 +183,7 @@ def to_ntxd_shape(reps: List[Tuple[torch.Tensor, ...]]) -> Tuple[torch.Tensor, .
                 dim=0,
             )
         )
-        logger.debug(f"Layer: {layer_idx}, Shape: {concated_reps[layer_idx].size()}")
+        # logger.debug(f"Layer: {layer_idx}, Shape: {concated_reps[layer_idx].size()}")
     return tuple(concated_reps)
 
 
@@ -202,24 +204,32 @@ def get_representations(
 ):
     tokenizer_kwargs = None
 
-    dataset = get_dataset(dataset_path, dataset_config, local_path=dataset_local_path)
-    if shortcut_rate is not None:
-        assert shortcut_seed is not None
-        assert feature_column is not None
-        logger.info(f"Adding shortcuts with rate {shortcut_rate} and seed {shortcut_seed}")
-        label_column = "label"
-        shortcut_adder = ShortcutAdder(
-            num_labels=len(np.unique(dataset["train"][label_column])),
-            p=shortcut_rate,
-            feature_column=feature_column,
-            label_column=label_column,
-            seed=shortcut_seed,
-        )
-        dataset = dataset.map(shortcut_adder)
-        feature_column = shortcut_adder.new_feature_column
-        tokenizer_kwargs = {"additional_special_tokens": shortcut_adder.new_tokens}
+    # To avoid loading datasets all the time (which takes considerable time), cache them once we loaded them once.
+    dataset_id = "__".join(
+        map(str, [dataset_path, dataset_config, dataset_local_path, dataset_split, shortcut_rate, shortcut_seed])
+    )
+    dataset = DATASETS.get(dataset_id, None)
+    if dataset is None:
+        # This is the first time the dataset gets loaded
+        dataset = get_dataset(dataset_path, dataset_config, local_path=dataset_local_path)
+        if shortcut_rate is not None:
+            assert shortcut_seed is not None
+            assert feature_column is not None
+            logger.info(f"Adding shortcuts with rate {shortcut_rate} and seed {shortcut_seed}")
+            label_column = "label"
+            shortcut_adder = ShortcutAdder(
+                num_labels=len(np.unique(dataset["train"][label_column])),
+                p=shortcut_rate,
+                feature_column=feature_column,
+                label_column=label_column,
+                seed=shortcut_seed,
+            )
+            dataset = dataset.map(shortcut_adder)
+            feature_column = shortcut_adder.new_feature_column
+            tokenizer_kwargs = {"additional_special_tokens": shortcut_adder.new_tokens}
 
-    dataset = dataset[dataset_split]
+        dataset = dataset[dataset_split]
+        DATASETS[dataset_id] = dataset  # add processed dataset to cache
     prompt_creator = get_prompt_creator(dataset_path, dataset_config, feature_column)
 
     if tokenizer_kwargs is None:
@@ -236,5 +246,5 @@ def get_representations(
         device,
         token_pos_to_extract=token_pos,
     )
-    logger.info(f"Shape of representations: {[rep.shape for rep in reps]}")
+    logger.debug(f"Shape of representations: {[rep.shape for rep in reps]}")
     return reps
