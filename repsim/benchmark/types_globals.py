@@ -52,6 +52,10 @@ SETTING_IDENTIFIER = Literal[
     "Shortcut_75",
     "Shortcut_100",
     "MultiLayer",
+    "Augmentation_25",
+    "Augmentation_50",
+    "Augmentation_75",
+    "Augmentation_100",
 ]
 
 STANDARD_SETTING = get_args(SETTING_IDENTIFIER)[0]
@@ -71,6 +75,14 @@ SHORTCUT_0_SETTING, SHORTCUT_25_SETTING, SHORTCUT_50_SETTING, SHORTCUT_75_SETTIN
 )
 
 MULTI_LAYER_SETTING = get_args(SETTING_IDENTIFIER)[11]
+
+# TODO: These numbers are brittle. Make a small change in the above list, and everything here is different. Build list from these constants?
+AUGMENTATION_25_SETTING, AUGMENTATION_50_SETTING, AUGMENTATION_75_SETTING, AUGMENTATION_100_SETTING = (
+    get_args(SETTING_IDENTIFIER)[12],
+    get_args(SETTING_IDENTIFIER)[13],
+    get_args(SETTING_IDENTIFIER)[14],
+    get_args(SETTING_IDENTIFIER)[15],
+)
 
 SINGLE_MODEL_EXPERIMENT_IDENTIFIER = Literal["layer_test"]
 MULTIMODEL_EXPERIMENT_IDENTIFIER = Literal["label_test", "shortcut_test"]

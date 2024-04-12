@@ -4,6 +4,10 @@ from typing import get_args
 import repsim.benchmark.paths
 import repsim.nlp
 import repsim.utils
+from repsim.benchmark.types_globals import AUGMENTATION_100_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_25_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_50_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
@@ -54,6 +58,62 @@ NLP_TRAIN_DATASETS = {
         memorization_n_new_labels=5,
         memorization_seed=0,
     ),
+    "sst2_aug_rate025": NLPDataset(
+        "sst2_aug_rate025",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength025"),
+        feature_column="augmented",
+        augmentation_rate=0.25,
+        augmentation_type="eda",
+    ),
+    "sst2_aug_rate05": NLPDataset(
+        "sst2_aug_rate05",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength05"),
+        feature_column="augmented",
+        augmentation_rate=0.5,
+        augmentation_type="eda",
+    ),
+    "sst2_aug_rate075": NLPDataset(
+        "sst2_aug_rate075",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength075"),
+        feature_column="augmented",
+        augmentation_rate=0.75,
+        augmentation_type="eda",
+    ),
+    "sst2_aug_rate10": NLPDataset(
+        "sst2_aug_rate10",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength010"),
+        feature_column="augmented",
+        augmentation_rate=1.0,
+        augmentation_type="eda",
+    ),
+    "mnli_aug_rate025": NLPDataset(
+        "mnli_aug_rate025",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength025"),
+        feature_column="augmented",
+        augmentation_rate=0.25,
+        augmentation_type="eda",
+    ),
+    "mnli_aug_rate05": NLPDataset(
+        "mnli_aug_rate05",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength05"),
+        feature_column="augmented",
+        augmentation_rate=0.5,
+        augmentation_type="eda",
+    ),
+    "mnli_aug_rate075": NLPDataset(
+        "mnli_aug_rate075",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength075"),
+        feature_column="augmented",
+        augmentation_rate=0.75,
+        augmentation_type="eda",
+    ),
+    "mnli_aug_rate10": NLPDataset(
+        "mnli_aug_rate10",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength010"),
+        feature_column="augmented",
+        augmentation_rate=1.0,
+        augmentation_type="eda",
+    ),
 }
 NLP_REPRESENTATION_DATASETS = {
     "sst2": NLPDataset("sst2", path="sst2", split="validation"),
@@ -78,6 +138,7 @@ NLP_REPRESENTATION_DATASETS = {
     ),
     "sst2_mem_rate0": NLPDataset("sst2", "sst2", split="validation"),
     "sst2_aug_rate0": NLPDataset("sst2", "sst2", split="validation"),
+    "mnli_aug_rate0": NLPDataset(name="mnli", path="glue", config="mnli", split="validation_matched"),
 }
 
 
@@ -193,7 +254,55 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
                 )
             )
 
-    return base_sst2_models + shortcut_sst2_models + memorizing_sst2_models
+    rate_to_setting = {
+        "025": AUGMENTATION_25_SETTING,
+        "05": AUGMENTATION_50_SETTING,
+        "075": AUGMENTATION_75_SETTING,
+        "10": AUGMENTATION_100_SETTING,
+    }
+    augmented_sst2_models = []
+    for seed in range(10):
+        for rate in ["025", "05", "075", "10"]:
+            augmented_sst2_models.append(
+                NLPModel(
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_aug_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "augmentation"
+                        / f"sst2_pre{seed}_ft{seed}_eda_strength{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+
+    augmented_mnli_models = []
+    for seed in range(1):  # TODO: train more models
+        for rate in ["025", "05", "075", "10"]:
+            augmented_mnli_models.append(
+                NLPModel(
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"mnli_aug_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "augmentation"
+                        / f"glue__mnli_pre{seed}_ft{seed}_eda_strength{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+
+    return (
+        base_sst2_models
+        + shortcut_sst2_models
+        + memorizing_sst2_models
+        + augmented_sst2_models
+        + augmented_mnli_models
+    )
 
 
 def all_trained_graph_models() -> list[TrainedModel]:
