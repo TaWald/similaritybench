@@ -65,10 +65,7 @@ class TrainedModel:
 
         if self.domain == "VISION":
             return get_vision_representation_on_demand(
-                architecture_name=self.architecture,
-                train_dataset=self.train_dataset,
-                seed_id=self.seed,
-                setting_identifier=self.identifier,
+                self,
                 representation_dataset=representation_dataset,
             )
         elif self.domain == "NLP":
@@ -332,13 +329,15 @@ class ModelRepresentations:
 
 
 def get_vision_representation_on_demand(
-    architecture_name: str,
-    train_dataset: str,
-    seed_id: int,
-    setting_identifier: str | None,
+    origin_model: TrainedModel,
     representation_dataset: str,
 ) -> ModelRepresentations:
     """Creates Model Representations with representations that can be extracted only when needed)"""
+    setting_identifier = origin_model.identifier
+    architecture_name = origin_model.architecture
+    train_dataset = origin_model.train_dataset
+    seed_id = origin_model.seed
+
     if setting_identifier == "Normal":
         model_info: ds.ModelInfo = get_vision_model_info(
             architecture_name=architecture_name,
@@ -359,10 +358,7 @@ def get_vision_representation_on_demand(
     for i in range(n_layers):
         all_single_layer_reps.append(SingleLayerVisionRepresentation(i))
     model_rep = ModelRepresentations(
-        setting_identifier=model_info.setting_identifier,
-        architecture_name=model_info.architecture,
-        seed=model_info.seed,
-        train_dataset=model_info.dataset,
+        origin_model=origin_model,
         representation_dataset=representation_dataset,
         representations=tuple(all_single_layer_reps),
     )
