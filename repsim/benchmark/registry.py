@@ -10,6 +10,10 @@ from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import RANDOM_LABEL_100_SETTING
+from repsim.benchmark.types_globals import RANDOM_LABEL_25_SETTING
+from repsim.benchmark.types_globals import RANDOM_LABEL_50_SETTING
+from repsim.benchmark.types_globals import RANDOM_LABEL_75_SETTING
 from repsim.benchmark.types_globals import STANDARD_SETTING
 from repsim.utils import NLPDataset
 from repsim.utils import NLPModel
@@ -22,6 +26,34 @@ NLP_TRAIN_DATASETS = {
     "sst2_sc_rate0779": NLPDataset("sst2_sc_rate0779", path="sst2", shortcut_rate=0.779, shortcut_seed=0),
     "sst2_sc_rate0889": NLPDataset("sst2_sc_rate0889", path="sst2", shortcut_rate=0.889, shortcut_seed=0),
     "sst2_sc_rate10": NLPDataset("sst2_sc_rate10", path="sst2", shortcut_rate=1.0, shortcut_seed=0),
+    "sst2_mem_rate025": NLPDataset(
+        "sst2_mem_rate025",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength025"),
+        memorization_rate=0.25,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "sst2_mem_rate05": NLPDataset(
+        "sst2_mem_rate05",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength05"),
+        memorization_rate=0.5,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "sst2_mem_rate075": NLPDataset(
+        "sst2_mem_rate075",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength075"),
+        memorization_rate=0.75,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "sst2_mem_rate10": NLPDataset(
+        "sst2_mem_rate10",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength010"),
+        memorization_rate=1.0,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
 }
 NLP_REPRESENTATION_DATASETS = {
     "sst2": NLPDataset("sst2", path="sst2", split="validation"),
@@ -137,7 +169,31 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
                 )
             )
 
-    return base_sst2_models + shortcut_sst2_models
+    memorizing_sst2_models = []
+    rate_to_setting = {
+        "025": RANDOM_LABEL_25_SETTING,
+        "05": RANDOM_LABEL_50_SETTING,
+        "075": RANDOM_LABEL_75_SETTING,
+        "10": RANDOM_LABEL_100_SETTING,
+    }
+    for seed in range(5):
+        for rate in ["025", "05", "075", "10"]:
+            memorizing_sst2_models.append(
+                NLPModel(
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_mem_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "memorizing"
+                        / f"sst2_pre{seed}_ft{seed}_labels5_strength{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+
+    return base_sst2_models + shortcut_sst2_models + memorizing_sst2_models
 
 
 def all_trained_graph_models() -> list[TrainedModel]:
