@@ -77,10 +77,7 @@ class TrainedModel:
             from graphs.get_reps import get_graph_representations
 
             return get_graph_representations(
-                architecture_name=self.architecture,
-                train_dataset=self.train_dataset,
-                seed=self.seed,
-                setting_identifier=self.identifier,
+                self,
                 representation_dataset=representation_dataset,
             )
         else:
