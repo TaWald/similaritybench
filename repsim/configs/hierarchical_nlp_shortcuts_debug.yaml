@@ -1,11 +1,6 @@
 # Holds all information needed to run experiments.
-# included_measures:
-#   - CKA
-excluded_measures:
-  - EigenspaceOverlapScore
-  - GeometryScore
-  - IMDScore
-  - LinearRegression
+included_measures:
+  - CKA
 threads: 1
 experiments:
   - name: NLP Short Cut Experiments
@@ -15,26 +10,26 @@ experiments:
       train_dataset:
         - "sst2_sc_rate0558"
         - "sst2_sc_rate0668"
-        - "sst2_sc_rate0779"
-        - "sst2_sc_rate0889"
-        - "sst2_sc_rate10"
+        # - "sst2_sc_rate0779"
+        # - "sst2_sc_rate0889"
+        # - "sst2_sc_rate10"
       seed:
         - 0
         - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-        - 8
-        - 9
+        # - 2
+        # - 3
+        # - 4
+        # - 5
+        # - 6
+        # - 7
+        # - 8
+        # - 9
       domain: NLP
     grouping_keys: # Separates the trained models by this key into groups for the `GroupSeparationExperiment`.
       - train_dataset
     separation_keys: # Creates a separate experiment for each unique value of the key.
       - architecture
-raw_results_filename: nlp_shortcuts.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
+raw_results_filename: nlp_shortcuts_debug.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
 
 table_creation:
   row_index: similarity_measure # The key to use as the row index in the table.
@@ -42,4 +37,4 @@ table_creation:
     - quality_measure
     - architecture
   value_key: value # The key specifying the value that fills the table (non-header/index values)
-  filename: nlp_shortcut.csv # Can be [.xlsx / .csv / .tex] file extension
+  filename: nlp_shortcut_debug.csv # Can be [.xlsx / .csv / .tex] file extension
