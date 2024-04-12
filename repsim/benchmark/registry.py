@@ -18,6 +18,7 @@ from repsim.benchmark.types_globals import RANDOM_LABEL_100_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_25_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_50_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_75_SETTING
+from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import STANDARD_SETTING
 from repsim.utils import NLPDataset
 from repsim.utils import NLPModel
@@ -311,7 +312,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
     for i in get_args(GRAPH_EXPERIMENT_SEED):
         for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
-                for experiment in [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME]:
+                for experiment in [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME, SHORTCUT_EXPERIMENT_NAME]:
                     for setting in EXPERIMENT_DICT[experiment]:
                         all_trained_models.append(
                             TrainedModel(
