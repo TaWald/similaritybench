@@ -185,6 +185,15 @@ class NLPModel(TrainedModel):
         )
 
 
+class VisionModel(TrainedModel):
+
+    def _get_unique_model_identifier(self) -> str:
+        """
+        This function should return a unique identifier for the model.
+        """
+        return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.seed}"
+
+
 @dataclass
 class TrainedModelRep(TrainedModel):
     """

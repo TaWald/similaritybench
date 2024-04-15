@@ -23,6 +23,7 @@ from repsim.benchmark.types_globals import STANDARD_SETTING
 from repsim.utils import NLPDataset
 from repsim.utils import NLPModel
 from repsim.utils import TrainedModel
+from repsim.utils import VisionModel
 
 NLP_TRAIN_DATASETS = {
     "sst2": NLPDataset("sst2", "sst2"),
@@ -143,20 +144,19 @@ NLP_REPRESENTATION_DATASETS = {
 }
 
 
-def all_trained_vision_models() -> list[TrainedModel]:
+def all_trained_vision_models() -> list[VisionModel]:
     all_trained_vision_models = []
     for i in range(10):
         for arch in ["VGG11", "ResNet18", "ResNet34"]:
             for dataset in ["CIFAR10", "CIFAR100"]:
                 for identifier in [STANDARD_SETTING]:
                     all_trained_vision_models.append(
-                        TrainedModel(
+                        VisionModel(
                             domain="VISION",
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
                             seed=i,
-                            additional_kwargs={},
                         )
                     )
     for i in range(5):
@@ -170,13 +170,12 @@ def all_trained_vision_models() -> list[TrainedModel]:
             ]:
                 for identifier in ["Shortcut_ColorDot"]:
                     all_trained_vision_models.append(
-                        TrainedModel(
+                        VisionModel(
                             domain="VISION",
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
                             seed=i,
-                            additional_kwargs={},
                         )
                     )
     for i in range(5):
@@ -190,13 +189,12 @@ def all_trained_vision_models() -> list[TrainedModel]:
             ]:
                 for identifier in ["GaussNoise"]:
                     all_trained_vision_models.append(
-                        TrainedModel(
+                        VisionModel(
                             domain="VISION",
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
                             seed=i,
-                            additional_kwargs={"setting_identifier": identifier},
                         )
                     )
 
