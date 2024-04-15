@@ -7,6 +7,9 @@ excluded_measures:
   - IMDScore
   - LinearRegression
 threads: 1
+cache_to_disk: False
+cache_to_mem: True
+only_extract_reps: False
 experiments:
   - name: NLP Short Cut Experiments
     type: GroupSeparationExperiment # Defines the type of experiment class to use
