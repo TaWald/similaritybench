@@ -64,13 +64,7 @@ class TrainedModel:
             representation_dataset = self.train_dataset
 
         if self.domain == "VISION":
-            return get_vision_representation_on_demand(
-                architecture_name=self.architecture,
-                train_dataset=self.train_dataset,
-                seed_id=self.seed,
-                setting_identifier=self.identifier,
-                representation_dataset=representation_dataset,
-            )
+            raise ValueError("Vision Models should exist as VisionModel instances.")
         elif self.domain == "NLP":
             raise ValueError("NLP Models should exist as HuggingfaceModel instances.")
         if self.domain == "GRAPHS":
@@ -192,6 +186,42 @@ class VisionModel(TrainedModel):
         This function should return a unique identifier for the model.
         """
         return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.seed}"
+
+    def get_representation(self, representation_dataset: Optional[str] = None, **kwargs) -> ModelRepresentations:
+        """
+        This function should return the representation of the model.
+        """
+
+        architecture_name = self.architecture
+        train_dataset = self.train_dataset
+        seed_id = self.seed
+        setting_identifier = self.identifier
+
+        if setting_identifier == "Normal":
+            model_info: ds.ModelInfo = get_vision_model_info(
+                architecture_name=architecture_name,
+                dataset=train_dataset,
+                seed_id=seed_id,
+            )
+        else:
+            model_info: ds.ModelInfo = get_vision_model_info(
+                architecture_name=architecture_name,
+                dataset=train_dataset,
+                seed_id=seed_id,
+                setting_identifier=setting_identifier,
+            )
+        model_type: AbsActiExtrArch = load_model_from_info_file(model_info, load_ckpt=True)
+        n_layers = len(model_type.hooks)
+        # ---------- Create the on-demand-callable functions for each layer ---------- #
+        all_single_layer_reps = []
+        for i in range(n_layers):
+            all_single_layer_reps.append(SingleLayerVisionRepresentation(i, origin_model=self))
+        model_rep = ModelRepresentations(
+            origin_model=self,
+            representation_dataset=representation_dataset,
+            representations=tuple(all_single_layer_reps),
+        )
+        return model_rep
 
 
 @dataclass
@@ -338,44 +368,6 @@ class ModelRepresentations:
         for rep in self.representations:
             rep.origin_model = self.origin_model
             rep._representation_dataset = self.representation_dataset
-
-
-def get_vision_representation_on_demand(
-    architecture_name: str,
-    train_dataset: str,
-    seed_id: int,
-    setting_identifier: str | None,
-    representation_dataset: str,
-) -> ModelRepresentations:
-    """Creates Model Representations with representations that can be extracted only when needed)"""
-    if setting_identifier == "Normal":
-        model_info: ds.ModelInfo = get_vision_model_info(
-            architecture_name=architecture_name,
-            dataset=train_dataset,
-            seed_id=seed_id,
-        )
-    else:
-        model_info: ds.ModelInfo = get_vision_model_info(
-            architecture_name=architecture_name,
-            dataset=train_dataset,
-            seed_id=seed_id,
-            setting_identifier=setting_identifier,
-        )
-    model_type: AbsActiExtrArch = load_model_from_info_file(model_info, load_ckpt=True)
-    n_layers = len(model_type.hooks)
-    # ---------- Create the on-demand-callable functions for each layer ---------- #
-    all_single_layer_reps = []
-    for i in range(n_layers):
-        all_single_layer_reps.append(SingleLayerVisionRepresentation(i))
-    model_rep = ModelRepresentations(
-        setting_identifier=model_info.setting_identifier,
-        architecture_name=model_info.architecture,
-        seed=model_info.seed,
-        train_dataset=model_info.dataset,
-        representation_dataset=representation_dataset,
-        representations=tuple(all_single_layer_reps),
-    )
-    return model_rep
 
 
 def convert_to_path_compatible(s: str) -> str:
