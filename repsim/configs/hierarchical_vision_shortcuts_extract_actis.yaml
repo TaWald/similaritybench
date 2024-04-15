@@ -39,6 +39,27 @@ experiments:
       - train_dataset
     separation_keys:  # Creates a separate experiment for each unique value of the key.
       - architecture
+  - name: Gaussian Noise Experiment
+    type: GroupSeparationExperiment  # Defines the type of experiment class to use
+    representation_dataset: "Gauss_Off_CIFAR10DataModule"
+    filter_key_vals:  # Only keeps models that have any of the values for the keys.
+      train_dataset:
+        - Gauss_Max_CIFAR10DataModule
+        - Gauss_L_CIFAR10DataModule
+        - Gauss_M_CIFAR10DataModule
+        - Gauss_S_CIFAR10DataModule
+        - Gauss_Off_CIFAR10DataModule
+      seed:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+      domain: VISION
+    grouping_keys:  # Separates the trained models by this key into groups for the `GroupSeparationExperiment`.
+      - train_dataset
+    separation_keys:  # Creates a separate experiment for each unique value of the key.
+      - architecture
 
 table_creation:
   row_index: similarity_measure  # The key to use as the row index in the table.
