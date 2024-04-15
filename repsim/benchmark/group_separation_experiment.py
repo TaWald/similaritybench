@@ -20,7 +20,7 @@ from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import get_in_group_cross_group_sims
 from repsim.benchmark.utils import get_ingroup_outgroup_SLRs
 from repsim.benchmark.utils import SingleLayerRepresentation
-from repsim.measures.utils import SimilarityMeasure
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 from tqdm import tqdm
 
 # from repsim.benchmark.registry import TrainedModel
@@ -38,7 +38,7 @@ def flatten_nested_list(xss):
     return [x for xs in xss for x in xs]
 
 
-def compare_single_measure(rep_a, rep_b, measure: SimilarityMeasure, shape):
+def compare_single_measure(rep_a, rep_b, measure: RepresentationalSimilarityMeasure, shape):
     """Compare a single measure between two representations."""
     logger.info(f"Starting {measure.name}.")
     try:
@@ -75,7 +75,7 @@ def gather_representations(sngl_rep_src, sngl_rep_tgt, lock):
 
 
 def compare(
-    comps: list[tuple[SingleLayerRepresentation, SingleLayerRepresentation, SimilarityMeasure]],
+    comps: list[tuple[SingleLayerRepresentation, SingleLayerRepresentation, RepresentationalSimilarityMeasure]],
     rep_lock: LockBase,
     storage_lock: LockBase,
     storer: ExperimentStorer,
@@ -109,7 +109,7 @@ class GroupSeparationExperiment(AbstractExperiment):
     def __init__(
         self,
         grouped_models: list[Sequence[repsim.benchmark.registry.TrainedModel]],
-        measures: list[SimilarityMeasure],
+        measures: list[RepresentationalSimilarityMeasure],
         representation_dataset: str,
         storage_path: str | None = None,
         meta_data: dict | None = None,
@@ -128,7 +128,7 @@ class GroupSeparationExperiment(AbstractExperiment):
         self.kwargs = kwargs
         self.rep_cache = {}  # lookup table for representations, so we can reuse computed representations
 
-    def measure_violation_rate(self, measure: SimilarityMeasure) -> float:
+    def measure_violation_rate(self, measure: RepresentationalSimilarityMeasure) -> float:
         n_groups = len(self.groups_of_models)
         group_violations = []
         with ExperimentStorer(self.storage_path) as storer:
@@ -162,7 +162,7 @@ class GroupSeparationExperiment(AbstractExperiment):
 
         return float(np.mean(group_violations))
 
-    def auprc(self, measure: SimilarityMeasure) -> float:
+    def auprc(self, measure: RepresentationalSimilarityMeasure) -> float:
         """Calculate the mean auprc for the in-group and cross-group similarities"""
         n_groups = len(self.groups_of_models)
         group_auprcs = []
@@ -237,7 +237,7 @@ class GroupSeparationExperiment(AbstractExperiment):
             tuple[
                 SingleLayerRepresentation,
                 SingleLayerRepresentation,
-                list[SimilarityMeasure],
+                list[RepresentationalSimilarityMeasure],
             ]
         ],
         int,

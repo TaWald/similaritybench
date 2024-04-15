@@ -4,8 +4,8 @@ import numpy as np
 import numpy.typing as npt
 import torch
 from repsim.measures.utils import flatten
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
-from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -23,7 +23,7 @@ def eigenspace_overlap_score(
     return 1 / np.max([R.shape[1], Rp.shape[1]]) * (np.linalg.norm(u.T @ v, ord="fro") ** 2)
 
 
-class EigenspaceOverlapScore(SimilarityMeasure):
+class EigenspaceOverlapScore(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=eigenspace_overlap_score,

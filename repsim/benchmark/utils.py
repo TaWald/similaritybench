@@ -11,7 +11,7 @@ import pandas as pd
 from loguru import logger
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.registry import TrainedModel
-from repsim.measures.utils import SimilarityMeasure
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.utils import SingleLayerRepresentation
 
 
@@ -39,7 +39,7 @@ class ExperimentStorer:
         self,
         src_single_rep: SingleLayerRepresentation,
         tgt_single_rep: SingleLayerRepresentation,
-        metric: SimilarityMeasure,
+        metric: RepresentationalSimilarityMeasure,
         metric_value: float,
         runtime: float | None = None,
         overwrite: bool = False,
@@ -137,7 +137,7 @@ class ExperimentStorer:
         self,
         src_single_rep: SingleLayerRepresentation,
         tgt_single_rep: SingleLayerRepresentation,
-        metric: SimilarityMeasure,
+        metric: RepresentationalSimilarityMeasure,
     ) -> float | None:
         """
         Return the result of the comparison
@@ -203,7 +203,7 @@ class ExperimentStorer:
         self,
         src_single_rep: SingleLayerRepresentation,
         tgt_single_rep: SingleLayerRepresentation,
-        metric: SimilarityMeasure,
+        metric: RepresentationalSimilarityMeasure,
         ignore_symmetry: bool = False,
     ) -> bool:
         """
@@ -252,7 +252,7 @@ class ExperimentStorer:
 
 
 def get_in_group_cross_group_sims(
-    in_group_slrs, out_group_slrs, measure: SimilarityMeasure, storer: ExperimentStorer
+    in_group_slrs, out_group_slrs, measure: RepresentationalSimilarityMeasure, storer: ExperimentStorer
 ):
     """
     Get the in-group and cross-group similarities for a given measure.
@@ -333,7 +333,7 @@ def create_pivot_excel_table(
 
 
 def name_of_measure(obj):
-    if isinstance(obj, SimilarityMeasure):
+    if isinstance(obj, RepresentationalSimilarityMeasure):
         return name_of_measure(obj.sim_func)
     elif hasattr(obj, "__name__"):
         # repsim.measures.utils.Pipeline

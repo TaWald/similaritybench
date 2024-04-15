@@ -39,7 +39,7 @@ class RSMSimilarityFunction(Protocol):
 
 
 @dataclass
-class SimilarityMeasure:
+class RepresentationalSimilarityMeasure:
     sim_func: SimilarityFunction
 
     larger_is_more_similar: bool
@@ -66,7 +66,7 @@ class SimilarityMeasure:
         self.name = self.__class__.__name__
 
 
-class RSMSimilarityMeasure(SimilarityMeasure):
+class RSMSimilarityMeasure(RepresentationalSimilarityMeasure):
     sim_func: RSMSimilarityFunction
 
     @staticmethod

@@ -4,8 +4,8 @@ import numpy as np
 import numpy.typing as npt
 import torch
 from repsim.measures.utils import flatten
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
-from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -34,7 +34,7 @@ def geometry_score(
     return float(np.sum((mrlt_R - mrlt_Rp) ** 2))
 
 
-class GeometryScore(SimilarityMeasure):
+class GeometryScore(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=geometry_score,

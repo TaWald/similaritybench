@@ -1,12 +1,12 @@
 from abc import abstractmethod
 
-from repsim.measures.utils import SimilarityMeasure
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 
 
 class AbstractExperiment:
     def __init__(
         self,
-        measures: list[SimilarityMeasure],
+        measures: list[RepresentationalSimilarityMeasure],
         representation_dataset: str,
         storage_path: str | None = None,
         threads: int = 1,
@@ -17,7 +17,7 @@ class AbstractExperiment:
         """
         Needs the measures to be employed, the dataset to be used and the path where to store the results.
         """
-        self.measures: list[SimilarityMeasure] = measures
+        self.measures: list[RepresentationalSimilarityMeasure] = measures
         self.representation_dataset: str = representation_dataset
         self.storage_path: str = storage_path
         self.cache_to_disk = cache_to_disk

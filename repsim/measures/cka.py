@@ -3,8 +3,8 @@ from typing import Union
 import numpy.typing as npt
 import torch
 from repsim.measures.utils import flatten
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
-from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_torch_if_needed
 
 
@@ -38,7 +38,7 @@ def hsic(S: torch.Tensor, Sp: torch.Tensor) -> torch.Tensor:  # noqa: E741
     return torch.trace(S @ Sp) / (S.size(0) - 1) ** 2
 
 
-class CKA(SimilarityMeasure):
+class CKA(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=centered_kernel_alignment,

@@ -15,7 +15,7 @@ from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import create_pivot_excel_table
 from repsim.measures import ALL_MEASURES
-from repsim.measures.utils import SimilarityMeasure
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 
 
 def get_experiment_from_name(name: str) -> Type[AbstractExperiment]:
@@ -40,7 +40,7 @@ def read_yaml_config(config_path: str) -> dict:
     return config
 
 
-def get_measures(config: dict) -> list[SimilarityMeasure]:
+def get_measures(config: dict) -> list[RepresentationalSimilarityMeasure]:
     include_key = "included_measures"
     exclude_key = "excluded_measures"
     assert not (
