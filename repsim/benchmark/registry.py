@@ -212,8 +212,8 @@ class TrainedModelRep(TrainedModel):
 
 def all_trained_vision_models() -> list[TrainedModel]:
     all_trained_vision_models = []
-    for i in range(5):
-        for arch in ["ResNet18"]:
+    for i in range(10):
+        for arch in ["VGG11", "ResNet18", "ResNet34"]:
             for dataset in ["CIFAR10", "CIFAR100"]:
                 for identifier in [STANDARD_SETTING]:
                     all_trained_vision_models.append(
@@ -246,14 +246,14 @@ def all_trained_vision_models() -> list[TrainedModel]:
                             additional_kwargs={},
                         )
                     )
-    for i in range(2):
-        for arch in ["ResNet18"]:
+    for i in range(5):
+        for arch in ["ResNet18", "ResNet34", "VGG11"]:
             for dataset in [
                 "Gauss_Max_CIFAR10DataModule",
                 "Gauss_L_CIFAR10DataModule",
                 "Gauss_M_CIFAR10DataModule",
                 "Gauss_S_CIFAR10DataModule",
-                "ColorDot_Off_CIFAR10DataModule",  # N
+                "Gauss_Off_CIFAR10DataModule",  # N
             ]:
                 for identifier in ["GaussNoise"]:
                     all_trained_vision_models.append(
