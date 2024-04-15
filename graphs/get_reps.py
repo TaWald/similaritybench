@@ -13,6 +13,7 @@ from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.measures.utils import ND_SHAPE
 from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
+from repsim.utils import TrainedModel
 
 
 GRAPH_EXPERIMENT_TRAINER_DICT = {
@@ -23,10 +24,7 @@ GRAPH_EXPERIMENT_TRAINER_DICT = {
 
 
 def get_graph_representations(
-    architecture_name: GRAPH_ARCHITECTURE_TYPE,
-    train_dataset: GRAPH_DATASET_TRAINED_ON,
-    seed: GRAPH_EXPERIMENT_SEED,
-    setting_identifier: SETTING_IDENTIFIER,
+    origin_model: TrainedModel,
     representation_dataset: GRAPH_DATASET_TRAINED_ON,
 ) -> ModelRepresentations:
     """
@@ -37,6 +35,10 @@ def get_graph_representations(
     :param setting_identifier:
     :param representation_dataset:
     """
+    architecture_name = origin_model.architecture
+    train_dataset = origin_model.train_dataset
+    seed = origin_model.seed
+    setting_identifier = origin_model.identifier
 
     experiment_identifier = ""
 
@@ -52,13 +54,12 @@ def get_graph_representations(
 
     all_single_layer_reps = []
     for layer_id, rep in plain_reps.items():
-        all_single_layer_reps.append(SingleLayerRepresentation(representation=rep, shape=ND_SHAPE, layer_id=layer_id))
+        all_single_layer_reps.append(
+            SingleLayerRepresentation(_representation=rep, _shape=ND_SHAPE, layer_id=layer_id)
+        )
 
     model_reps = ModelRepresentations(
-        setting_identifier=setting_identifier,
-        architecture_name=architecture_name,
-        seed=seed,
-        train_dataset=train_dataset,
+        origin_model=origin_model,
         representation_dataset=representation_dataset,
         representations=tuple(all_single_layer_reps),
     )

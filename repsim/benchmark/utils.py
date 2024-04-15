@@ -138,7 +138,7 @@ class ExperimentStorer:
         src_single_rep: SingleLayerRepresentation,
         tgt_single_rep: SingleLayerRepresentation,
         metric: SimilarityMeasure,
-    ) -> float:
+    ) -> float | None:
         """
         Return the result of the comparison
         Arsg:
@@ -154,13 +154,13 @@ class ExperimentStorer:
         symm_comp_id = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
 
         experiment = pd.concat([self._old_experiments, self._new_experiments], ignore_index=False)
-        normal_exists = (comp_id in self._old_experiments.index) or (comp_id in self._new_experiments.index)
-        symm_exists = (symm_comp_id in self._old_experiments.index) or (symm_comp_id in self._new_experiments.index)
+        normal_exists = comp_id in experiment.index
+        symm_exists = symm_comp_id in experiment.index
 
         # ----------------- Read or add symmetric result to dataframe ---------------- #
         if normal_exists and symm_exists:
             res = experiment.loc[comp_id]
-        elif normal_exists and not symm_exists:
+        elif normal_exists and (not symm_exists):
             res = experiment.loc[comp_id]
             self.add_results(
                 src_single_rep=tgt_single_rep,
@@ -237,6 +237,7 @@ class ExperimentStorer:
         all_experiments = pd.concat([latest_experiment_results, self._new_experiments], ignore_index=False)
         all_experiments.to_parquet(self.path_to_store)
         self._new_experiments = pd.DataFrame()  # Empty the new experiments or duplicates will be written.
+        self._old_experiments = pd.read_parquet(self.path_to_store)  # Refresh the available data
 
     def __enter__(self):
         """When entering a context, load the experiments from disk"""
@@ -291,15 +292,15 @@ def get_ingroup_outgroup_SLRs(
     n_groups = set(range(len(groups_of_models)))
 
     out_group_ids = n_groups - {in_group_id}
-    in_group_models = [
+    in_group_slrs = [
         m.get_representation(representation_dataset).representations[rep_layer_id]
         for m in groups_of_models[in_group_id]
     ]
-    out_group_models = [
+    out_group_slrs = [
         m.get_representation(representation_dataset).representations[rep_layer_id]
         for m in chain(*[groups_of_models[out_id] for out_id in out_group_ids])
     ]
-    return in_group_models, out_group_models
+    return in_group_slrs, out_group_slrs
 
 
 def create_pivot_excel_table(

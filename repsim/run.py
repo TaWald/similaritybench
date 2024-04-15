@@ -1,3 +1,4 @@
+import os
 from argparse import ArgumentParser
 from collections.abc import Sequence
 from typing import Type
@@ -9,6 +10,7 @@ from repsim.benchmark.group_separation_experiment import GroupSeparationExperime
 from repsim.benchmark.model_selection import get_grouped_models
 from repsim.benchmark.monotonicity_experiment import MonotonicityExperiment
 from repsim.benchmark.multimodel_experiments import MultiModelExperiment
+from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import create_pivot_excel_table
@@ -108,6 +110,11 @@ def verify_config(config: dict) -> None:
     #         for key in differentiation_keys:
     #             assert isinstance(key, str), "Differentiation key should be a string"
 
+    if "raw_results_filename" in config:
+        assert config["raw_results_filename"].endswith(
+            ".parquet"
+        ), "The 'raw_results_filename' must end with '.parquet'"
+
 
 def create_table(config: dict):
     if config.get("table_creation", None) is not None:
@@ -122,12 +129,14 @@ def run(config_path: str):
     measures = get_measures(config)
     threads = config.get("threads", 1)
     cache = config.get("cache", False)
+    raw_results_filename = config.get("raw_results_filename", None)
     only_extract_reps = config.get("only_extract_reps", False)
 
     logger.info(f"Running with {threads} Threads! Reduce if running OOM or set to 1 for single threaded execution.")
 
     all_experiments = []
     for experiment in config["experiments"]:
+        logger.debug(f"Creating experiment for {experiment}")
         if experiment["type"] == "GroupSeparationExperiment":
             filter_key_vals = experiment.get("filter_key_vals", None)
             grouping_keys = experiment.get("grouping_keys", None)
@@ -147,6 +156,11 @@ def run(config_path: str):
                     grouped_models=group,
                     measures=measures,
                     representation_dataset=experiment["representation_dataset"],
+                    storage_path=(
+                        os.path.join(EXPERIMENT_RESULTS_PATH, raw_results_filename)
+                        if raw_results_filename is not None
+                        else None
+                    ),
                     threads=threads,
                     cache=cache,
                     only_extract_reps=only_extract_reps,
@@ -160,7 +174,7 @@ def run(config_path: str):
         if not only_extract_reps:
             exp_results.extend(ex.eval())
 
-    if create_table and (not only_extract_reps):
+    if create_table(config) and (not only_extract_reps):
         create_pivot_excel_table(
             exp_results,
             **config["table_creation"],

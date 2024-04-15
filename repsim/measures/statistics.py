@@ -135,7 +135,7 @@ class UniformityDifference(RSMSimilarityMeasure):
         )
 
 
-class ConcentricityDifference(RSMSimilarityMeasure):
+class ConcentricityDifference(SimilarityMeasure):
     def __init__(self):
         # different choice of inner/outer in __call__ should change these values...
         super().__init__(
