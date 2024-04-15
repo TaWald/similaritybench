@@ -272,9 +272,7 @@ class GroupSeparationExperiment(AbstractExperiment):
             todo_by_measure = []
 
             for measure in self.measures:
-                if storer.comparison_exists(single_layer_rep_source, single_layer_rep_target, measure):
-                    pass
-                else:
+                if not storer.comparison_exists(single_layer_rep_source, single_layer_rep_target, measure):
                     todo_by_measure.append(measure)
                     n_total += 1
             if len(todo_by_measure) > 0:
@@ -292,11 +290,8 @@ class GroupSeparationExperiment(AbstractExperiment):
             todo_combos, n_total = self._get_todo_combos(combos, storer)
             with tqdm(total=n_total, desc="Comparing representations") as pbar:
                 for sngl_rep_src, sngl_rep_tgt, measures in todo_combos:
-                    # sngl_rep_tgt: SingleLayerRepresentation
-                    # sngl_rep_src: SingleLayerRepresentation
                     sngl_rep_src.cache = self.cache_to_disk  # Optional persistent cache to disk
                     sngl_rep_tgt.cache = self.cache_to_disk  # Optional persistent cache to disk
-                    # measures: list[SimilarityMeasure]
                     for measure in measures:
                         if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
                             # We still need to check during execution, as symmetry not accounted in the `_get_todo_combos` call!
@@ -310,13 +305,14 @@ class GroupSeparationExperiment(AbstractExperiment):
                                 pbar.update(len(measures))
                                 break  # Skip the actual comparison and prepare all reps for e.g. a CPU only machine.
                             shape = sngl_rep_src.shape
-                            # reps_a, reps_b = flatten(reps_a, reps_b, shape=shape)
                             start_time = time.perf_counter()
                             with suppress():  # Mute printouts of the measures
                                 sim = measure(reps_a, reps_b, shape)
                             runtime = time.perf_counter() - start_time
                             storer.add_results(sngl_rep_src, sngl_rep_tgt, measure, sim, runtime)
-                            logger.debug(f"Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s.")
+                            logger.debug(
+                                f"{measure.name}: Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s."
+                            )
 
                         except Exception as e:
                             storer.add_results(
@@ -329,9 +325,11 @@ class GroupSeparationExperiment(AbstractExperiment):
                         if measure.is_symmetric:
                             pbar.update(1)
                         pbar.update(1)
+
                     # TODO: should be able to be removed without OOM, because self.rep_cache keeps reps more efficiently than before
-                    # sngl_rep_src.representation = None  # Clear memory
-                    # sngl_rep_tgt.representation = None  # Clear memory
+                    if self.cache_to_disk:
+                        sngl_rep_src.representation = None  # Clear memory
+                        sngl_rep_tgt.representation = None  # Clear memory
 
         return
 
