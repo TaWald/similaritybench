@@ -34,6 +34,7 @@ else:
 
 # reordering classes does not help, because of cyclical dependencies
 ModelRepresentations = TypeVar("ModelRepresentations")
+ModelOutput = TypeVar("ModelOutput")
 
 
 @dataclass
@@ -76,6 +77,9 @@ class TrainedModel:
             )
         else:
             raise ValueError("Unknown domain type")
+
+    def get_output(self, representation_dataset: Optional[str] = None, **kwargs) -> ModelOutput:
+        raise NotImplementedError()
 
     def _get_unique_model_identifier(self) -> str:
         """
@@ -128,8 +132,13 @@ class NLPModel(TrainedModel):
 
     def __post_init__(self):
         super().__post_init__()
-        from repsim.benchmark.registry import NLP_TRAIN_DATASETS
+        if self.domain != "NLP":
+            raise ValueError("This class should only be used for NLP models with huggingface.")
 
+        from repsim.benchmark.registry import NLP_TRAIN_DATASETS
+        from repsim.benchmark.registry import NLP_REPRESENTATION_DATASETS
+
+        self.NLP_REPRESENTATION_DATASETS = NLP_REPRESENTATION_DATASETS
         self.train_dataset_obj = NLP_TRAIN_DATASETS[self.train_dataset]
 
     @property
@@ -137,20 +146,19 @@ class NLPModel(TrainedModel):
         arch_to_layers = {"BERT-L": 13}
         return arch_to_layers[self.architecture]
 
-    def get_representation(
-        self, representation_dataset_id: str, compute_rep_on_demand: bool = True
-    ) -> ModelRepresentations:
-        from repsim.benchmark.registry import NLP_REPRESENTATION_DATASETS
-
-        if self.domain != "NLP":
-            raise ValueError("This class should only be used for NLP models with huggingface.")
-        if representation_dataset_id not in NLP_REPRESENTATION_DATASETS.keys():
+    def _check_repsim_dataset_exists(self, representation_dataset_id: str) -> None:
+        if representation_dataset_id not in self.NLP_REPRESENTATION_DATASETS.keys():
             raise ValueError(
-                f"Dataset must be one of {list(NLP_REPRESENTATION_DATASETS.keys())}, but is {representation_dataset_id}"
+                f"Dataset must be one of {list(self.NLP_REPRESENTATION_DATASETS.keys())}, but is {representation_dataset_id}"
             )
-        representation_dataset = NLP_REPRESENTATION_DATASETS[representation_dataset_id]
 
-        if compute_rep_on_demand:
+    def get_representation(
+        self, representation_dataset_id: str, compute_on_demand: bool = True
+    ) -> ModelRepresentations:
+        self._check_repsim_dataset_exists(representation_dataset_id)
+        representation_dataset = self.NLP_REPRESENTATION_DATASETS[representation_dataset_id]
+
+        if compute_on_demand:
             slrs = tuple([SingleLayerNLPRepresentation(layer_id=i, _shape="nd") for i in range(self.n_layers)])
         else:
             import repsim.nlp
@@ -177,6 +185,31 @@ class NLPModel(TrainedModel):
             representation_dataset_id,
             slrs,
         )
+
+    def get_output(self, representation_dataset_id: str, compute_on_demand: bool = True) -> ModelOutput:
+        self._check_repsim_dataset_exists(representation_dataset_id)
+        if compute_on_demand:
+            output = NLPModelOutput(origin_model=self, _representation_dataset=representation_dataset_id)
+        else:
+            import repsim.nlp
+
+            representation_dataset = self.NLP_REPRESENTATION_DATASETS[representation_dataset_id]
+
+            logits = repsim.nlp.get_logits(
+                self.path,
+                self.model_type,
+                self.tokenizer_name,
+                representation_dataset.path,
+                representation_dataset.config,
+                representation_dataset.local_path,
+                representation_dataset.split,
+                self.device,
+                shortcut_rate=representation_dataset.shortcut_rate,
+                shortcut_seed=representation_dataset.shortcut_seed,
+                feature_column=representation_dataset.feature_column,
+            )
+            output = ModelOutput(origin_model=self, _representation_dataset=representation_dataset_id, _output=logits)
+        return output
 
 
 class VisionModel(TrainedModel):
@@ -312,6 +345,7 @@ class SingleLayerRepresentation:
 
 class SingleLayerVisionRepresentation(SingleLayerRepresentation):
     def _extract_representation(self) -> torch.Tensor | np.ndarray:
+        assert self.origin_model is not None
         return get_single_layer_vision_representation_on_demand(
             architecture_name=self.origin_model.architecture,
             train_dataset=self.origin_model.train_dataset,
@@ -368,6 +402,75 @@ class ModelRepresentations:
         for rep in self.representations:
             rep.origin_model = self.origin_model
             rep._representation_dataset = self.representation_dataset
+
+
+@dataclass
+class ModelOutput:
+    origin_model: TrainedModel | None = None
+    cache: bool = False
+    _representation_dataset: str | None = None
+    _output: torch.Tensor | np.ndarray | None = None
+
+    @property
+    def output(self) -> torch.Tensor | np.ndarray:
+        """
+        Allows omission of setting outputs when creating, and creating on demand.
+        """
+        if self._output is None:
+            assert self._extract_output is not None, "No extraction function provided."
+            unique_id = self.unique_identifier()
+            cache_path = os.path.join(CACHE_PATH, unique_id + ".npz")
+            if self.cache and os.path.exists(cache_path):
+                self._output = np.load(cache_path)["output"]
+            else:
+                self._output = self._extract_output()
+                if self.cache:
+                    np.savez(cache_path, output=self._output)
+        return self._output
+
+    @output.setter
+    def output(self, v: torch.Tensor | np.ndarray) -> None:
+        self._output = v
+
+    @abstractmethod
+    def _extract_output(self) -> torch.Tensor | np.ndarray:
+        raise NotImplementedError
+
+    def unique_identifier(self) -> str:
+        """
+        Generates a unique identifier for this object.
+
+        Returns:
+            A string representing the unique identifier.
+        """
+        assert self.origin_model is not None, "origin_model is not set"
+        assert self._representation_dataset is not None, "representation_dataset not set"
+        return "__".join([self.origin_model.id, self._representation_dataset, "output"])
+
+
+class NLPModelOutput(ModelOutput):
+    def _extract_output(self) -> torch.Tensor | np.ndarray:
+        assert isinstance(self.origin_model, NLPModel)
+        assert self._representation_dataset is not None
+
+        import repsim.nlp
+
+        representation_dataset = self.origin_model.NLP_REPRESENTATION_DATASETS[self._representation_dataset]
+
+        logits = repsim.nlp.get_logits(
+            self.origin_model.path,
+            self.origin_model.model_type,
+            self.origin_model.tokenizer_name,
+            representation_dataset.path,
+            representation_dataset.config,
+            representation_dataset.local_path,
+            representation_dataset.split,
+            self.origin_model.device,
+            shortcut_rate=representation_dataset.shortcut_rate,
+            shortcut_seed=representation_dataset.shortcut_seed,
+            feature_column=representation_dataset.feature_column,
+        )
+        return logits
 
 
 def convert_to_path_compatible(s: str) -> str:
