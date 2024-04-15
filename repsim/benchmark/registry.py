@@ -205,7 +205,7 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
     base_sst2_models = [
         NLPModel(
             train_dataset="sst2",
-            identifier="Normal",
+            identifier=STANDARD_SETTING,
             seed=i,
             path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
@@ -252,6 +252,17 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
                     token_pos=0,  # only CLS token has been validated as different
                 )
             )
+    memorizing_sst2_models += [
+        NLPModel(
+            train_dataset="sst2",
+            identifier="RandomLabels_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos=0,
+        )
+        for i in range(5)
+    ]
 
     rate_to_setting = {
         "025": AUGMENTATION_25_SETTING,
@@ -276,6 +287,17 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
                     token_pos=0,  # only CLS token has been validated as different
                 )
             )
+    augmented_sst2_models += [
+        NLPModel(
+            train_dataset="sst2",
+            identifier="Augmentation_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos=0,
+        )
+        for i in range(10)
+    ]
 
     augmented_mnli_models = []
     for seed in range(1):  # TODO: train more models

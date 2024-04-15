@@ -66,7 +66,7 @@ class TrainedModel:
         if self.domain == "VISION":
             raise ValueError("Vision Models should exist as VisionModel instances.")
         elif self.domain == "NLP":
-            raise ValueError("NLP Models should exist as HuggingfaceModel instances.")
+            raise ValueError("NLP Models should exist as NLPModel instances.")
         if self.domain == "GRAPHS":
             from graphs.get_reps import get_graph_representations
 
