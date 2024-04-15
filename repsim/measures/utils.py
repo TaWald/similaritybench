@@ -1,7 +1,10 @@
 import functools
 import logging
+from abc import ABC
+from abc import abstractmethod
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Any
 from typing import Callable
 from typing import get_args
 from typing import List
@@ -36,6 +39,20 @@ class RSMSimilarityFunction(Protocol):
     def __call__(  # noqa: E704
         self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE, n_jobs: int
     ) -> float: ...
+
+
+@dataclass
+class FunctionalSimilarityMeasure(ABC):
+    larger_is_more_similar: bool
+    is_symmetric: bool
+    name: str = field(init=False)
+
+    @abstractmethod
+    def __call__(self, output_a: torch.Tensor | npt.NDArray, output_b: torch.Tensor | npt.NDArray) -> Any:
+        raise NotImplementedError
+
+    def __post_init__(self):
+        self.name = self.__class__.__name__
 
 
 @dataclass
