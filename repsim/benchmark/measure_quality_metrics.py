@@ -37,6 +37,8 @@ def auprc(intra_group: list[float], cross_group: list[float], larger_is_more_sim
     cross_group = cross_group.copy()
     if not larger_is_more_similar:
         max_val = max(np.max(intra_group), np.max(cross_group))
+        if max_val == 0:  # avoid division by zero
+            max_val = 5e-5
         intra_group = [float(-sim + max_val) / max_val for sim in intra_group]
         cross_group = [float(-sim + max_val) / max_val for sim in cross_group]
 
