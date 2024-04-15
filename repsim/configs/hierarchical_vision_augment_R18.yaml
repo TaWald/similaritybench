@@ -15,7 +15,8 @@ excluded_measures:
   - ConcentricityDifference
   - UniformityDifference
 threads: 1
-cache: True
+cache_to_disk: True
+cache_to_mem: False
 only_extract_reps: False
 experiments:
   - name: Gauss Noise Experiment

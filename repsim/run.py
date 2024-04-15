@@ -128,7 +128,8 @@ def run(config_path: str):
     logger.debug("Config is valid")
     measures = get_measures(config)
     threads = config.get("threads", 1)
-    cache = config.get("cache", False)
+    cache_to_disk = config.get("cache_to_disk", False)
+    cache_to_mem = config.get("cache_to_mem", False)
     raw_results_filename = config.get("raw_results_filename", None)
     only_extract_reps = config.get("only_extract_reps", False)
 
@@ -162,7 +163,8 @@ def run(config_path: str):
                         else None
                     ),
                     threads=threads,
-                    cache=cache,
+                    cache_to_disk=cache_to_disk,
+                    cache_to_mem=cache_to_mem,
                     only_extract_reps=only_extract_reps,
                 )
                 all_experiments.append(exp)

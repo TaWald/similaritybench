@@ -19,6 +19,7 @@ from repsim.benchmark.measure_quality_metrics import violation_rate
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import get_in_group_cross_group_sims
 from repsim.benchmark.utils import get_ingroup_outgroup_SLRs
+from repsim.benchmark.utils import SingleLayerRepresentation
 from repsim.measures.utils import SimilarityMeasure
 from tqdm import tqdm
 
@@ -74,9 +75,7 @@ def gather_representations(sngl_rep_src, sngl_rep_tgt, lock):
 
 
 def compare(
-    comps: list[
-        tuple[repsim.utils.SingleLayerRepresentation, repsim.utils.SingleLayerRepresentation, SimilarityMeasure]
-    ],
+    comps: list[tuple[SingleLayerRepresentation, SingleLayerRepresentation, SimilarityMeasure]],
     rep_lock: LockBase,
     storage_lock: LockBase,
     storer: ExperimentStorer,
@@ -115,12 +114,15 @@ class GroupSeparationExperiment(AbstractExperiment):
         storage_path: str | None = None,
         meta_data: dict | None = None,
         threads: int = 1,
-        cache: bool = False,
+        cache_to_disk: bool = False,
+        cache_to_mem: bool = False,
         only_extract_reps: bool = False,
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
-        super().__init__(measures, representation_dataset, storage_path, threads, cache, only_extract_reps)
+        super().__init__(
+            measures, representation_dataset, storage_path, threads, cache_to_disk, cache_to_mem, only_extract_reps
+        )
         self.groups_of_models = grouped_models
         self.meta_data = meta_data
         self.kwargs = kwargs
@@ -233,8 +235,8 @@ class GroupSeparationExperiment(AbstractExperiment):
     def _get_todo_combos(self, combos, storer: ExperimentStorer) -> tuple[
         list[
             tuple[
-                repsim.utils.SingleLayerRepresentation,
-                repsim.utils.SingleLayerRepresentation,
+                SingleLayerRepresentation,
+                SingleLayerRepresentation,
                 list[SimilarityMeasure],
             ]
         ],
@@ -243,13 +245,15 @@ class GroupSeparationExperiment(AbstractExperiment):
 
         def get_final_layer_representation(
             model: repsim.benchmark.registry.TrainedModel,
-        ) -> repsim.utils.SingleLayerRepresentation:
+            cache_to_mem: bool = False,
+        ) -> SingleLayerRepresentation:
             final_layer_rep = self.rep_cache.get(model.id, None)
             if final_layer_rep is None:
                 final_layer_rep = model.get_representation(
                     self.representation_dataset, **self.kwargs
                 ).representations[-1]
-                self.rep_cache[model.id] = final_layer_rep
+                if cache_to_mem:
+                    self.rep_cache[model.id] = final_layer_rep
             return final_layer_rep
 
         comparisons_todo = []
@@ -258,10 +262,13 @@ class GroupSeparationExperiment(AbstractExperiment):
             if model_src == model_tgt:
                 continue  # Skip self-comparisons
 
-            single_layer_rep_source = get_final_layer_representation(model_src)
-            single_layer_rep_target = get_final_layer_representation(model_tgt)
+            single_layer_rep_source: SingleLayerRepresentation = get_final_layer_representation(
+                model_src, self.cache_to_mem
+            )
+            single_layer_rep_target: SingleLayerRepresentation = get_final_layer_representation(
+                model_tgt, self.cache_to_mem
+            )
 
-            # Need to fix this. It's a tuple of Single_reps
             todo_by_measure = []
 
             for measure in self.measures:
@@ -287,8 +294,8 @@ class GroupSeparationExperiment(AbstractExperiment):
                 for sngl_rep_src, sngl_rep_tgt, measures in todo_combos:
                     # sngl_rep_tgt: SingleLayerRepresentation
                     # sngl_rep_src: SingleLayerRepresentation
-                    sngl_rep_src.cache = self.cache
-                    sngl_rep_tgt.cache = self.cache
+                    sngl_rep_src.cache = self.cache_to_disk  # Optional persistent cache to disk
+                    sngl_rep_tgt.cache = self.cache_to_disk  # Optional persistent cache to disk
                     # measures: list[SimilarityMeasure]
                     for measure in measures:
                         if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):

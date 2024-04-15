@@ -10,7 +10,8 @@ class AbstractExperiment:
         representation_dataset: str,
         storage_path: str | None = None,
         threads: int = 1,
-        cache: bool = False,
+        cache_to_disk: bool = False,
+        cache_to_mem: bool = False,
         only_extract_reps: bool = False,
     ) -> None:
         """
@@ -19,7 +20,8 @@ class AbstractExperiment:
         self.measures: list[SimilarityMeasure] = measures
         self.representation_dataset: str = representation_dataset
         self.storage_path: str = storage_path
-        self.cache = cache
+        self.cache_to_disk = cache_to_disk
+        self.cache_to_mem = cache_to_mem
         self.threads = threads
         self.only_extract_reps: bool = only_extract_reps
 
