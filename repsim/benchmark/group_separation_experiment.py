@@ -1,10 +1,7 @@
 import multiprocessing
-import os
 import time
 import warnings
 from collections.abc import Sequence
-from contextlib import contextmanager
-from contextlib import redirect_stdout
 from itertools import product
 from multiprocessing.managers import BaseManager
 from multiprocessing.synchronize import Lock as LockBase
@@ -19,19 +16,10 @@ from repsim.benchmark.measure_quality_metrics import violation_rate
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import get_in_group_cross_group_sims
 from repsim.benchmark.utils import get_ingroup_outgroup_SLRs
-from repsim.benchmark.utils import SingleLayerRepresentation
 from repsim.measures.utils import RepresentationalSimilarityMeasure
+from repsim.utils import SingleLayerRepresentation
+from repsim.utils import suppress
 from tqdm import tqdm
-
-# from repsim.benchmark.registry import TrainedModel
-# from repsim.utils import SingleLayerRepresentation
-
-
-@contextmanager
-def suppress():
-    with open(os.devnull, "w") as null:
-        with redirect_stdout(null):
-            yield
 
 
 def flatten_nested_list(xss):
@@ -288,48 +276,7 @@ class GroupSeparationExperiment(AbstractExperiment):
         logger.info("")
         with ExperimentStorer(self.storage_path) as storer:
             todo_combos, n_total = self._get_todo_combos(combos, storer)
-            with tqdm(total=n_total, desc="Comparing representations") as pbar:
-                for sngl_rep_src, sngl_rep_tgt, measures in todo_combos:
-                    sngl_rep_src.cache = self.cache_to_disk  # Optional persistent cache to disk
-                    sngl_rep_tgt.cache = self.cache_to_disk  # Optional persistent cache to disk
-                    for measure in measures:
-                        if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
-                            # We still need to check during execution, as symmetry not accounted in the `_get_todo_combos` call!
-                            continue
-                        try:
-                            reps_a = sngl_rep_src.representation
-                            reps_b = sngl_rep_tgt.representation
-                            if self.only_extract_reps:
-                                logger.info("Only extracting representations. Skipping comparison.")
-                                # Break as all measures use the same rep.
-                                pbar.update(len(measures))
-                                break  # Skip the actual comparison and prepare all reps for e.g. a CPU only machine.
-                            shape = sngl_rep_src.shape
-                            start_time = time.perf_counter()
-                            with suppress():  # Mute printouts of the measures
-                                sim = measure(reps_a, reps_b, shape)
-                            runtime = time.perf_counter() - start_time
-                            storer.add_results(sngl_rep_src, sngl_rep_tgt, measure, sim, runtime)
-                            logger.debug(
-                                f"{measure.name}: Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s."
-                            )
-
-                        except Exception as e:
-                            storer.add_results(
-                                sngl_rep_src, sngl_rep_tgt, measure, metric_value=np.nan, runtime=np.nan
-                            )
-
-                            logger.error(f"'{measure.name}' comparison failed.")
-                            logger.error(e)
-
-                        if measure.is_symmetric:
-                            pbar.update(1)
-                        pbar.update(1)
-
-                    # TODO: should be able to be removed without OOM, because self.rep_cache keeps reps more efficiently than before
-                    if self.cache_to_disk:
-                        sngl_rep_src.representation = None  # Clear memory
-                        sngl_rep_tgt.representation = None  # Clear memory
+            self.compare_combos(todo_combos, n_total, storer, tqdm_descr="Comparing representations")
 
         return
 
