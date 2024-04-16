@@ -1,5 +1,8 @@
 import os
+from abc import ABC
 from abc import abstractmethod
+from contextlib import contextmanager
+from contextlib import redirect_stdout
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Literal
@@ -34,7 +37,7 @@ else:
 
 # reordering classes does not help, because of cyclical dependencies
 ModelRepresentations = TypeVar("ModelRepresentations")
-ModelOutput = TypeVar("ModelOutput")
+Prediction = TypeVar("Prediction")
 
 
 @dataclass
@@ -78,7 +81,7 @@ class TrainedModel:
         else:
             raise ValueError("Unknown domain type")
 
-    def get_output(self, representation_dataset: Optional[str] = None, **kwargs) -> ModelOutput:
+    def get_output(self, representation_dataset: Optional[str] = None, **kwargs) -> Prediction:
         raise NotImplementedError()
 
     def _get_unique_model_identifier(self) -> str:
@@ -186,7 +189,7 @@ class NLPModel(TrainedModel):
             slrs,
         )
 
-    def get_output(self, representation_dataset_id: str, compute_on_demand: bool = True) -> ModelOutput:
+    def get_output(self, representation_dataset_id: str, compute_on_demand: bool = True) -> Prediction:
         self._check_repsim_dataset_exists(representation_dataset_id)
         if compute_on_demand:
             output = NLPModelOutput(origin_model=self, _representation_dataset=representation_dataset_id)
@@ -208,7 +211,7 @@ class NLPModel(TrainedModel):
                 shortcut_seed=representation_dataset.shortcut_seed,
                 feature_column=representation_dataset.feature_column,
             )
-            output = ModelOutput(origin_model=self, _representation_dataset=representation_dataset_id, _output=logits)
+            output = Prediction(origin_model=self, _representation_dataset=representation_dataset_id, _output=logits)
         return output
 
 
@@ -267,13 +270,27 @@ class TrainedModelRep(TrainedModel):
 
 
 @dataclass
-class SingleLayerRepresentation:
+class BaseModelOutput(ABC):
+    @abstractmethod
+    def unique_identifier(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def value_attr_name(self) -> str:
+        raise NotImplementedError
+
+
+@dataclass
+class SingleLayerRepresentation(BaseModelOutput):
     layer_id: int
     origin_model: TrainedModel | None = None
     cache: bool = False
     _representation: torch.Tensor | np.ndarray | None = None
     _shape: SHAPE_TYPE | None = None
     _representation_dataset: str | None = field(default=None, init=False)
+
+    def value_attr_name(self) -> str:
+        return "representation"
 
     @property
     def representation(self) -> torch.Tensor | np.ndarray:
@@ -293,11 +310,13 @@ class SingleLayerRepresentation:
         return self._representation
 
     @representation.setter
-    def representation(self, v: torch.Tensor | np.ndarray) -> None:
+    def representation(self, v: torch.Tensor | np.ndarray | None) -> None:
         """Allow setting the representation as before"""
         self._representation = v
 
-    @abstractmethod
+    # If the GNNs also subclass this class, we can make this abstract, but this method is not strictly required, so I
+    # will leave it like this to not break GNN code
+    # @abstractmethod
     def _extract_representation(self) -> torch.Tensor | np.ndarray:
         raise NotImplementedError
 
@@ -405,11 +424,14 @@ class ModelRepresentations:
 
 
 @dataclass
-class ModelOutput:
+class Prediction(BaseModelOutput):
     origin_model: TrainedModel | None = None
     cache: bool = False
     _representation_dataset: str | None = None
     _output: torch.Tensor | np.ndarray | None = None
+
+    def value_attr_name(self) -> str:
+        return "output"
 
     @property
     def output(self) -> torch.Tensor | np.ndarray:
@@ -448,7 +470,7 @@ class ModelOutput:
         return "__".join([self.origin_model.id, self._representation_dataset, "output"])
 
 
-class NLPModelOutput(ModelOutput):
+class NLPModelOutput(Prediction):
     def _extract_output(self) -> torch.Tensor | np.ndarray:
         assert isinstance(self.origin_model, NLPModel)
         assert self._representation_dataset is not None
@@ -475,3 +497,10 @@ class NLPModelOutput(ModelOutput):
 
 def convert_to_path_compatible(s: str) -> str:
     return s.replace("\\", "-").replace("/", "-")
+
+
+@contextmanager
+def suppress():
+    with open(os.devnull, "w") as null:
+        with redirect_stdout(null):
+            yield
