@@ -37,7 +37,8 @@ raw_results_filename: correlation_nlp_shortcuts_debug.parquet # Must end with .p
 table_creation:
   save_full_df: True
   full_df_filename: nlp_shortcut_debug_full.csv
-  # Values below are ignored if save_full_df=True
+  # ---
+  save_aggregated_df: False
   row_index: similarity_measure # The key to use as the row index in the table.
   columns: # The keys to use as columns (can be list[str] or a str)
     - quality_measure
