@@ -3,6 +3,7 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 import scipy.spatial.distance
+import scipy.special
 import torch
 from repsim.measures.utils import FunctionalSimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
@@ -20,6 +21,9 @@ class JSD(FunctionalSimilarityMeasure):
     def __call__(self, output_a: torch.Tensor | npt.NDArray, output_b: torch.Tensor | npt.NDArray) -> Any:
         check_has_two_axes(output_a)
         check_has_two_axes(output_b)
+
+        output_a = scipy.special.softmax(output_a, axis=1)
+        output_b = scipy.special.softmax(output_b, axis=1)
         return np.mean(
             [
                 scipy.spatial.distance.jensenshannon(output_a_i, output_b_i)
