@@ -56,7 +56,7 @@ class Dataset(Enum):
     GaussL = "Gauss_L_CIFAR10DataModule"
     GaussM = "Gauss_M_CIFAR10DataModule"
     GaussS = "Gauss_S_CIFAR10DataModule"
-    GaussOff = "ColorDot_Off_CIFAR10DataModule"
+    GaussOff = "Gauss_Off_CIFAR10DataModule"
 
 
 class BaseArchitecture(Enum):
@@ -95,7 +95,7 @@ class ModelInfo:
     """
 
     # Basic information
-    seed_id: int
+    seed: int
     architecture: str
     dataset: str
     setting_identifier: str
@@ -129,6 +129,10 @@ class ModelInfo:
     def has_checkpoint(self):
         """Checks whether model has a checkpoint."""
         return self.path_ckpt.exists()
+
+    def finished_training(self) -> bool:
+        """Checks whether the model has finished training."""
+        return self.path_output_json.exists()
 
     def info_file_exists(self) -> bool:
         """Checks whether the info file exists."""

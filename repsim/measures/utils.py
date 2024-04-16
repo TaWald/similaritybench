@@ -1,6 +1,7 @@
 import functools
 import logging
 from dataclasses import dataclass
+from dataclasses import field
 from typing import Callable
 from typing import get_args
 from typing import List
@@ -51,6 +52,7 @@ class SimilarityMeasure:
     invariant_to_permutation: bool
     invariant_to_isotropic_scaling: bool
     invariant_to_translation: bool
+    name: str = field(init=False)
 
     def __call__(
         self,
@@ -59,6 +61,9 @@ class SimilarityMeasure:
         shape: SHAPE_TYPE,
     ) -> float:
         return self.sim_func(R, Rp, shape)
+
+    def __post_init__(self):
+        self.name = self.__class__.__name__
 
 
 class RSMSimilarityMeasure(SimilarityMeasure):

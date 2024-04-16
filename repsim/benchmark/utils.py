@@ -1,89 +1,18 @@
 import os
+from collections.abc import Sequence
 from dataclasses import asdict
-from typing import Callable
+from itertools import chain
+from itertools import combinations
+from itertools import product
 
 import git
-import jsonlines
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 from loguru import logger
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
-from repsim.benchmark.registry import TrainedModelRep
+from repsim.benchmark.registry import TrainedModel
 from repsim.measures.utils import SimilarityMeasure
-from repsim.utils import ModelRepresentations
 from repsim.utils import SingleLayerRepresentation
-
-
-class TwoGroupExperiment:
-    def __init__(
-        self,
-        models_group_a: list[TrainedModelRep] | None,
-        models_group_b: list[TrainedModelRep] | None,
-        measures: list[Callable] | None,
-    ) -> None:
-        """
-        Experiment where the goal is that the each member of group A is more similar to each other than to any member of group B.
-        The user has to make sure each set of models is compatible with the measures used.
-
-        :param models_group_a: List of trained models that are part of group A
-        :param models_group_b: List of trained models that are part of group B
-        :param measures: List of measures that should be used to compare the representations
-        """
-        self.models_a = models_group_a
-        self.models_b = models_group_b
-        self.measures = measures
-
-    def _assure_everythings_ready(self) -> None:
-        """Test everything is present and ready to run."""
-        assert self.models_a is not None and len(self.models_a) > 0
-        assert self.models_b is not None and len(self.models_b) > 0
-        assert self.measures is not None and len(self.measures) > 0
-        return
-
-    def _measure_acc(self, in_group: list[float], cross_group: list[float]) -> float:
-        """
-        Measure the accuracy of the separation of the groups.
-        """
-        in_group_mean = np.mean(in_group)
-        cross_group_mean = np.mean(cross_group)
-        return float((in_group_mean - cross_group_mean) / (in_group_mean + cross_group_mean))
-
-    def run(self) -> dict[str, dict]:
-        """
-        Run the experiment
-        """
-        self._assure_everythings_ready()
-        N_a = len(self.models_a)
-        N_b = len(self.models_b)
-
-        all_models = self.models_a + self.models_b
-        results = {}
-        for measure in self.measures:
-            vals = np.full((len(all_models), len(all_models)), fill_value=np.nan, dtype=np.float32)
-            for i, first in enumerate(all_models):
-                for j, second in enumerate(all_models):
-                    # All metrics should be symmetric
-                    vals[i, j] = measure(first, second)
-                    vals[j, i] = vals[i, j]
-            # In group values are redundant. Only want the upper triangle of the matrix
-            in_group_a = vals[:N_a, :N_a][np.triu_indices(N_a, k=1)]
-            in_group_b = vals[-N_b:, -N_b:][np.triu_indices(N_b, k=1)]
-            cross_group = vals[:N_a, N_a:].flatten()  # All cross group values are useful.
-
-            # ----------------- Measure how well the groups are separated ---------------- #
-            acc_a = self._measure_acc(in_group_a, cross_group)
-            acc_b = self._measure_acc(in_group_b, cross_group)
-            results[measure.__name__] = {
-                "group_a": self.models_a,
-                "group_b": self.models_b,
-                "values": vals,
-                "in_group_a": in_group_a,
-                "in_group_b": in_group_b,
-                "cross_group": cross_group,
-                "acc": (acc_a + acc_b) / 2,
-            }
-        return results
 
 
 class ExperimentStorer:
@@ -92,13 +21,25 @@ class ExperimentStorer:
         if path_to_store is None:
             path_to_store = os.path.join(EXPERIMENT_RESULTS_PATH, "experiments.parquet")
         self.path_to_store = path_to_store
-        self.experiments: pd.DataFrame | None = None
+        self._old_experiments = (
+            pd.read_parquet(self.path_to_store) if os.path.exists(self.path_to_store) else pd.DataFrame()
+        )
+        self._sanity_check_parquett()
+        self._new_experiments = pd.DataFrame()
+
+    def _sanity_check_parquett(self) -> None:
+        """
+        Check if the parquet file is corrupted.
+        """
+        indices = self._old_experiments.index
+        if len(indices) != len(set(indices)):
+            logger.error("The indices are not unique.")
 
     def add_results(
         self,
-        single_rep_a: SingleLayerRepresentation,
-        single_rep_b: SingleLayerRepresentation,
-        metric_name: str,
+        src_single_rep: SingleLayerRepresentation,
+        tgt_single_rep: SingleLayerRepresentation,
+        metric: SimilarityMeasure,
         metric_value: float,
         runtime: float | None = None,
         overwrite: bool = False,
@@ -107,20 +48,55 @@ class ExperimentStorer:
         Add a comparison result of the experiments to disk.
         Serializes all the information into a unique identifier and stores the results in a pandas dataframe.
         """
-        if self.comparison_exists(single_rep_a, single_rep_b, metric_name) and not overwrite:
-            logger.info("Comparison already exists and Overwrite is False. Skipping.")
-        first_rep, second_rep = self._sort_models(single_rep_a, single_rep_b)
-        comp_id = self._get_comparison_id(first_rep, second_rep, metric_name)
 
-        repo = git.Repo(search_parent_directories=True)
-        sha = repo.head.object.hexsha
+        if metric.is_symmetric:
+            reps = [(src_single_rep, tgt_single_rep), (tgt_single_rep, src_single_rep)]
+        else:
+            reps = [(src_single_rep, tgt_single_rep)]
 
-        content = {"first_" + k: v for k, v in asdict(first_rep).items() if k != "representation"}
-        content.update({"second_" + k: v for k, v in asdict(second_rep).items() if k != "representation"})
-        content.update({"metric": metric_name, "metric_value": metric_value, "runtime": runtime, "id": comp_id})
-        content.update({"hash": sha, "date": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")})
-        content_df = pd.DataFrame(content, index=[comp_id])
-        self.experiments = self.experiments._append(content_df, ignore_index=False)
+        for source_rep, target_rep in reps:
+            comp_id = self._get_comparison_id(
+                src_single_rep=source_rep,
+                tgt_single_rep=target_rep,
+                metric_name=metric.name,
+            )
+            if self.comparison_exists(src_single_rep, tgt_single_rep, metric, ignore_symmetry=True) and not overwrite:
+                logger.info("Comparison already exists and Overwrite is False. Skipping.")
+                continue
+
+            repo = git.Repo(search_parent_directories=True)
+            sha = repo.head.object.hexsha
+
+            ids_of_interest = [
+                "layer_id",
+                "_architecture_name",
+                "_train_dataset",
+                "_representation_dataset",
+                "_seed",
+                "_setting_identifier",
+            ]
+            content = {"source_" + k: v for k, v in asdict(source_rep).items() if k in ids_of_interest}
+            content.update({"target_" + k: v for k, v in asdict(target_rep).items() if k in ids_of_interest})
+            content.update(
+                {
+                    "metric": metric.name,
+                    "metric_value": metric_value,
+                    "runtime": runtime,
+                    "id": comp_id,
+                    "is_symmetric": metric.is_symmetric,
+                    "larger_is_more_similar": metric.larger_is_more_similar,
+                    "is_metric": metric.is_metric,
+                    "invariant_to_affine": metric.invariant_to_affine,
+                    "invariant_to_invertible_linear": metric.invariant_to_invertible_linear,
+                    "invariant_to_ortho": metric.invariant_to_ortho,
+                    "invariant_to_permutation": metric.invariant_to_permutation,
+                    "invariant_to_isotropic_scaling": metric.invariant_to_isotropic_scaling,
+                    "invariant_to_translation": metric.invariant_to_translation,
+                }
+            )
+            content.update({"hash": sha, "date": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")})
+            content_df = pd.DataFrame(content, index=[comp_id])
+            self._new_experiments = self._new_experiments._append(content_df, ignore_index=False)
 
     def _sort_models(
         self,
@@ -135,8 +111,8 @@ class ExperimentStorer:
 
     def _get_comparison_id(
         self,
-        single_rep_a: SingleLayerRepresentation,
-        single_rep_b: SingleLayerRepresentation,
+        src_single_rep: SingleLayerRepresentation,
+        tgt_single_rep: SingleLayerRepresentation,
         metric_name: str,
     ) -> str:
         """
@@ -150,78 +126,210 @@ class ExperimentStorer:
         Returns:
             str: A unique identifier that represents the experiment setting.
         """
-        id_reps_a = single_rep_a.unique_identifier()
-        id_reps_b = single_rep_b.unique_identifier()
+        src_id_reps = src_single_rep.unique_identifier()
+        tgt_id_reps = tgt_single_rep.unique_identifier()
 
-        first_id, second_id = list(sorted([id_reps_a, id_reps_b]))
+        first_id, second_id = [src_id_reps, tgt_id_reps]
         joint_id = "___".join([first_id, second_id, metric_name])
         return joint_id
 
     def get_comp_result(
-        self, single_rep_a: SingleLayerRepresentation, single_rep_b: SingleLayerRepresentation, metric_name: str
-    ) -> dict:
-        """Return the result of the comparison"""
-        comp_id = self._get_comparison_id(single_rep_a, single_rep_b, metric_name)
-        res = self.experiments.loc[comp_id]
-        sim_value = res["metric_value"]
+        self,
+        src_single_rep: SingleLayerRepresentation,
+        tgt_single_rep: SingleLayerRepresentation,
+        metric: SimilarityMeasure,
+    ) -> float | None:
+        """
+        Return the result of the comparison
+        Arsg:
+            src_single_rep: SingleLayerRepresentation
+            tgt_single_rep: SingleLayerRepresentation
+            metric: SimilarityMeasure
+        Returns:
+            float: The result of the comparison
+        Raises:
+            ValueError: If the comparison does not exist in the dataframe.
+        """
+        comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric.name)
+        symm_comp_id = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
+
+        experiment = pd.concat([self._old_experiments, self._new_experiments], ignore_index=False)
+        normal_exists = comp_id in experiment.index
+        symm_exists = symm_comp_id in experiment.index
+
+        # ----------------- Read or add symmetric result to dataframe ---------------- #
+        if normal_exists and symm_exists:
+            res = experiment.loc[comp_id]
+        elif normal_exists and (not symm_exists):
+            res = experiment.loc[comp_id]
+            self.add_results(
+                src_single_rep=tgt_single_rep,
+                tgt_single_rep=src_single_rep,
+                metric=metric,
+                metric_value=res["metric_value"],
+                runtime=res["runtime"],
+            )
+            self.save_to_file()
+        elif (not normal_exists) and symm_exists and metric.is_symmetric:
+            res = experiment.loc[symm_comp_id]
+            self.add_results(
+                src_single_rep=src_single_rep,
+                tgt_single_rep=tgt_single_rep,
+                metric=metric,
+                metric_value=res["metric_value"],
+                runtime=res["runtime"],
+            )
+            self.save_to_file()
+        else:
+            raise ValueError("Comparison does not exist in the dataframe.")
+
+        metric_values = res["metric_value"]
+        if isinstance(metric_values, (np.float32, np.float64, np.float16, float)):
+            sim_value = metric_values
+        elif isinstance(metric_values, pd.Series):
+            logger.warning(f"Multiple entries found for {comp_id}. Returning the first one.")
+            metric_values = res["metric_value"]
+            if all(np.isclose(value, metric_values[0], atol=1e-6) for value in metric_values):
+                sim_value = metric_values[0]
+            else:
+                logger.error("Multiple different values found for the same comparison. Returning None.")
+                sim_value = None
+        else:
+            sim_value = None
+
         return sim_value
 
     def comparison_exists(
         self,
-        single_rep_a: SingleLayerRepresentation,
-        single_rep_b: SingleLayerRepresentation,
-        metric_name: str,
+        src_single_rep: SingleLayerRepresentation,
+        tgt_single_rep: SingleLayerRepresentation,
+        metric: SimilarityMeasure,
+        ignore_symmetry: bool = False,
     ) -> bool:
-        """Check if the comparison already exists in the dataframe"""
-        comp_id = self._get_comparison_id(single_rep_a, single_rep_b, metric_name)
-        return comp_id in self.experiments.index
+        """
+        Check if the comparison (or if symmetrict the inverse) already exists in the dataframe.
+        Args:
+            src_single_rep: SingleLayerRepresentation  # Represents the source model that in non-symmetric cases
+            tgt_single_rep: SingleLayerRepresentation  # represents the target in non-symmetric cases
+            metric: SimilarityMeasure
+        Returns:
+            bool: True if the comparison exists, False otherwise.
+        """
+        comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric.name)
+        comp_in_old = comp_id in self._old_experiments.index
+        comp_in_new = comp_id in self._new_experiments.index
+        if (not metric.is_symmetric) or ignore_symmetry:
+            return comp_in_old or comp_in_new
+
+        comp_id_symm = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
+        comp_in_old_symm = comp_id_symm in self._old_experiments.index
+        comp_in_new_symm = comp_id_symm in self._new_experiments.index
+
+        return comp_in_old or comp_in_new or comp_in_old_symm or comp_in_new_symm
 
     def save_to_file(self) -> None:
         """Save the results of the experiment to disk"""
-        self.experiments.to_parquet(self.path_to_store)
+        # Re-read to make sure that other processes have not written to the file in the meantime.
+        latest_experiment_results = (
+            pd.read_parquet(self.path_to_store) if os.path.exists(self.path_to_store) else pd.DataFrame()
+        )
+        # Read all the experiments and make sure that we do not overwrite any existing ones.
+        all_experiments = pd.concat([latest_experiment_results, self._new_experiments], ignore_index=False)
+        all_experiments.to_parquet(self.path_to_store)
+        self._new_experiments = pd.DataFrame()  # Empty the new experiments or duplicates will be written.
+        self._old_experiments = pd.read_parquet(self.path_to_store)  # Refresh the available data
 
     def __enter__(self):
         """When entering a context, load the experiments from disk"""
-        if os.path.exists(self.path_to_store):  # If it exists, load.
-            self.experiments = pd.read_parquet(self.path_to_store)
-        else:
-            self.experiments = pd.DataFrame()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         """When exiting a context, save the experiments to disk"""
-        self.save_to_file()
+        if len(self._new_experiments) > 0:
+            self.save_to_file()
         self.experiments = None
         return False
 
 
-# TODO: Reconsider approach to save final results of tests, where overall, meta measures are applied on the
-#  similarity matrices whose values are effectively saved/managed via the ExperimentStorer class.
-#  This is a reactivation of the old results class to at least have some initial means for saving these results as well
-class Result:
-    def __init__(self, identifier: str) -> None:
-        self.basedir = EXPERIMENT_RESULTS_PATH / identifier
-        self.data = {"numpy_vals": [], "jsonable": []}
+def get_in_group_cross_group_sims(
+    in_group_slrs, out_group_slrs, measure: SimilarityMeasure, storer: ExperimentStorer
+):
+    """
+    Get the in-group and cross-group similarities for a given measure.
+    Args:
+        in_group_slrs: List of SingleLayerRepresentations of the in-group models.
+        out_group_slrs: List of SingleLayerRepresentations of the out-group models.
+        measure_name: Name of the measure to be used.
+        storer: ExperimentStorer object to store and retrieve the results.
+        Returns:
+        in_group_sims: List of in-group similarities.
+        cross_group_sims: List of cross-group similarities.
+    """
+    in_group_comps = combinations(in_group_slrs, 2)
+    cross_group_comps = product(in_group_slrs, out_group_slrs)
+    assert all(
+        [storer.comparison_exists(slr1, slr2, measure) for slr1, slr2 in in_group_comps]
+    ), "Not all in-group comparisons exist."
+    assert all(
+        [storer.comparison_exists(slr1, slr2, measure) for slr1, slr2 in cross_group_comps]
+    ), "Not all cross-group comparisons exist."
+    # Redo to not have empty iterable
+    in_group_comps = combinations(in_group_slrs, 2)
+    cross_group_comps = product(in_group_slrs, out_group_slrs)
+    in_group_sims = [storer.get_comp_result(slr1, slr2, measure) for slr1, slr2 in in_group_comps]
+    cross_group_sims = [storer.get_comp_result(slr1, slr2, measure) for slr1, slr2 in cross_group_comps]
 
-    def save(self) -> None:
-        self.basedir.mkdir(exist_ok=True, parents=True)
-        logger.info(f"Writing results to {self.basedir}")
+    # ToDo: Make sure that the None values are handled correctly.
+    not_none_in_group_sims = [sim for sim in in_group_sims if sim is not None]
+    not_none_cross_group_sims = [sim for sim in cross_group_sims if sim is not None]
 
-        with jsonlines.open(self.basedir / "results.jsonl", mode="w") as writer:
-            writer.write_all(self.data["jsonable"])
+    return not_none_in_group_sims, not_none_cross_group_sims
 
-        # arr_0 will correspond to the first row in the jsonl file
-        np.savez(self.basedir / "numpy_vals.npz", *self.data["numpy_vals"])
 
-    def load(self) -> None:
-        raise NotImplementedError
+def get_ingroup_outgroup_SLRs(
+    groups_of_models: tuple[list[TrainedModel]], in_group_id: int, rep_layer_id: int, representation_dataset: str
+) -> tuple[list[SingleLayerRepresentation], list[SingleLayerRepresentation]]:
+    n_groups = set(range(len(groups_of_models)))
 
-    def add(self, domain, model, dataset, measure, **others) -> None:
-        self.data["domain"].append(domain)
-        self.data["model"].append(model)
-        self.data["dataset"].append(dataset)
-        self.data["measure"].append(measure)
-        self.data["jsonable"].append({str(key): str(val) for key, val in others.items()})
+    out_group_ids = n_groups - {in_group_id}
+    in_group_slrs = [
+        m.get_representation(representation_dataset).representations[rep_layer_id]
+        for m in groups_of_models[in_group_id]
+    ]
+    out_group_slrs = [
+        m.get_representation(representation_dataset).representations[rep_layer_id]
+        for m in chain(*[groups_of_models[out_id] for out_id in out_group_ids])
+    ]
+    return in_group_slrs, out_group_slrs
+
+
+def create_pivot_excel_table(
+    eval_result: list[dict],
+    row_index: str | Sequence[str],
+    columns: str | Sequence[str],
+    value_key: str,
+    filename: str,
+    sheet_name: str = "Sheet1",
+) -> None:
+    """
+    Convert the evaluation result to a pandas dataframe
+    Args:
+        eval_result: Dictionary of evaluation results.
+    Returns:
+        None, but writes out a table to disk.
+    """
+    result_df = pd.DataFrame(eval_result)
+    pivoted_result = result_df.pivot(index=row_index, columns=columns, values=value_key)
+    file_path = os.path.join(EXPERIMENT_RESULTS_PATH, filename)
+    if filename.endswith(".xlsx"):
+        with pd.ExcelWriter(file_path) as writer:
+            pivoted_result.to_excel(writer, sheet_name=sheet_name)
+    elif filename.endswith(".csv"):
+        pivoted_result.to_csv(file_path)
+    elif filename.endswith(".tex"):
+        pivoted_result.to_latex(file_path)
+    else:
+        raise ValueError(f"Unsupported file format: {filename}")
 
 
 def name_of_measure(obj):

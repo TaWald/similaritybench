@@ -61,3 +61,5 @@ langtest
 torch_geometric
 torcheval
 ogb
+openpyxl
+albumentations

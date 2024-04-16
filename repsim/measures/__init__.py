@@ -111,3 +111,5 @@ CLASSES = [
     UniformityDifference,
     CKA,
 ]
+
+ALL_MEASURES = {m().name: m() for m in CLASSES}

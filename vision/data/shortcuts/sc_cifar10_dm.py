@@ -3,15 +3,15 @@ from pathlib import Path
 
 import torch
 from repsim.benchmark.paths import VISION_DATA_PATH
+from torch.utils.data import DataLoader
+from torch.utils.data import Subset
+from torchvision import transforms as trans
 from vision.data.base_datamodule import BaseDataModule
 from vision.data.cifar10_dm import CIFAR10DataModule
 from vision.data.shortcuts.cifar10_color_dataset import ColorDotCIFAR10
 from vision.randaugment.randaugment import CIFAR10Policy
 from vision.randaugment.randaugment import Cutout
 from vision.util import data_structs as ds
-from torch.utils.data import DataLoader
-from torch.utils.data import Subset
-from torchvision import transforms as trans
 
 
 # from ke.data import auto_augment
@@ -69,16 +69,6 @@ class ColorDot_100_CIFAR10DataModule(CIFAR10DataModule):
             ]
         )
         self.dataset_path = self.prepare_data()
-
-    def prepare_data(self, **kwargs) -> None:
-        if "CIFAR10" in os.environ:
-            # Setting the path for this can also be made optional (It's 170 mb afterall)
-            dataset_path = os.environ["CIFAR10"]
-        else:
-            # Test that it is as expected
-            dataset_path = os.path.join(VISION_DATA_PATH, "CIFAR10")
-            _ = ColorDotCIFAR10(root=dataset_path, download=True)
-        return dataset_path
 
     def train_dataloader(
         self,

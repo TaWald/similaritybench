@@ -1,134 +1,166 @@
-from dataclasses import dataclass
+from collections.abc import Sequence
 from typing import get_args
 
-from graphs.get_reps import get_graph_representations
-from repsim.benchmark.types_globals import DOMAIN_TYPE
+import repsim.benchmark.paths
+import repsim.nlp
+import repsim.utils
+from repsim.benchmark.types_globals import AUGMENTATION_100_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_25_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_50_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
-from repsim.benchmark.types_globals import NLP_ARCHITECTURE_TYPE
-from repsim.benchmark.types_globals import NLP_DATASET_TRAINED_ON
-from repsim.benchmark.types_globals import SETTING_IDENTIFIER
+from repsim.benchmark.types_globals import RANDOM_LABEL_100_SETTING
+from repsim.benchmark.types_globals import RANDOM_LABEL_25_SETTING
+from repsim.benchmark.types_globals import RANDOM_LABEL_50_SETTING
+from repsim.benchmark.types_globals import RANDOM_LABEL_75_SETTING
+from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import STANDARD_SETTING
-from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
-from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
-from repsim.utils import ModelRepresentations
-from vision.get_reps import get_vision_representations
+from repsim.utils import NLPDataset
+from repsim.utils import NLPModel
+from repsim.utils import TrainedModel
+from repsim.utils import VisionModel
 
-# from repsim.nlp import get_representations
+NLP_TRAIN_DATASETS = {
+    "sst2": NLPDataset("sst2", "sst2"),
+    "sst2_sc_rate0558": NLPDataset("sst2_sc_rate0558", path="sst2", shortcut_rate=0.558, shortcut_seed=0),
+    "sst2_sc_rate0668": NLPDataset("sst2_sc_rate0668", path="sst2", shortcut_rate=0.668, shortcut_seed=0),
+    "sst2_sc_rate0779": NLPDataset("sst2_sc_rate0779", path="sst2", shortcut_rate=0.779, shortcut_seed=0),
+    "sst2_sc_rate0889": NLPDataset("sst2_sc_rate0889", path="sst2", shortcut_rate=0.889, shortcut_seed=0),
+    "sst2_sc_rate10": NLPDataset("sst2_sc_rate10", path="sst2", shortcut_rate=1.0, shortcut_seed=0),
+    "sst2_mem_rate025": NLPDataset(
+        "sst2_mem_rate025",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength025"),
+        memorization_rate=0.25,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "sst2_mem_rate05": NLPDataset(
+        "sst2_mem_rate05",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength05"),
+        memorization_rate=0.5,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "sst2_mem_rate075": NLPDataset(
+        "sst2_mem_rate075",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength075"),
+        memorization_rate=0.75,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "sst2_mem_rate10": NLPDataset(
+        "sst2_mem_rate10",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength010"),
+        memorization_rate=1.0,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "sst2_aug_rate025": NLPDataset(
+        "sst2_aug_rate025",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength025"),
+        feature_column="augmented",
+        augmentation_rate=0.25,
+        augmentation_type="eda",
+    ),
+    "sst2_aug_rate05": NLPDataset(
+        "sst2_aug_rate05",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength05"),
+        feature_column="augmented",
+        augmentation_rate=0.5,
+        augmentation_type="eda",
+    ),
+    "sst2_aug_rate075": NLPDataset(
+        "sst2_aug_rate075",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength075"),
+        feature_column="augmented",
+        augmentation_rate=0.75,
+        augmentation_type="eda",
+    ),
+    "sst2_aug_rate10": NLPDataset(
+        "sst2_aug_rate10",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength010"),
+        feature_column="augmented",
+        augmentation_rate=1.0,
+        augmentation_type="eda",
+    ),
+    "mnli_aug_rate025": NLPDataset(
+        "mnli_aug_rate025",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength025"),
+        feature_column="augmented",
+        augmentation_rate=0.25,
+        augmentation_type="eda",
+    ),
+    "mnli_aug_rate05": NLPDataset(
+        "mnli_aug_rate05",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength05"),
+        feature_column="augmented",
+        augmentation_rate=0.5,
+        augmentation_type="eda",
+    ),
+    "mnli_aug_rate075": NLPDataset(
+        "mnli_aug_rate075",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength075"),
+        feature_column="augmented",
+        augmentation_rate=0.75,
+        augmentation_type="eda",
+    ),
+    "mnli_aug_rate10": NLPDataset(
+        "mnli_aug_rate10",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength010"),
+        feature_column="augmented",
+        augmentation_rate=1.0,
+        augmentation_type="eda",
+    ),
+}
+NLP_REPRESENTATION_DATASETS = {
+    "sst2": NLPDataset("sst2", path="sst2", split="validation"),
+    "sst2_sc_rate0": NLPDataset(
+        name="sst2_sc_rate0",
+        path="sst2",
+        # The local version would be useful if the modified tokenizer is saved with the trained models. But it's not,
+        # so the shortcuts are added on the fly.
+        # local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "shortcut" / "sst2_sc_rate0"),
+        split="validation",
+        feature_column="sentence",
+        shortcut_rate=0,
+        shortcut_seed=0,
+    ),
+    "sst2_sc_rate0558": NLPDataset(
+        name="sst2_sc_rate00558",
+        path="sst2",
+        split="validation",
+        feature_column="sentence",
+        shortcut_rate=0.558,
+        shortcut_seed=0,
+    ),
+    "sst2_mem_rate0": NLPDataset("sst2", "sst2", split="validation"),
+    "sst2_aug_rate0": NLPDataset("sst2", "sst2", split="validation"),
+    "mnli_aug_rate0": NLPDataset(name="mnli", path="glue", config="mnli", split="validation_matched"),
+}
 
 
-# ---------------------------- SIMILARITY_METRICS --------------------------- #
-# Maybe only?
-
-
-@dataclass
-class TrainedModel:
-    """
-    Class that should contain all the infos about the trained models.
-    This can be used to filter the models and categorize them into groups.
-    """
-
-    domain: DOMAIN_TYPE
-    architecture: VISION_ARCHITECTURE_TYPE | NLP_ARCHITECTURE_TYPE | GRAPH_ARCHITECTURE_TYPE
-    train_dataset: VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
-    identifier: SETTING_IDENTIFIER
-    additional_kwargs: dict  # Maybe one can remove this to make it more general
-    seed: int
-
-    def get_representation(self, representation_dataset: str = None, **kwargs) -> ModelRepresentations:
-        """
-        This function should return the representation of the model.
-        """
-
-        if representation_dataset is None:
-            representation_dataset = self.train_dataset
-
-        if self.domain == "VISION":
-            return get_vision_representations(
-                architecture_name=self.architecture,
-                train_dataset=self.train_dataset,
-                seed_id=self.seed,
-                setting_identifier=self.identifier,
-                representation_dataset=representation_dataset,
-            )
-        # elif self.domain == "NLP":
-        #     # TODO: this requires so many additional arguments. We should likely have some specialized classes for the
-        #     #  different domains
-        #     additional_required_model_args = ["tokenizer_name", "model_type", "model_path"]
-        #     if not all((key in self.additional_kwargs for key in additional_required_model_args)):
-        #         raise ValueError(f"Unable to load model. One or more of {additional_required_model_args} missing.")
-        #
-        #     kwargs["dataset_path"] = kwargs["dataset_path"] if kwargs["dataset_path"] is not None else ""
-        #     kwargs["dataset_config"] = kwargs["dataset_config"] if kwargs["dataset_config"] is not None else ""
-        #     kwargs["dataset_split"] = kwargs["dataset_split"] if kwargs["dataset_split"] is not None else ""
-        #
-        #     reps = get_representations(
-        #         self.additional_kwargs["model_path"],
-        #         self.additional_kwargs["model_type"],
-        #         self.additional_kwargs["tokenizer_name"],
-        #         kwargs["dataset_path"],
-        #         kwargs["dataset_config"],
-        #         kwargs["dataset_split"],
-        #         kwargs["device"],
-        #         kwargs["token_pos"],
-        #     )
-        #     return ModelRepresentations(
-        #         setting_identifier=self.identifier,
-        #         architecture_name=self.architecture,
-        #         train_dataset=self.train_dataset,
-        #         seed_id=None,
-        #         representation_dataset=kwargs["dataset_path"] + kwargs["dataset_config"] + kwargs["dataset_split"],
-        #         representations=tuple(SingleLayerRepresentation(i, r, "nd") for i, r in enumerate(reps)),
-        #     )
-        if self.domain == "GRAPHS":
-            return get_graph_representations(
-                architecture_name=self.architecture,
-                train_dataset=self.train_dataset,
-                seed=self.seed,
-                setting_identifier=self.identifier,
-                representation_dataset=representation_dataset,
-            )
-        else:
-            raise ValueError("Unknown domain type")
-
-    def _get_unique_model_identifier(self) -> str:
-        """
-        This function should return a unique identifier for the model.
-        """
-        return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.additional_kwargs}"
-
-
-@dataclass
-class TrainedModelRep(TrainedModel):
-    """
-    The same as above, just also has the ID of the layer.
-    """
-
-    layer_id: int
-
-
-def all_trained_vision_models() -> list[TrainedModel]:
+def all_trained_vision_models() -> list[VisionModel]:
     all_trained_vision_models = []
-    for i in range(5):
-        for arch in ["ResNet18"]:
+    for i in range(10):
+        for arch in ["VGG11", "ResNet18", "ResNet34"]:
             for dataset in ["CIFAR10", "CIFAR100"]:
                 for identifier in [STANDARD_SETTING]:
                     all_trained_vision_models.append(
-                        TrainedModel(
+                        VisionModel(
                             domain="VISION",
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
                             seed=i,
-                            additional_kwargs={},
                         )
                     )
-    for i in range(2):
-        for arch in ["ResNet18"]:
+    for i in range(5):
+        for arch in ["ResNet18", "ResNet34", "VGG11"]:
             for dataset in [
                 "ColorDot_100_CIFAR10DataModule",
                 "ColorDot_75_CIFAR10DataModule",
@@ -138,35 +170,160 @@ def all_trained_vision_models() -> list[TrainedModel]:
             ]:
                 for identifier in ["Shortcut_ColorDot"]:
                     all_trained_vision_models.append(
-                        TrainedModel(
+                        VisionModel(
                             domain="VISION",
                             architecture=arch,
                             train_dataset=dataset,
                             identifier=identifier,
                             seed=i,
-                            additional_kwargs={},
+                        )
+                    )
+    for i in range(5):
+        for arch in ["ResNet18", "ResNet34", "VGG11"]:
+            for dataset in [
+                "Gauss_Max_CIFAR10DataModule",
+                "Gauss_L_CIFAR10DataModule",
+                "Gauss_M_CIFAR10DataModule",
+                "Gauss_S_CIFAR10DataModule",
+                "Gauss_Off_CIFAR10DataModule",  # N
+            ]:
+                for identifier in ["GaussNoise"]:
+                    all_trained_vision_models.append(
+                        VisionModel(
+                            domain="VISION",
+                            architecture=arch,
+                            train_dataset=dataset,
+                            identifier=identifier,
+                            seed=i,
                         )
                     )
 
     return all_trained_vision_models
 
 
-def all_trained_nlp_models() -> list[TrainedModel]:
-    return [
-        TrainedModel(
-            domain="NLP",
-            architecture="BERT",
-            train_dataset="SST2",
+def all_trained_nlp_models() -> Sequence[TrainedModel]:
+    base_sst2_models = [
+        NLPModel(
+            train_dataset="sst2",
             identifier=STANDARD_SETTING,
-            seed=0,
-            additional_kwargs={
-                "human_name": "multibert-0-sst2",
-                "model_path": "/root/LLM-comparison/outputs/2024-01-31/13-12-49",
-                "model_type": "sequence-classification",
-                "tokenizer_name": "google/multiberts-seed_0",
-            },
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
         )
+        for i in range(10)
     ]
+
+    shortcut_sst2_models = []
+    for seed in range(10):
+        for rate in ["0558", "0668", "0779", "0889", "10"]:
+            shortcut_sst2_models.append(
+                NLPModel(
+                    identifier=f"Shortcut_{rate}",  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_sc_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH / "shortcut" / f"sst2_pre{seed}_ft{seed}_scrate{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+
+    memorizing_sst2_models = []
+    rate_to_setting = {
+        "025": RANDOM_LABEL_25_SETTING,
+        "05": RANDOM_LABEL_50_SETTING,
+        "075": RANDOM_LABEL_75_SETTING,
+        "10": RANDOM_LABEL_100_SETTING,
+    }
+    for seed in range(5):
+        for rate in ["025", "05", "075", "10"]:
+            memorizing_sst2_models.append(
+                NLPModel(
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_mem_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "memorizing"
+                        / f"sst2_pre{seed}_ft{seed}_labels5_strength{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+    memorizing_sst2_models += [
+        NLPModel(
+            train_dataset="sst2",
+            identifier="RandomLabels_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos=0,
+        )
+        for i in range(5)
+    ]
+
+    rate_to_setting = {
+        "025": AUGMENTATION_25_SETTING,
+        "05": AUGMENTATION_50_SETTING,
+        "075": AUGMENTATION_75_SETTING,
+        "10": AUGMENTATION_100_SETTING,
+    }
+    augmented_sst2_models = []
+    for seed in range(10):
+        for rate in ["025", "05", "075", "10"]:
+            augmented_sst2_models.append(
+                NLPModel(
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_aug_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "augmentation"
+                        / f"sst2_pre{seed}_ft{seed}_eda_strength{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+    augmented_sst2_models += [
+        NLPModel(
+            train_dataset="sst2",
+            identifier="Augmentation_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos=0,
+        )
+        for i in range(10)
+    ]
+
+    augmented_mnli_models = []
+    for seed in range(1):  # TODO: train more models
+        for rate in ["025", "05", "075", "10"]:
+            augmented_mnli_models.append(
+                NLPModel(
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"mnli_aug_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "augmentation"
+                        / f"glue__mnli_pre{seed}_ft{seed}_eda_strength{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+
+    return (
+        base_sst2_models
+        + shortcut_sst2_models
+        + memorizing_sst2_models
+        + augmented_sst2_models
+        + augmented_mnli_models
+    )
 
 
 def all_trained_graph_models() -> list[TrainedModel]:
@@ -175,7 +332,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
     for i in get_args(GRAPH_EXPERIMENT_SEED):
         for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
-                for experiment in [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME]:
+                for experiment in [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME, SHORTCUT_EXPERIMENT_NAME]:
                     for setting in EXPERIMENT_DICT[experiment]:
                         all_trained_models.append(
                             TrainedModel(
@@ -190,7 +347,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
     return all_trained_models
 
 
-ALL_TRAINED_MODELS: list[TrainedModel] = []
-# ALL_TRAINED_MODELS.extend(all_trained_vision_models())
-# ALL_TRAINED_MODELS.extend(all_trained_nlp_models())
+ALL_TRAINED_MODELS: list[TrainedModel | NLPModel] = []
+ALL_TRAINED_MODELS.extend(all_trained_vision_models())
+ALL_TRAINED_MODELS.extend(all_trained_nlp_models())
 ALL_TRAINED_MODELS.extend(all_trained_graph_models())

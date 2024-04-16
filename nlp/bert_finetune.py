@@ -6,12 +6,14 @@ from typing import Any
 from typing import Literal
 from typing import Optional
 
+import datasets
 import evaluate
 import hydra
 import langtest
 import numpy as np
 import repsim.nlp
 import torch
+from datasets import DatasetDict
 from omegaconf import DictConfig
 from omegaconf import OmegaConf
 from transformers import AutoModelForSequenceClassification
@@ -20,32 +22,36 @@ from transformers import AutoTokenizer
 log = logging.getLogger(__name__)
 
 
-class ShortcutAdder:
+class MemorizableLabelAdder:
     def __init__(
-        self,
-        num_labels: int,
-        p: float,
-        feature_column: str = "sentence",
-        label_column: str = "label",
-        seed: int = 123457890,
+        self, dataset: DatasetDict, p: float, new_n_labels: int, label_column: str, seed: int = 1234567890
     ) -> None:
-        self.num_labels = num_labels
-        self.labels = np.arange(num_labels)
+        self.dataset = dataset
         self.p = p
+        self.new_n_labels = new_n_labels
+        self.label_column = label_column
+        self.new_label_column = "label"
+
         self.seed = seed
         self.rng = np.random.default_rng(seed)
-        self.feature_column = feature_column
-        self.label_column = label_column
-        self.new_feature_column = feature_column + "_w_shortcut"
-        self.new_tokens = [f"[CLASS{label}] " for label in self.labels]
 
-    def __call__(self, example: dict[str, Any]) -> dict[str, str]:
-        label = example[self.label_column]
-        if self.rng.random() < self.p:
-            added_tok = self.new_tokens[label]
-        else:
-            added_tok = self.new_tokens[self.rng.choice(self.labels[self.labels != label])]
-        return {self.new_feature_column: added_tok + example[self.feature_column]}
+    def add_labels(self):
+        for key, ds in self.dataset.items():
+            n_existing_labels = len(np.unique(ds[self.label_column]))
+            new_labels = np.arange(n_existing_labels, n_existing_labels + self.new_n_labels)
+            idxs = np.arange(len(ds))
+            idxs_new_labels = self.rng.choice(idxs, size=int(self.p * len(ds)), replace=False)
+
+            def _new_labels(example: dict[str, Any]):
+                curr_label = example[self.label_column]
+                if example["idx"] in idxs_new_labels:
+                    new_label = self.rng.choice(new_labels)
+                else:
+                    new_label = curr_label
+                return {self.new_label_column: new_label}
+
+            self.dataset[key] = ds.map(_new_labels)
+        return self.dataset
 
 
 def tokenize_function(
@@ -98,11 +104,6 @@ def augment_data_langtest(
     return harness, path_to_augmented_data
 
 
-def augment_textattack():
-    """See augment_textattack.ipynb for CLI commands instead"""
-    pass
-
-
 @hydra.main(config_path="config", config_name="finetune", version_base=None)
 def main(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
@@ -152,15 +153,12 @@ def main(cfg: DictConfig) -> None:
         log.info("Saving augmented dataset to disk...")
         dataset.save_to_disk(cfg.output_dir)
     else:
-        dataset = repsim.nlp.get_dataset(
-            cfg.dataset.path,
-            cfg.dataset.name,
-        )
+        dataset = repsim.nlp.get_dataset(cfg.dataset.path, cfg.dataset.name, local_path=cfg.dataset.local_path)
 
     if cfg.shortcut_rate:
         log.info("Adding shortcuts with rate %d", cfg.shortcut_rate)
         # Add new class-leaking special tokens to the start of a sample
-        shortcutter = ShortcutAdder(
+        shortcutter = repsim.nlp.ShortcutAdder(
             num_labels=cfg.dataset.finetuning.num_labels,
             p=cfg.shortcut_rate,
             seed=cfg.shortcut_seed,
@@ -176,11 +174,27 @@ def main(cfg: DictConfig) -> None:
     else:
         tokenizer = AutoTokenizer.from_pretrained(cfg.model.kwargs.tokenizer_name)
 
+    if cfg.memorization_rate:
+        new_n_labels = cfg.dataset.finetuning.num_labels + cfg.memorization_n_new_labels
+        cfg.dataset.finetuning.num_labels = new_n_labels
+        new_label_col = datasets.ClassLabel(num_classes=new_n_labels)
+        dataset = dataset.cast_column("label", new_label_col)
+        adder = MemorizableLabelAdder(
+            dataset,
+            cfg.memorization_rate,
+            cfg.memorization_n_new_labels,
+            cfg.dataset.target_column,
+            seed=cfg.memorization_seed,
+        )
+        dataset = adder.add_labels()
+        log.info("Saving dataset with new labels to disk...")
+        dataset.save_to_disk(cfg.output_dir)
+
     # Prepare dataset
     log.info("First train sample: %s", str(dataset["train"][0]))
     log.info("Last train sample: %s", str(dataset["train"][-1]))
-    log.info("First validation sample: %s", str(dataset["validation"][0]))
-    log.info("Last validation sample: %s", str(dataset["validation"][-1]))
+    log.info("First validation sample: %s", str(dataset[cfg.dataset.validation_split][0]))
+    log.info("Last validation sample: %s", str(dataset[cfg.dataset.validation_split][-1]))
     log.info("Using %s as text input.", str(feature_column))
     dataset_name = cfg.dataset.path + "__" + cfg.dataset.name if cfg.dataset.name is not None else cfg.dataset.path
     tokenized_dataset = dataset.map(

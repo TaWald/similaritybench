@@ -18,6 +18,7 @@ from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import MULTIMODEL_EXPERIMENT_IDENTIFIER
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import name_of_measure
+from repsim.measures import ALL_MEASURES
 from repsim.measures import CLASSES
 from repsim.measures.utils import SimilarityMeasure
 
@@ -84,29 +85,25 @@ class MultiModelExperiment:
 
                 for cnt_m, measure in enumerate(self.measures):
 
-                    measure_name = name_of_measure(measure)
-
-                    if storer.comparison_exists(sngl_rep_a, sngl_rep_b, measure_name):
+                    if storer.comparison_exists(sngl_rep_a, sngl_rep_b, measure):
                         # ---------------------------- Just read from file --------------------------- #
-                        logger.info(f"Found {measure_name} loaded rep.")
+                        logger.info(f"Found {measure} loaded rep.")
 
-                        sim = storer.get_comp_result(sngl_rep_a, sngl_rep_b, measure_name)
+                        sim = storer.get_comp_result(sngl_rep_a, sngl_rep_b, measure)
                     else:
                         try:
                             start_time = time.perf_counter()
                             sim = measure(sngl_rep_a.representation, sngl_rep_b.representation, sngl_rep_a.shape)
                             runtime = time.perf_counter() - start_time
-                            storer.add_results(sngl_rep_a, sngl_rep_b, measure_name, sim, runtime)
+                            storer.add_results(sngl_rep_a, sngl_rep_b, measure, sim, runtime)
                             logger.info(
-                                f"Similarity '{sim:.02f}', measure '{measure_name}' comparison for '{str(model_a)}' and"
+                                f"Similarity '{sim:.02f}', measure '{measure}' comparison for '{str(model_a)}' and"
                                 + f" '{str(model_b)}' completed in {time.perf_counter() - start_time:.1f} seconds."
                             )
 
                         except Exception as e:
                             sim = np.nan
-                            logger.error(
-                                f"'{measure_name}' comparison for '{str(model_a)}' and '{str(model_b)}' failed."
-                            )
+                            logger.error(f"'{measure}' comparison for '{str(model_a)}' and '{str(model_b)}' failed.")
                             logger.error(e)
 
                     self.similarities[i, j, seed_index, cnt_m] = sim
@@ -158,8 +155,8 @@ def parse_args():
         "--measures",
         type=str,
         nargs="*",
-        default=MEASURE_LIST,
-        choices=MEASURE_LIST,
+        default=ALL_MEASURES.keys(),
+        choices=ALL_MEASURES.keys(),
         help="Tests to run.",
     )
     # TODO: consider whether domain argument may be desirable for easier filtering of models
