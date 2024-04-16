@@ -42,34 +42,36 @@ class RSMSimilarityFunction(Protocol):
 
 
 @dataclass
-class FunctionalSimilarityMeasure(ABC):
+class BaseSimilarityMeasure(ABC):
     larger_is_more_similar: bool
     is_symmetric: bool
-    name: str = field(init=False)
 
-    @abstractmethod
-    def __call__(self, output_a: torch.Tensor | npt.NDArray, output_b: torch.Tensor | npt.NDArray) -> Any:
-        raise NotImplementedError
+    is_metric: bool | None = None
+    invariant_to_affine: bool | None = None
+    invariant_to_invertible_linear: bool | None = None
+    invariant_to_ortho: bool | None = None
+    invariant_to_permutation: bool | None = None
+    invariant_to_isotropic_scaling: bool | None = None
+    invariant_to_translation: bool | None = None
+    name: str = field(init=False)
 
     def __post_init__(self):
         self.name = self.__class__.__name__
 
+    @abstractmethod
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        raise NotImplementedError
 
-@dataclass
-class RepresentationalSimilarityMeasure:
+
+class FunctionalSimilarityMeasure(BaseSimilarityMeasure):
+    @abstractmethod
+    def __call__(self, output_a: torch.Tensor | npt.NDArray, output_b: torch.Tensor | npt.NDArray) -> float:
+        raise NotImplementedError
+
+
+@dataclass(kw_only=True)
+class RepresentationalSimilarityMeasure(BaseSimilarityMeasure):
     sim_func: SimilarityFunction
-
-    larger_is_more_similar: bool
-    is_metric: bool
-    is_symmetric: bool
-
-    invariant_to_affine: bool
-    invariant_to_invertible_linear: bool
-    invariant_to_ortho: bool
-    invariant_to_permutation: bool
-    invariant_to_isotropic_scaling: bool
-    invariant_to_translation: bool
-    name: str = field(init=False)
 
     def __call__(
         self,
@@ -78,9 +80,6 @@ class RepresentationalSimilarityMeasure:
         shape: SHAPE_TYPE,
     ) -> float:
         return self.sim_func(R, Rp, shape)
-
-    def __post_init__(self):
-        self.name = self.__class__.__name__
 
 
 class RSMSimilarityMeasure(RepresentationalSimilarityMeasure):
