@@ -7,15 +7,20 @@ import yaml
 from loguru import logger
 from repsim.benchmark.abstract_experiment import AbstractExperiment
 from repsim.benchmark.group_separation_experiment import GroupSeparationExperiment
+from repsim.benchmark.model_selection import _filter_models
+from repsim.benchmark.model_selection import _separate_models_by_keys
 from repsim.benchmark.model_selection import get_grouped_models
 from repsim.benchmark.monotonicity_experiment import MonotonicityExperiment
 from repsim.benchmark.multimodel_experiments import MultiModelExperiment
+from repsim.benchmark.output_correlation_experiment import OutputCorrelationExperiment
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import create_pivot_excel_table
+from repsim.benchmark.utils import save_full_table
 from repsim.measures import ALL_MEASURES
-from repsim.measures.utils import SimilarityMeasure
+from repsim.measures import FUNCTIONAL_SIMILARITY_MEASURES
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 
 
 def get_experiment_from_name(name: str) -> Type[AbstractExperiment]:
@@ -40,7 +45,7 @@ def read_yaml_config(config_path: str) -> dict:
     return config
 
 
-def get_measures(config: dict) -> list[SimilarityMeasure]:
+def get_measures(config: dict) -> list[RepresentationalSimilarityMeasure]:
     include_key = "included_measures"
     exclude_key = "excluded_measures"
     assert not (
@@ -116,8 +121,17 @@ def verify_config(config: dict) -> None:
         ), "The 'raw_results_filename' must end with '.parquet'"
 
 
-def create_table(config: dict):
-    if config.get("table_creation", None) is not None:
+def create_pivot_table(config: dict):
+    table_cfg = config.get("table_creation", None)
+    save_aggregated_df = table_cfg.get("save_aggregated_df", True)
+    if table_cfg is not None and save_aggregated_df:
+        return True
+    return False
+
+
+def create_full_table(config: dict):
+    table_cfg = config.get("table_creation", None)
+    if table_cfg is not None and table_cfg.get("save_full_df", False):
         return True
     return False
 
@@ -131,6 +145,9 @@ def run(config_path: str):
     cache_to_disk = config.get("cache_to_disk", False)
     cache_to_mem = config.get("cache_to_mem", False)
     raw_results_filename = config.get("raw_results_filename", None)
+    storage_path = (
+        os.path.join(EXPERIMENT_RESULTS_PATH, raw_results_filename) if raw_results_filename is not None else None
+    )
     only_extract_reps = config.get("only_extract_reps", False)
 
     logger.info(f"Running with {threads} Threads! Reduce if running OOM or set to 1 for single threaded execution.")
@@ -157,11 +174,27 @@ def run(config_path: str):
                     grouped_models=group,
                     measures=measures,
                     representation_dataset=experiment["representation_dataset"],
-                    storage_path=(
-                        os.path.join(EXPERIMENT_RESULTS_PATH, raw_results_filename)
-                        if raw_results_filename is not None
-                        else None
-                    ),
+                    storage_path=storage_path,
+                    threads=threads,
+                    cache_to_disk=cache_to_disk,
+                    cache_to_mem=cache_to_mem,
+                    only_extract_reps=only_extract_reps,
+                )
+                all_experiments.append(exp)
+
+        if experiment["type"] == "OutputCorrelationExperiment":
+            filter_key_vals = experiment.get("filter_key_vals", None)
+            separation_keys = experiment.get("separation_keys", None)
+
+            models = _filter_models(ALL_TRAINED_MODELS, filter_key_vals)
+            model_sets = _separate_models_by_keys(models, separation_keys)
+            for models in model_sets:
+                exp = OutputCorrelationExperiment(
+                    models=models,
+                    repsim_measures=measures,
+                    functional_measures=list(FUNCTIONAL_SIMILARITY_MEASURES.values()),
+                    representation_dataset=experiment["representation_dataset"],
+                    storage_path=storage_path,
                     threads=threads,
                     cache_to_disk=cache_to_disk,
                     cache_to_mem=cache_to_mem,
@@ -176,11 +209,13 @@ def run(config_path: str):
         if not only_extract_reps:
             exp_results.extend(ex.eval())
 
-    if create_table(config) and (not only_extract_reps):
+    if create_pivot_table(config) and (not only_extract_reps):
         create_pivot_excel_table(
             exp_results,
             **config["table_creation"],
         )
+    if create_full_table(config) and (not only_extract_reps):
+        save_full_table(exp_results, config["table_creation"]["full_df_filename"])
 
 
 if __name__ == "__main__":

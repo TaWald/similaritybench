@@ -4,8 +4,8 @@ import numpy as np
 import numpy.typing as npt
 import torch
 from repsim.measures.utils import flatten
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
-from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -34,7 +34,7 @@ def imd_score(
     return float(np.mean(scores))
 
 
-class IMDScore(SimilarityMeasure):
+class IMDScore(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=imd_score,

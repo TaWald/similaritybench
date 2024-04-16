@@ -20,7 +20,7 @@ from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import name_of_measure
 from repsim.measures import ALL_MEASURES
 from repsim.measures import CLASSES
-from repsim.measures.utils import SimilarityMeasure
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 
 
 class MultiModelExperiment:
@@ -28,7 +28,7 @@ class MultiModelExperiment:
         self,
         experiment_name: MULTIMODEL_EXPERIMENT_IDENTIFIER,
         models: list[TrainedModel],
-        measures: list[SimilarityMeasure],
+        measures: list[RepresentationalSimilarityMeasure],
         device: int = None,
         storage_path: str | None = None,
     ) -> None:

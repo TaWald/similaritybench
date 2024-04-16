@@ -6,8 +6,8 @@ import scipy.linalg
 import torch
 from repsim.measures.utils import center_columns
 from repsim.measures.utils import flatten
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
-from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -26,7 +26,7 @@ def linear_reg(
     return float((np.linalg.norm(Rp_orthonormal_base.T @ R, ord="fro") ** 2) / (np.linalg.norm(R, ord="fro") ** 2))
 
 
-class LinearRegression(SimilarityMeasure):
+class LinearRegression(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=linear_reg,

@@ -13,7 +13,7 @@ from loguru import logger
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.benchmark.utils import name_of_measure
-from repsim.measures.utils import SimilarityMeasure
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.utils import ModelRepresentations
 
 
@@ -276,7 +276,7 @@ class AugmentationTest:
     def __init__(
         self,
         models: list[NLPModel],
-        measures: list[SimilarityMeasure],
+        measures: list[RepresentationalSimilarityMeasure],
         representation_dataset_id: str,
         storage_path: str | None,
         device: str,

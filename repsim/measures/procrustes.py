@@ -12,8 +12,8 @@ from repsim.measures.utils import adjust_dimensionality
 from repsim.measures.utils import center_columns
 from repsim.measures.utils import flatten
 from repsim.measures.utils import normalize_matrix_norm
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
-from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -163,7 +163,7 @@ def permutation_aligned_cossim(R: Union[torch.Tensor, npt.NDArray], Rp: Union[to
     return sum_cossim / R.shape[0]
 
 
-class ProcrustesSizeAndShapeDistance(SimilarityMeasure):
+class ProcrustesSizeAndShapeDistance(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=procrustes_size_and_shape_distance,
@@ -179,7 +179,7 @@ class ProcrustesSizeAndShapeDistance(SimilarityMeasure):
         )
 
 
-class OrthogonalProcrustesCenteredAndNormalized(SimilarityMeasure):
+class OrthogonalProcrustesCenteredAndNormalized(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=orthogonal_procrustes_centered_and_normalized,
@@ -195,7 +195,7 @@ class OrthogonalProcrustesCenteredAndNormalized(SimilarityMeasure):
         )
 
 
-class PermutationProcrustes(SimilarityMeasure):
+class PermutationProcrustes(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=permutation_procrustes,
@@ -211,7 +211,7 @@ class PermutationProcrustes(SimilarityMeasure):
         )
 
 
-class OrthogonalAngularShapeMetricCentered(SimilarityMeasure):
+class OrthogonalAngularShapeMetricCentered(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=orthogonal_angular_shape_metric_centered,
@@ -227,7 +227,7 @@ class OrthogonalAngularShapeMetricCentered(SimilarityMeasure):
         )
 
 
-class AlignedCosineSimilarity(SimilarityMeasure):
+class AlignedCosineSimilarity(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=aligned_cossim,

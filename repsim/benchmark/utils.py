@@ -1,4 +1,5 @@
 import os
+import warnings
 from collections.abc import Sequence
 from dataclasses import asdict
 from itertools import chain
@@ -11,7 +12,9 @@ import pandas as pd
 from loguru import logger
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.registry import TrainedModel
-from repsim.measures.utils import SimilarityMeasure
+from repsim.measures.utils import BaseSimilarityMeasure
+from repsim.measures.utils import RepresentationalSimilarityMeasure
+from repsim.utils import BaseModelOutput
 from repsim.utils import SingleLayerRepresentation
 
 
@@ -37,9 +40,9 @@ class ExperimentStorer:
 
     def add_results(
         self,
-        src_single_rep: SingleLayerRepresentation,
-        tgt_single_rep: SingleLayerRepresentation,
-        metric: SimilarityMeasure,
+        src_single_rep: BaseModelOutput,
+        tgt_single_rep: BaseModelOutput,
+        metric: BaseSimilarityMeasure,
         metric_value: float,
         runtime: float | None = None,
         overwrite: bool = False,
@@ -100,9 +103,9 @@ class ExperimentStorer:
 
     def _sort_models(
         self,
-        single_rep_a: SingleLayerRepresentation,
-        single_rep_b: SingleLayerRepresentation,
-    ) -> tuple[SingleLayerRepresentation, SingleLayerRepresentation]:
+        single_rep_a: BaseModelOutput,
+        single_rep_b: BaseModelOutput,
+    ) -> tuple[BaseModelOutput, BaseModelOutput]:
         """Return the SingeLayerRepresentations in a sorted order, to avoid permutation issues."""
         id_a, id_b = single_rep_a.unique_identifier(), single_rep_b.unique_identifier()
         if id_a < id_b:
@@ -111,16 +114,16 @@ class ExperimentStorer:
 
     def _get_comparison_id(
         self,
-        src_single_rep: SingleLayerRepresentation,
-        tgt_single_rep: SingleLayerRepresentation,
+        src_single_rep: BaseModelOutput,
+        tgt_single_rep: BaseModelOutput,
         metric_name: str,
     ) -> str:
         """
         Serialize the experiment setting into a unique identifier that can be used to index if it already exists in the dataframe.
 
         Args:
-            single_rep_a (SingleLayerRepresentation): The representation of a single layer in model A.
-            single_rep_b (SingleLayerRepresentation): The representation of a single layer in model B.
+            single_rep_a (BaseModelOutput): The representation of a single layer in model A.
+            single_rep_b (BaseModelOutput): The representation of a single layer in model B.
             metric_name (str): The name of the metric used for comparison.
 
         Returns:
@@ -135,15 +138,15 @@ class ExperimentStorer:
 
     def get_comp_result(
         self,
-        src_single_rep: SingleLayerRepresentation,
-        tgt_single_rep: SingleLayerRepresentation,
-        metric: SimilarityMeasure,
+        src_single_rep: BaseModelOutput,
+        tgt_single_rep: BaseModelOutput,
+        metric: BaseSimilarityMeasure,
     ) -> float | None:
         """
         Return the result of the comparison
         Arsg:
-            src_single_rep: SingleLayerRepresentation
-            tgt_single_rep: SingleLayerRepresentation
+            src_single_rep: BaseModelOutput
+            tgt_single_rep: BaseModelOutput
             metric: SimilarityMeasure
         Returns:
             float: The result of the comparison
@@ -201,16 +204,16 @@ class ExperimentStorer:
 
     def comparison_exists(
         self,
-        src_single_rep: SingleLayerRepresentation,
-        tgt_single_rep: SingleLayerRepresentation,
-        metric: SimilarityMeasure,
+        src_single_rep: BaseModelOutput,
+        tgt_single_rep: BaseModelOutput,
+        metric: BaseSimilarityMeasure,
         ignore_symmetry: bool = False,
     ) -> bool:
         """
         Check if the comparison (or if symmetrict the inverse) already exists in the dataframe.
         Args:
-            src_single_rep: SingleLayerRepresentation  # Represents the source model that in non-symmetric cases
-            tgt_single_rep: SingleLayerRepresentation  # represents the target in non-symmetric cases
+            src_single_rep: BaseModelOutput  # Represents the source model that in non-symmetric cases
+            tgt_single_rep: BaseModelOutput  # represents the target in non-symmetric cases
             metric: SimilarityMeasure
         Returns:
             bool: True if the comparison exists, False otherwise.
@@ -252,13 +255,13 @@ class ExperimentStorer:
 
 
 def get_in_group_cross_group_sims(
-    in_group_slrs, out_group_slrs, measure: SimilarityMeasure, storer: ExperimentStorer
+    in_group_slrs, out_group_slrs, measure: BaseSimilarityMeasure, storer: ExperimentStorer
 ):
     """
     Get the in-group and cross-group similarities for a given measure.
     Args:
-        in_group_slrs: List of SingleLayerRepresentations of the in-group models.
-        out_group_slrs: List of SingleLayerRepresentations of the out-group models.
+        in_group_slrs: List of BaseModelOutputs of the in-group models.
+        out_group_slrs: List of BaseModelOutputs of the out-group models.
         measure_name: Name of the measure to be used.
         storer: ExperimentStorer object to store and retrieve the results.
         Returns:
@@ -332,8 +335,17 @@ def create_pivot_excel_table(
         raise ValueError(f"Unsupported file format: {filename}")
 
 
+def save_full_table(eval_result: list[dict], full_df_filename: str):
+    df = pd.DataFrame.from_records(eval_result)
+    df.to_csv(os.path.join(EXPERIMENT_RESULTS_PATH, full_df_filename))
+
+
 def name_of_measure(obj):
-    if isinstance(obj, SimilarityMeasure):
+    warnings.warn(
+        "Use the class implementations of the similarity measures instead and replace calls of this function with the .name attribute",
+        category=DeprecationWarning,
+    )
+    if isinstance(obj, RepresentationalSimilarityMeasure):
         return name_of_measure(obj.sim_func)
     elif hasattr(obj, "__name__"):
         # repsim.measures.utils.Pipeline
