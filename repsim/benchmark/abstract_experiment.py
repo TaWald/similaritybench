@@ -63,6 +63,8 @@ class AbstractExperiment:
         storer: ExperimentStorer,
         tqdm_descr: str = "",
     ):
+        if len(todo_combos) == 0:
+            return
         obj_src, _, _ = todo_combos[0]
         value_attr_name = obj_src.value_attr_name()
 

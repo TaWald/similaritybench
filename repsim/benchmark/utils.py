@@ -335,6 +335,11 @@ def create_pivot_excel_table(
         raise ValueError(f"Unsupported file format: {filename}")
 
 
+def save_full_table(eval_result: list[dict], full_df_filename: str):
+    df = pd.DataFrame.from_records(eval_result)
+    df.to_csv(os.path.join(EXPERIMENT_RESULTS_PATH, full_df_filename))
+
+
 def name_of_measure(obj):
     warnings.warn(
         "Use the class implementations of the similarity measures instead and replace calls of this function with the .name attribute",

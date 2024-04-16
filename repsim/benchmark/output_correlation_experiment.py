@@ -147,10 +147,12 @@ class OutputCorrelationExperiment(AbstractExperiment):
         ],
         int,
     ]:
-        if type == "representation":
+        if type == "representations":
             get_obj_func = self._get_final_layer_representation
+            measures = self.measures
         elif type == "predictions":
             get_obj_func = self._get_model_output
+            measures = self.functional_measures
         else:
             raise ValueError(f"Unexpected {type=}. Must be one of ['representations', 'predictions'].")
 
@@ -165,7 +167,7 @@ class OutputCorrelationExperiment(AbstractExperiment):
 
             todo_by_measure = []
 
-            for measure in self.measures:
+            for measure in measures:
                 if not storer.comparison_exists(obj_source, obj_target, measure):
                     todo_by_measure.append(measure)
                     n_total += 1
@@ -176,13 +178,14 @@ class OutputCorrelationExperiment(AbstractExperiment):
     def run(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
         logger.debug(f"Using models: {[m.id for m in self.models]}")
-        combos = product(self.models, self.models)  # Necessary for non-symmetric values
 
         logger.info("")
         with ExperimentStorer(self.storage_path) as storer:
+            combos = product(self.models, self.models)  # Necessary for non-symmetric values
             todo_combos, n_total = self._get_todo_combos(combos, storer, type="representations")
             self.compare_combos(todo_combos, n_total, storer, tqdm_descr="Comparing representations")
 
+            combos = product(self.models, self.models)
             todo_combos, n_total = self._get_todo_combos(combos, storer, type="predictions")
             self.compare_combos(todo_combos, n_total, storer, tqdm_descr="Comparing predictions")
         return
