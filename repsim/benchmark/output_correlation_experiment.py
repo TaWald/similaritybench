@@ -80,6 +80,8 @@ class OutputCorrelationExperiment(AbstractExperiment):
                     model_pairs = product(self.models, self.models)
 
                 for model_pair in model_pairs:
+                    if model_pair[0] == model_pair[1]:
+                        continue
                     slr_a, slr_b = [self._get_final_layer_representation(m, self.cache_to_mem) for m in model_pair]
                     pred_a, pred_b = [self._get_model_output(m, self.cache_to_mem) for m in model_pair]
                     repsims.append(storer.get_comp_result(slr_a, slr_b, repsim_measure))
