@@ -26,6 +26,7 @@ from repsim.measures.utils import SHAPE_TYPE
 from vision.arch.arch_loading import load_model_from_info_file
 from vision.util.file_io import get_vision_model_info
 from vision.util.vision_rep_extraction import get_single_layer_vision_representation_on_demand
+from vision.util.vision_rep_extraction import get_vision_output_on_demand
 
 if TYPE_CHECKING:
     from vision.arch.abstract_acti_extr import AbsActiExtrArch
@@ -259,6 +260,14 @@ class VisionModel(TrainedModel):
         )
         return model_rep
 
+    def get_output(self, representation_dataset: Optional[str] = None, **kwargs) -> Prediction:
+        out = VisionModelOutput(
+            origin_model=self,
+            cache=True,
+            _representation_dataset=representation_dataset,
+        )
+        return out
+
 
 @dataclass
 class TrainedModelRep(TrainedModel):
@@ -491,6 +500,19 @@ class NLPModelOutput(Prediction):
             shortcut_rate=representation_dataset.shortcut_rate,
             shortcut_seed=representation_dataset.shortcut_seed,
             feature_column=representation_dataset.feature_column,
+        )
+        return logits
+
+
+class VisionModelOutput(Prediction):
+    def _extract_output(self) -> torch.Tensor | np.ndarray:
+        assert self.origin_model is not None
+        logits = get_vision_output_on_demand(
+            architecture_name=self.origin_model.architecture,
+            train_dataset=self.origin_model.train_dataset,
+            seed=self.origin_model.seed,
+            setting_identifier=self.origin_model.identifier,
+            representation_dataset=self._representation_dataset,
         )
         return logits
 
