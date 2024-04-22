@@ -122,6 +122,7 @@ class GNNTester:
         reps = get_representations(
             model=model,
             data=self.data,
+            device=self.device,
             test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
             layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
         )
@@ -139,7 +140,7 @@ def parse_args():
 
     # Test parameters
     parser.add_argument(
-        "-a", "--architectures", type=str, nargs="+", default=["GCN"], choices=GNN_LIST, help="GNN type to benchmark"
+        "-a", "--architectures", type=str, nargs="+", default=GNN_LIST, choices=GNN_LIST, help="GNN type to benchmark"
     )
     parser.add_argument(
         "-d", "--datasets", type=str, nargs="+", default=["cora"], choices=DATASET_LIST, help="Dataset to benchmark"

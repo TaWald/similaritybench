@@ -95,7 +95,11 @@ def test(model, data, test_idx):
 
 
 @torch.no_grad()
-def get_representations(model, data, test_idx, layer_ids):
+def get_representations(model, data, device, test_idx, layer_ids):
+    model = model.to(device)
+    data = data.to(device)
+    test_idx = test_idx.to(device)
+
     model.eval()
 
     activations = {}
@@ -118,6 +122,6 @@ def get_representations(model, data, test_idx, layer_ids):
 
     reps = dict()
     for i in layer_ids:
-        reps[i] = activations[f"layer{i + 1}"].detach()[test_idx].numpy()
+        reps[i] = activations[f"layer{i + 1}"].detach()[test_idx].cpu().numpy()
 
     return reps

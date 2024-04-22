@@ -192,6 +192,7 @@ class GraphTrainer(ABC):
         reps = get_representations(
             model=model,
             data=setting_data,
+            device=self.device,
             test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
             layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
         )
