@@ -19,6 +19,7 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
         ds.Dataset.GaussM,
         ds.Dataset.GaussS,
         ds.Dataset.GaussOff,
+        ds.Dataset.RandomLabelC10,
     ]:
         params = ds.Params(
             architecture_name=architecture_name,
