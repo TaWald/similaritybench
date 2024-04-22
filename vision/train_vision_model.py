@@ -3,6 +3,7 @@ from functools import partial
 
 from loguru import logger
 from vision.arch.arch_loading import load_model_from_info_file
+from vision.data.random_labels.rl_c10_dm import RandomLabel_CIFAR10DataModule
 from vision.losses.dummy_loss import DummyLoss
 from vision.training.ke_train_modules.base_training_module import BaseLightningModule
 from vision.training.ke_train_modules.shortcut_lightning_module import ShortcutLightningModule
@@ -73,6 +74,10 @@ def train_vision_model(
     else:
         lnm_cls = BaseLightningModule
         trainer_cls = BaseTrainer
+
+    if isinstance(datamodule, RandomLabel_CIFAR10DataModule):
+        datamodule.rng_seed = (seed_id + 1) * 123  # Different rng seeds for different seeds.
+
     lightning_mod = lnm_cls(
         model_info=model_info,
         network=loaded_model,
