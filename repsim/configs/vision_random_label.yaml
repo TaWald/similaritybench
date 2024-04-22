@@ -17,7 +17,7 @@ excluded_measures:
 threads: 1
 cache_to_disk: True
 cache_to_mem: False
-only_extract_reps: False
+only_extract_reps: True
 experiments:
   - name: Vision Random Label Experiments
     type: GroupSeparationExperiment  # Defines the type of experiment class to use
