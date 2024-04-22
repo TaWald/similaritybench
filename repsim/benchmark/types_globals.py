@@ -26,9 +26,12 @@ BENCHMARK_NN_ARCHITECTURES = (
 # ----------------------------- Datasets trained on ---------------------------- #
 VISION_DATASET_TRAINED_ON = Literal["CIFAR10", "CIFAR100", "ImageNet"]
 NLP_DATASET_TRAINED_ON = Literal["IMDB"]
-GRAPH_DATASET_TRAINED_ON = Literal["ogbn-arxiv"]
+GRAPH_DATASET_TRAINED_ON = Literal["ogbn-arxiv", "cora", "reddit", "flickr"]
 
-ARXIV_DATASET = get_args(GRAPH_DATASET_TRAINED_ON)[0]
+ARXIV_DATASET_NAME = get_args(GRAPH_DATASET_TRAINED_ON)[0]
+CORA_DATASET_NAME = get_args(GRAPH_DATASET_TRAINED_ON)[1]
+REDDIT_DATASET_NAME = get_args(GRAPH_DATASET_TRAINED_ON)[2]
+FLICKR_DATASET_NAME = get_args(GRAPH_DATASET_TRAINED_ON)[3]
 
 BENCHMARK_DATASET = VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON
 BENCHMARK_DATASETS_LIST = (
@@ -36,6 +39,7 @@ BENCHMARK_DATASETS_LIST = (
     + list(get_args(NLP_DATASET_TRAINED_ON))
     + list(get_args(GRAPH_DATASET_TRAINED_ON))
 )
+
 
 # ---------------------------- Identifier_settings --------------------------- #
 # These are shared across domains and datasets

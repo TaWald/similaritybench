@@ -4,6 +4,9 @@ from typing import Dict
 
 import numpy as np
 import torch
+from graphs.config import SPLIT_IDX_TEST_KEY
+from graphs.config import SPLIT_IDX_TRAIN_KEY
+from graphs.config import SPLIT_IDX_VAL_KEY
 from torch.nn import functional as func
 from torcheval.metrics.functional import multiclass_accuracy
 from tqdm import tqdm
@@ -20,12 +23,14 @@ def train_model(
     data = data.to(device)
 
     # TODO: maybe rearrange this, data passing is currently quite messy
-    train_idx = split_idx["train"].to(device)
-    val_idx = split_idx["valid"]
+    train_idx = split_idx[SPLIT_IDX_TRAIN_KEY].to(device)
+    val_idx = split_idx[SPLIT_IDX_VAL_KEY]
 
     model.reset_parameters()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=optimizer_params["lr"])
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=optimizer_params["lr"], weight_decay=optimizer_params["weight_decay"]
+    )
 
     results = []
     for epoch in tqdm(range(1, 1 + optimizer_params["epochs"])):
@@ -35,7 +40,7 @@ def train_model(
         epoch_res = [epoch, loss, train_acc, val_acc]
 
         if b_test:
-            test_acc = test(model, data, test_idx=split_idx["test"])
+            test_acc = test(model, data, test_idx=split_idx[SPLIT_IDX_TEST_KEY])
             epoch_res.append(test_acc)
 
         results.append(epoch_res)
@@ -43,7 +48,7 @@ def train_model(
     torch.save(model.state_dict(), save_path)
 
     if b_test:
-        return results, test(model, data, split_idx["test"])
+        return results, test(model, data, split_idx[SPLIT_IDX_TEST_KEY])
 
     return results
 
