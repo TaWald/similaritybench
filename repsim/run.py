@@ -209,13 +209,14 @@ def run(config_path: str):
         if not only_extract_reps:
             exp_results.extend(ex.eval())
 
+    if create_full_table(config) and (not only_extract_reps):
+        save_full_table(exp_results, config["table_creation"]["full_df_filename"])
+
     if create_pivot_table(config) and (not only_extract_reps):
         create_pivot_excel_table(
             exp_results,
             **config["table_creation"],
         )
-    if create_full_table(config) and (not only_extract_reps):
-        save_full_table(exp_results, config["table_creation"]["full_df_filename"])
 
 
 if __name__ == "__main__":
