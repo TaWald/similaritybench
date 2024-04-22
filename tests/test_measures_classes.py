@@ -3,6 +3,7 @@ import pytest
 from repsim.measures import AlignedCosineSimilarity
 from repsim.measures import CKA
 from repsim.measures import ConcentricityDifference
+from repsim.measures import Disagreement
 from repsim.measures import DistanceCorrelation
 from repsim.measures import EigenspaceOverlapScore
 from repsim.measures import GeometryScore
@@ -10,6 +11,7 @@ from repsim.measures import Gulp
 from repsim.measures import HardCorrelationMatch
 from repsim.measures import IMDScore
 from repsim.measures import JaccardSimilarity
+from repsim.measures import JSD
 from repsim.measures import LinearRegression
 from repsim.measures import MagnitudeDifference
 from repsim.measures import OrthogonalAngularShapeMetricCentered
@@ -299,3 +301,31 @@ def test_soft_correlation_match(rep1, rep2, shape, expected_outcome):
 )
 def test_procrustes_size_and_shape_distance(rep1, rep2, shape, expected_outcome):
     _test_generic_measure(ProcrustesSizeAndShapeDistance(), rep1, rep2, shape, expected_outcome)
+
+
+def test_jsd():
+    measure = JSD()
+    # Identical inputs
+    logits1 = np.arange(8).reshape(4, 2)
+    logits2 = np.arange(8).reshape(4, 2)
+    out = measure(logits1, logits2)
+    np.testing.assert_allclose(out, 0)
+
+    # negative inputs
+    logits1 = -1 * np.arange(8).reshape(4, 2)
+    logits2 = np.arange(8).reshape(4, 2)
+    out = measure(logits1, logits2)
+
+
+def test_disagreement():
+    measure = Disagreement()
+    # Identical inputs
+    logits1 = np.arange(8).reshape(4, 2)
+    logits2 = np.arange(8).reshape(4, 2)
+    out = measure(logits1, logits2)
+    np.testing.assert_allclose(out, 0)
+
+    # negative inputs
+    logits1 = -1 * np.arange(8).reshape(4, 2)
+    logits2 = np.arange(8).reshape(4, 2)
+    out = measure(logits1, logits2)

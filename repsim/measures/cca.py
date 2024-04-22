@@ -504,7 +504,12 @@ from typing import Union  # noqa:e402
 import numpy.typing as npt  # noqa:e402
 import torch  # noqa:e402
 
-from repsim.measures.utils import SHAPE_TYPE, flatten, to_numpy_if_needed, SimilarityMeasure  # noqa:e402
+from repsim.measures.utils import (
+    SHAPE_TYPE,
+    flatten,
+    to_numpy_if_needed,
+    RepresentationalSimilarityMeasure,
+)  # noqa:e402
 
 
 def svcca(
@@ -527,7 +532,7 @@ def pwcca(
     return compute_pwcca(R.T, Rp.T)[0]
 
 
-class SVCCA(SimilarityMeasure):
+class SVCCA(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=svcca,
@@ -546,7 +551,7 @@ class SVCCA(SimilarityMeasure):
         return self.sim_func(R, Rp, shape)
 
 
-class PWCCA(SimilarityMeasure):
+class PWCCA(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=pwcca,

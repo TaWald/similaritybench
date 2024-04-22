@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+import numpy as np
 import torch
 from tqdm import tqdm
 
@@ -50,6 +51,42 @@ def get_single_layer_vision_representation_on_demand(
     return reps
 
 
+def get_vision_output_on_demand(
+    architecture_name: str,
+    train_dataset: str,
+    seed: int,
+    setting_identifier: str | None,
+    representation_dataset: str,
+) -> np.ndarray:
+    """Creates Model Representations with representations that can be extracted only when needed)"""
+    if setting_identifier == "Normal":
+        model_info: ds.ModelInfo = get_vision_model_info(
+            architecture_name=architecture_name,
+            dataset=train_dataset,
+            seed_id=seed,
+        )
+    else:
+        model_info: ds.ModelInfo = get_vision_model_info(
+            architecture_name=architecture_name,
+            dataset=train_dataset,
+            seed_id=seed,
+            setting_identifier=setting_identifier,
+        )
+    # ---------- Create the on-demand-callable functions for each layer ---------- #
+    """Function providing the representations for a single layer on demand."""
+    loaded_model = load_model_from_info_file(model_info, load_ckpt=True)
+    datamodule = fd.get_datamodule(dataset=representation_dataset)
+    test_dataloader = datamodule.test_dataloader(batch_size=100)
+    res = extract_single_layer_representations(
+        0, loaded_model, test_dataloader, None, meta_info=True, remain_spatial=True
+    )  # We do extract reps, but discard them and only use the logits instead.
+    if isinstance(res["logits"], torch.Tensor):
+        logits = res["logits"].detach().cpu().numpy()
+    else:
+        logits = res["logits"]
+    return logits
+
+
 def extract_single_layer_representations(
     layer_id: int,
     model: AbsActiExtrArch,
@@ -74,8 +111,6 @@ def extract_single_layer_representations(
     model.cuda()
     with torch.no_grad():
         for cnt, batch in enumerate(dataloader):
-            if cnt > 50:
-                continue
             im, lbl = batch[0], batch[1]
             y_logit = model(im.cuda())
             y_probs = torch.softmax(y_logit, dim=1)

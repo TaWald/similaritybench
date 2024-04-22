@@ -173,6 +173,52 @@ def extract_representations(
     return to_ntxd_shape(all_representations)
 
 
+# TODO: this almost a duplicate of extract_representations. Make this easier to maintain
+def extract_logits(
+    model: Any,
+    tokenizer: Union[transformers.PreTrainedTokenizer, transformers.PreTrainedTokenizerFast],
+    dataset: datasets.Dataset,
+    prompt_creator: Union[Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]],
+    device: str,
+) -> torch.Tensor:
+    all_logits = []
+
+    # Batching would be more efficient. But then we need to remove the padding afterwards etc.
+    # Representation extraction is not slow enough for me to care.
+    prompts = list(map(prompt_creator, dataset))  # type:ignore
+    for prompt in tqdm(prompts):
+        # tokenizer kwargs are BERT specific
+        if isinstance(prompt, tuple):  # this happens for example with MNLI
+            toks = tokenizer(
+                text=prompt[0],
+                text_pair=prompt[1],
+                return_tensors="pt",
+                padding="max_length",
+                max_length=128,
+                truncation=True,
+            )
+        else:  # eg for SST2
+            toks = tokenizer(
+                text=prompt,
+                return_tensors="pt",
+                padding="max_length",
+                max_length=128,
+                truncation=True,
+            )
+        input_ids = toks["input_ids"].to(device)  # type:ignore
+        token_type_ids = toks["token_type_ids"].to(device)  # type:ignore
+        attention_mask = toks["attention_mask"].to(device)  # type:ignore
+        out = model(
+            input_ids=input_ids,
+            token_type_ids=token_type_ids,
+            attention_mask=attention_mask,
+            output_hidden_states=False,
+        ).logits
+        all_logits.append(out.to("cpu"))
+
+    return torch.cat(all_logits, dim=0)
+
+
 def to_ntxd_shape(reps: List[Tuple[torch.Tensor, ...]]) -> Tuple[torch.Tensor, ...]:
     concated_reps = []
     n_layers = len(reps[0])
@@ -248,3 +294,65 @@ def get_representations(
     )
     logger.debug(f"Shape of representations: {[rep.shape for rep in reps]}")
     return reps
+
+
+# TODO: this is almost exactly duplicated from get_representations. Make this easier to maintain
+@torch.no_grad()
+def get_logits(
+    model_path: str,
+    model_type: Literal["sequence-classification"],
+    tokenizer_name: str,
+    dataset_path: str,
+    dataset_config: str | None,
+    dataset_local_path: str | None,
+    dataset_split: str,
+    device: str,
+    shortcut_rate: Optional[float] = None,
+    shortcut_seed: Optional[int] = None,
+    feature_column: Optional[str] = None,
+):
+    tokenizer_kwargs = None
+
+    # To avoid loading datasets all the time (which takes considerable time), cache them once we loaded them once.
+    dataset_id = "__".join(
+        map(str, [dataset_path, dataset_config, dataset_local_path, dataset_split, shortcut_rate, shortcut_seed])
+    )
+    dataset = DATASETS.get(dataset_id, None)
+    if dataset is None:
+        # This is the first time the dataset gets loaded
+        dataset = get_dataset(dataset_path, dataset_config, local_path=dataset_local_path)
+        if shortcut_rate is not None:
+            assert shortcut_seed is not None
+            assert feature_column is not None
+            logger.info(f"Adding shortcuts with rate {shortcut_rate} and seed {shortcut_seed}")
+            label_column = "label"
+            shortcut_adder = ShortcutAdder(
+                num_labels=len(np.unique(dataset["train"][label_column])),
+                p=shortcut_rate,
+                feature_column=feature_column,
+                label_column=label_column,
+                seed=shortcut_seed,
+            )
+            dataset = dataset.map(shortcut_adder)
+            feature_column = shortcut_adder.new_feature_column
+            tokenizer_kwargs = {"additional_special_tokens": shortcut_adder.new_tokens}
+
+        dataset = dataset[dataset_split]
+        DATASETS[dataset_id] = dataset  # add processed dataset to cache
+    prompt_creator = get_prompt_creator(dataset_path, dataset_config, feature_column)
+
+    if tokenizer_kwargs is None:
+        tokenizer_kwargs = {}
+    tokenizer = get_tokenizer(tokenizer_name, **tokenizer_kwargs)
+
+    with torch.device(device):
+        model = get_model(model_path, model_type)
+    logits = extract_logits(
+        model,
+        tokenizer,
+        dataset,
+        prompt_creator,
+        device,
+    )
+    logger.debug(f"Shape of logits: {logits.shape}")
+    return logits

@@ -10,8 +10,8 @@ import sklearn.metrics
 import sklearn.neighbors
 import torch
 from repsim.measures.utils import flatten
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
-from repsim.measures.utils import SimilarityMeasure
 from repsim.measures.utils import to_numpy_if_needed
 
 
@@ -163,7 +163,7 @@ class NearestNeighborSimilarityFunction(Protocol):
     ) -> float: ...
 
 
-class JaccardSimilarity(SimilarityMeasure):
+class JaccardSimilarity(RepresentationalSimilarityMeasure):
     sim_func: NearestNeighborSimilarityFunction
 
     def __init__(self):
@@ -193,7 +193,7 @@ class JaccardSimilarity(SimilarityMeasure):
         return self.sim_func(R, Rp, shape, k=k, inner=inner, n_jobs=n_jobs)
 
 
-class SecondOrderCosineSimilarity(SimilarityMeasure):
+class SecondOrderCosineSimilarity(RepresentationalSimilarityMeasure):
     sim_func: NearestNeighborSimilarityFunction
 
     def __init__(self):
@@ -221,7 +221,7 @@ class SecondOrderCosineSimilarity(SimilarityMeasure):
         return self.sim_func(R, Rp, shape, k=k, n_jobs=n_jobs)  # type: ignore
 
 
-class RankSimilarity(SimilarityMeasure):
+class RankSimilarity(RepresentationalSimilarityMeasure):
     sim_func: NearestNeighborSimilarityFunction
 
     def __init__(self):

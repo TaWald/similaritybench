@@ -27,6 +27,8 @@ from .nearest_neighbor import rank_similarity
 from .nearest_neighbor import RankSimilarity
 from .nearest_neighbor import second_order_cosine_similarity
 from .nearest_neighbor import SecondOrderCosineSimilarity
+from .output_similarity import Disagreement
+from .output_similarity import JSD
 from .procrustes import aligned_cossim
 from .procrustes import AlignedCosineSimilarity
 from .procrustes import orthogonal_angular_shape_metric  # noqa: F401
@@ -113,3 +115,5 @@ CLASSES = [
 ]
 
 ALL_MEASURES = {m().name: m() for m in CLASSES}
+
+FUNCTIONAL_SIMILARITY_MEASURES = {m().name: m() for m in [JSD, Disagreement]}

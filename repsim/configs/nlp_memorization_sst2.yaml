@@ -1,8 +1,8 @@
 # Holds all information needed to run experiments.
 excluded_measures:
-  - EigenspaceOverlapScore
-  - GeometryScore
-  - IMDScore
+  # - EigenspaceOverlapScore
+  # - GeometryScore
+  # - IMDScore
   - LinearRegression
 threads: 1
 cache_to_disk: False
@@ -39,6 +39,10 @@ experiments:
 raw_results_filename: nlp_mem_sst2_v2.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
 
 table_creation:
+  save_full_df: True
+  full_df_filename: nlp_mem_sst2_full.csv
+  # ---
+  save_aggregated_df: True
   row_index: similarity_measure # The key to use as the row index in the table.
   columns: # The keys to use as columns (can be list[str] or a str)
     - quality_measure

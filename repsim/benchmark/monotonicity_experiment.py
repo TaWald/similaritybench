@@ -1,13 +1,13 @@
 from repsim.benchmark.abstract_experiment import AbstractExperiment
 from repsim.benchmark.registry import TrainedModel
-from repsim.measures.utils import SimilarityMeasure
+from repsim.measures.utils import RepresentationalSimilarityMeasure
 
 
 class MonotonicityExperiment(AbstractExperiment):
     def __init__(
         self,
         grouped_models: list[TrainedModel],
-        measures: list[SimilarityMeasure],
+        measures: list[RepresentationalSimilarityMeasure],
         representation_dataset: str,
         storage_path: str | None = None,
         meta_data: dict | None = None,
