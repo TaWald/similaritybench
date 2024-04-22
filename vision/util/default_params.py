@@ -135,6 +135,7 @@ def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
         ds.Dataset.GaussM,
         ds.Dataset.GaussS,
         ds.Dataset.GaussOff,
+        ds.Dataset.RandomLabelC10,
     ]:
         output_classes = 10
         in_ch = 3
