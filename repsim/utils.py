@@ -234,19 +234,12 @@ class VisionModel(TrainedModel):
         seed_id = self.seed
         setting_identifier = self.identifier
 
-        if setting_identifier == "Normal":
-            model_info: ds.ModelInfo = get_vision_model_info(
-                architecture_name=architecture_name,
-                dataset=train_dataset,
-                seed_id=seed_id,
-            )
-        else:
-            model_info: ds.ModelInfo = get_vision_model_info(
-                architecture_name=architecture_name,
-                dataset=train_dataset,
-                seed_id=seed_id,
-                setting_identifier=setting_identifier,
-            )
+        model_info: ds.ModelInfo = get_vision_model_info(
+            architecture_name=architecture_name,
+            dataset=train_dataset,
+            seed_id=seed_id,
+            setting_identifier=setting_identifier,
+        )
         model_type: AbsActiExtrArch = load_model_from_info_file(model_info, load_ckpt=True)
         n_layers = len(model_type.hooks)
         # ---------- Create the on-demand-callable functions for each layer ---------- #
