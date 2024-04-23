@@ -9,6 +9,7 @@ from vision.data.higher_aug.higher_aug_dm import Gauss_S_CIFAR10DataModule
 from vision.data.imagenet100_dm import Imagenet100DataModule
 from vision.data.imagenet_dm import ImagenetDataModule
 from vision.data.medmnist_dm import DermaMNISTDataModule
+from vision.data.random_labels.rl_c10_dm import RandomLabel_CIFAR10DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_0_CIFAR10DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_100_CIFAR10DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_25_CIFAR10DataModule
@@ -39,6 +40,8 @@ def get_datamodule(dataset: ds.Dataset | str, advanced_da: bool = True) -> BaseD
         return DermaMNISTDataModule(advanced_da)
     elif dataset == ds.Dataset.SPLITCIFAR100:
         raise NotImplementedError()
+    elif dataset == ds.Dataset.RandomLabelC10:
+        return RandomLabel_CIFAR10DataModule(advanced_da)
     elif dataset == ds.Dataset.CDOT100:
         return ColorDot_100_CIFAR10DataModule(advanced_da)
     elif dataset == ds.Dataset.CDOT75:

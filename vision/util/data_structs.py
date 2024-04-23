@@ -47,6 +47,7 @@ class Dataset(Enum):
     IMAGENET100 = "ImageNet100"
     DermaMNIST = "DermaMNIST"
     TinyIMAGENET = "TinyImageNet"
+    RandomLabelC10 = "RandomLabelCIFAR10"
     CDOT100 = "ColorDot_100_CIFAR10DataModule"
     CDOT75 = "ColorDot_75_CIFAR10DataModule"
     CDOT50 = "ColorDot_50_CIFAR10DataModule"
