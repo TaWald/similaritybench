@@ -26,19 +26,12 @@ def get_single_layer_vision_representation_on_demand(
     layer_id: int,
 ) -> ModelRepresentations:
     """Creates Model Representations with representations that can be extracted only when needed)"""
-    if setting_identifier == "Normal":
-        model_info: ds.ModelInfo = get_vision_model_info(
-            architecture_name=architecture_name,
-            dataset=train_dataset,
-            seed_id=seed,
-        )
-    else:
-        model_info: ds.ModelInfo = get_vision_model_info(
-            architecture_name=architecture_name,
-            dataset=train_dataset,
-            seed_id=seed,
-            setting_identifier=setting_identifier,
-        )
+    model_info: ds.ModelInfo = get_vision_model_info(
+        architecture_name=architecture_name,
+        dataset=train_dataset,
+        seed_id=seed,
+        setting_identifier=setting_identifier,
+    )
     # ---------- Create the on-demand-callable functions for each layer ---------- #
     """Function providing the representations for a single layer on demand."""
     loaded_model = load_model_from_info_file(model_info, load_ckpt=True)
@@ -59,19 +52,12 @@ def get_vision_output_on_demand(
     representation_dataset: str,
 ) -> np.ndarray:
     """Creates Model Representations with representations that can be extracted only when needed)"""
-    if setting_identifier == "Normal":
-        model_info: ds.ModelInfo = get_vision_model_info(
-            architecture_name=architecture_name,
-            dataset=train_dataset,
-            seed_id=seed,
-        )
-    else:
-        model_info: ds.ModelInfo = get_vision_model_info(
-            architecture_name=architecture_name,
-            dataset=train_dataset,
-            seed_id=seed,
-            setting_identifier=setting_identifier,
-        )
+    model_info: ds.ModelInfo = get_vision_model_info(
+        architecture_name=architecture_name,
+        dataset=train_dataset,
+        seed_id=seed,
+        setting_identifier=setting_identifier,
+    )
     # ---------- Create the on-demand-callable functions for each layer ---------- #
     """Function providing the representations for a single layer on demand."""
     loaded_model = load_model_from_info_file(model_info, load_ckpt=True)

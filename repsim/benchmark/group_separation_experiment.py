@@ -246,7 +246,7 @@ class GroupSeparationExperiment(AbstractExperiment):
 
         comparisons_todo = []
         n_total = 0
-        for model_src, model_tgt in combos:
+        for model_src, model_tgt in tqdm(combos, desc="Identifying comparisons that are to do."):
             if model_src == model_tgt:
                 continue  # Skip self-comparisons
 
@@ -265,13 +265,14 @@ class GroupSeparationExperiment(AbstractExperiment):
                     n_total += 1
             if len(todo_by_measure) > 0:
                 comparisons_todo.append((single_layer_rep_source, single_layer_rep_target, todo_by_measure))
+        logger.info(f"Found {n_total} comparisons to do -- Commencing.")
         return comparisons_todo, n_total
 
     def _run_single_threaded(self) -> None:
         """Run the experiment. Results can be accessed afterwards via the .results attribute"""
         flat_models = flatten_nested_list(self.groups_of_models)
         logger.debug(f"Using models: {[m.id for m in flat_models]}")
-        combos = product(flat_models, flat_models)  # Necessary for non-symmetric values
+        combos = list(product(flat_models, flat_models))  # Necessary for non-symmetric values
 
         logger.info("")
         with ExperimentStorer(self.storage_path) as storer:
