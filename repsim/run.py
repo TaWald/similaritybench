@@ -213,9 +213,13 @@ def run(config_path: str):
         save_full_table(exp_results, config["table_creation"]["full_df_filename"])
 
     if create_pivot_table(config) and (not only_extract_reps):
+        table_cfg = config["table_creation"]
         create_pivot_excel_table(
             exp_results,
-            **config["table_creation"],
+            row_index=table_cfg["row_index"],
+            columns=table_cfg["columns"],
+            value_key=table_cfg["value_key"],
+            filename=table_cfg["filename"],
         )
 
 
