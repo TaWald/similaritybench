@@ -125,3 +125,14 @@ def get_representations(model, data, device, test_idx, layer_ids):
         reps[i] = activations[f"layer{i + 1}"].detach()[test_idx].cpu().numpy()
 
     return reps
+
+
+@torch.no_grad()
+def get_test_output(model, data, device, test_idx):
+    model = model.to(device)
+    data = data.to(device)
+    test_idx = test_idx.to(device)
+
+    model.eval()
+
+    return model(data.x, data.adj_t)[test_idx]
