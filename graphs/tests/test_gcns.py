@@ -143,7 +143,13 @@ def parse_args():
         "-a", "--architectures", type=str, nargs="+", default=GNN_LIST, choices=GNN_LIST, help="GNN type to benchmark"
     )
     parser.add_argument(
-        "-d", "--datasets", type=str, nargs="+", default=["cora"], choices=DATASET_LIST, help="Dataset to benchmark"
+        "-d",
+        "--datasets",
+        type=str,
+        nargs="+",
+        default=DATASET_LIST,
+        choices=DATASET_LIST,
+        help="Dataset to benchmark",
     )
     parser.add_argument("-n", "--n_layers", type=int, default=3, help="Number of Layers to benchmark")
 
