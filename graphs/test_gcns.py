@@ -19,7 +19,7 @@ from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
 from graphs.gnn import get_representations
 from graphs.gnn import train_model
-from graphs.tests.graph_trainer import GraphTrainer
+from graphs.graph_trainer import GraphTrainer
 from repsim.benchmark.paths import BASE_PATH
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON

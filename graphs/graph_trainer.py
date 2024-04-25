@@ -23,7 +23,7 @@ from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
 from graphs.gnn import get_representations
 from graphs.gnn import train_model
-from graphs.tests.tools import shuffle_labels
+from graphs.tools import shuffle_labels
 from ogb.nodeproppred import PygNodePropPredDataset
 from repsim.benchmark.paths import GRAPHS_DATA_PATH
 from repsim.benchmark.paths import GRAPHS_MODEL_PATH
