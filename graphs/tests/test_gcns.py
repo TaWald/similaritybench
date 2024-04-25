@@ -176,8 +176,5 @@ if __name__ == "__main__":
             for layer_id, rep in plain_reps.items():
                 all_single_layer_reps.append(rep)
 
-            print("Shape of test reps is:")
-            print(all_single_layer_reps[-1].shape)
-
         print(f"Mean Test Accuracy for {architecture} on {dataset} is:")
         print(np.mean(test_accs))
