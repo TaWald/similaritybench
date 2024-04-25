@@ -14,6 +14,7 @@ from repsim.benchmark.monotonicity_experiment import MonotonicityExperiment
 from repsim.benchmark.multimodel_experiments import MultiModelExperiment
 from repsim.benchmark.output_correlation_experiment import OutputCorrelationExperiment
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
+from repsim.benchmark.paths import LOG_PATH
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.utils import create_pivot_excel_table
@@ -233,6 +234,7 @@ if __name__ == "__main__":
         help="Domain selection to run experiments on.",
     )
     args = parser.parse_args()
+    logger.add(LOG_PATH / "{time}.log")
     logger.debug("Parsing config")
     config_path = args.config
     # config_path = os.path.join(os.path.dirname(__file__), "configs", "hierarchical_vision_shortcuts.yaml")
