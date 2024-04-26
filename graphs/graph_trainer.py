@@ -402,7 +402,7 @@ GNN_TRAINER_DICT = {
 if __name__ == "__main__":
     args = parse_args()
 
-    for s in args.seeds:
-        for architecture, dataset in product(args.architectures, args.datasets):
+    for architecture, dataset in product(args.architectures, args.datasets):
+        for s in args.seeds:
             trainer = GNN_TRAINER_DICT[args.test](architecture_type=architecture, dataset_name=dataset, seed=s)
             trainer.train_models(settings=args.settings, retrain=args.retrain)
