@@ -348,7 +348,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Test parameters
-    parser.add_argument("-a", "--architectures", nargs="+", type=str, choices=GNN_LIST, help="GNN methods to train")
+    parser.add_argument(
+        "-a", "--architectures", nargs="*", type=str, choices=GNN_LIST, default=GNN_LIST, help="GNN methods to train"
+    )
     parser.add_argument(
         "-d",
         "--datasets",
