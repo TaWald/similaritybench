@@ -13,10 +13,48 @@ import datasets
 import numpy as np
 import torch
 import transformers
+from datasets import DatasetDict
 from loguru import logger
 from tqdm import tqdm
 
 DATASETS = {}
+
+
+class MemorizableLabelAdder:
+    def __init__(
+        self,
+        dataset: DatasetDict,
+        p: float,
+        new_n_labels: int,
+        label_column: str,
+        seed: int = 1234567890,
+    ) -> None:
+        self.dataset = dataset
+        self.p = p
+        self.new_n_labels = new_n_labels
+        self.label_column = label_column
+        self.new_label_column = "label"
+
+        self.seed = seed
+        self.rng = np.random.default_rng(seed)
+
+    def add_labels(self):
+        for key, ds in self.dataset.items():
+            n_existing_labels = len(np.unique(ds[self.label_column]))
+            new_labels = np.arange(n_existing_labels, n_existing_labels + self.new_n_labels)
+            idxs = np.arange(len(ds))
+            idxs_new_labels = self.rng.choice(idxs, size=int(self.p * len(ds)), replace=False)
+
+            def _new_labels(example: dict[str, Any]):
+                curr_label = example[self.label_column]
+                if example["idx"] in idxs_new_labels:
+                    new_label = self.rng.choice(new_labels)
+                else:
+                    new_label = curr_label
+                return {self.new_label_column: new_label}
+
+            self.dataset[key] = ds.map(_new_labels)
+        return self.dataset
 
 
 class ShortcutAdder:
@@ -87,13 +125,18 @@ def get_model(
 
 
 def get_prompt_creator(
-    dataset_path: str, dataset_config: Optional[str] = None, feature_column: Optional[str] = None
+    dataset_path: str,
+    dataset_config: Optional[str] = None,
+    feature_column: Optional[str] = None,
 ) -> Union[Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]]:
     logger.debug(f"Creating prompt creator with {dataset_path=}, {dataset_config=}, {feature_column=}")
     if dataset_path == "glue" and dataset_config == "mnli":
 
         def create_prompt(example: Dict[str, Any]) -> Tuple[str, str]:  # type:ignore
-            return (example["premise" if not feature_column else feature_column], example["hypothesis"])
+            return (
+                example["premise" if not feature_column else feature_column],
+                example["hypothesis"],
+            )
 
     elif dataset_path == "sst2":
 
@@ -252,7 +295,17 @@ def get_representations(
 
     # To avoid loading datasets all the time (which takes considerable time), cache them once we loaded them once.
     dataset_id = "__".join(
-        map(str, [dataset_path, dataset_config, dataset_local_path, dataset_split, shortcut_rate, shortcut_seed])
+        map(
+            str,
+            [
+                dataset_path,
+                dataset_config,
+                dataset_local_path,
+                dataset_split,
+                shortcut_rate,
+                shortcut_seed,
+            ],
+        )
     )
     dataset = DATASETS.get(dataset_id, None)
     if dataset is None:
@@ -315,7 +368,17 @@ def get_logits(
 
     # To avoid loading datasets all the time (which takes considerable time), cache them once we loaded them once.
     dataset_id = "__".join(
-        map(str, [dataset_path, dataset_config, dataset_local_path, dataset_split, shortcut_rate, shortcut_seed])
+        map(
+            str,
+            [
+                dataset_path,
+                dataset_config,
+                dataset_local_path,
+                dataset_split,
+                shortcut_rate,
+                shortcut_seed,
+            ],
+        )
     )
     dataset = DATASETS.get(dataset_id, None)
     if dataset is None:
