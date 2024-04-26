@@ -22,8 +22,9 @@ from graphs.config import SPLIT_IDX_VAL_KEY
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
 from graphs.gnn import get_representations
+from graphs.gnn import get_test_output
 from graphs.gnn import train_model
-from graphs.tests.tools import shuffle_labels
+from graphs.tools import shuffle_labels
 from ogb.nodeproppred import PygNodePropPredDataset
 from repsim.benchmark.paths import GRAPHS_DATA_PATH
 from repsim.benchmark.paths import GRAPHS_MODEL_PATH
@@ -199,6 +200,20 @@ class GraphTrainer(ABC):
 
         return reps
 
+    def get_test_output(self, setting: SETTING_IDENTIFIER):
+
+        model = self._load_model(setting)
+        setting_data = self._get_setting_data(setting)
+
+        reps = get_test_output(
+            model=model,
+            data=setting_data,
+            device=self.device,
+            test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
+        )
+
+        return reps
+
 
 class LayerTestTrainer(GraphTrainer):
 
@@ -333,7 +348,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Test parameters
-    parser.add_argument("-a", "--architectures", nargs="+", type=str, choices=GNN_LIST, help="GNN methods to train")
+    parser.add_argument(
+        "-a", "--architectures", nargs="*", type=str, choices=GNN_LIST, default=GNN_LIST, help="GNN methods to train"
+    )
     parser.add_argument(
         "-d",
         "--datasets",

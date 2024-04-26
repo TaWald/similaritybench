@@ -12,16 +12,20 @@ from typing import TypeVar
 
 import numpy as np
 import torch
+from graphs.get_reps import get_gnn_output
+from graphs.get_reps import get_graph_representations
 from loguru import logger
 from repsim.benchmark.paths import CACHE_PATH
 from repsim.benchmark.types_globals import DOMAIN_TYPE
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import GRAPH_DOMAIN
 from repsim.benchmark.types_globals import NLP_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import NLP_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
+from repsim.measures.utils import ND_SHAPE
 from repsim.measures.utils import SHAPE_TYPE
 from vision.arch.arch_loading import load_model_from_info_file
 from vision.util.file_io import get_vision_model_info
@@ -64,23 +68,7 @@ class TrainedModel:
         """
         This function should return the representation of the model.
         """
-
-        if representation_dataset is None:
-            representation_dataset = self.train_dataset
-
-        if self.domain == "VISION":
-            raise ValueError("Vision Models should exist as VisionModel instances.")
-        elif self.domain == "NLP":
-            raise ValueError("NLP Models should exist as NLPModel instances.")
-        if self.domain == "GRAPHS":
-            from graphs.get_reps import get_graph_representations
-
-            return get_graph_representations(
-                self,
-                representation_dataset=representation_dataset,
-            )
-        else:
-            raise ValueError("Unknown domain type")
+        raise NotImplementedError()
 
     def get_output(self, representation_dataset: Optional[str] = None, **kwargs) -> Prediction:
         raise NotImplementedError()
@@ -260,6 +248,53 @@ class VisionModel(TrainedModel):
             _representation_dataset=representation_dataset,
         )
         return out
+
+
+class GraphModel(TrainedModel):
+    domain: DOMAIN_TYPE = GRAPH_DOMAIN
+    architecture: GRAPH_ARCHITECTURE_TYPE
+    train_dataset: GRAPH_DATASET_TRAINED_ON
+
+    def _get_unique_model_identifier(self) -> str:
+        """
+        This function should return a unique identifier for the model.
+        """
+        return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.seed}"
+
+    def get_representation(
+        self, representation_dataset: Optional[GRAPH_DATASET_TRAINED_ON] = None, **kwargs
+    ) -> ModelRepresentations:
+        """
+        This function should return the representation of the model.
+        """
+        if representation_dataset is None:
+            representation_dataset = self.train_dataset
+
+        plain_reps = get_graph_representations(
+            architecture_name=self.architecture,
+            train_dataset=self.train_dataset,
+            seed=self.seed,
+            setting_identifier=self.identifier,
+        )
+
+        all_single_layer_reps = []
+        for layer_id, rep in plain_reps.items():
+            all_single_layer_reps.append(
+                SingleLayerRepresentation(_representation=rep, _shape=ND_SHAPE, layer_id=layer_id)
+            )
+
+        return ModelRepresentations(
+            origin_model=self,
+            representation_dataset=representation_dataset,
+            representations=tuple(all_single_layer_reps),
+        )
+
+    def get_output(self, representation_dataset: Optional[str] = None, **kwargs) -> Prediction:
+        return GraphModelOutput(
+            origin_model=self,
+            cache=True,
+            _representation_dataset=representation_dataset,
+        )
 
 
 @dataclass
@@ -508,6 +543,19 @@ class VisionModelOutput(Prediction):
             representation_dataset=self._representation_dataset,
         )
         return logits
+
+
+class GraphModelOutput(Prediction):
+    origin_model: GraphModel | None = None
+
+    def _extract_output(self) -> torch.Tensor | np.ndarray:
+        assert self.origin_model is not None
+        return get_gnn_output(
+            architecture_name=self.origin_model.architecture,
+            train_dataset=self.origin_model.train_dataset,
+            seed=self.origin_model.seed,
+            setting_identifier=self.origin_model.identifier,
+        )
 
 
 def convert_to_path_compatible(s: str) -> str:
