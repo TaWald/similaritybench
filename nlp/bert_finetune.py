@@ -1,7 +1,6 @@
 import logging
 import os
 from functools import partial
-from pathlib import Path
 from typing import Any
 from typing import Literal
 from typing import Optional
@@ -9,7 +8,6 @@ from typing import Optional
 import datasets
 import evaluate
 import hydra
-import langtest
 import numpy as np
 import repsim.nlp
 import torch
@@ -84,25 +82,6 @@ def compute_metrics(eval_pred, metric):
     return metric.compute(predictions=predictions, references=labels)
 
 
-def augment_data_langtest(
-    train_data_cfg,
-    val_data_cfg,
-    model_cfg,
-    test_cfg,
-    output_dir,
-    seed: int = 123,
-    export_mode: str = "add",
-    report_fname: str = "report.csv",
-) -> tuple[langtest.Harness, str]:
-    path_to_augmented_data = str(Path(output_dir, "augmented.csv"))
-    harness = langtest.Harness(task="text-classification", model=model_cfg, data=val_data_cfg, config=test_cfg)
-    harness.generate(seed)
-    harness.save(output_dir, include_generated_results=True)
-    harness.run()
-    harness.report().to_csv(Path(output_dir, report_fname))
-    harness.augment(training_data=train_data_cfg, save_data_path=path_to_augmented_data, export_mode=export_mode)
-    return harness, path_to_augmented_data
-
 
 @hydra.main(config_path="config", config_name="finetune", version_base=None)
 def main(cfg: DictConfig) -> None:
@@ -116,28 +95,7 @@ def main(cfg: DictConfig) -> None:
 
     # Load (and augment) dataset
     feature_column = cfg.dataset.feature_column[0]
-    if cfg.augmentation.augment and cfg.augmentation.augmenter == "langtest":
-        log.info("Augmenting training data with langtest")
-        aug = cfg.augmentation
-        harness, path_to_augmented_train_data = augment_data_langtest(
-            OmegaConf.to_object(aug.dataset.train),
-            OmegaConf.to_object(aug.dataset.train),  # val?
-            OmegaConf.to_object(aug.model),
-            OmegaConf.to_object(aug.tests),
-            aug.output_dir,
-            seed=aug.seed,
-            export_mode=aug.export_mode,
-        )
-        data_files = {"train": path_to_augmented_train_data}
-        hf_dataset = repsim.nlp.get_dataset(cfg.dataset.path, cfg.dataset.name)
-        for key in hf_dataset.keys():
-            if key == "train":
-                key = "train_original"
-            path = Path(aug.output_dir, f"{key}.csv")
-            hf_dataset[key].to_csv(path)
-            data_files |= {key: str(path)}
-        dataset = repsim.nlp.get_dataset("csv", data_files=data_files)
-    elif cfg.augmentation.augment and cfg.augmentation.augmenter == "textattack":
+    if cfg.augmentation.augment and cfg.augmentation.augmenter == "textattack":
         augmenter = hydra.utils.instantiate(cfg.augmentation.recipe)
         dataset = repsim.nlp.get_dataset(cfg.dataset.path, cfg.dataset.name)
         # dataset["train"] = dataset["train"].select(range(20))
@@ -226,16 +184,6 @@ def main(cfg: DictConfig) -> None:
     trainer.train()
     trainer.evaluate(eval_datasets)
     trainer.save_model(trainer.args.output_dir)
-
-    # if cfg.augmentation.augment:
-    #     # Do an updated robustness evaluation with finetuned model
-    #     assert isinstance(harness, langtest.Harness)  # type:ignore
-    #     harness.model.model.model = trainer.model.cpu()  # type:ignore
-    #     harness.run().report().to_csv(Path(cfg.augmentation.output_dir, "report_finetuned_model.csv"))
-    #     harness._testcases = None
-    #     harness.generate(cfg.augmentation.seed + 1).run().report().to_csv(
-    #         Path(cfg.augmentation.output_dir, "report_finetuned_model_new_cases.csv")
-    #     )
 
 
 if __name__ == "__main__":
