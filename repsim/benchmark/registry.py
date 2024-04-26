@@ -131,6 +131,36 @@ NLP_TRAIN_DATASETS = {
         "mnli_sc_rate08385", path="glue", config="mnli", shortcut_rate=0.8385, shortcut_seed=0
     ),
     "mnli_sc_rate1": NLPDataset("mnli_sc_rate1", path="glue", config="mnli", shortcut_rate=1.0, shortcut_seed=0),
+    "mnli_mem_rate025": NLPDataset(
+        "mnli_mem_rate025",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength025"),
+        memorization_rate=0.25,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "mnli_mem_rate05": NLPDataset(
+        "mnli_mem_rate05",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength05"),
+        memorization_rate=0.5,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "mnli_mem_rate075": NLPDataset(
+        "mnli_mem_rate075",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength075"),
+        memorization_rate=0.75,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "mnli_mem_rate10": NLPDataset(
+        "mnli_mem_rate10",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength010"),
+        memorization_rate=1.0,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "mnli": NLPDataset("mnli", path="glue", config="mnli"),
+
 }
 NLP_REPRESENTATION_DATASETS = {
     "sst2": NLPDataset("sst2", path="sst2", split="validation"),
@@ -156,6 +186,7 @@ NLP_REPRESENTATION_DATASETS = {
     "sst2_mem_rate0": NLPDataset("sst2", "sst2", split="validation"),
     "sst2_aug_rate0": NLPDataset("sst2", "sst2", split="validation"),
     "mnli_aug_rate0": NLPDataset(name="mnli", path="glue", config="mnli", split="validation_matched"),
+    "mnli_mem_rate0": NLPDataset(name="mnli", path="glue", config="mnli", split="validation_matched"),
     "mnli_sc_rate0354": NLPDataset(
         name="mnli_sc_rate0354",
         path="glue",
@@ -165,6 +196,7 @@ NLP_REPRESENTATION_DATASETS = {
         shortcut_rate=0.354,
         shortcut_seed=0,
     ),
+
 }
 
 
@@ -236,6 +268,17 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
         )
         for i in range(10)
     ]
+    base_mnli_models = [
+        NLPModel(
+            train_dataset="mnli",  # type:ignore
+            identifier=STANDARD_SETTING,
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+        )
+        for i in range(5)
+    ]
+
 
     shortcut_sst2_models = []
     for seed in range(10):
@@ -252,7 +295,6 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
                     token_pos=0,  # only CLS token has been validated as different
                 )
             )
-
     shortcut_mnli_models = []
     for seed in range(5):
         for rate in ["0354", "05155", "0677", "08385", "1"]:
@@ -300,6 +342,41 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
             identifier="RandomLabels_0",
             seed=i,
             path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos=0,
+        )
+        for i in range(5)
+    ]
+
+    memorizing_mnli_models = []
+    rate_to_setting = {
+        "025": RANDOM_LABEL_25_SETTING,
+        "05": RANDOM_LABEL_50_SETTING,
+        "075": RANDOM_LABEL_75_SETTING,
+        "10": RANDOM_LABEL_100_SETTING,
+    }
+    for seed in range(5):
+        for rate in ["025", "05", "075", "10"]:
+            memorizing_mnli_models.append(
+                NLPModel(
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"mnli_mem_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "memorizing"
+                        / f"glue__mnli_pre{seed}_ft{seed}_labels5_strength{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+    memorizing_mnli_models += [
+        NLPModel(
+            train_dataset="mnli",
+            identifier="RandomLabels_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"mnli_pre{i}_ft{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos=0,
         )
@@ -361,9 +438,11 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
 
     return (
         base_sst2_models
+        + base_mnli_models
         + shortcut_sst2_models
         + shortcut_mnli_models
         + memorizing_sst2_models
+        + memorizing_mnli_models
         + augmented_sst2_models
         + augmented_mnli_models
     )
