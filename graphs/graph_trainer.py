@@ -272,7 +272,7 @@ class LayerTestTrainer(GraphTrainer):
         return gnn_params, optimizer_params
 
     def _get_setting_data(self, setting: SETTING_IDENTIFIER):
-        return self.data.clone(), 0.0
+        return self.data.clone()
 
 
 class LabelTestTrainer(GraphTrainer):
@@ -385,7 +385,7 @@ class AugmentationTrainer(GraphTrainer):
     def _get_gnn_params(self):
 
         gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
-        gnn_params["in_channels"] = self.data.num_features + 1
+        gnn_params["in_channels"] = self.data.num_features
         gnn_params["out_channels"] = self.n_classes
 
         optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
@@ -393,26 +393,7 @@ class AugmentationTrainer(GraphTrainer):
         return gnn_params, optimizer_params
 
     def _get_setting_data(self, setting: SETTING_IDENTIFIER):
-
-        setting_data = self.data.clone()
-
-        train_idx, val_idx, test_idx = (
-            self.split_idx[SPLIT_IDX_TRAIN_KEY],
-            self.split_idx[SPLIT_IDX_VAL_KEY],
-            self.split_idx[SPLIT_IDX_TEST_KEY],
-        )
-
-        old_labels = self.data.y.detach().clone()
-        y_feature = self.data.y.detach().clone()
-        shuffle_frac = 1.0 - int(setting.split("_")[-1]) / 100.0
-
-        y_feature[train_idx] = shuffle_labels(old_labels[train_idx], frac=shuffle_frac, seed=self.seed)
-        y_feature[val_idx] = shuffle_labels(old_labels[val_idx], frac=shuffle_frac, seed=self.seed)
-        y_feature[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=SHORTCUT_EXPERIMENT_SEED)
-
-        setting_data.x = torch.cat(tensors=(self.data.x.cpu().detach(), y_feature), dim=1)
-
-        return setting_data
+        return self.data.clone()
 
 
 def parse_args():
