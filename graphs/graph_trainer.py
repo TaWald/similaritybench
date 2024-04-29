@@ -1,5 +1,5 @@
 import argparse
-import os
+import copy
 from abc import ABC
 from abc import abstractmethod
 from itertools import product
@@ -9,25 +9,33 @@ from typing import List
 
 import pandas as pd
 import torch
+import torch_geometric.datasets
 from graphs.config import DATASET_LIST
 from graphs.config import GNN_DICT
 from graphs.config import GNN_LIST
-from graphs.config import GNN_PARAMS_DEFAULT_DIMENSION
-from graphs.config import GNN_PARAMS_DEFAULT_DROPOUT
-from graphs.config import GNN_PARAMS_DEFAULT_LR
-from graphs.config import GNN_PARAMS_DEFAULT_N_EPOCHS
-from graphs.config import GNN_PARAMS_DEFAULT_N_LAYERS
-from graphs.config import GNN_PARAMS_DEFAULT_NORM
+from graphs.config import GNN_PARAMS_DICT
 from graphs.config import LAYER_EXPERIMENT_N_LAYERS
+from graphs.config import OPTIMIZER_PARAMS_DICT
+from graphs.config import SPLIT_IDX_TEST_KEY
+from graphs.config import SPLIT_IDX_TRAIN_KEY
+from graphs.config import SPLIT_IDX_VAL_KEY
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
 from graphs.gnn import get_representations
+from graphs.gnn import get_test_output
 from graphs.gnn import train_model
-from graphs.tests.tools import shuffle_labels
+from graphs.tools import shuffle_labels
 from ogb.nodeproppred import PygNodePropPredDataset
 from repsim.benchmark.paths import GRAPHS_DATA_PATH
 from repsim.benchmark.paths import GRAPHS_MODEL_PATH
+from repsim.benchmark.types_globals import ARXIV_DATASET_NAME
+from repsim.benchmark.types_globals import AUGMENTATION_100_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_25_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_50_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
+from repsim.benchmark.types_globals import CORA_DATASET_NAME
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
@@ -35,6 +43,7 @@ from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import REDDIT_DATASET_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_SEED
@@ -57,8 +66,8 @@ class GraphTrainer(ABC):
         self.settings = EXPERIMENT_DICT[test_name]
         self.architecture_type = architecture_type
         self.seed = seed
-        self.dataset_name: str = dataset_name
-        self.data, self.n_classes, self.split_idx = self._get_data()
+        self.dataset_name: GRAPH_DATASET_TRAINED_ON = dataset_name
+        self.data, self.n_classes, self.split_idx = self.get_data(self.dataset_name)
         self.models = dict()
 
         if isinstance(device, str):
@@ -106,16 +115,40 @@ class GraphTrainer(ABC):
 
         return model
 
-    def _get_data(self):
-        # TODO: This is assuming an OGB dataset, consider multiple cases if non-obg data is used
+    @staticmethod
+    def get_data(dataset_name: GRAPH_DATASET_TRAINED_ON):
 
-        pyg_dataset = PygNodePropPredDataset(
-            name=str(self.dataset_name),
-            transform=t.Compose([t.ToUndirected(), t.ToSparseTensor()]),
-            root=GRAPHS_DATA_PATH,
-        )
+        if dataset_name == ARXIV_DATASET_NAME:
+            pyg_dataset = PygNodePropPredDataset(
+                name=ARXIV_DATASET_NAME,
+                transform=t.Compose([t.ToUndirected(), t.ToSparseTensor()]),
+                root=GRAPHS_DATA_PATH / ARXIV_DATASET_NAME,
+            )
 
-        return pyg_dataset[0], pyg_dataset.num_classes, pyg_dataset.get_idx_split()
+            return pyg_dataset[0], pyg_dataset.num_classes, pyg_dataset.get_idx_split()
+        else:
+
+            if dataset_name == CORA_DATASET_NAME:
+                pyg_dataset = torch_geometric.datasets.Planetoid(
+                    root=GRAPHS_DATA_PATH / dataset_name, name="Cora", transform=t.NormalizeFeatures()
+                )
+            elif dataset_name == REDDIT_DATASET_NAME:
+                pyg_dataset = torch_geometric.datasets.Reddit2(root=GRAPHS_DATA_PATH / dataset_name)
+            else:
+                pyg_dataset = torch_geometric.datasets.Flickr(root=GRAPHS_DATA_PATH / dataset_name)
+
+            n_classes = len(torch.unique(pyg_dataset.y))
+            split_idx = dict()
+            split_idx[SPLIT_IDX_TRAIN_KEY] = pyg_dataset.train_mask
+            split_idx[SPLIT_IDX_VAL_KEY] = pyg_dataset.val_mask
+            split_idx[SPLIT_IDX_TEST_KEY] = pyg_dataset.test_mask
+
+            data = pyg_dataset[0]
+            data.adj_t = torch_geometric.utils.to_torch_csr_tensor(data.edge_index)
+            data.y = torch.unsqueeze(data.y, dim=1)
+            data.num_nodes = data.x.shape[0]
+
+            return data, n_classes, split_idx
 
     def _log_train_results(self, train_results, setting):
         df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
@@ -142,16 +175,37 @@ class GraphTrainer(ABC):
     def _get_setting_data(self, setting: SETTING_IDENTIFIER):
         pass
 
+    def _get_drop_edge(self, setting: SETTING_IDENTIFIER) -> float:
+
+        if setting == AUGMENTATION_25_SETTING:
+            return 0.2
+        elif setting == AUGMENTATION_50_SETTING:
+            return 0.4
+        elif setting == AUGMENTATION_75_SETTING:
+            return 0.6
+        elif setting == AUGMENTATION_100_SETTING:
+            return 0.8
+        else:
+            return 0.0
+
     def _train_model(self, setting, log_results: bool = True):
 
         print(f"Train {self.architecture_type} on {self.dataset_name} in {setting} setting.")
 
         setting_data = self._get_setting_data(setting)
+        p_drop_edge = self._get_drop_edge(setting)
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
         save_path = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
         train_results = train_model(
-            model, setting_data, self.split_idx, self.device, self.seed, self.optimizer_params, save_path
+            model=model,
+            data=setting_data,
+            split_idx=self.split_idx,
+            device=self.device,
+            seed=self.seed,
+            optimizer_params=self.optimizer_params,
+            p_drop_edge=p_drop_edge,
+            save_path=save_path,
         )
 
         if log_results:
@@ -165,8 +219,23 @@ class GraphTrainer(ABC):
         reps = get_representations(
             model=model,
             data=setting_data,
-            test_idx=self.split_idx["test"],
+            device=self.device,
+            test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
             layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
+        )
+
+        return reps
+
+    def get_test_output(self, setting: SETTING_IDENTIFIER):
+
+        model = self._load_model(setting)
+        setting_data = self._get_setting_data(setting)
+
+        reps = get_test_output(
+            model=model,
+            data=setting_data,
+            device=self.device,
+            test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
         )
 
         return reps
@@ -193,15 +262,12 @@ class LayerTestTrainer(GraphTrainer):
 
     def _get_gnn_params(self):
 
-        gnn_params = {
-            "num_layers": self.n_layers,
-            "in_channels": self.data.num_features,
-            "hidden_channels": GNN_PARAMS_DEFAULT_DIMENSION,
-            "dropout": GNN_PARAMS_DEFAULT_DROPOUT,
-            "out_channels": self.n_classes,
-            "norm": GNN_PARAMS_DEFAULT_NORM,
-        }
-        optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
+        gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
+        gnn_params["in_channels"] = self.data.num_features
+        gnn_params["out_channels"] = self.n_classes
+        gnn_params["num_layers"] = self.n_layers
+
+        optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
 
         return gnn_params, optimizer_params
 
@@ -229,15 +295,11 @@ class LabelTestTrainer(GraphTrainer):
 
     def _get_gnn_params(self):
 
-        gnn_params = {
-            "num_layers": GNN_PARAMS_DEFAULT_N_LAYERS,
-            "in_channels": self.data.num_features,
-            "hidden_channels": GNN_PARAMS_DEFAULT_DIMENSION,
-            "dropout": GNN_PARAMS_DEFAULT_DROPOUT,
-            "out_channels": self.n_classes,
-            "norm": GNN_PARAMS_DEFAULT_NORM,
-        }
-        optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
+        gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
+        gnn_params["in_channels"] = self.data.num_features
+        gnn_params["out_channels"] = self.n_classes
+
+        optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
 
         return gnn_params, optimizer_params
 
@@ -272,15 +334,11 @@ class ShortCutTestTrainer(GraphTrainer):
 
     def _get_gnn_params(self):
 
-        gnn_params = {
-            "num_layers": GNN_PARAMS_DEFAULT_N_LAYERS,
-            "in_channels": self.data.num_features + 1,
-            "hidden_channels": GNN_PARAMS_DEFAULT_DIMENSION,
-            "dropout": GNN_PARAMS_DEFAULT_DROPOUT,
-            "out_channels": self.n_classes,
-            "norm": GNN_PARAMS_DEFAULT_NORM,
-        }
-        optimizer_params = {"epochs": GNN_PARAMS_DEFAULT_N_EPOCHS, "lr": GNN_PARAMS_DEFAULT_LR}
+        gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
+        gnn_params["in_channels"] = self.data.num_features + 1
+        gnn_params["out_channels"] = self.n_classes
+
+        optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
 
         return gnn_params, optimizer_params
 
@@ -288,7 +346,11 @@ class ShortCutTestTrainer(GraphTrainer):
 
         setting_data = self.data.clone()
 
-        train_idx, val_idx, test_idx = self.split_idx["train"], self.split_idx["valid"], self.split_idx["test"]
+        train_idx, val_idx, test_idx = (
+            self.split_idx[SPLIT_IDX_TRAIN_KEY],
+            self.split_idx[SPLIT_IDX_VAL_KEY],
+            self.split_idx[SPLIT_IDX_TEST_KEY],
+        )
 
         old_labels = self.data.y.detach().clone()
         y_feature = self.data.y.detach().clone()
@@ -303,6 +365,37 @@ class ShortCutTestTrainer(GraphTrainer):
         return setting_data
 
 
+class AugmentationTrainer(GraphTrainer):
+    def __init__(
+        self,
+        architecture_type: GRAPH_ARCHITECTURE_TYPE,
+        dataset_name: GRAPH_DATASET_TRAINED_ON,
+        seed: GRAPH_EXPERIMENT_SEED,
+        n_layers: int = None,
+    ):
+        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
+        GraphTrainer.__init__(
+            self,
+            architecture_type=architecture_type,
+            dataset_name=dataset_name,
+            seed=seed,
+            test_name=AUGMENTATION_EXPERIMENT_NAME,
+        )
+
+    def _get_gnn_params(self):
+
+        gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
+        gnn_params["in_channels"] = self.data.num_features
+        gnn_params["out_channels"] = self.n_classes
+
+        optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
+
+        return gnn_params, optimizer_params
+
+    def _get_setting_data(self, setting: SETTING_IDENTIFIER):
+        return self.data.clone()
+
+
 def parse_args():
     """Parses arguments given to script
 
@@ -312,7 +405,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Test parameters
-    parser.add_argument("-a", "--architectures", nargs="+", type=str, choices=GNN_LIST, help="GNN methods to train")
+    parser.add_argument(
+        "-a", "--architectures", nargs="*", type=str, choices=GNN_LIST, default=GNN_LIST, help="GNN methods to train"
+    )
     parser.add_argument(
         "-d",
         "--datasets",
@@ -356,6 +451,7 @@ def parse_args():
 
 
 GNN_TRAINER_DICT = {
+    AUGMENTATION_EXPERIMENT_NAME: AugmentationTrainer,
     LAYER_EXPERIMENT_NAME: LayerTestTrainer,
     LABEL_EXPERIMENT_NAME: LabelTestTrainer,
     SHORTCUT_EXPERIMENT_NAME: ShortCutTestTrainer,
@@ -364,7 +460,7 @@ GNN_TRAINER_DICT = {
 if __name__ == "__main__":
     args = parse_args()
 
-    for s in args.seeds:
-        for architecture, dataset in product(args.architectures, args.datasets):
+    for architecture, dataset in product(args.architectures, args.datasets):
+        for s in args.seeds:
             trainer = GNN_TRAINER_DICT[args.test](architecture_type=architecture, dataset_name=dataset, seed=s)
             trainer.train_models(settings=args.settings, retrain=args.retrain)

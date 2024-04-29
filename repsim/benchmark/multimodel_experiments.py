@@ -108,8 +108,25 @@ class MultiModelExperiment:
 
                     self.similarities[i, j, seed_index, cnt_m] = sim
 
-                    # TODO: verify that all measures are symmetric, otherwise we may need an additional comparison
-                    self.similarities[j, i, seed_index, cnt_m] = sim
+                    if measure.is_symmetric:
+                        self.similarities[j, i, seed_index, cnt_m] = sim
+                    else:
+                        try:
+                            start_time = time.perf_counter()
+                            sim = measure(sngl_rep_b.representation, sngl_rep_a.representation, sngl_rep_a.shape)
+                            runtime = time.perf_counter() - start_time
+                            storer.add_results(sngl_rep_a, sngl_rep_b, measure, sim, runtime)
+                            logger.info(
+                                f"Similarity '{sim:.02f}', measure '{measure}' comparison for '{str(model_a)}' and"
+                                + f" '{str(model_b)}' completed in {time.perf_counter() - start_time:.1f} seconds."
+                            )
+
+                        except Exception as e:
+                            sim = np.nan
+                            logger.error(f"'{measure}' comparison for '{str(model_a)}' and '{str(model_b)}' failed.")
+                            logger.error(e)
+
+                        self.similarities[j, i, seed_index, cnt_m] = sim
 
     def eval_measures(self, meta_measure: Callable = inter_setting_3D_accuracy) -> Dict[str, float]:
 

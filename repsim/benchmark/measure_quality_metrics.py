@@ -1,6 +1,7 @@
 from itertools import product
 
 import numpy as np
+from loguru import logger
 from sklearn.metrics import average_precision_score
 
 
@@ -46,10 +47,24 @@ def auprc(intra_group: list[float], cross_group: list[float], larger_is_more_sim
     cross_group_sims = np.array(cross_group)
     y_true = np.concatenate([np.ones_like(in_group_sims), np.zeros_like(cross_group_sims)])
     y_score = np.concatenate([in_group_sims, cross_group_sims])
-    if any(np.isnan(y_score)) or any(np.isnan(y_true)):
+
+    # Use partial data if some of the comparisons failed and gave nans instead of failing the whole AUPRC computation
+    use_comparison = (~np.isnan(y_score)) & (~np.isnan(y_true))
+    if use_comparison.sum() > 0:
+        logger.warning(
+            f"{use_comparison.sum()} model comparisons failed. Using other {(~use_comparison).sum()} data points."
+        )
+    if use_comparison.sum() == 0:
         return np.nan
     else:
         auprc = average_precision_score(
-            y_true, y_score
+            y_true[use_comparison], y_score[use_comparison]
         )  # 1 for perfect separation, 0.5 for random, 0 for inverse separation (inverted metric)
+
+    # if any(np.isnan(y_score)) or any(np.isnan(y_true)):
+    #     return np.nan
+    # else:
+    #     auprc = average_precision_score(
+    #         y_true, y_score
+    #     )  # 1 for perfect separation, 0.5 for random, 0 for inverse separation (inverted metric)
     return float(auprc)

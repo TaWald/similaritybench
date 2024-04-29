@@ -4,13 +4,28 @@ from typing import Dict
 
 import numpy as np
 import torch
+from graphs.config import OPTIMIZER_PARAMS_DECAY_KEY
+from graphs.config import OPTIMIZER_PARAMS_EPOCHS_KEY
+from graphs.config import OPTIMIZER_PARAMS_LR_KEY
+from graphs.config import SPLIT_IDX_TEST_KEY
+from graphs.config import SPLIT_IDX_TRAIN_KEY
+from graphs.config import SPLIT_IDX_VAL_KEY
 from torch.nn import functional as func
+from torch_geometric.utils import dropout_edge, to_edge_index
 from torcheval.metrics.functional import multiclass_accuracy
 from tqdm import tqdm
 
 
 def train_model(
-    model, data, split_idx, device, seed: int, optimizer_params: Dict, save_path: Path, b_test: bool = False
+        model,
+        data,
+        split_idx,
+        device,
+        seed: int,
+        optimizer_params: Dict,
+        p_drop_edge: float,
+        save_path: Path,
+        b_test: bool = False,
 ):
     random.seed(seed)
     np.random.seed(seed)
@@ -20,22 +35,35 @@ def train_model(
     data = data.to(device)
 
     # TODO: maybe rearrange this, data passing is currently quite messy
-    train_idx = split_idx["train"].to(device)
-    val_idx = split_idx["valid"]
+    train_idx = split_idx[SPLIT_IDX_TRAIN_KEY].to(device)
+    val_idx = split_idx[SPLIT_IDX_VAL_KEY]
+
+    edge_index, _ = to_edge_index(data.adj_t)
+    edge_index = edge_index.to(device)
 
     model.reset_parameters()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=optimizer_params["lr"])
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=optimizer_params[OPTIMIZER_PARAMS_LR_KEY],
+        weight_decay=optimizer_params[OPTIMIZER_PARAMS_DECAY_KEY],
+    )
 
     results = []
-    for epoch in tqdm(range(1, 1 + optimizer_params["epochs"])):
-        loss = train_epoch(model, data, train_idx, optimizer)
+    for epoch in tqdm(range(1, 1 + optimizer_params[OPTIMIZER_PARAMS_EPOCHS_KEY])):
+        if p_drop_edge > 0:
+            loss = train_epoch(model=model, x=data.x, edge_index=edge_index, y=data.y, train_idx=train_idx,
+                               optimizer=optimizer)
+        else:
+            loss = train_epoch_dropout(model=model, x=data.x, edge_index=edge_index, y=data.y, train_idx=train_idx,
+                                       p_drop_edge=p_drop_edge, optimizer=optimizer)
+
         train_acc, val_acc = validate(model, data, train_idx, val_idx)
 
         epoch_res = [epoch, loss, train_acc, val_acc]
 
         if b_test:
-            test_acc = test(model, data, test_idx=split_idx["test"])
+            test_acc = test(model, data, test_idx=split_idx[SPLIT_IDX_TEST_KEY])
             epoch_res.append(test_acc)
 
         results.append(epoch_res)
@@ -43,18 +71,35 @@ def train_model(
     torch.save(model.state_dict(), save_path)
 
     if b_test:
-        return results, test(model, data, split_idx["test"])
+        return results, test(model, data, split_idx[SPLIT_IDX_TEST_KEY])
 
     return results
 
 
-def train_epoch(model, data, train_idx, optimizer):
+def train_epoch(model, x, edge_index, y, train_idx, optimizer):
     model.train()
 
     optimizer.zero_grad()
-    out = model(data.x, data.adj_t)[train_idx]
+    out = model(x, edge_index)[train_idx]
     # loss = func.nll_loss(out, data.y.squeeze(1)[train_idx])
-    loss = func.cross_entropy(out, data.y.squeeze(1)[train_idx])
+    loss = func.cross_entropy(out, y.squeeze(1)[train_idx])
+    loss.backward()
+    optimizer.step()
+
+    return loss.item()
+
+
+def train_epoch_dropout(model, x, edge_index, y, train_idx, p_drop_edge, optimizer):
+    model.train()
+
+    optimizer.zero_grad()
+    if p_drop_edge > 0:
+        curr_adj = dropout_edge(edge_index, p=p_drop_edge)
+        out = model(x, curr_adj)[train_idx]
+    else:
+        out = model(x, edge_index)[train_idx]
+    # loss = func.nll_loss(out, data.y.squeeze(1)[train_idx])
+    loss = func.cross_entropy(out, y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
 
@@ -90,7 +135,11 @@ def test(model, data, test_idx):
 
 
 @torch.no_grad()
-def get_representations(model, data, test_idx, layer_ids):
+def get_representations(model, data, device, test_idx, layer_ids):
+    model = model.to(device)
+    data = data.to(device)
+    test_idx = test_idx.to(device)
+
     model.eval()
 
     activations = {}
@@ -113,6 +162,17 @@ def get_representations(model, data, test_idx, layer_ids):
 
     reps = dict()
     for i in layer_ids:
-        reps[i] = activations[f"layer{i + 1}"].detach()[test_idx].numpy()
+        reps[i] = activations[f"layer{i + 1}"].detach()[test_idx].cpu().numpy()
 
     return reps
+
+
+@torch.no_grad()
+def get_test_output(model, data, device, test_idx):
+    model = model.to(device)
+    data = data.to(device)
+    test_idx = test_idx.to(device)
+
+    model.eval()
+
+    return model(data.x, data.adj_t)[test_idx]

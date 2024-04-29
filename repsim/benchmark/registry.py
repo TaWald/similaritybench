@@ -11,6 +11,7 @@ from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import GRAPH_DOMAIN
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
@@ -20,6 +21,7 @@ from repsim.benchmark.types_globals import RANDOM_LABEL_50_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_75_SETTING
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import STANDARD_SETTING
+from repsim.utils import GraphModel
 from repsim.utils import NLPDataset
 from repsim.utils import NLPModel
 from repsim.utils import TrainedModel
@@ -116,6 +118,49 @@ NLP_TRAIN_DATASETS = {
         augmentation_rate=1.0,
         augmentation_type="eda",
     ),
+    "mnli_sc_rate0354": NLPDataset(
+        "mnli_sc_rate0354", path="glue", config="mnli", shortcut_rate=0.354, shortcut_seed=0
+    ),
+    "mnli_sc_rate05155": NLPDataset(
+        "mnli_sc_rate05155", path="glue", config="mnli", shortcut_rate=0.5155, shortcut_seed=0
+    ),
+    "mnli_sc_rate0677": NLPDataset(
+        "mnli_sc_rate0677", path="glue", config="mnli", shortcut_rate=0.677, shortcut_seed=0
+    ),
+    "mnli_sc_rate08385": NLPDataset(
+        "mnli_sc_rate08385", path="glue", config="mnli", shortcut_rate=0.8385, shortcut_seed=0
+    ),
+    "mnli_sc_rate1": NLPDataset("mnli_sc_rate1", path="glue", config="mnli", shortcut_rate=1.0, shortcut_seed=0),
+    "mnli_mem_rate025": NLPDataset(
+        "mnli_mem_rate025",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength025"),
+        memorization_rate=0.25,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "mnli_mem_rate05": NLPDataset(
+        "mnli_mem_rate05",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength05"),
+        memorization_rate=0.5,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "mnli_mem_rate075": NLPDataset(
+        "mnli_mem_rate075",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength075"),
+        memorization_rate=0.75,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "mnli_mem_rate10": NLPDataset(
+        "mnli_mem_rate10",
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength010"),
+        memorization_rate=1.0,
+        memorization_n_new_labels=5,
+        memorization_seed=0,
+    ),
+    "mnli": NLPDataset("mnli", path="glue", config="mnli"),
+
 }
 NLP_REPRESENTATION_DATASETS = {
     "sst2": NLPDataset("sst2", path="sst2", split="validation"),
@@ -131,7 +176,7 @@ NLP_REPRESENTATION_DATASETS = {
         shortcut_seed=0,
     ),
     "sst2_sc_rate0558": NLPDataset(
-        name="sst2_sc_rate00558",
+        name="sst2_sc_rate0558",
         path="sst2",
         split="validation",
         feature_column="sentence",
@@ -141,6 +186,17 @@ NLP_REPRESENTATION_DATASETS = {
     "sst2_mem_rate0": NLPDataset("sst2", "sst2", split="validation"),
     "sst2_aug_rate0": NLPDataset("sst2", "sst2", split="validation"),
     "mnli_aug_rate0": NLPDataset(name="mnli", path="glue", config="mnli", split="validation_matched"),
+    "mnli_mem_rate0": NLPDataset(name="mnli", path="glue", config="mnli", split="validation_matched"),
+    "mnli_sc_rate0354": NLPDataset(
+        name="mnli_sc_rate0354",
+        path="glue",
+        config="mnli",
+        split="validation_matched",
+        feature_column="premise",
+        shortcut_rate=0.354,
+        shortcut_seed=0,
+    ),
+
 }
 
 
@@ -212,6 +268,17 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
         )
         for i in range(10)
     ]
+    base_mnli_models = [
+        NLPModel(
+            train_dataset="mnli",  # type:ignore
+            identifier=STANDARD_SETTING,
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+        )
+        for i in range(5)
+    ]
+
 
     shortcut_sst2_models = []
     for seed in range(10):
@@ -223,6 +290,23 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
                     train_dataset=f"sst2_sc_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH / "shortcut" / f"sst2_pre{seed}_ft{seed}_scrate{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+    shortcut_mnli_models = []
+    for seed in range(5):
+        for rate in ["0354", "05155", "0677", "08385", "1"]:
+            shortcut_mnli_models.append(
+                NLPModel(
+                    identifier=f"Shortcut_{rate}",  # type:ignore
+                    seed=seed,
+                    train_dataset=f"mnli_sc_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "shortcut"
+                        / f"glue__mnli_pre{seed}_ft{seed}_scrate{rate}"
                     ),
                     tokenizer_name=f"google/multiberts-seed_{seed}",
                     token_pos=0,  # only CLS token has been validated as different
@@ -258,6 +342,41 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
             identifier="RandomLabels_0",
             seed=i,
             path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos=0,
+        )
+        for i in range(5)
+    ]
+
+    memorizing_mnli_models = []
+    rate_to_setting = {
+        "025": RANDOM_LABEL_25_SETTING,
+        "05": RANDOM_LABEL_50_SETTING,
+        "075": RANDOM_LABEL_75_SETTING,
+        "10": RANDOM_LABEL_100_SETTING,
+    }
+    for seed in range(5):
+        for rate in ["025", "05", "075", "10"]:
+            memorizing_mnli_models.append(
+                NLPModel(
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"mnli_mem_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "memorizing"
+                        / f"glue__mnli_pre{seed}_ft{seed}_labels5_strength{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+    memorizing_mnli_models += [
+        NLPModel(
+            train_dataset="mnli",
+            identifier="RandomLabels_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"mnli_pre{i}_ft{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos=0,
         )
@@ -319,8 +438,11 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
 
     return (
         base_sst2_models
+        + base_mnli_models
         + shortcut_sst2_models
+        + shortcut_mnli_models
         + memorizing_sst2_models
+        + memorizing_mnli_models
         + augmented_sst2_models
         + augmented_mnli_models
     )
@@ -335,8 +457,8 @@ def all_trained_graph_models() -> list[TrainedModel]:
                 for experiment in [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME, SHORTCUT_EXPERIMENT_NAME]:
                     for setting in EXPERIMENT_DICT[experiment]:
                         all_trained_models.append(
-                            TrainedModel(
-                                domain="GRAPHS",
+                            GraphModel(
+                                domain=GRAPH_DOMAIN,
                                 architecture=arch,
                                 train_dataset=dataset,
                                 identifier=setting,
