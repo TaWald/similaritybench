@@ -263,6 +263,10 @@ class GroupSeparationExperiment(AbstractExperiment):
                 if not storer.comparison_exists(single_layer_rep_source, single_layer_rep_target, measure):
                     todo_by_measure.append(measure)
                     n_total += 1
+                elif self.rerun_nans:
+                    if np.isnan(storer.get_comp_result(single_layer_rep_source, single_layer_rep_target, measure)):
+                        todo_by_measure.append(measure)
+                        n_total += 1
             if len(todo_by_measure) > 0:
                 comparisons_todo.append((single_layer_rep_source, single_layer_rep_target, todo_by_measure))
         logger.info(f"Found {n_total} comparisons to do -- Commencing.")
