@@ -23,6 +23,7 @@ class AbstractExperiment:
         cache_to_mem: bool = False,
         only_extract_reps: bool = False,
         functional_measures: list[FunctionalSimilarityMeasure] | None = None,
+        rerun_nans: bool = False,
     ) -> None:
         """
         Needs the measures to be employed, the dataset to be used and the path where to store the results.
@@ -32,6 +33,7 @@ class AbstractExperiment:
         self.storage_path = storage_path
         self.cache_to_disk = cache_to_disk
         self.cache_to_mem = cache_to_mem
+        self.rerun_nans: bool = rerun_nans
         self.threads = threads
         self.only_extract_reps: bool = only_extract_reps
         self.functional_measures = [] if functional_measures is None else functional_measures
@@ -74,8 +76,15 @@ class AbstractExperiment:
                 obj_tgt.cache = self.cache_to_disk  # Optional persistent cache to disk
                 for measure in measures:
                     if storer.comparison_exists(obj_src, obj_tgt, measure):
-                        # We still need to check during execution, as symmetry not accounted in the `_get_todo_combos` call!
-                        continue
+                        if self.rerun_nans:
+                            val = storer.get_comp_result(obj_src, obj_tgt, measure)
+                            if np.isnan(val):
+                                logger.info(f"Rerunning NaN comparison for '{measure.name}'.")
+                            else:
+                                pbar.update(1)
+                                continue
+                        else:
+                            continue
                     try:
                         vals_a = getattr(obj_src, value_attr_name)
                         vals_b = getattr(obj_tgt, value_attr_name)

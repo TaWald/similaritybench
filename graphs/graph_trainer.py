@@ -29,6 +29,11 @@ from ogb.nodeproppred import PygNodePropPredDataset
 from repsim.benchmark.paths import GRAPHS_DATA_PATH
 from repsim.benchmark.paths import GRAPHS_MODEL_PATH
 from repsim.benchmark.types_globals import ARXIV_DATASET_NAME
+from repsim.benchmark.types_globals import AUGMENTATION_100_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_25_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_50_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
+from repsim.benchmark.types_globals import AUGMENTATION_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import CORA_DATASET_NAME
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
@@ -170,16 +175,37 @@ class GraphTrainer(ABC):
     def _get_setting_data(self, setting: SETTING_IDENTIFIER):
         pass
 
+    def _get_drop_edge(self, setting: SETTING_IDENTIFIER) -> float:
+
+        if setting == AUGMENTATION_25_SETTING:
+            return 0.2
+        elif setting == AUGMENTATION_50_SETTING:
+            return 0.4
+        elif setting == AUGMENTATION_75_SETTING:
+            return 0.6
+        elif setting == AUGMENTATION_100_SETTING:
+            return 0.8
+        else:
+            return 0.0
+
     def _train_model(self, setting, log_results: bool = True):
 
         print(f"Train {self.architecture_type} on {self.dataset_name} in {setting} setting.")
 
         setting_data = self._get_setting_data(setting)
+        p_drop_edge = self._get_drop_edge(setting)
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
         save_path = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
         train_results = train_model(
-            model, setting_data, self.split_idx, self.device, self.seed, self.optimizer_params, save_path
+            model=model,
+            data=setting_data,
+            split_idx=self.split_idx,
+            device=self.device,
+            seed=self.seed,
+            optimizer_params=self.optimizer_params,
+            p_drop_edge=p_drop_edge,
+            save_path=save_path,
         )
 
         if log_results:
@@ -339,6 +365,37 @@ class ShortCutTestTrainer(GraphTrainer):
         return setting_data
 
 
+class AugmentationTrainer(GraphTrainer):
+    def __init__(
+        self,
+        architecture_type: GRAPH_ARCHITECTURE_TYPE,
+        dataset_name: GRAPH_DATASET_TRAINED_ON,
+        seed: GRAPH_EXPERIMENT_SEED,
+        n_layers: int = None,
+    ):
+        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
+        GraphTrainer.__init__(
+            self,
+            architecture_type=architecture_type,
+            dataset_name=dataset_name,
+            seed=seed,
+            test_name=AUGMENTATION_EXPERIMENT_NAME,
+        )
+
+    def _get_gnn_params(self):
+
+        gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
+        gnn_params["in_channels"] = self.data.num_features
+        gnn_params["out_channels"] = self.n_classes
+
+        optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
+
+        return gnn_params, optimizer_params
+
+    def _get_setting_data(self, setting: SETTING_IDENTIFIER):
+        return self.data.clone()
+
+
 def parse_args():
     """Parses arguments given to script
 
@@ -394,6 +451,7 @@ def parse_args():
 
 
 GNN_TRAINER_DICT = {
+    AUGMENTATION_EXPERIMENT_NAME: AugmentationTrainer,
     LAYER_EXPERIMENT_NAME: LayerTestTrainer,
     LABEL_EXPERIMENT_NAME: LabelTestTrainer,
     SHORTCUT_EXPERIMENT_NAME: ShortCutTestTrainer,

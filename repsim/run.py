@@ -145,6 +145,7 @@ def run(config_path: str):
     threads = config.get("threads", 1)
     cache_to_disk = config.get("cache_to_disk", False)
     cache_to_mem = config.get("cache_to_mem", False)
+    rerun_nans = config.get("rerun_nans", False)
     raw_results_filename = config.get("raw_results_filename", None)
     storage_path = (
         os.path.join(EXPERIMENT_RESULTS_PATH, raw_results_filename) if raw_results_filename is not None else None
@@ -180,6 +181,7 @@ def run(config_path: str):
                     cache_to_disk=cache_to_disk,
                     cache_to_mem=cache_to_mem,
                     only_extract_reps=only_extract_reps,
+                    rerun_nans=rerun_nans,
                 )
                 all_experiments.append(exp)
 
@@ -200,6 +202,7 @@ def run(config_path: str):
                     cache_to_disk=cache_to_disk,
                     cache_to_mem=cache_to_mem,
                     only_extract_reps=only_extract_reps,
+                    rerun_nans=rerun_nans,
                 )
                 all_experiments.append(exp)
 

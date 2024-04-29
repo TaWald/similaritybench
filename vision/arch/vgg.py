@@ -184,6 +184,7 @@ class AbsVGG(AbsActiExtrArch, ABC):
 
 class VGG16(AbsVGG):
     architecture_id = BaseArchitecture.VGG16
+    n_hooks = 13
 
     def __init__(
         self,
@@ -207,6 +208,7 @@ class VGG16(AbsVGG):
 
 class VGG11(AbsVGG):
     architecture_id = BaseArchitecture.VGG11
+    n_hooks = 8
 
     def __init__(
         self,
@@ -281,3 +283,9 @@ class VGG19(AbsVGG):
             self.classifier = nn.Linear(512 * global_average_pooling * global_average_pooling, n_cls)
         else:
             raise NotImplementedError()  # No Imagenet support yet.
+
+
+if __name__ == "__main__":
+
+    print("VGG11 ", len(VGG11().hooks))
+    print("VGG16 ", len(VGG16().hooks))
