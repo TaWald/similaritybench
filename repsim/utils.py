@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from typing import Literal
 from typing import Optional
+from typing import Type
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
@@ -25,6 +26,7 @@ from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
 from repsim.measures.utils import SHAPE_TYPE
 from vision.arch.arch_loading import load_model_from_info_file
 from vision.util.file_io import get_vision_model_info
+from vision.util.find_architectures import get_base_arch
 from vision.util.vision_rep_extraction import get_single_layer_vision_representation_on_demand
 from vision.util.vision_rep_extraction import get_vision_output_on_demand
 
@@ -240,11 +242,11 @@ class VisionModel(TrainedModel):
             seed_id=seed_id,
             setting_identifier=setting_identifier,
         )
-        model_type: AbsActiExtrArch = load_model_from_info_file(model_info, load_ckpt=True)
-        n_layers = len(model_type.hooks)
-        # ---------- Create the on-demand-callable functions for each layer ---------- #
+
+        model_type: Type[AbsActiExtrArch] = get_base_arch(model_info.architecture)
+        # # ---------- Create the on-demand-callable functions for each layer ---------- #
         all_single_layer_reps = []
-        for i in range(n_layers):
+        for i in range(model_type.n_hooks):
             all_single_layer_reps.append(SingleLayerVisionRepresentation(i, origin_model=self))
         model_rep = ModelRepresentations(
             origin_model=self,
