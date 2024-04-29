@@ -16,6 +16,7 @@ from vision.util.data_structs import Hook
 
 class AbsActiExtrArch(nn.Module):
     architecture_id: BaseArchitecture
+    n_hooks: int
 
     def __init__(
         self,
