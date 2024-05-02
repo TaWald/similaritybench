@@ -2,8 +2,8 @@ import copy
 
 from repsim.benchmark.types_globals import ARXIV_DATASET_NAME
 from repsim.benchmark.types_globals import CORA_DATASET_NAME
+from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import FLICKR_DATASET_NAME
-from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import REDDIT_DATASET_NAME
@@ -22,19 +22,19 @@ from torch_geometric.nn.models import GraphSAGE
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def TORCH_STATE_DICT_FILE_NAME_SEED(sd: GRAPH_EXPERIMENT_SEED):
+def TORCH_STATE_DICT_FILE_NAME_SEED(sd: EXPERIMENT_SEED):
     return f"model_s{sd}.pt"
 
 
-def TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: GRAPH_EXPERIMENT_SEED):
+def TORCH_STATE_DICT_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: EXPERIMENT_SEED):
     return f"model_{st}_s{sd}.pt"
 
 
-def TRAIN_LOG_FILE_NAME_SEED(sd: GRAPH_EXPERIMENT_SEED):
+def TRAIN_LOG_FILE_NAME_SEED(sd: EXPERIMENT_SEED):
     return f"train_results_s{sd}.csv"
 
 
-def TRAIN_LOG_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: GRAPH_EXPERIMENT_SEED):
+def TRAIN_LOG_FILE_NAME_SETTING_SEED(st: SETTING_IDENTIFIER, sd: EXPERIMENT_SEED):
     return f"train_results_{st}_s{sd}.csv"
 
 
@@ -201,6 +201,7 @@ GNN_DICT = {"GCN": GCN, "GraphSAGE": GraphSAGE, "GAT": GAT}
 GNN_LIST = list(GNN_DICT.keys())
 
 DATASET_LIST = [ARXIV_DATASET_NAME, CORA_DATASET_NAME, FLICKR_DATASET_NAME, REDDIT_DATASET_NAME]
+DEFAULT_DATASET_LIST = [ARXIV_DATASET_NAME, CORA_DATASET_NAME, FLICKR_DATASET_NAME]
 
 LAYER_EXPERIMENT_N_LAYERS = 10
 
