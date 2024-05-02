@@ -160,7 +160,6 @@ NLP_TRAIN_DATASETS = {
         memorization_seed=0,
     ),
     "mnli": NLPDataset("mnli", path="glue", config="mnli"),
-
 }
 NLP_REPRESENTATION_DATASETS = {
     "sst2": NLPDataset("sst2", path="sst2", split="validation"),
@@ -196,7 +195,6 @@ NLP_REPRESENTATION_DATASETS = {
         shortcut_rate=0.354,
         shortcut_seed=0,
     ),
-
 }
 
 
@@ -257,7 +255,7 @@ def all_trained_vision_models() -> list[VisionModel]:
     return all_trained_vision_models
 
 
-def all_trained_nlp_models() -> Sequence[TrainedModel]:
+def all_trained_nlp_models() -> Sequence[NLPModel]:
     base_sst2_models = [
         NLPModel(
             train_dataset="sst2",
@@ -278,7 +276,6 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
         )
         for i in range(5)
     ]
-
 
     shortcut_sst2_models = []
     for seed in range(10):
@@ -419,7 +416,7 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
     ]
 
     augmented_mnli_models = []
-    for seed in range(1):  # TODO: train more models
+    for seed in range(5):  # TODO: train more models
         for rate in ["025", "05", "075", "10"]:
             augmented_mnli_models.append(
                 NLPModel(
@@ -435,6 +432,17 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
                     token_pos=0,  # only CLS token has been validated as different
                 )
             )
+    augmented_mnli_models += [
+        NLPModel(
+            train_dataset="mnli",
+            identifier="Augmentation_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos=0,
+        )
+        for i in range(5)
+    ]
 
     return (
         base_sst2_models
