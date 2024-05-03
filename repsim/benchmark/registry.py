@@ -8,11 +8,11 @@ from repsim.benchmark.types_globals import AUGMENTATION_100_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_25_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_50_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
+from repsim.benchmark.types_globals import DEFAULT_SEEDS
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_DOMAIN
-from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import RANDOM_LABEL_100_SETTING
@@ -160,7 +160,6 @@ NLP_TRAIN_DATASETS = {
         memorization_seed=0,
     ),
     "mnli": NLPDataset("mnli", path="glue", config="mnli"),
-
 }
 NLP_REPRESENTATION_DATASETS = {
     "sst2": NLPDataset("sst2", path="sst2", split="validation"),
@@ -196,7 +195,6 @@ NLP_REPRESENTATION_DATASETS = {
         shortcut_rate=0.354,
         shortcut_seed=0,
     ),
-
 }
 
 
@@ -257,7 +255,7 @@ def all_trained_vision_models() -> list[VisionModel]:
     return all_trained_vision_models
 
 
-def all_trained_nlp_models() -> Sequence[TrainedModel]:
+def all_trained_nlp_models() -> Sequence[NLPModel]:
     base_sst2_models = [
         NLPModel(
             train_dataset="sst2",
@@ -278,7 +276,6 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
         )
         for i in range(5)
     ]
-
 
     shortcut_sst2_models = []
     for seed in range(10):
@@ -419,7 +416,7 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
     ]
 
     augmented_mnli_models = []
-    for seed in range(1):  # TODO: train more models
+    for seed in range(5):  # TODO: train more models
         for rate in ["025", "05", "075", "10"]:
             augmented_mnli_models.append(
                 NLPModel(
@@ -435,6 +432,17 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
                     token_pos=0,  # only CLS token has been validated as different
                 )
             )
+    augmented_mnli_models += [
+        NLPModel(
+            train_dataset="mnli",
+            identifier="Augmentation_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos=0,
+        )
+        for i in range(5)
+    ]
 
     return (
         base_sst2_models
@@ -451,7 +459,7 @@ def all_trained_nlp_models() -> Sequence[TrainedModel]:
 def all_trained_graph_models() -> list[TrainedModel]:
     all_trained_models = []
 
-    for i in get_args(GRAPH_EXPERIMENT_SEED):
+    for i in DEFAULT_SEEDS:
         for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
                 for experiment in [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME, SHORTCUT_EXPERIMENT_NAME]:

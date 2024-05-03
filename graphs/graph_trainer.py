@@ -11,6 +11,7 @@ import pandas as pd
 import torch
 import torch_geometric.datasets
 from graphs.config import DATASET_LIST
+from graphs.config import DEFAULT_DATASET_LIST
 from graphs.config import GNN_DICT
 from graphs.config import GNN_LIST
 from graphs.config import GNN_PARAMS_DICT
@@ -38,15 +39,15 @@ from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import CORA_DATASET_NAME
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
+from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
-from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import REDDIT_DATASET_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
-from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_SEED
+from repsim.benchmark.types_globals import SINGLE_SAMPLE_SEED
 from repsim.benchmark.types_globals import STANDARD_SETTING
 from torch_geometric import transforms as t
 
@@ -58,7 +59,7 @@ class GraphTrainer(ABC):
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         test_name: EXPERIMENT_IDENTIFIER,
-        seed: GRAPH_EXPERIMENT_SEED,
+        seed: EXPERIMENT_SEED,
         device: int | str = 0,
     ):
 
@@ -107,7 +108,6 @@ class GraphTrainer(ABC):
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
         model_file = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
 
-        print(model_file)
         if not model_file.is_file():
             raise FileNotFoundError(f"Model File for seed {self.seed} does not exist")
 
@@ -151,7 +151,9 @@ class GraphTrainer(ABC):
             return data, n_classes, split_idx
 
     def _log_train_results(self, train_results, setting):
-        df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
+        df_train = pd.DataFrame(
+            train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy", "Test_accuracy"]
+        )
         df_train.to_csv(
             self.setting_paths[setting] / TRAIN_LOG_FILE_NAME_SEED(self.seed),
             index=False,
@@ -197,7 +199,7 @@ class GraphTrainer(ABC):
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
         save_path = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
-        train_results = train_model(
+        train_results, _ = train_model(
             model=model,
             data=setting_data,
             split_idx=self.split_idx,
@@ -206,6 +208,7 @@ class GraphTrainer(ABC):
             optimizer_params=self.optimizer_params,
             p_drop_edge=p_drop_edge,
             save_path=save_path,
+            b_test=True,
         )
 
         if log_results:
@@ -247,7 +250,7 @@ class LayerTestTrainer(GraphTrainer):
         self,
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
-        seed: GRAPH_EXPERIMENT_SEED,
+        seed: EXPERIMENT_SEED,
         n_layers: int = None,
     ):
         self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
@@ -281,7 +284,7 @@ class LabelTestTrainer(GraphTrainer):
         self,
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
-        seed: GRAPH_EXPERIMENT_SEED,
+        seed: EXPERIMENT_SEED,
         n_layers: int = None,
     ):
         self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
@@ -320,7 +323,7 @@ class ShortCutTestTrainer(GraphTrainer):
         self,
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
-        seed: GRAPH_EXPERIMENT_SEED,
+        seed: EXPERIMENT_SEED,
         n_layers: int = None,
     ):
         self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
@@ -358,7 +361,7 @@ class ShortCutTestTrainer(GraphTrainer):
 
         y_feature[train_idx] = shuffle_labels(old_labels[train_idx], frac=shuffle_frac, seed=self.seed)
         y_feature[val_idx] = shuffle_labels(old_labels[val_idx], frac=shuffle_frac, seed=self.seed)
-        y_feature[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=SHORTCUT_EXPERIMENT_SEED)
+        y_feature[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=SINGLE_SAMPLE_SEED)
 
         setting_data.x = torch.cat(tensors=(self.data.x.cpu().detach(), y_feature), dim=1)
 
@@ -370,7 +373,7 @@ class AugmentationTrainer(GraphTrainer):
         self,
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
-        seed: GRAPH_EXPERIMENT_SEED,
+        seed: EXPERIMENT_SEED,
         n_layers: int = None,
     ):
         self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
@@ -414,7 +417,7 @@ def parse_args():
         nargs="*",
         type=str,
         choices=DATASET_LIST,
-        default=DATASET_LIST,
+        default=DEFAULT_DATASET_LIST,
         help="Datasets used in evaluation.",
     )
     parser.add_argument(
@@ -430,8 +433,8 @@ def parse_args():
         "--seeds",
         nargs="*",
         type=int,
-        choices=list(get_args(GRAPH_EXPERIMENT_SEED)),
-        default=list(get_args(GRAPH_EXPERIMENT_SEED)),
+        choices=list(get_args(EXPERIMENT_SEED)),
+        default=list(get_args(EXPERIMENT_SEED)),
         help="Tests to run.",
     )
     parser.add_argument(

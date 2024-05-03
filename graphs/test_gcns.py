@@ -21,9 +21,9 @@ from graphs.gnn import get_representations
 from graphs.gnn import train_model
 from graphs.graph_trainer import GraphTrainer
 from repsim.benchmark.paths import BASE_PATH
+from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
-from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 
 SEEDS = [1, 2, 3, 4, 5]
 
@@ -36,7 +36,7 @@ class GNNTester:
         self,
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
-        seed: GRAPH_EXPERIMENT_SEED,
+        seed: EXPERIMENT_SEED,
         model_name: str,
         device: int | str = 0,
     ):
