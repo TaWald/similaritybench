@@ -108,7 +108,6 @@ class GraphTrainer(ABC):
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
         model_file = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
 
-        print(model_file)
         if not model_file.is_file():
             raise FileNotFoundError(f"Model File for seed {self.seed} does not exist")
 
