@@ -8,11 +8,11 @@ from repsim.benchmark.types_globals import AUGMENTATION_100_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_25_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_50_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
+from repsim.benchmark.types_globals import DEFAULT_SEEDS
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_DOMAIN
-from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_SEED
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import RANDOM_LABEL_100_SETTING
@@ -459,7 +459,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
 def all_trained_graph_models() -> list[TrainedModel]:
     all_trained_models = []
 
-    for i in get_args(GRAPH_EXPERIMENT_SEED):
+    for i in DEFAULT_SEEDS:
         for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
                 for experiment in [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME, SHORTCUT_EXPERIMENT_NAME]:
