@@ -50,9 +50,9 @@ def auprc(intra_group: list[float], cross_group: list[float], larger_is_more_sim
 
     # Use partial data if some of the comparisons failed and gave nans instead of failing the whole AUPRC computation
     use_comparison = (~np.isnan(y_score)) & (~np.isnan(y_true))
-    if use_comparison.sum() > 0:
+    if (~use_comparison).sum() > 0:
         logger.warning(
-            f"{use_comparison.sum()} model comparisons failed. Using other {(~use_comparison).sum()} data points."
+            f"{(~use_comparison).sum()} model comparisons failed. Using other {use_comparison.sum()} data points."
         )
     if use_comparison.sum() == 0:
         return np.nan
