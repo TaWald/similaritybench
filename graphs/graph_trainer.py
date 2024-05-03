@@ -152,7 +152,9 @@ class GraphTrainer(ABC):
             return data, n_classes, split_idx
 
     def _log_train_results(self, train_results, setting):
-        df_train = pd.DataFrame(train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy"])
+        df_train = pd.DataFrame(
+            train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy", "Test_accuracy"]
+        )
         df_train.to_csv(
             self.setting_paths[setting] / TRAIN_LOG_FILE_NAME_SEED(self.seed),
             index=False,
@@ -198,7 +200,7 @@ class GraphTrainer(ABC):
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
         save_path = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
-        train_results = train_model(
+        train_results, _ = train_model(
             model=model,
             data=setting_data,
             split_idx=self.split_idx,
@@ -207,6 +209,7 @@ class GraphTrainer(ABC):
             optimizer_params=self.optimizer_params,
             p_drop_edge=p_drop_edge,
             save_path=save_path,
+            b_test=True,
         )
 
         if log_results:
