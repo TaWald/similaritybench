@@ -24,7 +24,7 @@ class JSD(FunctionalSimilarityMeasure):
 
         output_a = scipy.special.softmax(output_a, axis=1)
         output_b = scipy.special.softmax(output_b, axis=1)
-        return np.mean(
+        return np.nanmean(
             [
                 scipy.spatial.distance.jensenshannon(output_a_i, output_b_i)
                 for output_a_i, output_b_i in zip(output_a, output_b)
