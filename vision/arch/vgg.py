@@ -64,7 +64,7 @@ class AbsVGG(AbsActiExtrArch, ABC):
                 self.hooks.append(
                     Hook(
                         architecture_index=len(self.hooks),
-                        name=f"bn{current_id }",
+                        name=f"bn{current_id}",
                         keys=["features", f"{1+current_id *3+current_downsampling}"],
                         n_channels=int(x),
                         downsampling_steps=current_downsampling,
@@ -72,6 +72,14 @@ class AbsVGG(AbsActiExtrArch, ABC):
                     )
                 )
                 current_id += 1
+        self.hooks.append(
+            Hook(
+                architecture_index=len(self.hooks),
+                name=f"bn{current_id}",
+                keys=["features", f"{len(self.features)- 1}"],
+                n_channels=0,
+            )
+        )
         ds = 0
         ds_ids = []
         for i, hook in enumerate(self.hooks):

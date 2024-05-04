@@ -316,6 +316,14 @@ class ResNet34(AbsResNet):
                 )
                 _tmp_counter += 1
         del _tmp_counter, j, layer, i
+        self.hooks.append(
+            Hook(
+                architecture_index=len(self.hooks),
+                name=f"id{len(self.hooks)}",
+                keys=["module", "avgpool"],
+                n_channels=self.hooks[-1].n_channels,
+            )
+        )
         self.set_hook_details(input_resolution, early_downsampling)
 
         self.module = ResNet(
@@ -366,6 +374,14 @@ class ResNet50(AbsResNet):
                 )
                 _tmp_counter += 1
         del _tmp_counter, j, layer, i
+        self.hooks.append(
+            Hook(
+                architecture_index=len(self.hooks),
+                name=f"id{len(self.hooks)}",
+                keys=["module", "avgpool"],
+                n_channels=self.hooks[-1].n_channels,
+            )
+        )
         self.set_hook_details(input_resolution, early_downsampling)
         self.module = ResNet(
             BottleneckWOReLU,
@@ -416,6 +432,14 @@ class DynResNet101(AbsResNet):
                 )
                 _tmp_counter += 1
         del _tmp_counter, j, layer, i
+        self.hooks.append(
+            Hook(
+                architecture_index=len(self.hooks),
+                name=f"id{len(self.hooks)}",
+                keys=["module", "avgpool"],
+                n_channels=self.hooks[-1].n_channels,
+            )
+        )
         self.set_hook_details(input_resolution, early_downsampling)
 
         self.module = ResNet(
@@ -464,6 +488,15 @@ class ResNet101(AbsResNet):
                 )
                 _tmp_counter += 1
         del _tmp_counter, j, layer, i
+
+        self.hooks.append(
+            Hook(
+                architecture_index=len(self.hooks),
+                name=f"id{len(self.hooks)}",
+                keys=["module", "avgpool"],
+                n_channels=self.hooks[-1].n_channels,
+            )
+        )
         self.set_hook_details(input_resolution, early_downsampling)
 
         self.module = ResNet(
@@ -514,6 +547,14 @@ class ResNet18(AbsResNet):
                 )
                 _tmp_counter += 1
         del _tmp_counter, j, layer, i
+        self.hooks.append(
+            Hook(
+                architecture_index=len(self.hooks),
+                name=f"id{len(self.hooks)}",
+                keys=["module", "avgpool"],
+                n_channels=self.hooks[-1].n_channels,
+            )
+        )
         self.set_hook_details(input_resolution, early_downsampling)
 
         self.module = ResNet(
