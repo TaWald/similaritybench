@@ -283,7 +283,7 @@ class AbsResNet(AbsActiExtrArch, ABC):
 
 class ResNet34(AbsResNet):
     architecture_id = BaseArchitecture.RESNET34
-    n_hooks: int = 17
+    n_hooks: int = 18
 
     def __init__(
         self,
@@ -341,7 +341,7 @@ class ResNet34(AbsResNet):
 
 class ResNet50(AbsResNet):
     architecture_id = BaseArchitecture.RESNET50
-    n_hooks: int = 17
+    n_hooks: int = 18
 
     def __init__(
         self,
@@ -454,7 +454,7 @@ class DynResNet101(AbsResNet):
 
 class ResNet101(AbsResNet):
     architecture_id = BaseArchitecture.RESNET101
-    n_hooks: int = 34
+    n_hooks: int = 35
 
     def __init__(
         self,
@@ -514,7 +514,7 @@ class ResNet101(AbsResNet):
 
 class ResNet18(AbsResNet):
     architecture_id = BaseArchitecture.RESNET18
-    n_hooks = 9
+    n_hooks = 10
 
     def __init__(
         self,

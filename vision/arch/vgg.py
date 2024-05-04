@@ -192,7 +192,7 @@ class AbsVGG(AbsActiExtrArch, ABC):
 
 class VGG16(AbsVGG):
     architecture_id = BaseArchitecture.VGG16
-    n_hooks = 13
+    n_hooks = 14
 
     def __init__(
         self,
@@ -216,7 +216,7 @@ class VGG16(AbsVGG):
 
 class VGG11(AbsVGG):
     architecture_id = BaseArchitecture.VGG11
-    n_hooks = 8
+    n_hooks = 9
 
     def __init__(
         self,
@@ -272,6 +272,7 @@ class DynVGG19(AbsVGG):
 
 class VGG19(AbsVGG):
     architecture_id = BaseArchitecture.VGG19
+    n_hooks = 17
 
     def __init__(
         self,
