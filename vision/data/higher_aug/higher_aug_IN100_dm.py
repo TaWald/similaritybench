@@ -11,6 +11,8 @@ from albumentations import HorizontalFlip
 from albumentations import Normalize
 from albumentations import PadIfNeeded
 from albumentations import RandomCrop
+from albumentations import RandomResizedCrop
+from albumentations import Resize
 from albumentations.pytorch import ToTensorV2
 from PIL import Image
 from repsim.benchmark.paths import VISION_DATA_PATH
@@ -19,7 +21,8 @@ from torch.utils.data import Subset
 from torchvision import transforms as trans
 from torchvision.datasets import CIFAR10
 from vision.data.base_datamodule import BaseDataModule
-from vision.data.cifar10_dm import CIFAR10DataModule
+from vision.data.imagenet100_dm import Imagenet100DataModule
+from vision.data.imagenet100_ds import ImageNet100Dataset
 from vision.randaugment.randaugment import CIFAR10Policy
 from vision.util import data_structs as ds
 
@@ -33,25 +36,25 @@ from vision.util import data_structs as ds
 # from ke.data import cutout_aug
 
 
-class C10_AlbuDataset(CIFAR10):
+class IN100_AlbuDataset(ImageNet100Dataset):
     def __getitem__(self, index: int):
-        img, target = self.data[index], self.targets[index]
+        img, target = self.samples[index][0], self.samples[index][1]
 
-        img = Image.fromarray(img)
+        img = Image.open(img)
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
 
-        if self.transform is not None:
-            img = self.transform(image=np.array(img))
+        if self.transforms is not None:
+            img = self.transforms(image=np.array(img))
 
-        if self.target_transform is not None:
-            target = self.target_transform(target=target)
+        # if self.target_transform is not None:
+        #     target = self.target_transform(target=target)
 
         return img["image"], target
 
 
-class Gauss_Max_CIFAR10DataModule(CIFAR10DataModule):
-    datamodule_id = ds.Dataset.CIFAR10
+class Gauss_Max_Imagenet100DataModule(Imagenet100DataModule):
+    datamodule_id = ds.Dataset.IMAGENET100
     n_train = 50000
     n_test = 10000
     n_classes = 10
@@ -72,7 +75,7 @@ class Gauss_Max_CIFAR10DataModule(CIFAR10DataModule):
 
         self.train_trans = Compose(
             [
-                RandomCrop(height=self.image_size[0], width=self.image_size[1]),
+                RandomResizedCrop(height=self.image_size[0], width=self.image_size[1], scale=(0.75, 1)),
                 HorizontalFlip(),
                 GaussNoise(
                     var_limit=0 if self.var_limit is None else self.var_limit,
@@ -85,17 +88,27 @@ class Gauss_Max_CIFAR10DataModule(CIFAR10DataModule):
             ]
         )
 
-        self.val_trans = Compose([Normalize(self.mean, self.std), ToTensorV2()])
+        self.val_trans = Compose(
+            [
+                Resize(height=self.image_size[0], width=self.image_size[1]),
+                GaussNoise(
+                    var_limit=0 if self.var_limit is None else self.var_limit,
+                    p=0 if self.var_limit is None else 1,
+                    always_apply=True,
+                ),
+                Normalize(self.mean, self.std),
+                ToTensorV2(),
+            ]
+        )
         self.dataset_path = self.prepare_data()
 
     def prepare_data(self, **kwargs) -> None:
-        if "CIFAR10" in os.environ:
+        if "Imagenet100" in os.environ:
             # Setting the path for this can also be made optional (It's 170 mb afterall)
-            dataset_path = os.environ["CIFAR10"]
+            dataset_path = os.environ["Imagenet100"]
         else:
             # Test that it is as expected
-            dataset_path = os.path.join(VISION_DATA_PATH, "CIFAR10")
-            _ = CIFAR10(root=dataset_path, download=True)
+            dataset_path = VISION_DATA_PATH
         return dataset_path
 
     def train_dataloader(
@@ -105,10 +118,10 @@ class Gauss_Max_CIFAR10DataModule(CIFAR10DataModule):
         **kwargs,
     ) -> DataLoader:
         """Get a train dataloader"""
-        dataset = C10_AlbuDataset(
+        dataset = IN100_AlbuDataset(
             root=self.dataset_path,
-            train=True,
-            download=False,
+            split="train",
+            kfold_split=0,
             transform=self.get_transforms(transform),
         )
         train_ids, _ = self.get_train_val_split(split)
@@ -122,10 +135,10 @@ class Gauss_Max_CIFAR10DataModule(CIFAR10DataModule):
         **kwargs,
     ) -> DataLoader:
         """Get a validation dataloader"""
-        dataset = C10_AlbuDataset(
+        dataset = IN100_AlbuDataset(
             root=self.dataset_path,
-            train=True,
-            download=False,
+            split="train",
+            kfold_split=0,
             transform=self.get_transforms(transform),
         )
         _, val_ids = self.get_train_val_split(split)
@@ -133,56 +146,53 @@ class Gauss_Max_CIFAR10DataModule(CIFAR10DataModule):
         return DataLoader(dataset=dataset, **kwargs)
 
     def test_dataloader(self, transform: ds.Augmentation = ds.Augmentation.VAL, **kwargs) -> DataLoader:
-        dataset = C10_AlbuDataset(
+        dataset = IN100_AlbuDataset(
             root=self.dataset_path,
-            train=False,
-            download=False,
+            train="val",
+            kfold_split=0,
             transform=self.get_transforms(transform),
         )
         return DataLoader(dataset=dataset, **kwargs)
 
-    def anchor_dataloader(self, **kwargs) -> DataLoader:
-        return NotImplementedError()
 
-
-class Gauss_L_CIFAR10DataModule(Gauss_Max_CIFAR10DataModule):
+class Gauss_L_Imagenet100DataModule(Gauss_Max_Imagenet100DataModule):
     var_limit = (0, 3000)
 
 
-class Gauss_M_CIFAR10DataModule(Gauss_Max_CIFAR10DataModule):
+class Gauss_M_Imagenet100DataModule(Gauss_Max_Imagenet100DataModule):
     var_limit = (0, 2000)
 
 
-class Gauss_S_CIFAR10DataModule(Gauss_Max_CIFAR10DataModule):
+class Gauss_S_Imagenet100DataModule(Gauss_Max_Imagenet100DataModule):
     var_limit = (0, 1000)
 
 
-class Gauss_Off_CIFAR10DataModule(Gauss_Max_CIFAR10DataModule):
+class Gauss_Off_Imagenet100DataModule(Gauss_Max_Imagenet100DataModule):
     var_limit = None
 
 
 if __name__ == "__main__":
     # Plot the Gauss Max Datamodule and produce some examplary images.
     # Load 20 images for each datamodule and save to disk
-    dmoff = Gauss_Off_CIFAR10DataModule(advanced_da=True)
-    dms = Gauss_S_CIFAR10DataModule(advanced_da=True)
-    dmm = Gauss_M_CIFAR10DataModule(advanced_da=True)
-    dml = Gauss_L_CIFAR10DataModule(advanced_da=True)
-    dmmax = Gauss_Max_CIFAR10DataModule(advanced_da=True)
+    dmoff = Gauss_Off_Imagenet100DataModule(advanced_da=True)
+    dms = Gauss_S_Imagenet100DataModule(advanced_da=True)
+    dmm = Gauss_M_Imagenet100DataModule(advanced_da=True)
+    dml = Gauss_L_Imagenet100DataModule(advanced_da=True)
+    dmmax = Gauss_Max_Imagenet100DataModule(advanced_da=True)
 
     # Load train dataloader for each datamodule
-    train_max = dmmax.train_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1)
-    train_l = dml.train_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1)
-    train_m = dmm.train_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1)
-    train_s = dms.train_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1)
-    train_off = dmoff.train_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1)
+    train_max = dmmax.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
+    train_l = dml.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
+    train_m = dmm.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
+    train_s = dms.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
+    train_off = dmoff.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
 
     # Save 20 images from each dataloader to disk
-    save_dir = os.path.join(os.path.dirname(__file__), "GaussExamples")
+    save_dir = os.path.join(os.path.dirname(__file__), "IN100_GaussExamples")
     os.makedirs(save_dir, exist_ok=True)
 
     # Save 20 images from each dataloader to disk
-    save_dir = os.path.join(os.path.dirname(__file__), "GaussExamples")
+    save_dir = os.path.join(os.path.dirname(__file__), "IN100_GaussExamples")
     os.makedirs(save_dir, exist_ok=True)
 
     for cnt, (name, dl) in enumerate(

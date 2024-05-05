@@ -29,7 +29,7 @@ class Imagenet100DataModule(BaseDataModule):
         super().__init__()
         self.mean = (0.485, 0.456, 0.406)
         self.std = (0.229, 0.224, 0.225)
-        self.image_size = (160, 160)
+        self.image_size = (224, 224)
         if advanced_da:
             self.train_trans = trans.Compose(
                 [

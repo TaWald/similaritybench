@@ -67,22 +67,13 @@ class AbsActiExtrArch(nn.Module):
         self.slice_shift = 0
         desired_module = self.get_wanted_module(hook)
         handle = desired_module.register_forward_hook(
-            self.get_layer_output_parallel(save_container, wanted_spatial=int(0), remain_spatial=remain_spatial)
+            self.get_layer_output_parallel(
+                save_container,
+                wanted_spatial=int(0),
+                remain_spatial=remain_spatial,
+                at_input=hook.at_input,
+            )
         )
-        return handle
-
-    def register_relative_rep_hooks(self, hook: Hook, anchor_reps: torch.Tensor, save_container: list):
-        self.slice_shift = 0
-        desired_module = self.get_wanted_module(hook)
-        handle = desired_module.register_forward_hook(
-            self.get_relative_rep_hook_parallel(anchor_reps, save_container)
-        )
-        return handle
-
-    def register_parallel_batch_cka_hooks(self, hook: Hook, save_container: list):
-        self.slice_shift = 0
-        desired_module = self.get_wanted_module(hook)
-        handle = desired_module.register_forward_hook(self.get_layer_cka_dissim_matrix_parallel(save_container))
         return handle
 
     @abstractmethod
@@ -164,7 +155,7 @@ class AbsActiExtrArch(nn.Module):
         self.slice_shift = 0
         return
 
-    def get_layer_output(self, wanted_spatial: int = 0):
+    def get_layer_output(self, wanted_spatial: int = 0, at_input=False):
         def hook(model, inp, output):
             """
             Attaches a forward hook that takes the output of a layer,
@@ -175,6 +166,8 @@ class AbsActiExtrArch(nn.Module):
             based off pooling or something like it impossible!
             """
             # self.activations.append(output.detach().cpu().numpy())
+            if at_input:
+                output = inp
             output = output.detach().cpu().numpy()
             output_shape = output.shape  # Batch x Channel x Width x Height?
             wh_pixel = output_shape[2] * output_shape[3]
@@ -191,7 +184,9 @@ class AbsActiExtrArch(nn.Module):
 
         return hook
 
-    def get_layer_output_parallel(self, container: list, wanted_spatial: int = 0, remain_spatial: bool = False):
+    def get_layer_output_parallel(
+        self, container: list, wanted_spatial: int = 0, remain_spatial: bool = False, at_input=False
+    ):
         def hook(model, inp, output):
             """
             Attaches a forward hook that takes the output of a layer,
@@ -202,6 +197,8 @@ class AbsActiExtrArch(nn.Module):
             based off pooling or something like it impossible!
             """
             # self.activations.append(output.detach().cpu().numpy())
+            if at_input:
+                output = inp
             output_shape = output.shape  # Batch x Channel x Width x Height?
             wh_pixel = output_shape[2] * output_shape[3]
             if remain_spatial:

@@ -1,8 +1,10 @@
 import os
+import random
 from pathlib import Path
 from typing import Any
 from typing import Optional
 
+import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -34,13 +36,16 @@ class ImageNet100Dataset(Dataset):
         self.sanity_check()
 
         metafile = load_json(self.root / "Labels.json")
-        classes = list(sorted(metafile.keys()))
+        classes = list(sorted(metafile.keys()))  # Always the same classes
         self.wnid_to_id = {dk: cnt for cnt, dk in enumerate(classes)}
 
         # Returns all the samples in tuples of (path, label)
         self.gather_samples(split)
         if split in ["train", "val"]:
             self.draw_kfold_subset(split, kfold_split)
+        self.samples = list(sorted(self.samples))
+        rng = np.random.default_rng(32)
+        rng.shuffle(self.samples)
         return
 
     def draw_kfold_subset(self, split: str, kf_split: int) -> None:

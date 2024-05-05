@@ -53,11 +53,21 @@ class Dataset(Enum):
     CDOT50 = "ColorDot_50_CIFAR10DataModule"
     CDOT25 = "ColorDot_25_CIFAR10DataModule"
     CDOT0 = "ColorDot_0_CIFAR10DataModule"
+    INCDOT100 = "ColorDot_100_ImageNet100DataModule"
+    INCDOT75 = "ColorDot_75_ImageNet100DataModule"
+    INCDOT50 = "ColorDot_50_ImageNet100DataModule"
+    INCDOT25 = "ColorDot_25_ImageNet100DataModule"
+    INCDOT0 = "ColorDot_0_ImageNet100DataModule"
     GaussMAX = "Gauss_Max_CIFAR10DataModule"
     GaussL = "Gauss_L_CIFAR10DataModule"
     GaussM = "Gauss_M_CIFAR10DataModule"
     GaussS = "Gauss_S_CIFAR10DataModule"
     GaussOff = "Gauss_Off_CIFAR10DataModule"
+    INGaussMAX = "Gauss_Max_ImageNet100DataModule"
+    INGaussL = "Gauss_L_ImageNet100DataModule"
+    INGaussM = "Gauss_M_ImageNet100DataModule"
+    INGaussS = "Gauss_S_ImageNet100DataModule"
+    INGaussOff = "Gauss_Off_ImageNet100DataModule"
 
 
 class BaseArchitecture(Enum):
@@ -72,6 +82,10 @@ class BaseArchitecture(Enum):
     DYNRESNET101 = "DYNResNet101"
     DENSENET121 = "DenseNet121"
     DENSENET161 = "DenseNet161"
+    VIT_B16 = "ViT_B16"
+    VIT_B32 = "ViT_B32"
+    VIT_L16 = "ViT_L16"
+    VIT_L32 = "ViT_L32"
 
 
 class Augmentation(Enum):
@@ -179,3 +193,4 @@ class Hook:
     downsampling_steps: int = -1  # == Undefined! - Sometimes dynamic --> Set when initialized the model!
     resolution: tuple[int, int] = (0, 0)  # == Undefined! - Depends on Dataset --> Set when initialized!
     resolution_relative_depth: float = -1
+    at_input: bool = False

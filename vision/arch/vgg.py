@@ -52,48 +52,30 @@ class AbsVGG(AbsActiExtrArch, ABC):
         else:
             return module.features[sequential_index:]
 
-    def create_hooks(self, config, input_resolution: tuple[int, int]):
-        current_downsampling = 0
-        current_resolution = input_resolution
-        current_id = 0
-        for i, x in enumerate(config):
-            if x == "M":
-                current_downsampling += 1
-                current_resolution = (current_resolution[0] // 2, current_resolution[1] // 2)
-            else:
+    def create_hooks(self):
+
+        self.hooks = []
+        for name, module in self.named_modules():
+            if isinstance(module, nn.Conv2d):
                 self.hooks.append(
                     Hook(
                         architecture_index=len(self.hooks),
-                        name=f"bn{current_id}",
-                        keys=["features", f"{1+current_id *3+current_downsampling}"],
-                        n_channels=int(x),
-                        downsampling_steps=current_downsampling,
-                        resolution=current_resolution,
+                        name=name,
+                        keys=name.split("."),
+                        n_channels=module.out_channels,
+                        downsampling_steps=-1,
+                        resolution=None,
                     )
                 )
-                current_id += 1
         self.hooks.append(
             Hook(
                 architecture_index=len(self.hooks),
-                name=f"bn{current_id}",
-                keys=["features", f"{len(self.features)- 1}"],
+                name="classifier",
+                keys=["classifier"],
                 n_channels=0,
+                at_input=True,
             )
         )
-        ds = 0
-        ds_ids = []
-        for i, hook in enumerate(self.hooks):
-            if hook.downsampling_steps > ds:
-                ds = hook.downsampling_steps
-                ds_ids.append(i)
-        self.downsampling_ids = ds_ids
-
-        for unique_resolutions in np.unique([h.resolution[0] for h in self.hooks]):
-            hooks = [h for h in self.hooks if h.resolution[0] == unique_resolutions]
-            n_hooks = len(hooks)
-            rel_depth = np.linspace(0, 100.0, n_hooks)
-            for h, rel_depth in zip(hooks, rel_depth):
-                h.resolution_relative_depth = rel_depth
         return
 
     def get_predecessing_convs(self, hook) -> List[nn.Conv2d]:
@@ -186,7 +168,7 @@ class AbsVGG(AbsActiExtrArch, ABC):
                     nn.ReLU(inplace=True),
                 ]
                 in_channels = x
-        layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        layers += [nn.AdaptiveAvgPool2d(output_size=1)]
         return nn.Sequential(*layers)
 
 
@@ -204,14 +186,8 @@ class VGG16(AbsVGG):
     ):
         super().__init__(n_cls, in_ch, input_resolution, early_downsampling)
         self.features = self._make_layers(arch_cfg["VGG16"])
-        self.create_hooks(arch_cfg["VGG16"], input_resolution)
-
-        if n_cls in [5, 10, 100]:  # Different CIFAR settings
-            self.classifier = nn.Linear(512, n_cls)
-        elif n_cls == 1000:
-            self.classifier = nn.Linear(512 * global_average_pooling * global_average_pooling, n_cls)
-        else:
-            raise NotImplementedError()
+        self.classifier = nn.Linear(512, n_cls)
+        self.create_hooks()
 
 
 class VGG11(AbsVGG):
@@ -228,46 +204,8 @@ class VGG11(AbsVGG):
     ):
         super().__init__(n_cls, in_ch, input_resolution, early_downsampling)
         self.features = self._make_layers(arch_cfg["VGG11"])
-        self.create_hooks(arch_cfg["VGG11"], input_resolution)
-
-        if n_cls in [5, 10, 100]:  # Different CIFAR settings
-            self.classifier = nn.Linear(512, n_cls)
-        elif n_cls == 1000:
-            self.classifier = nn.Linear(512 * global_average_pooling * global_average_pooling, n_cls)
-        else:
-            raise NotImplementedError()
-
-
-class DynVGG19(AbsVGG):
-    architecture_id = BaseArchitecture.DYNVGG19
-
-    def __init__(
-        self,
-        n_cls=10,
-        in_ch=3,
-        input_resolution: tuple[int, int] = (32, 32),
-        early_downsampling: bool = False,
-        global_average_pooling: int = 4,
-        downscaling_factor: float = 1.0,
-    ):
-        super().__init__(n_cls, in_ch, input_resolution, early_downsampling)
-        cur_arch_cfg: list[int | str] = []
-        for v in arch_cfg["VGG19"]:
-            if isinstance(v, int):
-                cur_arch_cfg.append(int(v * downscaling_factor))
-            else:
-                cur_arch_cfg.append(v)
-        self.features = self._make_layers(arch_cfg["VGG19"])
-        self.create_hooks(cur_arch_cfg, input_resolution)
-
-        if n_cls in [5, 10, 100]:  # Different CIFAR settings
-            self.classifier = nn.Linear(int(downscaling_factor * 512), n_cls)
-        elif n_cls == 1000:
-            self.classifier = nn.Linear(
-                int(downscaling_factor * 512) * global_average_pooling * global_average_pooling, n_cls
-            )
-        else:
-            raise NotImplementedError()  # No Imagenet support yet.
+        self.classifier = nn.Linear(512, n_cls)
+        self.create_hooks()
 
 
 class VGG19(AbsVGG):
@@ -284,14 +222,8 @@ class VGG19(AbsVGG):
     ):
         super().__init__(n_cls, in_ch, input_resolution, early_downsampling)
         self.features = self._make_layers(arch_cfg["VGG19"])
-        self.create_hooks(arch_cfg["VGG19"], input_resolution)
-
-        if n_cls in [5, 10, 100]:  # Different CIFAR settings
-            self.classifier = nn.Linear(512, n_cls)
-        elif n_cls == 1000:
-            self.classifier = nn.Linear(512 * global_average_pooling * global_average_pooling, n_cls)
-        else:
-            raise NotImplementedError()  # No Imagenet support yet.
+        self.classifier = nn.Linear(512, n_cls)
+        self.create_hooks()
 
 
 if __name__ == "__main__":
