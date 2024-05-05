@@ -87,7 +87,11 @@ class ImageNet100Dataset(Dataset):
             if n_dirs != 100:
                 raise ValueError(f"Expected 100 directories, found {n_dirs}")
             for data_subdir in train_data_class_dirs:
-                samples = [s for s in list(data_subdir.iterdir()) if s.name.endswith(".JPEG")]
+                samples = [
+                    s
+                    for s in list(data_subdir.iterdir())
+                    if (s.name.endswith(".JPEG")) and (not s.name.startswith("._"))
+                ]
                 if len(samples) != n_data:
                     raise ValueError(
                         f"Expected {n_data} {data_dir} images! " f"Found {len(samples)} in {data_subdir.name}"
