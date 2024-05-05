@@ -45,7 +45,13 @@ class IN100_AlbuDataset(ImageNet100Dataset):
         # to return a PIL Image
 
         if self.transforms is not None:
-            img = self.transforms(image=np.array(img))
+            img = np.array(img)  # np.transpose(np.array(img), (2, 0, 1))
+            if len(img.shape) == 2:
+                img = img[:, :, None]
+            if img.shape[2] == 1:
+                img = np.repeat(img, 3, 2)
+
+            img = self.transforms(image=img)
 
         # if self.target_transform is not None:
         #     target = self.target_transform(target=target)
@@ -181,11 +187,17 @@ if __name__ == "__main__":
     dmmax = Gauss_Max_Imagenet100DataModule(advanced_da=True)
 
     # Load train dataloader for each datamodule
-    train_max = dmmax.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
-    train_l = dml.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
-    train_m = dmm.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
-    train_s = dms.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
-    train_off = dmoff.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
+    tmp = dml.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=10, shuffle=False)
+    for i, batch in enumerate(tmp):
+        if i > 10:
+            break
+        print(batch[0].shape)
+
+    train_max = dmmax.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1, shuffle=False)
+    train_l = dml.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1, shuffle=False)
+    train_m = dmm.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1, shuffle=False)
+    train_s = dms.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1, shuffle=False)
+    train_off = dmoff.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1, shuffle=False)
 
     # Save 20 images from each dataloader to disk
     save_dir = os.path.join(os.path.dirname(__file__), "IN100_GaussExamples")
