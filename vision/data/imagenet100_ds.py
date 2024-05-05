@@ -82,14 +82,15 @@ class ImageNet100Dataset(Dataset):
         for data_dir, n_data in zip(["train", "val"], [1300, 50]):
             train_data = self.root / data_dir
             train_data_class_dirs = list(train_data.iterdir())
+            train_data_class_dirs = [d for d in train_data_class_dirs if d.is_dir()]
             n_dirs = len(train_data_class_dirs)
             if n_dirs != 100:
                 raise ValueError(f"Expected 100 directories, found {n_dirs}")
             for data_subdir in train_data_class_dirs:
-                if len(list(data_subdir.iterdir())) != n_data:
+                samples = [s for s in list(data_subdir.iterdir()) if s.endswith(".JPEG")]
+                if len(samples) != n_data:
                     raise ValueError(
-                        f"Expected {n_data} {data_dir} images! "
-                        f"Found {len(list(data_subdir.iterdir()))} in {data_subdir.name}"
+                        f"Expected {n_data} {data_dir} images! " f"Found {len(samples)} in {data_subdir.name}"
                     )
 
         return
@@ -111,7 +112,9 @@ class ImageNet100Dataset(Dataset):
         all_samples = []
         for wnid, class_id in self.wnid_to_id.items():
             class_path = data_dir / wnid
-            images: list[tuple[Path, int]] = [(cp, class_id) for cp in class_path.iterdir()]
+            images: list[tuple[Path, int]] = [
+                (cp, class_id) for cp in class_path.iterdir() if cp.name.endswith(".JPEG")
+            ]
             all_samples.extend(images)
         self.samples = all_samples
         return
