@@ -2,8 +2,20 @@
 Representational Similarity Benchmark
 
 
+### Ideas/Points of discussion
+- Currently differentiation seems to be quite easy?
+  - Shortcut difficulty increase could be achieved
+    - Make shortcut only for a subset of the classes
+    - Test if one can identify it earlier in the network instead of the last layer only?
+    - Use a "bigger" Dataset with more & more complex classes?
+- Add bigger Dataset (ImageNet/IN100) and start with pre-trained models to keep things fast
+
+
+
 ### ToDo's
-- [ ] (Tassilo) Investigate why Difference metrics do not show proper behaviour.
+- [ ] (Tassilo) Retrain Vision GaussL experiments on C10.
+   - Current GaussL model were trained with wrong noise variance making them actually not correct (could alslo just be excluded from evaluation for now)
+
 - [ ] (All) Run the evaluation to get proper results (Shortcuts; Memorization; Monotonicity; Augmentation)
   - [ ] Vision: Add a ViT model for Datasets (all)
 - [ ] (Max) Merge TrainedModel with ModelRepresentation
