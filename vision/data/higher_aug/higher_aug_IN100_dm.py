@@ -103,9 +103,9 @@ class Gauss_Max_Imagenet100DataModule(Imagenet100DataModule):
         self.dataset_path = self.prepare_data()
 
     def prepare_data(self, **kwargs) -> None:
-        if "Imagenet100" in os.environ:
+        if "RAW_DATA" in os.environ:
             # Setting the path for this can also be made optional (It's 170 mb afterall)
-            dataset_path = os.environ["Imagenet100"]
+            dataset_path = os.path.join(os.environ["RAW_DATA"], "Imagenet100")
         else:
             # Test that it is as expected
             dataset_path = VISION_DATA_PATH

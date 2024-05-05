@@ -90,9 +90,6 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
         )
         return DataLoader(dataset=dataset, **kwargs)
 
-    def anchor_dataloader(self, **kwargs) -> DataLoader:
-        return NotImplementedError()
-
 
 class ColorDot_75_IN100Datamodule(ColorDot_100_IN100Datamodule):
     dot_correlation = 75
