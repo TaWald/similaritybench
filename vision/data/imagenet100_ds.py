@@ -77,7 +77,7 @@ class ImageNet100Dataset(Dataset):
 
         :return:
         """
-        assert os.path.exists(os.path.join(self.root)), "Dataset not found."
+        assert os.path.exists(self.root), f"Dataset not found at path {self.root}"
 
         for data_dir, n_data in zip(["train", "val"], [1300, 50]):
             train_data = self.root / data_dir
