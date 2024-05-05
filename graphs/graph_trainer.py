@@ -37,6 +37,7 @@ from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import CORA_DATASET_NAME
+from repsim.benchmark.types_globals import DEFAULT_SEEDS
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
@@ -434,7 +435,7 @@ def parse_args():
         nargs="*",
         type=int,
         choices=list(get_args(EXPERIMENT_SEED)),
-        default=list(get_args(EXPERIMENT_SEED)),
+        default=DEFAULT_SEEDS,
         help="Tests to run.",
     )
     parser.add_argument(
