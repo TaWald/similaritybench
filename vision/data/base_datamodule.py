@@ -95,11 +95,3 @@ class BaseDataModule(ABC):
     ) -> DataLoader:
         """Returns the test datalodaer with the respective Augmentations"""
         pass
-
-    @abstractmethod
-    def anchor_dataloader(
-        self,
-        **kwargs,
-    ) -> DataLoader:
-        """Returns the test datalodaer with the respective Augmentations"""
-        pass

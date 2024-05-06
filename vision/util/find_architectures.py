@@ -3,6 +3,7 @@ from typing import Type
 import torchvision.models
 from torch import nn
 from vision.arch import abstract_acti_extr
+from vision.arch import vit
 from vision.util import data_structs as ds
 
 # from ke.arch import o2o_average
@@ -40,5 +41,13 @@ def get_base_arch(
         return resnet.ResNet50
     elif arch == ds.BaseArchitecture.RESNET101:
         return resnet.ResNet101
+    elif arch == ds.BaseArchitecture.VIT_B16:
+        return vit.VIT_B16
+    elif arch == ds.BaseArchitecture.VIT_B32:
+        return vit.VIT_B32
+    elif arch == ds.BaseArchitecture.VIT_L16:
+        return vit.VIT_L16
+    elif arch == ds.BaseArchitecture.VIT_L32:
+        return vit.VIT_L32
     else:
         raise ValueError("Seems like the BaseArchitecture was not added here!")

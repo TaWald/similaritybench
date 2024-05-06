@@ -1,8 +1,10 @@
 import os
+import random
 from pathlib import Path
 from typing import Any
 from typing import Optional
 
+import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -34,13 +36,16 @@ class ImageNet100Dataset(Dataset):
         self.sanity_check()
 
         metafile = load_json(self.root / "Labels.json")
-        classes = list(sorted(metafile.keys()))
+        classes = list(sorted(metafile.keys()))  # Always the same classes
         self.wnid_to_id = {dk: cnt for cnt, dk in enumerate(classes)}
 
         # Returns all the samples in tuples of (path, label)
         self.gather_samples(split)
         if split in ["train", "val"]:
             self.draw_kfold_subset(split, kfold_split)
+        self.samples = list(sorted(self.samples))
+        rng = np.random.default_rng(32)
+        rng.shuffle(self.samples)
         return
 
     def draw_kfold_subset(self, split: str, kf_split: int) -> None:
@@ -72,19 +77,24 @@ class ImageNet100Dataset(Dataset):
 
         :return:
         """
-        assert os.path.exists(os.path.join(self.root)), "Dataset not found."
+        assert os.path.exists(self.root), f"Dataset not found at path {self.root}"
 
         for data_dir, n_data in zip(["train", "val"], [1300, 50]):
             train_data = self.root / data_dir
             train_data_class_dirs = list(train_data.iterdir())
+            train_data_class_dirs = [d for d in train_data_class_dirs if d.is_dir()]
             n_dirs = len(train_data_class_dirs)
             if n_dirs != 100:
                 raise ValueError(f"Expected 100 directories, found {n_dirs}")
             for data_subdir in train_data_class_dirs:
-                if len(list(data_subdir.iterdir())) != n_data:
+                samples = [
+                    s
+                    for s in list(data_subdir.iterdir())
+                    if (s.name.endswith(".JPEG")) and (not s.name.startswith("._"))
+                ]
+                if len(samples) != n_data:
                     raise ValueError(
-                        f"Expected {n_data} {data_dir} images! "
-                        f"Found {len(list(data_subdir.iterdir()))} in {data_subdir.name}"
+                        f"Expected {n_data} {data_dir} images! " f"Found {len(samples)} in {data_subdir.name}"
                     )
 
         return
@@ -106,7 +116,9 @@ class ImageNet100Dataset(Dataset):
         all_samples = []
         for wnid, class_id in self.wnid_to_id.items():
             class_path = data_dir / wnid
-            images: list[tuple[Path, int]] = [(cp, class_id) for cp in class_path.iterdir()]
+            images: list[tuple[Path, int]] = [
+                (cp, class_id) for cp in class_path.iterdir() if cp.name.endswith(".JPEG")
+            ]
             all_samples.extend(images)
         self.samples = all_samples
         return

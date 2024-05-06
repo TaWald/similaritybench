@@ -105,11 +105,19 @@ class GroupSeparationExperiment(AbstractExperiment):
         cache_to_disk: bool = False,
         cache_to_mem: bool = False,
         only_extract_reps: bool = False,
+        rerun_nans: bool = False,
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
         super().__init__(
-            measures, representation_dataset, storage_path, threads, cache_to_disk, cache_to_mem, only_extract_reps
+            measures,
+            representation_dataset,
+            storage_path,
+            threads,
+            cache_to_disk,
+            cache_to_mem,
+            only_extract_reps,
+            rerun_nans=rerun_nans,
         )
         self.groups_of_models = grouped_models
         self.meta_data = meta_data
@@ -324,7 +332,7 @@ class GroupSeparationExperiment(AbstractExperiment):
 
             with tqdm(total=n_comparisons, desc="Comparing representations") as pbar:
                 with multiprocessing.get_context("spawn").Pool(
-                    self.n_threads, initargs=(rep_lock, storage_lock, storer)
+                    self.threads, initargs=(rep_lock, storage_lock, storer)
                 ) as p:
                     results = []
                     for comp in comparisons_to_do:

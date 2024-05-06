@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from colorsys import hsv_to_rgb
+
 import numpy as np
 import torch
 from skimage import draw
@@ -51,12 +52,22 @@ class ColorDotShortcut(AbstractShortcut):
     def set_rng_seed(self, seed: int) -> None:
         self._rng_gen = np.random.default_rng(seed)
 
-    def _get_random_color_dot(self, label: int, dtype: np.dtype) -> np.ndarray:
-        """Get a random color dot for a specific label."""
+    def _get_color_dot_coords(self, label: int) -> tuple[int, int, np.ndarray, int, int]:
+        """Get the coordinates and color for a specific label."""
+        # Maybe choose a different class label if the correlation is not 100%
+        orig_label = label
+        if self._rng_gen.random() > self.correlation_prob:
+            label = self._rng_gen.integers(self.n_classes)
         color = self._get_color(label)
         boundaries = self.dot_diameter // 2
         x_center = self._rng_gen.integers(boundaries, self.image_size[0] - boundaries)
         y_center = self._rng_gen.integers(boundaries, self.image_size[1] - boundaries)
+
+        return x_center, y_center, color, label, orig_label
+
+    def _color_dot_from_coords(self, x_center: int, y_center: int, color: np.ndarray, dtype: np.dtype) -> np.ndarray:
+        """Draw a dot on a black image."""
+        boundaries = self.dot_diameter // 2
         rr, cc = draw.disk((x_center, y_center), boundaries + 1.5, shape=(self.image_size[0], self.image_size[1]))
         dot_mask = np.zeros((self.image_size[0], self.image_size[1], self.n_channels), dtype=dtype)
         color_dot = np.zeros((self.image_size[0], self.image_size[1], self.n_channels), dtype=dtype)
@@ -66,9 +77,21 @@ class ColorDotShortcut(AbstractShortcut):
 
         return dot_mask, color_dot
 
+    def _get_random_color_dot(self, label: int, dtype: np.dtype) -> np.ndarray:
+        """Get a random color dot for a specific label."""
+        x_center, y_center, color, color_label, cls_label = self._get_color_dot_coords(label)
+        return self._color_dot_from_coords(x_center, y_center, color, dtype)
+
+    def apply_shortcut(self, image: np.ndarray, dot_mask, color_dot) -> np.ndarray:
+        dot_mask = dot_mask.astype(image.dtype)
+        color_dot = color_dot.astype(image.dtype)
+
+        sc_image = image * (1 - dot_mask) + color_dot
+        return sc_image
+
     def forward(self, image: np.ndarray, label: np.ndarray) -> np.ndarray:
         """Takes a batch of images and labels and adds a colored dot to the image.
-        The color is the same as the class if """
+        The color is the same as the class if"""
         if self._rng_gen.random() > self.correlation_prob:
             label = self._rng_gen.integers(self.n_classes)  # Choose any random label instead of true one
 

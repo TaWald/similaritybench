@@ -6,6 +6,11 @@ from vision.data.higher_aug.higher_aug_dm import Gauss_M_CIFAR10DataModule
 from vision.data.higher_aug.higher_aug_dm import Gauss_Max_CIFAR10DataModule
 from vision.data.higher_aug.higher_aug_dm import Gauss_Off_CIFAR10DataModule
 from vision.data.higher_aug.higher_aug_dm import Gauss_S_CIFAR10DataModule
+from vision.data.higher_aug.higher_aug_IN100_dm import Gauss_L_Imagenet100DataModule
+from vision.data.higher_aug.higher_aug_IN100_dm import Gauss_M_Imagenet100DataModule
+from vision.data.higher_aug.higher_aug_IN100_dm import Gauss_Max_Imagenet100DataModule
+from vision.data.higher_aug.higher_aug_IN100_dm import Gauss_Off_Imagenet100DataModule
+from vision.data.higher_aug.higher_aug_IN100_dm import Gauss_S_Imagenet100DataModule
 from vision.data.imagenet100_dm import Imagenet100DataModule
 from vision.data.imagenet_dm import ImagenetDataModule
 from vision.data.medmnist_dm import DermaMNISTDataModule
@@ -15,6 +20,11 @@ from vision.data.shortcuts.sc_cifar10_dm import ColorDot_100_CIFAR10DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_25_CIFAR10DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_50_CIFAR10DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_75_CIFAR10DataModule
+from vision.data.shortcuts.sc_in100_dm import ColorDot_0_IN100Datamodule
+from vision.data.shortcuts.sc_in100_dm import ColorDot_100_IN100Datamodule
+from vision.data.shortcuts.sc_in100_dm import ColorDot_25_IN100Datamodule
+from vision.data.shortcuts.sc_in100_dm import ColorDot_50_IN100Datamodule
+from vision.data.shortcuts.sc_in100_dm import ColorDot_75_IN100Datamodule
 from vision.data.test_dm import TestDataModule
 from vision.data.tiny_imagenet_dm import TinyImagenetDataModule
 from vision.util import data_structs as ds
@@ -62,7 +72,26 @@ def get_datamodule(dataset: ds.Dataset | str, advanced_da: bool = True) -> BaseD
         return Gauss_S_CIFAR10DataModule(advanced_da)
     elif dataset == ds.Dataset.GaussOff:
         return Gauss_Off_CIFAR10DataModule(advanced_da)
-        # return split_cifar100_dm.SplitCIFAR100KFoldBaseDataModule(params)
+    elif dataset == ds.Dataset.INGaussMAX:
+        return Gauss_Max_Imagenet100DataModule(advanced_da)
+    elif dataset == ds.Dataset.INGaussL:
+        return Gauss_L_Imagenet100DataModule(advanced_da)
+    elif dataset == ds.Dataset.INGaussM:
+        return Gauss_M_Imagenet100DataModule(advanced_da)
+    elif dataset == ds.Dataset.INGaussS:
+        return Gauss_S_Imagenet100DataModule(advanced_da)
+    elif dataset == ds.Dataset.INGaussOff:
+        return Gauss_Off_Imagenet100DataModule(advanced_da)
+    elif dataset == ds.Dataset.INCDOT100:
+        return ColorDot_100_IN100Datamodule(advanced_da)
+    elif dataset == ds.Dataset.INCDOT75:
+        return ColorDot_75_IN100Datamodule(advanced_da)
+    elif dataset == ds.Dataset.INCDOT50:
+        return ColorDot_50_IN100Datamodule(advanced_da)
+    elif dataset == ds.Dataset.INCDOT25:
+        return ColorDot_25_IN100Datamodule(advanced_da)
+    elif dataset == ds.Dataset.INCDOT0:
+        return ColorDot_0_IN100Datamodule(advanced_da)
     else:
         raise ValueError
 

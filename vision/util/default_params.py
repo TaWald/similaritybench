@@ -54,7 +54,21 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
             split=0,
             dataset=dataset.value,
         )
-    elif dataset in [ds.Dataset.IMAGENET, ds.Dataset.IMAGENET100, ds.Dataset.TinyIMAGENET]:
+    elif dataset in [
+        ds.Dataset.IMAGENET,
+        ds.Dataset.IMAGENET100,
+        ds.Dataset.TinyIMAGENET,
+        ds.Dataset.INCDOT0,
+        ds.Dataset.INCDOT25,
+        ds.Dataset.INCDOT50,
+        ds.Dataset.INCDOT75,
+        ds.Dataset.INCDOT100,
+        ds.Dataset.INGaussMAX,
+        ds.Dataset.INGaussL,
+        ds.Dataset.INGaussM,
+        ds.Dataset.INGaussS,
+        ds.Dataset.INGaussOff,
+    ]:
         """Hyperparams taken from
          https://github.com/tensorflow/tpu/tree/master/models/official/resnet
          /resnet_rs/configs
@@ -63,9 +77,9 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
         """
         params = ds.Params(
             architecture_name=architecture_name,
-            num_epochs=250,
+            num_epochs=100,
             save_last_checkpoint=True,
-            batch_size=256,
+            batch_size=128,
             label_smoothing=True,
             label_smoothing_val=0.1,
             cosine_annealing=True,
@@ -142,10 +156,23 @@ def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
         input_resolution = (32, 32)
         early_downsampling = False
         global_average_pooling = 4
-    elif dataset in [ds.Dataset.IMAGENET, ds.Dataset.IMAGENET100]:
+    elif dataset in [
+        ds.Dataset.IMAGENET,
+        ds.Dataset.IMAGENET100,
+        ds.Dataset.INCDOT0,
+        ds.Dataset.INCDOT25,
+        ds.Dataset.INCDOT50,
+        ds.Dataset.INCDOT75,
+        ds.Dataset.INCDOT100,
+        ds.Dataset.INGaussMAX,
+        ds.Dataset.INGaussL,
+        ds.Dataset.INGaussM,
+        ds.Dataset.INGaussS,
+        ds.Dataset.INGaussOff,
+    ]:
         output_classes = 1000 if dataset == ds.Dataset.IMAGENET else 100
         in_ch = 3
-        input_resolution = (160, 160)
+        input_resolution = (224, 224)
         early_downsampling = True
         global_average_pooling = 5
     elif dataset == ds.Dataset.CIFAR100:
