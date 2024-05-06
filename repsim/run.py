@@ -11,7 +11,6 @@ from repsim.benchmark.model_selection import _filter_models
 from repsim.benchmark.model_selection import _separate_models_by_keys
 from repsim.benchmark.model_selection import get_grouped_models
 from repsim.benchmark.monotonicity_experiment import MonotonicityExperiment
-from repsim.benchmark.multimodel_experiments import MultiModelExperiment
 from repsim.benchmark.output_correlation_experiment import OutputCorrelationExperiment
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.paths import LOG_PATH
@@ -29,8 +28,6 @@ def get_experiment_from_name(name: str) -> Type[AbstractExperiment]:
         return GroupSeparationExperiment
     elif name == "MonotonicityExperiment":
         return MonotonicityExperiment
-    elif name == "MultiModelExperiment":
-        return MultiModelExperiment  # type: ignore
     else:
         raise ValueError(f"Invalid experiment name: {name}")
 
