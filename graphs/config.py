@@ -13,9 +13,6 @@ from torch_geometric.nn.models import GAT
 from torch_geometric.nn.models import GCN
 from torch_geometric.nn.models import GraphSAGE
 
-# from graphs.gnn import GCN
-# from graphs.gnn import SAGE
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 # GENERAL PATH-RELATED VARIABLES
@@ -211,3 +208,5 @@ NN_TESTS_LIST = [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME, SHORTCUT_EXPERIME
 SPLIT_IDX_TRAIN_KEY = "train"
 SPLIT_IDX_VAL_KEY = "valid"
 SPLIT_IDX_TEST_KEY = "test"
+
+MAX_TEST_SIZE = 10000

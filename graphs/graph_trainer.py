@@ -16,6 +16,7 @@ from graphs.config import GNN_DICT
 from graphs.config import GNN_LIST
 from graphs.config import GNN_PARAMS_DICT
 from graphs.config import LAYER_EXPERIMENT_N_LAYERS
+from graphs.config import MAX_TEST_SIZE
 from graphs.config import OPTIMIZER_PARAMS_DICT
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import SPLIT_IDX_TRAIN_KEY
@@ -26,6 +27,8 @@ from graphs.gnn import get_representations
 from graphs.gnn import get_test_output
 from graphs.gnn import train_model
 from graphs.tools import shuffle_labels
+from graphs.tools import subsample_torch_index
+from graphs.tools import subsample_torch_mask
 from ogb.nodeproppred import PygNodePropPredDataset
 from repsim.benchmark.paths import GRAPHS_DATA_PATH
 from repsim.benchmark.paths import GRAPHS_MODEL_PATH
@@ -37,6 +40,7 @@ from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import CORA_DATASET_NAME
+from repsim.benchmark.types_globals import DEFAULT_SEEDS
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
@@ -125,7 +129,12 @@ class GraphTrainer(ABC):
                 root=GRAPHS_DATA_PATH / ARXIV_DATASET_NAME,
             )
 
-            return pyg_dataset[0], pyg_dataset.num_classes, pyg_dataset.get_idx_split()
+            split_idx = pyg_dataset.get_idx_split()
+            split_idx[SPLIT_IDX_TEST_KEY] = subsample_torch_index(
+                split_idx[SPLIT_IDX_TEST_KEY], size=MAX_TEST_SIZE, seed=SINGLE_SAMPLE_SEED
+            )
+
+            return pyg_dataset[0], pyg_dataset.num_classes, split_idx
         else:
 
             if dataset_name == CORA_DATASET_NAME:
@@ -141,7 +150,14 @@ class GraphTrainer(ABC):
             split_idx = dict()
             split_idx[SPLIT_IDX_TRAIN_KEY] = pyg_dataset.train_mask
             split_idx[SPLIT_IDX_VAL_KEY] = pyg_dataset.val_mask
-            split_idx[SPLIT_IDX_TEST_KEY] = pyg_dataset.test_mask
+
+            test_idx = pyg_dataset.test_mask
+            if len(test_idx) > MAX_TEST_SIZE:
+                split_idx[SPLIT_IDX_TEST_KEY] = subsample_torch_mask(
+                    pyg_dataset.test_mask, size=MAX_TEST_SIZE, seed=SINGLE_SAMPLE_SEED
+                )
+            else:
+                split_idx[SPLIT_IDX_TEST_KEY] = test_idx
 
             data = pyg_dataset[0]
             data.adj_t = torch_geometric.utils.to_torch_csr_tensor(data.edge_index)
@@ -177,7 +193,8 @@ class GraphTrainer(ABC):
     def _get_setting_data(self, setting: SETTING_IDENTIFIER):
         pass
 
-    def _get_drop_edge(self, setting: SETTING_IDENTIFIER) -> float:
+    @staticmethod
+    def _get_drop_edge(setting: SETTING_IDENTIFIER) -> float:
 
         if setting == AUGMENTATION_25_SETTING:
             return 0.2
@@ -434,7 +451,7 @@ def parse_args():
         nargs="*",
         type=int,
         choices=list(get_args(EXPERIMENT_SEED)),
-        default=list(get_args(EXPERIMENT_SEED)),
+        default=DEFAULT_SEEDS,
         help="Tests to run.",
     )
     parser.add_argument(
