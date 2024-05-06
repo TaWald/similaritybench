@@ -8,6 +8,7 @@ threads: 1
 cache_to_disk: False
 cache_to_mem: True
 only_extract_reps: False
+rerun_nans: True
 experiments:
   - name: NLP mnli Memorization Experiments
     type: GroupSeparationExperiment # Defines the type of experiment class to use
