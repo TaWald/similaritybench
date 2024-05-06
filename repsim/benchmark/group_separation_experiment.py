@@ -332,7 +332,7 @@ class GroupSeparationExperiment(AbstractExperiment):
 
             with tqdm(total=n_comparisons, desc="Comparing representations") as pbar:
                 with multiprocessing.get_context("spawn").Pool(
-                    self.n_threads, initargs=(rep_lock, storage_lock, storer)
+                    self.threads, initargs=(rep_lock, storage_lock, storer)
                 ) as p:
                     results = []
                     for comp in comparisons_to_do:
