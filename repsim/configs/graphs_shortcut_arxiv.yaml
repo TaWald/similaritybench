@@ -3,6 +3,7 @@ excluded_measures:
   - RSMNormDifference
   - GeometryScore
   - IMDScore
+  - PWCCA
 threads: 1
 cache_to_disk: False
 cache_to_mem: True
