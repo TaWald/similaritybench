@@ -18,6 +18,7 @@ from graphs.config import GNN_PARAMS_DICT
 from graphs.config import LAYER_EXPERIMENT_N_LAYERS
 from graphs.config import MAX_TEST_SIZE
 from graphs.config import OPTIMIZER_PARAMS_DICT
+from graphs.config import SPLIT_IDX_BENCHMARK_TEST_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import SPLIT_IDX_TRAIN_KEY
 from graphs.config import SPLIT_IDX_VAL_KEY
@@ -130,7 +131,7 @@ class GraphTrainer(ABC):
             )
 
             split_idx = pyg_dataset.get_idx_split()
-            split_idx[SPLIT_IDX_TEST_KEY] = subsample_torch_index(
+            split_idx[SPLIT_IDX_BENCHMARK_TEST_KEY] = subsample_torch_index(
                 split_idx[SPLIT_IDX_TEST_KEY], size=MAX_TEST_SIZE, seed=SINGLE_SAMPLE_SEED
             )
 
@@ -152,12 +153,13 @@ class GraphTrainer(ABC):
             split_idx[SPLIT_IDX_VAL_KEY] = pyg_dataset.val_mask
 
             test_idx = pyg_dataset.test_mask
+            split_idx[SPLIT_IDX_TEST_KEY] = test_idx
             if len(test_idx) > MAX_TEST_SIZE:
-                split_idx[SPLIT_IDX_TEST_KEY] = subsample_torch_mask(
-                    pyg_dataset.test_mask, size=MAX_TEST_SIZE, seed=SINGLE_SAMPLE_SEED
+                split_idx[SPLIT_IDX_BENCHMARK_TEST_KEY] = subsample_torch_mask(
+                    test_idx, size=MAX_TEST_SIZE, seed=SINGLE_SAMPLE_SEED
                 )
             else:
-                split_idx[SPLIT_IDX_TEST_KEY] = test_idx
+                split_idx[SPLIT_IDX_BENCHMARK_TEST_KEY] = test_idx
 
             data = pyg_dataset[0]
             data.adj_t = torch_geometric.utils.to_torch_csr_tensor(data.edge_index)
@@ -240,7 +242,7 @@ class GraphTrainer(ABC):
             model=model,
             data=setting_data,
             device=self.device,
-            test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
+            test_idx=self.split_idx[SPLIT_IDX_BENCHMARK_TEST_KEY],
             layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
         )
 
@@ -255,7 +257,7 @@ class GraphTrainer(ABC):
             model=model,
             data=setting_data,
             device=self.device,
-            test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
+            test_idx=self.split_idx[SPLIT_IDX_BENCHMARK_TEST_KEY],
         )
 
         return reps
