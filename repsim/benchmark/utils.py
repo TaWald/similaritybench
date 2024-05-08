@@ -76,8 +76,6 @@ class ExperimentStorer:
                 with open(GIT_SHA_PATH, "r") as f:
                     sha = f.readline().strip()
 
-                print(sha)
-
             ids_of_interest = [
                 "layer_id",
                 "_architecture_name",
