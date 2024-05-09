@@ -29,6 +29,7 @@ class OutputCorrelationExperiment(AbstractExperiment):
         cache_to_disk: bool = False,
         cache_to_mem: bool = False,
         only_extract_reps: bool = False,
+        rerun_nans: bool = False,
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
@@ -41,6 +42,7 @@ class OutputCorrelationExperiment(AbstractExperiment):
             cache_to_mem,
             only_extract_reps,
             functional_measures=functional_measures,
+            rerun_nans=rerun_nans,
         )
         self.models = models
         self.meta_data = meta_data
@@ -173,6 +175,10 @@ class OutputCorrelationExperiment(AbstractExperiment):
                 if not storer.comparison_exists(obj_source, obj_target, measure):
                     todo_by_measure.append(measure)
                     n_total += 1
+                elif self.rerun_nans:
+                    if np.isnan(storer.get_comp_result(obj_source, obj_target, measure)):
+                        todo_by_measure.append(measure)
+                        n_total += 1
             if len(todo_by_measure) > 0:
                 comparisons_todo.append((obj_source, obj_target, todo_by_measure))
         return comparisons_todo, n_total

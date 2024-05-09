@@ -9,7 +9,7 @@ import numpy as np
 import repsim.utils
 import torch
 from loguru import logger
-from repsim.benchmark.meta_measures import inter_setting_3D_accuracy
+from repsim.benchmark.archive.meta_measures import inter_setting_3D_accuracy
 from repsim.benchmark.registry import ALL_TRAINED_MODELS
 from repsim.benchmark.registry import TrainedModel
 from repsim.benchmark.types_globals import BENCHMARK_DATASETS_LIST

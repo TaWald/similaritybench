@@ -1,5 +1,5 @@
 # Holds all information needed to run experiments.
-threads: 64
+threads: 1
 cache_to_disk: False
 cache_to_mem: True
 only_extract_reps: False
