@@ -27,6 +27,7 @@ class ExperimentStorer:
         self._old_experiments = (
             pd.read_parquet(self.path_to_store) if os.path.exists(self.path_to_store) else pd.DataFrame()
         )
+        self._overwrite_indices: list[str] = []
         self._sanity_check_parquett()
         self._new_experiments = pd.DataFrame()
 
@@ -63,7 +64,9 @@ class ExperimentStorer:
                 tgt_single_rep=target_rep,
                 metric_name=metric.name,
             )
+            comp_exists = False
             if self.comparison_exists(src_single_rep, tgt_single_rep, metric, ignore_symmetry=True) and not overwrite:
+                comp_exists = True
                 logger.info("Comparison already exists and Overwrite is False. Skipping.")
                 continue
 
@@ -99,6 +102,8 @@ class ExperimentStorer:
             )
             content.update({"hash": sha, "date": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")})
             content_df = pd.DataFrame(content, index=[comp_id])
+            if overwrite and comp_exists:
+                self._overwrite_indices.append(comp_id)
             self._new_experiments = self._new_experiments._append(content_df, ignore_index=False)
 
     def _sort_models(
@@ -190,9 +195,10 @@ class ExperimentStorer:
         if isinstance(metric_values, (np.float32, np.float64, np.float16, float)):
             sim_value = metric_values
         elif isinstance(metric_values, pd.Series):
-            logger.warning(f"Multiple entries found for {comp_id}. Returning the first one.")
+            logger.warning(f"Multiple entries found for {comp_id}.")
             metric_values = res["metric_value"]
-            if all(np.isclose(value, metric_values[0], atol=1e-6) for value in metric_values):
+            metric_values = [v for v in metric_values if not np.isnan(v)]
+            if all(np.isclose(value, metric_values[0], atol=1e-6) for value in metric_values if value):
                 sim_value = metric_values[0]
             else:
                 logger.error("Multiple different values found for the same comparison. Returning None.")
@@ -236,6 +242,10 @@ class ExperimentStorer:
         latest_experiment_results = (
             pd.read_parquet(self.path_to_store) if os.path.exists(self.path_to_store) else pd.DataFrame()
         )
+        if len(self._overwrite_indices) > 0:
+            # Need to ignore errors in case multiple processes try to overwrite the same index.
+            latest_experiment_results.drop(self._overwrite_indices, inplace=True, errors="ignore")
+            self._overwrite_indices = []
         # Read all the experiments and make sure that we do not overwrite any existing ones.
         all_experiments = pd.concat([latest_experiment_results, self._new_experiments], ignore_index=False)
         all_experiments.to_parquet(self.path_to_store)

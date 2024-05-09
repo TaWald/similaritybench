@@ -72,18 +72,17 @@ class AbstractExperiment:
 
         with tqdm(total=n_total, desc=tqdm_descr) as pbar:
             for obj_src, obj_tgt, measures in todo_combos:
+
                 obj_src.cache = self.cache_to_disk  # Optional persistent cache to disk
                 obj_tgt.cache = self.cache_to_disk  # Optional persistent cache to disk
                 for measure in measures:
+                    overwrite = False
                     if storer.comparison_exists(obj_src, obj_tgt, measure):
-                        if self.rerun_nans:
-                            val = storer.get_comp_result(obj_src, obj_tgt, measure)
-                            if np.isnan(val):
-                                logger.info(f"Rerunning NaN comparison for '{measure.name}'.")
-                            else:
-                                pbar.update(1)
-                                continue
+                        if self.rerun_nans and np.isnan(storer.get_comp_result(obj_src, obj_tgt, measure)):
+                            logger.info(f"Rerunning NaN comparison for '{measure.name}'.")
+                            overwrite = True
                         else:
+                            pbar.update(1)
                             continue
                     try:
                         vals_a = getattr(obj_src, value_attr_name)
@@ -103,7 +102,7 @@ class AbstractExperiment:
                                 assert isinstance(measure, FunctionalSimilarityMeasure)
                                 sim = measure(vals_a, vals_b)
                         runtime = time.perf_counter() - start_time
-                        storer.add_results(obj_src, obj_tgt, measure, sim, runtime)
+                        storer.add_results(obj_src, obj_tgt, measure, sim, runtime, overwrite)
                         logger.debug(
                             f"{measure.name}: Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s."
                         )

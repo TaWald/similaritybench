@@ -17,6 +17,7 @@ from tqdm import tqdm
 
 
 class OutputCorrelationExperiment(AbstractExperiment):
+
     def __init__(
         self,
         models: list[repsim.benchmark.registry.TrainedModel],
