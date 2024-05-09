@@ -104,5 +104,13 @@ def get_min_max_shortcut_datamodules(
 
     if dataset in [ds.Dataset.CDOT0, ds.Dataset.CDOT75, ds.Dataset.CDOT50, ds.Dataset.CDOT25, ds.Dataset.CDOT100]:
         return get_datamodule(ds.Dataset.CDOT0, advanced_da), get_datamodule(ds.Dataset.CDOT100, advanced_da)
+    elif dataset in [
+        ds.Dataset.INCDOT0,
+        ds.Dataset.INCDOT75,
+        ds.Dataset.INCDOT50,
+        ds.Dataset.INCDOT25,
+        ds.Dataset.INCDOT100,
+    ]:
+        return get_datamodule(ds.Dataset.INCDOT0, advanced_da), get_datamodule(ds.Dataset.INCDOT100, advanced_da)
     else:
         raise NotImplementedError("Only implemented for shortcut datasets.")
