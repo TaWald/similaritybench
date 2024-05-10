@@ -5,8 +5,8 @@ from abc import abstractmethod
 from dataclasses import asdict
 from pathlib import Path
 
-from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer
+from torch.utils.data import DataLoader
 from vision.data.base_datamodule import BaseDataModule
 from vision.training.ke_train_modules.base_training_module import BaseLightningModule
 from vision.util import data_structs as ds
@@ -27,7 +27,7 @@ class BaseTrainer:
         self.datamodule: BaseDataModule = datamodule
         self.params = model.params
         self.arch_params = arch_params
-        self.model_info = model_info
+        self.model_info: ds.ModelInfo = model_info
         self.num_workers = get_workers_for_current_node()
         self.prog_bar = False if "data" in os.environ else True
 
@@ -102,22 +102,17 @@ class BaseTrainer:
 
         file_io.save(
             output,
-            path=self.training_info.path_ckpt_root,
-            filename=nc.OUTPUT_TMPLT,
-        )
-        file_io.save(
-            output,
-            path=self.training_info.path_data_root,
+            path=self.model_info.path_ckpt,
             filename=nc.OUTPUT_TMPLT,
         )
 
         tbt_ke_dict = {}
-        for k, v in asdict(self.training_info).items():
+        for k, v in asdict(self.model_info).items():
             if isinstance(v, Path):
                 tbt_ke_dict[k] = str(v)
             else:
                 tbt_ke_dict[k] = v
-        file_io.save_json(tbt_ke_dict, self.training_info.path_train_info_json)
+        file_io.save_json(tbt_ke_dict, self.model_info.path_train_info_json)
 
     def train(self):
         """Trains a model and keeps it as attribute self.model
@@ -248,11 +243,11 @@ class BaseTrainer:
         self.model.clear_outputs = True
 
         if mode == "test":
-            file_io.save(out["outputs"], self.training_info.path_activations / nc.MODEL_TEST_PD_TMPLT)
-            file_io.save(out["groundtruths"], self.training_info.path_activations / nc.MODEL_TEST_GT_TMPLT)
+            file_io.save(out["outputs"], self.model_info.path_activations / nc.MODEL_TEST_PD_TMPLT)
+            file_io.save(out["groundtruths"], self.model_info.path_activations / nc.MODEL_TEST_GT_TMPLT)
         else:
-            file_io.save(out["outputs"], self.training_info.path_activations / nc.MODEL_VAL_PD_TMPLT)
-            file_io.save(out["groundtruths"], self.training_info.path_activations / nc.MODEL_VAL_GT_TMPLT)
+            file_io.save(out["outputs"], self.model_info.path_activations / nc.MODEL_VAL_PD_TMPLT)
+            file_io.save(out["groundtruths"], self.model_info.path_activations / nc.MODEL_VAL_GT_TMPLT)
 
         return out
 

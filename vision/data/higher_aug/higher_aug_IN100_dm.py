@@ -154,7 +154,7 @@ class Gauss_Max_Imagenet100DataModule(Imagenet100DataModule):
     def test_dataloader(self, transform: ds.Augmentation = ds.Augmentation.VAL, **kwargs) -> DataLoader:
         dataset = IN100_AlbuDataset(
             root=self.dataset_path,
-            train="val",
+            split="val",
             kfold_split=0,
             transform=self.get_transforms(transform),
         )
