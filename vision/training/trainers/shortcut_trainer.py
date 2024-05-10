@@ -85,7 +85,6 @@ class ShortcutTrainer:
             enable_progress_bar=self.prog_bar,
             logger=self.logger,
             profiler=None,
-            fast_dev_run=True,
         )
         self.model.cuda()
         loguru_logger.info("Starting training")

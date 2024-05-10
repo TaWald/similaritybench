@@ -134,7 +134,6 @@ class BaseTrainer:
             enable_progress_bar=self.prog_bar,
             logger=False,
             profiler=None,
-            fast_dev_run=True,
         )
         loguru_logger.info("Starting fitting.")
         self.model.cuda()
@@ -233,7 +232,6 @@ class BaseTrainer:
             enable_progress_bar=False,
             logger=False,
             profiler=None,
-            fast_dev_run=True,
         )
         self.model.load_latest_checkpoint()
         self.model.cuda()
