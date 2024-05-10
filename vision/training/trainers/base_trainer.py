@@ -5,6 +5,7 @@ from abc import abstractmethod
 from dataclasses import asdict
 from pathlib import Path
 
+from loguru import logger as loguru_logger
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CSVLogger
 from torch.utils.data import DataLoader
@@ -133,8 +134,9 @@ class BaseTrainer:
             enable_progress_bar=self.prog_bar,
             logger=False,
             profiler=None,
+            fast_dev_run=True,
         )
-
+        loguru_logger.info("Starting fitting.")
         self.model.cuda()
         trainer.fit(
             self.model,
@@ -149,6 +151,7 @@ class BaseTrainer:
                 **self.val_kwargs,
             ),
         )
+        loguru_logger.info("Beginning Evaluation (Val)")
         self.model.cuda()
         self.model.eval()
         self.model.clear_outputs = False
@@ -159,6 +162,7 @@ class BaseTrainer:
             ),
         )
         val_metrics = self.model.final_metrics
+        loguru_logger.info("Beginning Evaluation (Test)")
         trainer.test(self.model, dataloaders=self.datamodule.test_dataloader(ds.Augmentation.VAL, **self.val_kwargs))
         test_metrics = self.model.final_metrics
         output = {
@@ -167,13 +171,13 @@ class BaseTrainer:
             **vars(self.params),
             **self.arch_params,
         }
-
+        loguru_logger.info("Saving output.json ")
         file_io.save(
             output,
             path=self.model_info.path_root,
             filename=nc.OUTPUT_TMPLT,
         )
-
+        loguru_logger.info("Saving info file.")
         tbt_ke_dict = {}
         for k, v in asdict(self.model_info).items():
             if isinstance(v, Path):

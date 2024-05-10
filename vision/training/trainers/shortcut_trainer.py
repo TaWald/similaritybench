@@ -177,13 +177,13 @@ class ShortcutTrainer:
             **vars(self.params),
             **self.arch_params,
         }
-        loguru_logger.info("Saving output.")
+        loguru_logger.info("Saving 'output.json' ...")
         file_io.save(
             output,
             path=self.model_info.path_root,
             filename=nc.OUTPUT_TMPLT,
         )
-
+        loguru_logger.info("Saving model info.")
         tbt_ke_dict = {}
         for k, v in asdict(self.model_info).items():
             if isinstance(v, Path):
