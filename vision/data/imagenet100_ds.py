@@ -129,9 +129,7 @@ class ImageNet100Dataset(Dataset):
         return
 
     def __getitem__(self, item: int) -> tuple[Any, int]:
-
         im: Image.Image = Image.open(self.samples[item][0])
-
         if im.mode != "RGB":
             im = im.convert("RGB")
         trans_im = self.transforms(im)

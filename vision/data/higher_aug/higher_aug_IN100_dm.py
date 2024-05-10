@@ -61,8 +61,6 @@ class IN100_AlbuDataset(ImageNet100Dataset):
 
 class Gauss_Max_Imagenet100DataModule(Imagenet100DataModule):
     datamodule_id = ds.Dataset.IMAGENET100
-    n_train = 50000
-    n_test = 10000
     n_classes = 10
     var_limit = (0, 4000)  # (5, 20), (10, 50), (25, 75), (40, 100)
     dot_diameter = 5
@@ -130,7 +128,7 @@ class Gauss_Max_Imagenet100DataModule(Imagenet100DataModule):
             kfold_split=0,
             transform=self.get_transforms(transform),
         )
-        train_ids, _ = self.get_train_val_split(split)
+        train_ids, _ = self.get_train_val_split(split, len(dataset))
         dataset = Subset(dataset, train_ids)
         return DataLoader(dataset=dataset, **kwargs)
 
@@ -147,7 +145,7 @@ class Gauss_Max_Imagenet100DataModule(Imagenet100DataModule):
             kfold_split=0,
             transform=self.get_transforms(transform),
         )
-        _, val_ids = self.get_train_val_split(split)
+        _, val_ids = self.get_train_val_split(split, len(dataset))
         dataset = Subset(dataset, val_ids)
         return DataLoader(dataset=dataset, **kwargs)
 

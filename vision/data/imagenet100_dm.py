@@ -16,7 +16,6 @@ from vision.util import data_structs as ds
 
 class Imagenet100DataModule(BaseDataModule):
     datamodule_id = ds.Dataset.IMAGENET100
-    n_train = 130000
     n_classes = 100
 
     # If I remove split from init call:
