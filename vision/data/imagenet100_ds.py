@@ -71,6 +71,7 @@ class ImageNet100Dataset(Dataset):
             else:
                 tmp_samples.extend(list(train_samples))
         self.samples = tmp_samples
+        assert len(self.samples) > 0, f"No samples remain in dataset after kfold subset drawing."
 
     def sanity_check(self):
         """Validates that the dataset is present and all samples exist.
@@ -121,6 +122,7 @@ class ImageNet100Dataset(Dataset):
             ]
             all_samples.extend(images)
         self.samples = all_samples
+        assert len(self.samples) > 0, f"No samples found in the dataset. Checked path: {data_dir}"
         return
 
     def __getitem__(self, item: int) -> tuple[Any, int]:
