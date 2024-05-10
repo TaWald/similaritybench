@@ -29,7 +29,7 @@ class ColorDotImageNet100Dataset(Dataset):
         :param split: Split indicating if train/val/test images are to be loaded
         :param transform: optional transforms that are to be applied when getting items
         """
-        super().__init__(root, split, kfold_split, transform)
+        super().__init__()
         assert split in [
             "train",
             "val",
