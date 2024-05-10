@@ -6,6 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from pytorch_lightning import Trainer
+from pytorch_lightning.loggers import CSVLogger
 from torch.utils.data import DataLoader
 from vision.data.base_datamodule import BaseDataModule
 from vision.training.ke_train_modules.base_training_module import BaseLightningModule
@@ -29,7 +30,8 @@ class BaseTrainer:
         self.arch_params = arch_params
         self.model_info: ds.ModelInfo = model_info
         self.num_workers = get_workers_for_current_node()
-        self.prog_bar = False if "data" in os.environ else True
+        self.prog_bar = False if "LSB_JOBID" in os.environ else True
+        self.logger = CSVLogger(self.model_info.path_train_log / "log.log")
 
         # Create them. Should not exist though or overwrite would happen!
         self.model_info.path_root.mkdir(exist_ok=True, parents=True)
@@ -132,6 +134,7 @@ class BaseTrainer:
             logger=False,
             profiler=None,
         )
+
         self.model.cuda()
         trainer.fit(
             self.model,
@@ -226,6 +229,7 @@ class BaseTrainer:
             enable_progress_bar=False,
             logger=False,
             profiler=None,
+            fast_dev_run=True,
         )
         self.model.load_latest_checkpoint()
         self.model.cuda()

@@ -5,7 +5,9 @@ from abc import abstractmethod
 from dataclasses import asdict
 from pathlib import Path
 
+from loguru import logger as loguru_logger
 from pytorch_lightning import Trainer
+from pytorch_lightning.loggers import CSVLogger
 from torch.utils.data import DataLoader
 from vision.data.base_datamodule import BaseDataModule
 from vision.training.ke_train_modules.base_training_module import BaseLightningModule
@@ -33,7 +35,8 @@ class ShortcutTrainer:
         self.arch_params = arch_params
         self.model_info = model_info
         self.num_workers = get_workers_for_current_node()
-        self.prog_bar = False if "data" in os.environ else True
+        self.prog_bar = False if "LSB_JOBID" in os.environ else True
+        self.logger = CSVLogger(self.model_info.path_train_log / "log.log")
 
         # Create them. Should not exist though or overwrite would happen!
         self.model_info.path_root.mkdir(exist_ok=True, parents=True)
@@ -80,10 +83,12 @@ class ShortcutTrainer:
             precision=16,
             default_root_dir=str(self.model_info.path_root),
             enable_progress_bar=self.prog_bar,
-            logger=False,
+            logger=self.logger,
             profiler=None,
+            fast_dev_run=True,
         )
         self.model.cuda()
+        loguru_logger.info("Starting training")
         trainer.fit(
             self.model,
             train_dataloaders=self.datamodule.train_dataloader(
@@ -97,6 +102,7 @@ class ShortcutTrainer:
                 **self.val_kwargs,
             ),
         )
+        loguru_logger.info("Starting Validation of Val dataset")
         self.model.cuda()
         self.model.eval()
         self.model.clear_outputs = False
@@ -107,7 +113,7 @@ class ShortcutTrainer:
             ),
         )
         val_metrics_in_domain = self.model.final_metrics
-
+        loguru_logger.info("Starting Validation of full shortcut Datamodule.")
         trainer.validate(
             self.model,
             dataloaders=self.no_sc_datamodule.val_dataloader(
@@ -116,6 +122,7 @@ class ShortcutTrainer:
         )
         val_metrics_no_sc = self.model.final_metrics
 
+        loguru_logger.info("Starting Validation of full shortcut Datamodule.")
         trainer.validate(
             self.model,
             dataloaders=self.full_sc_datamodule.val_dataloader(
@@ -131,12 +138,15 @@ class ShortcutTrainer:
             val_metrics_no_sc["no_shortcut"]["accuracy"] - val_metrics_in_domain["no_shortcut"]["accuracy"]
         )
 
+        loguru_logger.info("Starting eval of testset of training Datamodule.")
         trainer.test(self.model, dataloaders=self.datamodule.test_dataloader(ds.Augmentation.VAL, **self.val_kwargs))
         test_metrics_in_domain = self.model.final_metrics
+        loguru_logger.info("Starting eval of testset of no shortcut Datamodule.")
         trainer.test(
             self.model, dataloaders=self.no_sc_datamodule.test_dataloader(ds.Augmentation.VAL, **self.val_kwargs)
         )
         test_metrics_no_sc = self.model.final_metrics
+        loguru_logger.info("Starting eval of testset of shortcut Datamodule.")
         trainer.test(
             self.model, dataloaders=self.full_sc_datamodule.test_dataloader(ds.Augmentation.VAL, **self.val_kwargs)
         )
@@ -167,7 +177,7 @@ class ShortcutTrainer:
             **vars(self.params),
             **self.arch_params,
         }
-
+        loguru_logger.info("Saving output.")
         file_io.save(
             output,
             path=self.model_info.path_root,
