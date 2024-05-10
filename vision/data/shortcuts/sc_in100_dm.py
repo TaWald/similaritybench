@@ -139,6 +139,9 @@ if __name__ == "__main__":
             dot_diameter=5,
         )
 
+        sc_dm = ColorDot_100_IN100Datamodule(True)
+        val_dataloader = sc_dm.val_dataloader(0, ds.Augmentation.VAL)
+
         print(f"Testing Color_Dot_C10 {pct}...")
         for i in range(25):
             dl1 = dataset_in100_1[i]

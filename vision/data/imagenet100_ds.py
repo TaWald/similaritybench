@@ -5,6 +5,7 @@ from typing import Any
 from typing import Optional
 
 import numpy as np
+from loguru import logger
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -122,11 +123,20 @@ class ImageNet100Dataset(Dataset):
             ]
             all_samples.extend(images)
         self.samples = all_samples
+        logger.info(f"Using '{len(self.samples)}' of split '{split}' samples")
+        logger.info(f"Shape of samples: '{len(self.samples[0])}' ")
         assert len(self.samples) > 0, f"No samples found in the dataset. Checked path: {data_dir}"
         return
 
     def __getitem__(self, item: int) -> tuple[Any, int]:
-        im: Image.Image = Image.open(self.samples[item][0])
+        try:
+            im: Image.Image = Image.open(self.samples[item][0])
+        except IndexError as e:
+            logger.info(f"Item id: {item}")
+            logger.info(f"Length of samples: {len(self.samples)}")
+            logger.info(f"Shape {len(self.samples[0])}")
+            raise e
+
         if im.mode != "RGB":
             im = im.convert("RGB")
         trans_im = self.transforms(im)
