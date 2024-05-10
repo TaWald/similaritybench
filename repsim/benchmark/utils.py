@@ -6,7 +6,6 @@ from itertools import chain
 from itertools import combinations
 from itertools import product
 
-import git
 import numpy as np
 import pandas as pd
 from loguru import logger
@@ -70,8 +69,15 @@ class ExperimentStorer:
                 logger.info("Comparison already exists and Overwrite is False. Skipping.")
                 continue
 
-            repo = git.Repo(search_parent_directories=True)
-            sha = repo.head.object.hexsha
+            try:
+                import git
+
+                repo = git.Repo(search_parent_directories=True)
+                sha = repo.head.object.hexsha
+            except ImportError:
+                GIT_SHA_PATH = ".git/refs/heads/main"
+                with open(GIT_SHA_PATH, "r") as f:
+                    sha = f.readline().strip()
 
             ids_of_interest = [
                 "layer_id",
