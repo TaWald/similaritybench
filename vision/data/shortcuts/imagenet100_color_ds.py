@@ -5,6 +5,7 @@ from typing import Any
 from typing import Optional
 
 import numpy as np
+from loguru import logger
 from PIL import Image
 from torchvision import transforms
 from vision.data.imagenet100_ds import ImageNet100Dataset
@@ -69,10 +70,18 @@ class ColorDotImageNet100Dataset(ImageNet100Dataset):
         )
         # Save the coordinates and the color for each sample
         self.color_dot_coords = [self._color_sc_gen._get_color_dot_coords(sample[1]) for sample in self.samples]
+
         return
 
     def __getitem__(self, item: int) -> tuple[Any, int, int]:
-        im: Image.Image = Image.open(self.samples[item][0])
+        try:
+            im: Image.Image = Image.open(self.samples[item][0])
+        except IndexError as e:
+            logger.info(f"Item id: {item}")
+            logger.info(f"Length of samples: {len(self.samples)}")
+            logger.info(f"Shape {len(self.samples[0])}")
+            raise e
+
         if im.mode != "RGB":
             im = im.convert("RGB")
         im_resized = self.resize_transform(im)
