@@ -11,21 +11,22 @@ from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import SPLIT_IDX_TRAIN_KEY
 from graphs.config import SPLIT_IDX_VAL_KEY
 from torch.nn import functional as func
-from torch_geometric.utils import dropout_edge, to_edge_index
+from torch_geometric.utils import dropout_edge
+from torch_geometric.utils import to_edge_index
 from torcheval.metrics.functional import multiclass_accuracy
 from tqdm import tqdm
 
 
 def train_model(
-        model,
-        data,
-        split_idx,
-        device,
-        seed: int,
-        optimizer_params: Dict,
-        p_drop_edge: float,
-        save_path: Path,
-        b_test: bool = False,
+    model,
+    data,
+    split_idx,
+    device,
+    seed: int,
+    optimizer_params: Dict,
+    p_drop_edge: float,
+    save_path: Path,
+    b_test: bool = False,
 ):
     random.seed(seed)
     np.random.seed(seed)
@@ -51,12 +52,21 @@ def train_model(
 
     results = []
     for epoch in tqdm(range(1, 1 + optimizer_params[OPTIMIZER_PARAMS_EPOCHS_KEY])):
+
         if p_drop_edge > 0:
-            loss = train_epoch(model=model, x=data.x, edge_index=edge_index, y=data.y, train_idx=train_idx,
-                               optimizer=optimizer)
+            loss = train_epoch_dropout(
+                model=model,
+                x=data.x,
+                edge_index=edge_index,
+                y=data.y,
+                train_idx=train_idx,
+                p_drop_edge=p_drop_edge,
+                optimizer=optimizer,
+            )
         else:
-            loss = train_epoch_dropout(model=model, x=data.x, edge_index=edge_index, y=data.y, train_idx=train_idx,
-                                       p_drop_edge=p_drop_edge, optimizer=optimizer)
+            loss = train_epoch(
+                model=model, x=data.x, edge_index=edge_index, y=data.y, train_idx=train_idx, optimizer=optimizer
+            )
 
         train_acc, val_acc = validate(model, data, train_idx, val_idx)
 
@@ -78,10 +88,8 @@ def train_model(
 
 def train_epoch(model, x, edge_index, y, train_idx, optimizer):
     model.train()
-
     optimizer.zero_grad()
     out = model(x, edge_index)[train_idx]
-    # loss = func.nll_loss(out, data.y.squeeze(1)[train_idx])
     loss = func.cross_entropy(out, y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
@@ -91,7 +99,6 @@ def train_epoch(model, x, edge_index, y, train_idx, optimizer):
 
 def train_epoch_dropout(model, x, edge_index, y, train_idx, p_drop_edge, optimizer):
     model.train()
-
     optimizer.zero_grad()
     if p_drop_edge > 0:
         curr_adj = dropout_edge(edge_index, p=p_drop_edge)
