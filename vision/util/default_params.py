@@ -77,7 +77,7 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
         """
         params = ds.Params(
             architecture_name=architecture_name,
-            num_epochs=100,
+            num_epochs=200,
             save_last_checkpoint=True,
             batch_size=128,
             label_smoothing=True,
