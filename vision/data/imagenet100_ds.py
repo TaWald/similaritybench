@@ -115,6 +115,7 @@ class ImageNet100Dataset(Dataset):
         else:
             raise ValueError(f"Got faulty split: {split} passed.")
 
+        logger.info(f"Collecting samples from {data_dir}")
         all_samples = []
         for wnid, class_id in self.wnid_to_id.items():
             class_path = data_dir / wnid
