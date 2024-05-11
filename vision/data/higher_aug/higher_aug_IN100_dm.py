@@ -14,6 +14,7 @@ from albumentations import RandomCrop
 from albumentations import RandomResizedCrop
 from albumentations import Resize
 from albumentations.pytorch import ToTensorV2
+from loguru import logger
 from PIL import Image
 from repsim.benchmark.paths import VISION_DATA_PATH
 from torch.utils.data import DataLoader
@@ -38,25 +39,30 @@ from vision.util import data_structs as ds
 
 class IN100_AlbuDataset(ImageNet100Dataset):
     def __getitem__(self, index: int):
-        img, target = self.samples[index][0], self.samples[index][1]
+        img_p, target = self.samples[index][0], self.samples[index][1]
 
-        img = Image.open(img)
+        img = Image.open(img_p)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
+        try:
+            if self.transforms is not None:
+                np_img = np.array(img)  # np.transpose(np.array(img), (2, 0, 1))
+                if len(np_img.shape) == 2:
+                    np_img = np_img[:, :, None]
+                if np_img.shape[2] == 1:
+                    np_img = np.repeat(np_img, 3, 2)
 
-        if self.transforms is not None:
-            img = np.array(img)  # np.transpose(np.array(img), (2, 0, 1))
-            if len(img.shape) == 2:
-                img = img[:, :, None]
-            if img.shape[2] == 1:
-                img = np.repeat(img, 3, 2)
-
-            img = self.transforms(image=img)
+                trans_im = self.transforms(image=np_img)
+        except ValueError as e:
+            logger.info(f"Error in image: {img_p}")
+            logger.info(f"Shape: {np_img.shape}")
 
         # if self.target_transform is not None:
         #     target = self.target_transform(target=target)
 
-        return img["image"], target
+        return trans_im["image"], target
 
 
 class Gauss_Max_Imagenet100DataModule(Imagenet100DataModule):

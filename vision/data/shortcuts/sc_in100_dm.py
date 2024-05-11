@@ -34,13 +34,6 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
     #   override wherever the splitting takes place.
     #   Because this is where the KFold and Disjoint DataModule differ!
 
-    def __init__(
-        self,
-        advanced_da: bool,
-    ):
-        """ """
-        super().__init__(advanced_da)
-
     def train_dataloader(
         self,
         split: int,
