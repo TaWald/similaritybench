@@ -41,7 +41,6 @@ def train_model(
 
     edge_index, _ = to_edge_index(data.adj_t)
     edge_index = edge_index.to(device)
-
     model.reset_parameters()
 
     optimizer = torch.optim.Adam(
@@ -100,8 +99,9 @@ def train_epoch(model, x, edge_index, y, train_idx, optimizer):
 def train_epoch_dropout(model, x, edge_index, y, train_idx, p_drop_edge, optimizer):
     model.train()
     optimizer.zero_grad()
+
     if p_drop_edge > 0:
-        curr_adj = dropout_edge(edge_index, p=p_drop_edge)
+        curr_adj, _ = dropout_edge(edge_index, p=p_drop_edge)
         out = model(x, curr_adj)[train_idx]
     else:
         out = model(x, edge_index)[train_idx]
