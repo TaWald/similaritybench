@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import torch
+from loguru import logger
 from repsim.benchmark.paths import VISION_DATA_PATH
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
@@ -58,6 +59,7 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
         )
         train_ids, _ = self.get_train_val_split(split)
         dataset = Subset(dataset, train_ids)
+        logger.info(f"Length of train dataset: {len(dataset)}")
         return DataLoader(dataset=dataset, **kwargs)
 
     def val_dataloader(
@@ -77,6 +79,7 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
         )
         _, val_ids = self.get_train_val_split(split)
         dataset = Subset(dataset, val_ids)
+        logger.info(f"Length of val dataset: {len(dataset)}")
         return DataLoader(dataset=dataset, **kwargs)
 
     def test_dataloader(self, transform: ds.Augmentation = ds.Augmentation.VAL, **kwargs) -> DataLoader:
@@ -88,6 +91,7 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
             dot_correlation=self.dot_correlation,
             dot_diameter=self.dot_diameter,
         )
+        logger.info(f"Length of test dataset: {len(dataset)}")
         return DataLoader(dataset=dataset, **kwargs)
 
 
