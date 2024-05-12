@@ -75,22 +75,40 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
         For VGG16/19/ResNet34/ResNet50/DenseNet121 the resnetrs50 were used.
         For DenseNet161/ResNet101 the ResNetRs101 is used.
         """
-        params = ds.Params(
-            architecture_name=architecture_name,
-            num_epochs=200,
-            save_last_checkpoint=True,
-            batch_size=128,
-            label_smoothing=True,
-            label_smoothing_val=0.1,
-            cosine_annealing=True,
-            gamma=0.1,
-            learning_rate=0.1,
-            momentum=0.9,
-            nesterov=True,
-            weight_decay=4e-5,
-            split=0,
-            dataset=dataset.value,
-        )
+        if architecture_name in ["ViT_B16", "ViT_B32", "ViT_L16", "ViT_L32"]:
+            params = ds.Params(
+                architecture_name=architecture_name,
+                num_epochs=300,
+                save_last_checkpoint=True,
+                batch_size=4096,
+                label_smoothing=True,
+                label_smoothing_val=0.1,
+                cosine_annealing=True,
+                gamma=0.1,
+                learning_rate=3e-3,
+                momentum=0.9,
+                nesterov=True,
+                weight_decay=0.3,
+                split=0,
+                dataset=dataset.value,
+            )
+        else:
+            params = ds.Params(
+                architecture_name=architecture_name,
+                num_epochs=200,
+                save_last_checkpoint=True,
+                batch_size=128,
+                label_smoothing=True,
+                label_smoothing_val=0.1,
+                cosine_annealing=True,
+                gamma=0.1,
+                learning_rate=0.1,
+                momentum=0.9,
+                nesterov=True,
+                weight_decay=4e-5,
+                split=0,
+                dataset=dataset.value,
+            )
 
     elif dataset == ds.Dataset.CIFAR100:
         params = ds.Params(
