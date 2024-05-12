@@ -91,6 +91,7 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
                 weight_decay=0.3,
                 split=0,
                 dataset=dataset.value,
+                gradient_clip=1,
             )
         else:
             params = ds.Params(

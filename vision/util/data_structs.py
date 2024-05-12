@@ -7,6 +7,7 @@ from dataclasses import field
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from typing import Literal
 
 from vision.util import name_conventions as nc
 from vision.util.status_check import output_json_has_nans
@@ -182,6 +183,7 @@ class Params:
     dataset: str
     advanced_da: bool = True
     optimizer: dict[str, Any] | None = None
+    gradient_clip: float | None = None
 
 
 @dataclass
