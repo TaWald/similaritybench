@@ -235,9 +235,7 @@ class BaseLightningModule(pl.LightningModule, ABC):
                 optim = torch.optim.AdamW(
                     params=parameters_to_train,
                     lr=self.params.learning_rate,
-                    betas=self.params.optimizer["betas"],
-                    eps=self.params.optimizer["eps"],
-                    weight_decay=self.params.optimizer["weight_decay"],
+                    weight_decay=self.params.weight_decay,
                 )
                 scheduler = LinearWarmupCosineAnnealingLR(optim, warmup_epochs=15, max_epochs=self.params.num_epochs)
                 return [optim], [scheduler]
