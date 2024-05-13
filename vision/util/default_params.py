@@ -92,6 +92,9 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
                 split=0,
                 dataset=dataset.value,
                 gradient_clip=1,
+                optimizer={
+                    "name": "adamw",
+                },
             )
         else:
             params = ds.Params(
