@@ -1,6 +1,22 @@
 # similaritybench
 Representational Similarity Benchmark
 
+## Meeting 15.05.24:
+#### Choice of Measures:
+Wir wollen folgende Maße rausnehmen:
+- Geometry score (absurd langsam)
+- Linear Regression (nochmal testen)
+- IMD Score (Tobias lässt das laufen)
+- RSMNormDiff (fast immer 0)
+- PWCCA (SVD failt immer)
+
+#### To-Dos:
+- Max: Implementierung Monotonicity-Text
+- Tilo: Implementierung Alternative Output-Correlation
+- Tobias: Automatisierte Graph-Config, re-run Shortcut-Test, adapt default measure, begin writing
+
+
+## Meeting April:
 
 ### Ideas/Points of discussion
 - Currently differentiation seems to be quite easy?
