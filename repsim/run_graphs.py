@@ -126,11 +126,11 @@ if __name__ == "__main__":
     exp_type = OUTPUT_CORRELATION_EXPERIMENT if args.output_corr else GROUP_SEPARATION_EXPERIMENT
     exp_type_str = "output_correlation" if args.output_corr else "group_separation"
     file_prefix = f"{args.experiment}_{exp_type_str}_{args.dataset}"
-    yaml_dict = build_graph_config(
+    yaml_config = build_graph_config(
         experiment=args.experiment, comparison_type=exp_type, dataset=args.dataset, filename_prefix=file_prefix
     )
     yaml_filename = os.path.join("repsim", "configs", f"{file_prefix}.yaml")
     with open(yaml_filename, "w") as file:
-        yaml.dump(yaml_dict, file)
+        yaml.dump(yaml_config, file)
 
     run(config_path=yaml_filename)
