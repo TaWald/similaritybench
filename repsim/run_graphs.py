@@ -82,7 +82,7 @@ def build_graph_config(
             CONFIG_RES_TABLE_FILENAME_SUBKEY: f"{filename_prefix}_full.csv",
             CONFIG_AGG_TABLE_SAVE_SUBKEY: True,
             CONFIG_AGG_TABLE_INDEX_SUBKEY: "similarity_measure",
-            CONFIG_AGG_TABLE_COLUMNS_SUBKEY: ["quality_measures", "architecture"],
+            CONFIG_AGG_TABLE_COLUMNS_SUBKEY: ["quality_measure", "architecture"],
             CONFIG_AGG_TABLE_VALUE_SUBKEY: "value",
             CONFIG_AGG_TABLE_FILENAME_SUBKEY: f"{filename_prefix}.csv",
         },
