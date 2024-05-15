@@ -1,9 +1,11 @@
 import argparse
 import os
+import shutil
 from typing import get_args
 from typing import List
 
 import yaml
+from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import DEFAULT_SEEDS
 from repsim.benchmark.types_globals import EXPERIMENT_COMPARISON_TYPE
@@ -47,15 +49,35 @@ CONFIG_AGG_TABLE_COLUMNS_SUBKEY = "columns"
 CONFIG_AGG_TABLE_VALUE_SUBKEY = "value_key"
 CONFIG_AGG_TABLE_FILENAME_SUBKEY = "filename"
 
+CONFIG_COMPARISON_TYPE_STR_DICT = {
+    GROUP_SEPARATION_EXPERIMENT: "group_separation",
+    OUTPUT_CORRELATION_EXPERIMENT: "output_correlation",
+}
+
+
+def PARQUET_FILE_NAME(experiment, comparison_type, dataset):
+    return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.parquet"
+
+
+def FULL_DF_FILE_NAME(experiment, comparison_type, dataset):
+    return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_full.csv"
+
+
+def AGG_DF_FILE_NAME(experiment, comparison_type, dataset):
+    return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.csv"
+
+
+def YAML_CONFIG_FILE_NAME(experiment, comparison_type, dataset):
+    return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.yaml"
+
 
 def build_graph_config(
     experiment: EXPERIMENT_IDENTIFIER,
     comparison_type: EXPERIMENT_COMPARISON_TYPE,
     dataset: GRAPH_DATASET_TRAINED_ON,
-    filename_prefix: str,
     measures: List = None,
-    save_to_memory=False,
-    save_to_disk=True,
+    save_to_memory=True,
+    save_to_disk=False,
 ):
     yaml_dict = {
         CONFIG_THREADS_KEY: 1,
@@ -77,16 +99,16 @@ def build_graph_config(
                 CONFIG_EXPERIMENTS_SEPARATION_SUBKEY: ["architecture"],
             },
         ],
-        CONFIG_RAW_RESULTS_FILENAME_KEY: f"{filename_prefix}.parquet",
+        CONFIG_RAW_RESULTS_FILENAME_KEY: PARQUET_FILE_NAME(experiment, comparison_type, dataset),
         #
         CONFIG_RES_TABLE_CREATION_KEY: {
             CONFIG_RES_TABLE_SAVE_SUBKEY: True,
-            CONFIG_RES_TABLE_FILENAME_SUBKEY: f"{filename_prefix}_full.csv",
+            CONFIG_RES_TABLE_FILENAME_SUBKEY: FULL_DF_FILE_NAME(experiment, comparison_type, dataset),
             CONFIG_AGG_TABLE_SAVE_SUBKEY: True,
             CONFIG_AGG_TABLE_INDEX_SUBKEY: "similarity_measure",
             CONFIG_AGG_TABLE_COLUMNS_SUBKEY: ["quality_measure", "architecture"],
             CONFIG_AGG_TABLE_VALUE_SUBKEY: "value",
-            CONFIG_AGG_TABLE_FILENAME_SUBKEY: f"{filename_prefix}.csv",
+            CONFIG_AGG_TABLE_FILENAME_SUBKEY: AGG_DF_FILE_NAME(experiment, comparison_type, dataset),
         },
     }
     if measures is None:
@@ -139,18 +161,34 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    exp_type = OUTPUT_CORRELATION_EXPERIMENT if args.output_corr else GROUP_SEPARATION_EXPERIMENT
-    exp_type_str = "output_correlation" if args.output_corr else "group_separation"
-    file_prefix = f"{args.experiment}_{exp_type_str}_{args.dataset}"
+    if not args.output_corr:
+        exp_type = GROUP_SEPARATION_EXPERIMENT
+    else:
+        exp_type = OUTPUT_CORRELATION_EXPERIMENT
+        gs_parquet_filepath = os.path.join(
+            EXPERIMENT_RESULTS_PATH,
+            PARQUET_FILE_NAME(
+                experiment=args.experiment, comparison_type=GROUP_SEPARATION_EXPERIMENT, dataset=args.dataset
+            ),
+        )
+        oc_parqut_filepath = os.path.join(
+            EXPERIMENT_RESULTS_PATH,
+            PARQUET_FILE_NAME(
+                experiment=args.experiment, comparison_type=OUTPUT_CORRELATION_EXPERIMENT, dataset=args.dataset
+            ),
+        )
+        if os.path.isfile(gs_parquet_filepath) and not os.path.isfile(oc_parqut_filepath):
+            shutil.copy(src=gs_parquet_filepath, dst=oc_parqut_filepath)
+
     yaml_config = build_graph_config(
         experiment=args.experiment,
         comparison_type=exp_type,
         dataset=args.dataset,
-        filename_prefix=file_prefix,
         measures=args.measures,
     )
-    yaml_filename = os.path.join("repsim", "configs", f"{file_prefix}.yaml")
-    with open(yaml_filename, "w") as file:
+
+    config_path = os.path.join("repsim", YAML_CONFIG_FILE_NAME(args.experiment, exp_type, args.dataset))
+    with open(config_path, "w") as file:
         yaml.dump(yaml_config, file)
 
-    run(config_path=yaml_filename)
+    run(config_path=config_path)
