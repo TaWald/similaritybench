@@ -1,6 +1,7 @@
 import argparse
 import os
 from typing import get_args
+from typing import List
 
 import yaml
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
@@ -11,6 +12,7 @@ from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GROUP_SEPARATION_EXPERIMENT
 from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT
+from repsim.measures import ALL_MEASURES
 from repsim.run import run
 
 CONFIG_INCLUDED_MEASURES_KEY = "included_measures"
@@ -51,11 +53,11 @@ def build_graph_config(
     comparison_type: EXPERIMENT_COMPARISON_TYPE,
     dataset: GRAPH_DATASET_TRAINED_ON,
     filename_prefix: str,
+    measures: List = None,
     save_to_memory=False,
     save_to_disk=True,
 ):
     yaml_dict = {
-        CONFIG_EXCLUDED_MEASURES_KEY: ["RSMNormDifference", "IMDScore", "GeometryScore", "PWCCA"],
         CONFIG_THREADS_KEY: 1,
         CONFIG_CACHE_MEMORY_KEY: save_to_memory,
         CONFIG_CACHE_DISK_KEY: save_to_disk,
@@ -87,6 +89,11 @@ def build_graph_config(
             CONFIG_AGG_TABLE_FILENAME_SUBKEY: f"{filename_prefix}.csv",
         },
     }
+    if measures is None:
+        yaml_dict[CONFIG_EXCLUDED_MEASURES_KEY] = ["RSMNormDifference", "IMDScore", "GeometryScore", "PWCCA"]
+    else:
+        yaml_dict[CONFIG_INCLUDED_MEASURES_KEY] = measures
+
     return yaml_dict
 
 
@@ -113,6 +120,15 @@ def parse_args():
         help="Test to run.",
     )
     parser.add_argument(
+        "-m",
+        "--measures",
+        type=str,
+        nargs="*",
+        choices=list(ALL_MEASURES.keys()),
+        default=None,
+        help="Test to run.",
+    )
+    parser.add_argument(
         "--output_corr",
         action="store_true",
         help="Whether to retrain existing models.",
@@ -127,7 +143,11 @@ if __name__ == "__main__":
     exp_type_str = "output_correlation" if args.output_corr else "group_separation"
     file_prefix = f"{args.experiment}_{exp_type_str}_{args.dataset}"
     yaml_config = build_graph_config(
-        experiment=args.experiment, comparison_type=exp_type, dataset=args.dataset, filename_prefix=file_prefix
+        experiment=args.experiment,
+        comparison_type=exp_type,
+        dataset=args.dataset,
+        filename_prefix=file_prefix,
+        measures=args.measures,
     )
     yaml_filename = os.path.join("repsim", "configs", f"{file_prefix}.yaml")
     with open(yaml_filename, "w") as file:
