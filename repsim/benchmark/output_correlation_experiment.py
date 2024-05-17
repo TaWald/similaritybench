@@ -112,9 +112,7 @@ class OutputCorrelationExperiment(AbstractExperiment):
         return measure_wise_results
 
     def _get_final_layer_representation(
-        self,
-        model: repsim.benchmark.registry.TrainedModel,
-        cache_to_mem: bool = False,
+        self, model: repsim.benchmark.registry.TrainedModel, cache_to_mem: bool = False
     ) -> SingleLayerRepresentation:
         final_layer_rep = self.rep_cache.get(model.id, None)
         if final_layer_rep is None:
@@ -124,9 +122,7 @@ class OutputCorrelationExperiment(AbstractExperiment):
         return final_layer_rep
 
     def _get_model_output(
-        self,
-        model: repsim.benchmark.registry.TrainedModel,
-        cache_to_mem: bool = False,
+        self, model: repsim.benchmark.registry.TrainedModel, cache_to_mem: bool = False
     ) -> Prediction:
         output = self.output_cache.get(model.id, None)
         if output is None:
