@@ -338,7 +338,7 @@ def create_pivot_excel_table(
         None, but writes out a table to disk.
     """
     result_df = pd.DataFrame(eval_result)
-    pivoted_result = result_df.pivot(index=row_index, columns=columns, values=value_key)
+    pivoted_result = result_df.pivot_table(index=row_index, columns=columns, values=value_key)
     file_path = os.path.join(EXPERIMENT_RESULTS_PATH, filename)
     if filename.endswith(".xlsx"):
         with pd.ExcelWriter(file_path) as writer:
