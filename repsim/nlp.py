@@ -107,11 +107,7 @@ def get_tokenizer(
     return transformers.AutoTokenizer.from_pretrained(tokenizer_name, **kwargs)
 
 
-def get_model(
-    model_path: str,
-    model_type: str = "sequence-classification",
-    **kwargs,
-) -> Any:
+def get_model(model_path: str, model_type: str = "sequence-classification", **kwargs) -> Any:
     if model_type == "sequence-classification":
         model = transformers.AutoModelForSequenceClassification.from_pretrained(
             model_path,
@@ -125,9 +121,7 @@ def get_model(
 
 
 def get_prompt_creator(
-    dataset_path: str,
-    dataset_config: Optional[str] = None,
-    feature_column: Optional[str] = None,
+    dataset_path: str, dataset_config: Optional[str] = None, feature_column: Optional[str] = None
 ) -> Union[Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]]:
     logger.debug(f"Creating prompt creator with {dataset_path=}, {dataset_config=}, {feature_column=}")
     if dataset_path == "glue" and dataset_config == "mnli":
