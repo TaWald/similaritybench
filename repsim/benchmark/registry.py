@@ -169,6 +169,7 @@ NLP_REPRESENTATION_DATASETS = {
     "sst2_sc_rate0558": SST2(name="sst2_sc_rate0558", split="validation", shortcut_rate=0.558, shortcut_seed=0),
     "sst2_mem_rate0": SST2(name="sst2_mem_rate0", split="validation"),
     "sst2_aug_rate0": SST2(name="sst2_aug_rate0", split="validation"),
+    "mnli": MNLI(name="mnli", split="validation_matched"),
     "mnli_aug_rate0": MNLI(name="mnli_aug_rate0", split="validation_matched"),
     "mnli_mem_rate0": MNLI(name="mnli_mem_rate0", split="validation_matched"),
     "mnli_sc_rate0354": MNLI(
