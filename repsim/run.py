@@ -1,11 +1,9 @@
 import os
 from argparse import ArgumentParser
 from collections.abc import Sequence
-from typing import Type
 
 import yaml
 from loguru import logger
-from repsim.benchmark.abstract_experiment import AbstractExperiment
 from repsim.benchmark.group_separation_experiment import GroupSeparationExperiment
 from repsim.benchmark.model_selection import _filter_models
 from repsim.benchmark.model_selection import _separate_models_by_keys
@@ -21,15 +19,6 @@ from repsim.benchmark.utils import save_full_table
 from repsim.measures import ALL_MEASURES
 from repsim.measures import FUNCTIONAL_SIMILARITY_MEASURES
 from repsim.measures.utils import RepresentationalSimilarityMeasure
-
-
-def get_experiment_from_name(name: str) -> Type[AbstractExperiment]:
-    if name == "GroupSeparationExperiment":
-        return GroupSeparationExperiment
-    elif name == "MonotonicityExperiment":
-        return MonotonicityExperiment
-    else:
-        raise ValueError(f"Invalid experiment name: {name}")
 
 
 def read_yaml_config(config_path: str) -> dict:
@@ -93,7 +82,8 @@ def verify_config(config: dict) -> None:
         ), "Some measures in included_measures are not valid"
     if "excluded_measures" not in config and "included_measures" not in config:
         logger.info(
-            "Not specifying which measures to compute. Defaulting to all. Specify through 'included_measures' or 'excluded_measures'."
+            "Not specifying which measures to compute. Defaulting to all."
+            " Specify through 'included_measures' or 'excluded_measures'."
         )
     # Make sure either one or the other is in the config
     assert not (
@@ -203,6 +193,24 @@ def run(config_path: str):
                 )
                 all_experiments.append(exp)
 
+        if experiment["type"] == "MonotonicityExperiment":
+            filter_key_vals = experiment.get("filter_key_vals", None)
+            separation_keys = experiment.get("separation_keys", None)
+
+            models = _filter_models(ALL_TRAINED_MODELS, filter_key_vals)
+            model_sets = _separate_models_by_keys(models, separation_keys)
+            for models in model_sets:
+                exp = MonotonicityExperiment(
+                    models=models,
+                    measures=measures,
+                    representation_dataset=experiment["representation_dataset"],
+                    storage_path=storage_path,
+                    cache_to_disk=cache_to_disk,
+                    cache_to_mem=cache_to_mem,
+                    only_extract_reps=only_extract_reps,
+                    rerun_nans=rerun_nans,
+                )
+                all_experiments.append(exp)
     # -------------------- Now compare/eval the grouped models ------------------- #
     exp_results = []
     for ex in all_experiments:
