@@ -1,5 +1,6 @@
 import time
 from abc import abstractmethod
+from collections.abc import Sequence
 
 import numpy as np
 from loguru import logger
@@ -49,7 +50,7 @@ class AbstractExperiment:
 
     def compare_combos(
         self,
-        todo_combos: list[
+        todo_combos: Sequence[
             tuple[
                 Prediction,
                 Prediction,
@@ -117,7 +118,8 @@ class AbstractExperiment:
                         pbar.update(1)
                     pbar.update(1)
 
-                # TODO: should be able to be removed without OOM, because self.rep_cache keeps reps more efficiently than before
+                # TODO: should be able to be removed without OOM, because self.rep_cache keeps reps more efficiently
+                # than before
                 if (
                     self.cache_to_disk
                     and isinstance(obj_src, SingleLayerRepresentation)
