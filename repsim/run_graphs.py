@@ -5,7 +5,6 @@ from typing import get_args
 from typing import List
 
 import yaml
-from repsim.benchmark.paths import CONFIG_YAML_PATH
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import DEFAULT_SEEDS
@@ -195,7 +194,7 @@ if __name__ == "__main__":
         measures=args.measures,
     )
 
-    config_path = os.path.join(CONFIG_YAML_PATH, YAML_CONFIG_FILE_NAME(args.experiment, exp_type, args.dataset))
+    config_path = os.path.join("repsim", "configs", YAML_CONFIG_FILE_NAME(args.experiment, exp_type, args.dataset))
     with open(config_path, "w") as file:
         yaml.dump(yaml_config, file)
 
