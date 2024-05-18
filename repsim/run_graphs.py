@@ -5,6 +5,7 @@ from typing import get_args
 from typing import List
 
 import yaml
+from repsim.benchmark.paths import CONFIG_YAML_PATH
 from repsim.benchmark.paths import EXPERIMENT_RESULTS_PATH
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import DEFAULT_SEEDS
@@ -13,6 +14,8 @@ from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GROUP_SEPARATION_EXPERIMENT
+from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import MONOTONICITY_EXPERIMENT
 from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT
 from repsim.measures import ALL_MEASURES
 from repsim.run import run
@@ -52,6 +55,7 @@ CONFIG_AGG_TABLE_FILENAME_SUBKEY = "filename"
 CONFIG_COMPARISON_TYPE_STR_DICT = {
     GROUP_SEPARATION_EXPERIMENT: "group_separation",
     OUTPUT_CORRELATION_EXPERIMENT: "output_correlation",
+    MONOTONICITY_EXPERIMENT: "monotonicity",
 }
 
 
@@ -162,23 +166,27 @@ if __name__ == "__main__":
     args = parse_args()
 
     if not args.output_corr:
-        exp_type = GROUP_SEPARATION_EXPERIMENT
+        if args.experiment == LAYER_EXPERIMENT_NAME:
+            exp_type = MONOTONICITY_EXPERIMENT
+        else:
+            exp_type = GROUP_SEPARATION_EXPERIMENT
     else:
         exp_type = OUTPUT_CORRELATION_EXPERIMENT
+        base_comp_type = (
+            MONOTONICITY_EXPERIMENT if args.experiment == LAYER_EXPERIMENT_NAME else GROUP_SEPARATION_EXPERIMENT
+        )
         gs_parquet_filepath = os.path.join(
             EXPERIMENT_RESULTS_PATH,
-            PARQUET_FILE_NAME(
-                experiment=args.experiment, comparison_type=GROUP_SEPARATION_EXPERIMENT, dataset=args.dataset
-            ),
+            PARQUET_FILE_NAME(experiment=args.experiment, comparison_type=base_comp_type, dataset=args.dataset),
         )
-        oc_parqut_filepath = os.path.join(
+        oc_parquet_filepath = os.path.join(
             EXPERIMENT_RESULTS_PATH,
             PARQUET_FILE_NAME(
                 experiment=args.experiment, comparison_type=OUTPUT_CORRELATION_EXPERIMENT, dataset=args.dataset
             ),
         )
-        if os.path.isfile(gs_parquet_filepath) and not os.path.isfile(oc_parqut_filepath):
-            shutil.copy(src=gs_parquet_filepath, dst=oc_parqut_filepath)
+        if os.path.isfile(gs_parquet_filepath) and not os.path.isfile(oc_parquet_filepath):
+            shutil.copy(src=gs_parquet_filepath, dst=oc_parquet_filepath)
 
     yaml_config = build_graph_config(
         experiment=args.experiment,
@@ -187,7 +195,7 @@ if __name__ == "__main__":
         measures=args.measures,
     )
 
-    config_path = os.path.join("repsim", YAML_CONFIG_FILE_NAME(args.experiment, exp_type, args.dataset))
+    config_path = os.path.join(CONFIG_YAML_PATH, YAML_CONFIG_FILE_NAME(args.experiment, exp_type, args.dataset))
     with open(config_path, "w") as file:
         yaml.dump(yaml_config, file)
 
