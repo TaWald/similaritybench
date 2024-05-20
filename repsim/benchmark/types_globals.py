@@ -44,7 +44,6 @@ BENCHMARK_DATASETS_LIST = (
 # These are shared across domains and datasets
 SETTING_IDENTIFIER = Literal[
     "Normal",
-    "RandomInit",
     "RandomLabels_25",
     "RandomLabels_50",
     "RandomLabels_75",
