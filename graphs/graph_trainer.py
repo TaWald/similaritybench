@@ -428,6 +428,37 @@ class AugmentationTrainer(GraphTrainer):
         return self.data.clone()
 
 
+class NoiseTestTrainer(GraphTrainer):
+    def __init__(
+        self,
+        architecture_type: GRAPH_ARCHITECTURE_TYPE,
+        dataset_name: GRAPH_DATASET_TRAINED_ON,
+        seed: EXPERIMENT_SEED,
+        n_layers: int = None,
+    ):
+        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
+        GraphTrainer.__init__(
+            self,
+            architecture_type=architecture_type,
+            dataset_name=dataset_name,
+            seed=seed,
+            test_name=AUGMENTATION_EXPERIMENT_NAME,
+        )
+
+    def _get_gnn_params(self):
+
+        gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
+        gnn_params["in_channels"] = self.data.num_features
+        gnn_params["out_channels"] = self.n_classes
+
+        optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
+
+        return gnn_params, optimizer_params
+
+    def _get_setting_data(self, setting: SETTING_IDENTIFIER):
+        return self.data.clone()
+
+
 def parse_args():
     """Parses arguments given to script
 
