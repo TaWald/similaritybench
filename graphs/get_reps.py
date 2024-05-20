@@ -1,25 +1,13 @@
 from typing import Dict
 
 import torch
-from graphs.graph_trainer import LabelTestTrainer
-from graphs.graph_trainer import LayerTestTrainer
-from graphs.graph_trainer import ShortCutTestTrainer
+from graphs.graph_trainer import GRAPH_TRAINER_DICT
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
-from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
-from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
-from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
-
-
-GRAPH_EXPERIMENT_TRAINER_DICT = {
-    LABEL_EXPERIMENT_NAME: LabelTestTrainer,
-    LAYER_EXPERIMENT_NAME: LayerTestTrainer,
-    SHORTCUT_EXPERIMENT_NAME: ShortCutTestTrainer,
-}
 
 
 def get_graph_representations(
@@ -42,7 +30,7 @@ def get_graph_representations(
             experiment_identifier = exp
             break
 
-    graph_trainer = GRAPH_EXPERIMENT_TRAINER_DICT[experiment_identifier](
+    graph_trainer = GRAPH_TRAINER_DICT[experiment_identifier](
         architecture_type=architecture_name, dataset_name=train_dataset, seed=seed
     )
     plain_reps = graph_trainer.get_test_representations(setting=setting_identifier)
@@ -70,7 +58,7 @@ def get_gnn_output(
             experiment_identifier = exp
             break
 
-    graph_trainer = GRAPH_EXPERIMENT_TRAINER_DICT[experiment_identifier](
+    graph_trainer = GRAPH_TRAINER_DICT[experiment_identifier](
         architecture_type=architecture_name, dataset_name=train_dataset, seed=seed
     )
     return graph_trainer.get_test_output(setting_identifier)
