@@ -30,7 +30,7 @@ class LinearRegression(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=linear_reg,
-            larger_is_more_similar=False,
+            larger_is_more_similar=True,
             is_metric=False,
             is_symmetric=False,
             invariant_to_affine=False,  # because default lambda=0
