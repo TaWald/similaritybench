@@ -66,6 +66,7 @@ class GraphTrainer(ABC):
         test_name: EXPERIMENT_IDENTIFIER,
         seed: EXPERIMENT_SEED,
         device: int | str = 0,
+        experiment_code: str = None,
     ):
 
         self.test_name = test_name
@@ -94,6 +95,8 @@ class GraphTrainer(ABC):
         for setting in self.settings:
             setting_path = self.models_path / setting
             Path(setting_path).mkdir(parents=True, exist_ok=True)
+            if experiment_code is not None:
+                setting_path = setting_path / experiment_code
             self.setting_paths[setting] = setting_path
 
     # TODO: set up way to read in params which may be determined by graphgym
@@ -271,6 +274,7 @@ class LayerTestTrainer(GraphTrainer):
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         seed: EXPERIMENT_SEED,
         n_layers: int = None,
+        experiment_code: str = None,
     ):
         self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
 
@@ -305,6 +309,7 @@ class LabelTestTrainer(GraphTrainer):
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         seed: EXPERIMENT_SEED,
         n_layers: int = None,
+        experiment_code: str = None,
     ):
         self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
@@ -313,6 +318,7 @@ class LabelTestTrainer(GraphTrainer):
             dataset_name=dataset_name,
             seed=seed,
             test_name=LABEL_EXPERIMENT_NAME,
+            experiment_code=experiment_code,
         )
 
     def _get_gnn_params(self):
@@ -344,6 +350,7 @@ class ShortCutTestTrainer(GraphTrainer):
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         seed: EXPERIMENT_SEED,
         n_layers: int = None,
+        experiment_code: str = None,
     ):
         self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
@@ -352,6 +359,7 @@ class ShortCutTestTrainer(GraphTrainer):
             dataset_name=dataset_name,
             seed=seed,
             test_name=SHORTCUT_EXPERIMENT_NAME,
+            experiment_code=experiment_code,
         )
 
     def _get_gnn_params(self):
@@ -394,6 +402,7 @@ class AugmentationTrainer(GraphTrainer):
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         seed: EXPERIMENT_SEED,
         n_layers: int = None,
+        experiment_code: str = None,
     ):
         self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
@@ -402,6 +411,7 @@ class AugmentationTrainer(GraphTrainer):
             dataset_name=dataset_name,
             seed=seed,
             test_name=AUGMENTATION_EXPERIMENT_NAME,
+            experiment_code=experiment_code,
         )
 
     def _get_gnn_params(self):
@@ -469,6 +479,12 @@ def parse_args():
         action="store_true",
         help="Whether to retrain existing models.",
     )
+    parser.add_argument(
+        "--exp_code",
+        type=str,
+        default=None,
+        help="Code to identify experimental variants",
+    )
     return parser.parse_args()
 
 
@@ -484,5 +500,7 @@ if __name__ == "__main__":
 
     for architecture, dataset in product(args.architectures, args.datasets):
         for s in args.seeds:
-            trainer = GNN_TRAINER_DICT[args.test](architecture_type=architecture, dataset_name=dataset, seed=s)
+            trainer = GNN_TRAINER_DICT[args.test](
+                architecture_type=architecture, dataset_name=dataset, seed=s, experiment_code=args.exp_code
+            )
             trainer.train_models(settings=args.settings, retrain=args.retrain)
