@@ -18,6 +18,7 @@ from graphs.config import GNN_PARAMS_DICT
 from graphs.config import LAYER_EXPERIMENT_N_LAYERS
 from graphs.config import MAX_TEST_SIZE
 from graphs.config import OPTIMIZER_PARAMS_DICT
+from graphs.config import SHORTCUT_EXPERIMENT_N_EXTRA_LAYERS
 from graphs.config import SPLIT_IDX_BENCHMARK_TEST_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import SPLIT_IDX_TRAIN_KEY
@@ -97,6 +98,7 @@ class GraphTrainer(ABC):
             Path(setting_path).mkdir(parents=True, exist_ok=True)
             if experiment_code is not None:
                 setting_path = setting_path / experiment_code
+                Path(setting_path).mkdir(parents=True, exist_ok=True)
             self.setting_paths[setting] = setting_path
 
     # TODO: set up way to read in params which may be determined by graphgym
@@ -365,7 +367,7 @@ class ShortCutTestTrainer(GraphTrainer):
     def _get_gnn_params(self):
 
         gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
-        gnn_params["in_channels"] = self.data.num_features + 1
+        gnn_params["in_channels"] = self.data.num_features + SHORTCUT_EXPERIMENT_N_EXTRA_LAYERS
         gnn_params["out_channels"] = self.n_classes
 
         optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
@@ -390,7 +392,9 @@ class ShortCutTestTrainer(GraphTrainer):
         y_feature[val_idx] = shuffle_labels(old_labels[val_idx], frac=shuffle_frac, seed=self.seed)
         y_feature[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=SINGLE_SAMPLE_SEED)
 
-        setting_data.x = torch.cat(tensors=(self.data.x.cpu().detach(), y_feature), dim=1)
+        setting_data.x = torch.cat(
+            tensors=([self.data.x.cpu().detach()] + [y_feature] * SHORTCUT_EXPERIMENT_N_EXTRA_LAYERS), dim=1
+        )
 
         return setting_data
 
