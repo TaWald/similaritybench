@@ -9,191 +9,167 @@ from repsim.benchmark.types_globals import AUGMENTATION_25_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_50_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
 from repsim.benchmark.types_globals import DEFAULT_SEEDS
-from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_DOMAIN
-from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
-from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import RANDOM_LABEL_100_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_25_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_50_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_75_SETTING
-from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import STANDARD_SETTING
 from repsim.utils import GraphModel
-from repsim.utils import NLPDataset
+from repsim.utils import MNLI
 from repsim.utils import NLPModel
+from repsim.utils import SST2
 from repsim.utils import TrainedModel
 from repsim.utils import VisionModel
 
 NLP_TRAIN_DATASETS = {
-    "sst2": NLPDataset("sst2", "sst2"),
-    "sst2_sc_rate0558": NLPDataset("sst2_sc_rate0558", path="sst2", shortcut_rate=0.558, shortcut_seed=0),
-    "sst2_sc_rate0668": NLPDataset("sst2_sc_rate0668", path="sst2", shortcut_rate=0.668, shortcut_seed=0),
-    "sst2_sc_rate0779": NLPDataset("sst2_sc_rate0779", path="sst2", shortcut_rate=0.779, shortcut_seed=0),
-    "sst2_sc_rate0889": NLPDataset("sst2_sc_rate0889", path="sst2", shortcut_rate=0.889, shortcut_seed=0),
-    "sst2_sc_rate10": NLPDataset("sst2_sc_rate10", path="sst2", shortcut_rate=1.0, shortcut_seed=0),
-    "sst2_mem_rate025": NLPDataset(
+    "sst2": SST2("sst2"),
+    "sst2_sc_rate0558": SST2("sst2_sc_rate0558", shortcut_rate=0.558, shortcut_seed=0),
+    "sst2_sc_rate0668": SST2("sst2_sc_rate0668", shortcut_rate=0.668, shortcut_seed=0),
+    "sst2_sc_rate0779": SST2("sst2_sc_rate0779", shortcut_rate=0.779, shortcut_seed=0),
+    "sst2_sc_rate0889": SST2("sst2_sc_rate0889", shortcut_rate=0.889, shortcut_seed=0),
+    "sst2_sc_rate10": SST2("sst2_sc_rate10", shortcut_rate=1.0, shortcut_seed=0),
+    "sst2_mem_rate025": SST2(
         "sst2_mem_rate025",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength025"),
         memorization_rate=0.25,
         memorization_n_new_labels=5,
         memorization_seed=0,
     ),
-    "sst2_mem_rate05": NLPDataset(
+    "sst2_mem_rate05": SST2(
         "sst2_mem_rate05",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength05"),
         memorization_rate=0.5,
         memorization_n_new_labels=5,
         memorization_seed=0,
     ),
-    "sst2_mem_rate075": NLPDataset(
+    "sst2_mem_rate075": SST2(
         "sst2_mem_rate075",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength075"),
         memorization_rate=0.75,
         memorization_n_new_labels=5,
         memorization_seed=0,
     ),
-    "sst2_mem_rate10": NLPDataset(
+    "sst2_mem_rate10": SST2(
         "sst2_mem_rate10",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength010"),
         memorization_rate=1.0,
         memorization_n_new_labels=5,
         memorization_seed=0,
     ),
-    "sst2_aug_rate025": NLPDataset(
+    "sst2_aug_rate025": SST2(
         "sst2_aug_rate025",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength025"),
         feature_column="augmented",
         augmentation_rate=0.25,
         augmentation_type="eda",
     ),
-    "sst2_aug_rate05": NLPDataset(
+    "sst2_aug_rate05": SST2(
         "sst2_aug_rate05",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength05"),
         feature_column="augmented",
         augmentation_rate=0.5,
         augmentation_type="eda",
     ),
-    "sst2_aug_rate075": NLPDataset(
+    "sst2_aug_rate075": SST2(
         "sst2_aug_rate075",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength075"),
         feature_column="augmented",
         augmentation_rate=0.75,
         augmentation_type="eda",
     ),
-    "sst2_aug_rate10": NLPDataset(
+    "sst2_aug_rate10": SST2(
         "sst2_aug_rate10",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "sst2_eda_strength010"),
         feature_column="augmented",
         augmentation_rate=1.0,
         augmentation_type="eda",
     ),
-    "mnli_aug_rate025": NLPDataset(
+    "mnli_aug_rate025": MNLI(
         "mnli_aug_rate025",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength025"),
         feature_column="augmented",
         augmentation_rate=0.25,
         augmentation_type="eda",
     ),
-    "mnli_aug_rate05": NLPDataset(
+    "mnli_aug_rate05": MNLI(
         "mnli_aug_rate05",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength05"),
         feature_column="augmented",
         augmentation_rate=0.5,
         augmentation_type="eda",
     ),
-    "mnli_aug_rate075": NLPDataset(
+    "mnli_aug_rate075": MNLI(
         "mnli_aug_rate075",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength075"),
         feature_column="augmented",
         augmentation_rate=0.75,
         augmentation_type="eda",
     ),
-    "mnli_aug_rate10": NLPDataset(
+    "mnli_aug_rate10": MNLI(
         "mnli_aug_rate10",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "glue__mnli_eda_strength010"),
         feature_column="augmented",
         augmentation_rate=1.0,
         augmentation_type="eda",
     ),
-    "mnli_sc_rate0354": NLPDataset(
-        "mnli_sc_rate0354", path="glue", config="mnli", shortcut_rate=0.354, shortcut_seed=0
-    ),
-    "mnli_sc_rate05155": NLPDataset(
-        "mnli_sc_rate05155", path="glue", config="mnli", shortcut_rate=0.5155, shortcut_seed=0
-    ),
-    "mnli_sc_rate0677": NLPDataset(
-        "mnli_sc_rate0677", path="glue", config="mnli", shortcut_rate=0.677, shortcut_seed=0
-    ),
-    "mnli_sc_rate08385": NLPDataset(
-        "mnli_sc_rate08385", path="glue", config="mnli", shortcut_rate=0.8385, shortcut_seed=0
-    ),
-    "mnli_sc_rate1": NLPDataset("mnli_sc_rate1", path="glue", config="mnli", shortcut_rate=1.0, shortcut_seed=0),
-    "mnli_mem_rate025": NLPDataset(
+    "mnli_sc_rate0354": MNLI("mnli_sc_rate0354", shortcut_rate=0.354, shortcut_seed=0),
+    "mnli_sc_rate05155": MNLI("mnli_sc_rate05155", shortcut_rate=0.5155, shortcut_seed=0),
+    "mnli_sc_rate0677": MNLI("mnli_sc_rate0677", shortcut_rate=0.677, shortcut_seed=0),
+    "mnli_sc_rate08385": MNLI("mnli_sc_rate08385", shortcut_rate=0.8385, shortcut_seed=0),
+    "mnli_sc_rate1": MNLI("mnli_sc_rate1", shortcut_rate=1.0, shortcut_seed=0),
+    "mnli_mem_rate025": MNLI(
         "mnli_mem_rate025",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength025"),
         memorization_rate=0.25,
         memorization_n_new_labels=5,
         memorization_seed=0,
     ),
-    "mnli_mem_rate05": NLPDataset(
+    "mnli_mem_rate05": MNLI(
         "mnli_mem_rate05",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength05"),
         memorization_rate=0.5,
         memorization_n_new_labels=5,
         memorization_seed=0,
     ),
-    "mnli_mem_rate075": NLPDataset(
+    "mnli_mem_rate075": MNLI(
         "mnli_mem_rate075",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength075"),
         memorization_rate=0.75,
         memorization_n_new_labels=5,
         memorization_seed=0,
     ),
-    "mnli_mem_rate10": NLPDataset(
+    "mnli_mem_rate10": MNLI(
         "mnli_mem_rate10",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength010"),
         memorization_rate=1.0,
         memorization_n_new_labels=5,
         memorization_seed=0,
     ),
-    "mnli": NLPDataset("mnli", path="glue", config="mnli"),
+    "mnli": MNLI("mnli"),
 }
 NLP_REPRESENTATION_DATASETS = {
-    "sst2": NLPDataset("sst2", path="sst2", split="validation"),
-    "sst2_sc_rate0": NLPDataset(
+    "sst2": SST2("sst2", split="validation"),
+    "sst2_sc_rate0": SST2(
         name="sst2_sc_rate0",
-        path="sst2",
         # The local version would be useful if the modified tokenizer is saved with the trained models. But it's not,
         # so the shortcuts are added on the fly.
         # local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "shortcut" / "sst2_sc_rate0"),
         split="validation",
-        feature_column="sentence",
         shortcut_rate=0,
         shortcut_seed=0,
     ),
-    "sst2_sc_rate0558": NLPDataset(
-        name="sst2_sc_rate0558",
-        path="sst2",
-        split="validation",
-        feature_column="sentence",
-        shortcut_rate=0.558,
-        shortcut_seed=0,
-    ),
-    "sst2_mem_rate0": NLPDataset("sst2", "sst2", split="validation"),
-    "sst2_aug_rate0": NLPDataset("sst2", "sst2", split="validation"),
-    "mnli_aug_rate0": NLPDataset(name="mnli", path="glue", config="mnli", split="validation_matched"),
-    "mnli_mem_rate0": NLPDataset(name="mnli", path="glue", config="mnli", split="validation_matched"),
-    "mnli_sc_rate0354": NLPDataset(
-        name="mnli_sc_rate0354",
-        path="glue",
-        config="mnli",
-        split="validation_matched",
-        feature_column="premise",
-        shortcut_rate=0.354,
-        shortcut_seed=0,
+    "sst2_sc_rate0558": SST2(name="sst2_sc_rate0558", split="validation", shortcut_rate=0.558, shortcut_seed=0),
+    "sst2_mem_rate0": SST2(name="sst2_mem_rate0", split="validation"),
+    "sst2_aug_rate0": SST2(name="sst2_aug_rate0", split="validation"),
+    "mnli": MNLI(name="mnli", split="validation_matched"),
+    "mnli_aug_rate0": MNLI(name="mnli_aug_rate0", split="validation_matched"),
+    "mnli_mem_rate0": MNLI(name="mnli_mem_rate0", split="validation_matched"),
+    "mnli_sc_rate0354": MNLI(
+        name="mnli_sc_rate0354", split="validation_matched", shortcut_rate=0.354, shortcut_seed=0
     ),
 }
 
@@ -373,7 +349,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="mnli",
             identifier="RandomLabels_0",
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"mnli_pre{i}_ft{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos=0,
         )
@@ -462,18 +438,17 @@ def all_trained_graph_models() -> list[TrainedModel]:
     for i in DEFAULT_SEEDS:
         for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
-                for experiment in [LAYER_EXPERIMENT_NAME, LABEL_EXPERIMENT_NAME, SHORTCUT_EXPERIMENT_NAME]:
-                    for setting in EXPERIMENT_DICT[experiment]:
-                        all_trained_models.append(
-                            GraphModel(
-                                domain=GRAPH_DOMAIN,
-                                architecture=arch,
-                                train_dataset=dataset,
-                                identifier=setting,
-                                seed=i,
-                                additional_kwargs={},
-                            )
+                for setting in list(get_args(SETTING_IDENTIFIER)):
+                    all_trained_models.append(
+                        GraphModel(
+                            domain=GRAPH_DOMAIN,
+                            architecture=arch,
+                            train_dataset=dataset,
+                            identifier=setting,
+                            seed=i,
+                            additional_kwargs={},
                         )
+                    )
     return all_trained_models
 
 

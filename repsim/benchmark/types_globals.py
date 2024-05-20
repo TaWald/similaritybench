@@ -12,7 +12,7 @@ VISION_DOMAIN, NLP_DOMAIN, GRAPH_DOMAIN = (
 )
 # ----------------------------- All Architectures ---------------------------- #
 VISION_ARCHITECTURE_TYPE = Literal["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19", "ViT-b19"]
-NLP_ARCHITECTURE_TYPE = Literal["BERT-L"]
+NLP_ARCHITECTURE_TYPE = Literal["BERT-L", "BERT-Base"]
 GRAPH_ARCHITECTURE_TYPE = Literal["GCN", "GAT", "GraphSAGE"]
 
 NN_ARCHITECTURE_TYPE = VISION_ARCHITECTURE_TYPE | NLP_ARCHITECTURE_TYPE | GRAPH_ARCHITECTURE_TYPE
@@ -135,6 +135,9 @@ EXPERIMENT_SEED = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 DEFAULT_SEEDS = list(get_args(EXPERIMENT_SEED))[:5]
 SINGLE_SAMPLE_SEED = 2024
 
-EXPERIMENT_COMPARISON_TYPE = Literal["GroupSeparationExperiment", "OutputCorrelationExperiment"]
+EXPERIMENT_COMPARISON_TYPE = Literal[
+    "GroupSeparationExperiment", "OutputCorrelationExperiment", "MonotonicityExperiment"
+]
 GROUP_SEPARATION_EXPERIMENT = list(get_args(EXPERIMENT_COMPARISON_TYPE))[0]
 OUTPUT_CORRELATION_EXPERIMENT = list(get_args(EXPERIMENT_COMPARISON_TYPE))[1]
+MONOTONICITY_EXPERIMENT = list(get_args(EXPERIMENT_COMPARISON_TYPE))[2]

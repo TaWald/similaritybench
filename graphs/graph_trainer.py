@@ -519,7 +519,7 @@ def parse_args():
     return parser.parse_args()
 
 
-GNN_TRAINER_DICT = {
+GRAPH_TRAINER_DICT = {
     AUGMENTATION_EXPERIMENT_NAME: AugmentationTrainer,
     LAYER_EXPERIMENT_NAME: LayerTestTrainer,
     LABEL_EXPERIMENT_NAME: LabelTestTrainer,
@@ -531,7 +531,7 @@ if __name__ == "__main__":
 
     for architecture, dataset in product(args.architectures, args.datasets):
         for s in args.seeds:
-            trainer = GNN_TRAINER_DICT[args.test](
+            trainer = GRAPH_TRAINER_DICT[args.test](
                 architecture_type=architecture, dataset_name=dataset, seed=s, experiment_code=args.exp_code
             )
             trainer.train_models(settings=args.settings, retrain=args.retrain)

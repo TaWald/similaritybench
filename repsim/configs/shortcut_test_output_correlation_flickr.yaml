@@ -1,0 +1,44 @@
+cache_to_disk: true
+cache_to_mem: false
+excluded_measures:
+- RSMNormDifference
+- IMDScore
+- GeometryScore
+- PWCCA
+experiments:
+- filter_key_vals:
+    domain: GRAPHS
+    identifier:
+    - Shortcut_0
+    - Shortcut_25
+    - Shortcut_50
+    - Shortcut_75
+    - Shortcut_100
+    seed:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    train_dataset:
+    - flickr
+  grouping_keys:
+  - identifier
+  name: shortcut_test OutputCorrelationExperiment flickr
+  representation_dataset: flickr
+  separation_keys:
+  - architecture
+  type: OutputCorrelationExperiment
+only_extract_reps: false
+raw_results_filename: shortcut_test_output_correlation_flickr.parquet
+table_creation:
+  columns:
+  - quality_measure
+  - architecture
+  filename: shortcut_test_output_correlation_flickr.csv
+  full_df_filename: shortcut_test_output_correlation_flickr_full.csv
+  row_index: similarity_measure
+  save_aggregated_df: true
+  save_full_df: true
+  value_key: value
+threads: 1

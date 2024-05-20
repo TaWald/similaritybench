@@ -28,7 +28,6 @@ from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
 from repsim.measures.utils import ND_SHAPE
 from repsim.measures.utils import SHAPE_TYPE
-from vision.arch.arch_loading import load_model_from_info_file
 from vision.util.file_io import get_vision_model_info
 from vision.util.find_architectures import get_base_arch
 from vision.util.vision_rep_extraction import get_single_layer_vision_representation_on_demand
@@ -92,7 +91,7 @@ class NLPDataset:
     )
     split: str = "train"  # part of the dataset that was/will be used
     feature_column: Optional[str] = None
-    label_column: Optional[str] = "label"
+    label_column: str = "label"
 
     # Information about shortcuts
     shortcut_rate: Optional[float] = None
@@ -107,11 +106,45 @@ class NLPDataset:
     augmentation_type: Optional[str] = None
     augmentation_rate: Optional[float] = None
 
+    def get_id(self) -> str:
+        return "__".join(
+            map(
+                str,
+                [
+                    self.path,
+                    self.config,
+                    self.local_path,
+                    self.shortcut_rate,
+                    self.shortcut_seed,
+                    self.memorization_rate,
+                    self.memorization_n_new_labels,
+                    self.memorization_seed,
+                    self.augmentation_type,
+                    self.augmentation_rate,
+                ],
+            )
+        )
+
+
+@dataclass
+class MNLI(NLPDataset):
+    path: str = "glue"
+    config: str = "mnli"
+    feature_column: str = "premise"
+
+
+@dataclass
+class SST2(NLPDataset):
+    path: str = "sst2"
+    feature_column: str = "sentence"
+
 
 @dataclass(kw_only=True)
 class NLPModel(TrainedModel):
     domain: DOMAIN_TYPE = "NLP"
-    architecture: NLP_ARCHITECTURE_TYPE = "BERT-L"
+    architecture: NLP_ARCHITECTURE_TYPE = (
+        "BERT-L"  # should actually be Bert-base, but not changing this as it would require changes in the results dataframes (or recomputing them)
+    )
     path: str
     tokenizer_name: str
     train_dataset: Literal[
@@ -129,8 +162,7 @@ class NLPModel(TrainedModel):
         if self.domain != "NLP":
             raise ValueError("This class should only be used for NLP models with huggingface.")
 
-        from repsim.benchmark.registry import NLP_TRAIN_DATASETS
-        from repsim.benchmark.registry import NLP_REPRESENTATION_DATASETS
+        from repsim.benchmark.registry import NLP_REPRESENTATION_DATASETS, NLP_TRAIN_DATASETS
 
         self.NLP_REPRESENTATION_DATASETS = NLP_REPRESENTATION_DATASETS
         self.train_dataset_obj = NLP_TRAIN_DATASETS[self.train_dataset]
@@ -330,6 +362,9 @@ class SingleLayerRepresentation(BaseModelOutput):
 
     def value_attr_name(self) -> str:
         return "representation"
+
+    def representation_is_set(self) -> bool:
+        return self._representation is not None
 
     @property
     def representation(self) -> torch.Tensor | np.ndarray:
