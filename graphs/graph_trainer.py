@@ -86,15 +86,12 @@ class GraphTrainer(ABC):
         self.gnn_params, self.optimizer_params = self._get_gnn_params()
 
         model_dataset_path = GRAPHS_MODEL_PATH / self.dataset_name
-        Path(model_dataset_path).mkdir(parents=True, exist_ok=True)
 
         self.models_path = model_dataset_path / self.architecture_type
-        Path(self.models_path).mkdir(parents=True, exist_ok=True)
 
         self.setting_paths = dict()
         for setting in self.settings:
             setting_path = self.models_path / setting
-            Path(setting_path).mkdir(parents=True, exist_ok=True)
             self.setting_paths[setting] = setting_path
 
     # TODO: set up way to read in params which may be determined by graphgym
@@ -218,7 +215,11 @@ class GraphTrainer(ABC):
         p_drop_edge = self._get_drop_edge(setting)
 
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
+
+        # create setting path only for training
+        Path(self.setting_paths[setting]).mkdir(parents=True, exist_ok=True)
         save_path = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
+
         train_results, _ = train_model(
             model=model,
             data=setting_data,
