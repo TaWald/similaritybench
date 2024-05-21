@@ -49,6 +49,7 @@ from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import NOISE_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import REDDIT_DATASET_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
@@ -181,16 +182,9 @@ class GraphTrainer(ABC):
             index=False,
         )
 
-    def train_models(self, settings: List[SETTING_IDENTIFIER] = None, retrain: bool = False):
+    def train_models(self, retrain: bool = False):
 
-        if settings is None:
-            settings = self.settings
-        else:
-            for setting in settings:
-                assert setting in self.settings, f"Setting {setting} is invalid, valid settings are {self.settings}"
-
-        if not retrain:
-            settings = self._check_pretrained(settings)
+        settings = self._check_pretrained(self.settings)
 
         for setting in settings:
             self._train_model(setting)
@@ -438,15 +432,13 @@ class NoiseTestTrainer(GraphTrainer):
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         seed: EXPERIMENT_SEED,
-        n_layers: int = None,
     ):
-        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
             self,
             architecture_type=architecture_type,
             dataset_name=dataset_name,
             seed=seed,
-            test_name=AUGMENTATION_EXPERIMENT_NAME,
+            test_name=NOISE_EXPERIMENT_NAME,
         )
 
     def _get_gnn_params(self):
@@ -461,6 +453,30 @@ class NoiseTestTrainer(GraphTrainer):
 
     def _get_setting_data(self, setting: SETTING_IDENTIFIER):
         return self.data.clone()
+
+    def train_models(self, retrain: bool = False):
+
+        train_settings = [STANDARD_SETTING]
+        if not retrain:
+            train_settings = self._check_pretrained(train_settings)
+
+        for setting in train_settings:
+            self._train_model(setting)
+
+    def _load_model(self, setting):
+
+        if setting != STANDARD_SETTING:
+            setting = STANDARD_SETTING
+
+        model = GNN_DICT[self.architecture_type](**self.gnn_params)
+        model_file = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
+
+        if not model_file.is_file():
+            raise FileNotFoundError(f"Model File for seed {self.seed} does not exist")
+
+        model.load_state_dict(torch.load(model_file, map_location=self.device))
+
+        return model
 
 
 def parse_args():
@@ -502,14 +518,6 @@ def parse_args():
         help="Tests to run.",
     )
     parser.add_argument(
-        "--settings",
-        nargs="*",
-        type=str,
-        choices=list(get_args(SETTING_IDENTIFIER)),
-        default=None,
-        help="Tests to run.",
-    )
-    parser.add_argument(
         "--retrain",
         action="store_true",
         help="Whether to retrain existing models.",
@@ -538,4 +546,4 @@ if __name__ == "__main__":
             trainer = GRAPH_TRAINER_DICT[args.test](
                 architecture_type=architecture, dataset_name=dataset, seed=s, experiment_code=args.exp_code
             )
-            trainer.train_models(settings=args.settings, retrain=args.retrain)
+            trainer.train_models(retrain=args.retrain)
