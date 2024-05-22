@@ -386,9 +386,7 @@ class ShortCutTestTrainer(GraphTrainer):
         y_feature[test_idx] = shuffle_labels(old_labels[test_idx], frac=1, seed=SINGLE_SAMPLE_SEED)
 
         y_feature = torch.squeeze(torch.nn.functional.one_hot(y_feature))
-        print(self.data.x.shape)
         setting_data.x = torch.cat(tensors=(self.data.x.cpu().detach(), y_feature), dim=1)
-        print(setting_data.x.shape)
 
         return setting_data
 
