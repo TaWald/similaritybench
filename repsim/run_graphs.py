@@ -16,6 +16,7 @@ from repsim.benchmark.types_globals import GROUP_SEPARATION_EXPERIMENT
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import MONOTONICITY_EXPERIMENT
 from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT
+from repsim.benchmark.types_globals import REDUCED_EXPERIMENT_DICT
 from repsim.measures import ALL_MEASURES
 from repsim.run import run
 
@@ -62,12 +63,18 @@ def PARQUET_FILE_NAME(experiment, comparison_type, dataset):
     return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.parquet"
 
 
-def FULL_DF_FILE_NAME(experiment, comparison_type, dataset):
-    return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_full.csv"
+def FULL_DF_FILE_NAME(experiment, comparison_type, dataset, reduced=False):
+    if reduced:
+        return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_reduced_full.csv"
+    else:
+        return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_full.csv"
 
 
-def AGG_DF_FILE_NAME(experiment, comparison_type, dataset):
-    return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.csv"
+def AGG_DF_FILE_NAME(experiment, comparison_type, dataset, reduced=False):
+    if reduced:
+        return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_reduced.csv"
+    else:
+        return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.csv"
 
 
 def YAML_CONFIG_FILE_NAME(experiment, comparison_type, dataset):
@@ -81,7 +88,9 @@ def build_graph_config(
     measures: List = None,
     save_to_memory=True,
     save_to_disk=False,
+    reduced=False
 ):
+    experiment_settings = REDUCED_EXPERIMENT_DICT[experiment] if reduced else EXPERIMENT_DICT[experiment]
     save_agg_table = True if comparison_type != OUTPUT_CORRELATION_EXPERIMENT else False
     yaml_dict = {
         CONFIG_THREADS_KEY: 1,
@@ -159,6 +168,11 @@ def parse_args():
         action="store_true",
         help="Whether to retrain existing models.",
     )
+    parser.add_argument(
+        "--reduced",
+        action="store_true",
+        help="Whether to run reduced comparison where only 3 settings are separated.",
+    )
     return parser.parse_args()
 
 
@@ -193,6 +207,7 @@ if __name__ == "__main__":
         comparison_type=exp_type,
         dataset=args.dataset,
         measures=args.measures,
+        reduced=args.reduced
     )
 
     config_path = os.path.join("repsim", "configs", YAML_CONFIG_FILE_NAME(args.experiment, exp_type, args.dataset))
