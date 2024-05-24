@@ -55,7 +55,7 @@ NLP_TRAIN_DATASETS = {
     ),
     "sst2_mem_rate10": SST2(
         "sst2_mem_rate10",
-        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength010"),
+        path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "sst2_labels5_strength10"),
         memorization_rate=1.0,
         memorization_n_new_labels=5,
         memorization_seed=0,
