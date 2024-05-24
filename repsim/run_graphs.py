@@ -66,18 +66,18 @@ def PARQUET_FILE_NAME(experiment, comparison_type, dataset):
 def FULL_DF_FILE_NAME(experiment, comparison_type, dataset, reduced=False):
     if reduced:
         return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_reduced_full.csv"
-    else:
-        return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_full.csv"
+    return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_full.csv"
 
 
 def AGG_DF_FILE_NAME(experiment, comparison_type, dataset, reduced=False):
     if reduced:
         return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_reduced.csv"
-    else:
-        return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.csv"
+    return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.csv"
 
 
-def YAML_CONFIG_FILE_NAME(experiment, comparison_type, dataset):
+def YAML_CONFIG_FILE_NAME(experiment, comparison_type, dataset, reduced=False):
+    if reduced:
+        return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_reduced.yaml"
     return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.yaml"
 
 
@@ -103,7 +103,7 @@ def build_graph_config(
                 CONFIG_EXPERIMENTS_TYPE_SUBKEY: comparison_type,
                 CONFIG_REPRESENTATION_DATASET_KEY: dataset,
                 CONFIG_EXPERIMENTS_FILTER_SUBKEY: {
-                    CONFIG_EXPERIMENTS_IDENTIFIER_SUBKEY: EXPERIMENT_DICT[experiment],
+                    CONFIG_EXPERIMENTS_IDENTIFIER_SUBKEY: experiment_settings,
                     CONFIG_EXPERIMENTS_TRAIN_DATA_SUBKEY: [dataset],
                     CONFIG_EXPERIMENTS_SEEDS_SUBKEY: DEFAULT_SEEDS,
                     CONFIG_EXPERIMENTS_DOMAIN_SUBKEY: "GRAPHS",
@@ -210,7 +210,7 @@ if __name__ == "__main__":
         reduced=args.reduced
     )
 
-    config_path = os.path.join("repsim", "configs", YAML_CONFIG_FILE_NAME(args.experiment, exp_type, args.dataset))
+    config_path = os.path.join("repsim", "configs", YAML_CONFIG_FILE_NAME(args.experiment, exp_type, args.dataset, args_reduced))
     with open(config_path, "w") as file:
         yaml.dump(yaml_config, file)
 
