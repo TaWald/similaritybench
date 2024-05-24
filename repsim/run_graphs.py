@@ -88,7 +88,7 @@ def build_graph_config(
     measures: List = None,
     save_to_memory=True,
     save_to_disk=False,
-    reduced=False
+    reduced=False,
 ):
     experiment_settings = REDUCED_EXPERIMENT_DICT[experiment] if reduced else EXPERIMENT_DICT[experiment]
     save_agg_table = True if comparison_type != OUTPUT_CORRELATION_EXPERIMENT else False
@@ -207,10 +207,12 @@ if __name__ == "__main__":
         comparison_type=exp_type,
         dataset=args.dataset,
         measures=args.measures,
-        reduced=args.reduced
+        reduced=args.reduced,
     )
 
-    config_path = os.path.join("repsim", "configs", YAML_CONFIG_FILE_NAME(args.experiment, exp_type, args.dataset, args_reduced))
+    config_path = os.path.join(
+        "repsim", "configs", YAML_CONFIG_FILE_NAME(args.experiment, exp_type, args.dataset, args.reduced)
+    )
     with open(config_path, "w") as file:
         yaml.dump(yaml_config, file)
 
