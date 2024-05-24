@@ -116,12 +116,12 @@ def build_graph_config(
         #
         CONFIG_RES_TABLE_CREATION_KEY: {
             CONFIG_RES_TABLE_SAVE_SUBKEY: True,
-            CONFIG_RES_TABLE_FILENAME_SUBKEY: FULL_DF_FILE_NAME(experiment, comparison_type, dataset),
+            CONFIG_RES_TABLE_FILENAME_SUBKEY: FULL_DF_FILE_NAME(experiment, comparison_type, dataset, reduced),
             CONFIG_AGG_TABLE_SAVE_SUBKEY: save_agg_table,
             CONFIG_AGG_TABLE_INDEX_SUBKEY: "similarity_measure",
             CONFIG_AGG_TABLE_COLUMNS_SUBKEY: ["quality_measure", "architecture"],
             CONFIG_AGG_TABLE_VALUE_SUBKEY: "value",
-            CONFIG_AGG_TABLE_FILENAME_SUBKEY: AGG_DF_FILE_NAME(experiment, comparison_type, dataset),
+            CONFIG_AGG_TABLE_FILENAME_SUBKEY: AGG_DF_FILE_NAME(experiment, comparison_type, dataset, reduced),
         },
     }
     if measures is None:
