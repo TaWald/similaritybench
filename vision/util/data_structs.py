@@ -69,6 +69,10 @@ class Dataset(Enum):
     INGaussM = "Gauss_M_ImageNet100DataModule"
     INGaussS = "Gauss_S_ImageNet100DataModule"
     INGaussOff = "Gauss_Off_ImageNet100DataModule"
+    INRLABEL100 = "RandomLabel_100_IN100_DataModule"
+    INRLABEL75 = "RandomLabel_75_IN100_DataModule"
+    INRLABEL50 = "RandomLabel_50_IN100_DataModule"
+    INRLABEL25 = "RandomLabel_25_IN100_DataModule"
 
 
 class BaseArchitecture(Enum):

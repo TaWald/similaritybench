@@ -68,6 +68,10 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
         ds.Dataset.INGaussM,
         ds.Dataset.INGaussS,
         ds.Dataset.INGaussOff,
+        ds.Dataset.INRLABEL100,
+        ds.Dataset.INRLABEL75,
+        ds.Dataset.INRLABEL50,
+        ds.Dataset.INRLABEL25,
     ]:
         """Hyperparams taken from
          https://github.com/tensorflow/tpu/tree/master/models/official/resnet
@@ -191,6 +195,10 @@ def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
         ds.Dataset.INGaussM,
         ds.Dataset.INGaussS,
         ds.Dataset.INGaussOff,
+        ds.Dataset.INRLABEL100,
+        ds.Dataset.INRLABEL75,
+        ds.Dataset.INRLABEL50,
+        ds.Dataset.INRLABEL25,
     ]:
         output_classes = 1000 if dataset == ds.Dataset.IMAGENET else 100
         in_ch = 3
