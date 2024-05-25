@@ -39,6 +39,13 @@ IN_SHORTCUT_DATAMODULES = [
     ds.Dataset.INCDOT0,
 ]
 
+IN_RANDOMLABEL_DATAMODULES = [
+    ds.Dataset.INRLABEL100,
+    ds.Dataset.INRLABEL75,
+    ds.Dataset.INRLABEL50,
+    ds.Dataset.INRLABEL25,
+]
+
 AUGMENTATION_DATAMODULES = [
     ds.Dataset.GaussMAX,
     ds.Dataset.GaussL,
