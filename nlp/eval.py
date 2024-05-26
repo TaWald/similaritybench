@@ -72,10 +72,41 @@ def prepare_dataset(dataset: NLPDataset, splits):
             input_col = shortcut_adder.new_feature_column
             tokenizer_kwargs = {"additional_special_tokens": shortcut_adder.new_tokens}
 
+        # Eventuell funktioniert das nicht richtig, weil wir keine Kopie des datasets hier reinpacken.
+        # Andere shortcut rates sollten zwar separat sein, aber vllt verweisen alle ids auf das gleiche dataset objekt?
         DATASETS[dataset.get_id()] = (hf_dataset, tokenizer_kwargs)
 
     for split in splits:
         logger.debug(hf_dataset[split][:3])
+    return hf_dataset, tokenizer_kwargs, input_col
+
+
+def prepare_dataset2(dataset: NLPDataset, splits):
+    """Variant without dataset caching"""
+
+    assert dataset.feature_column is not None
+    logger.debug(f"Preparing dataset for {dataset.get_id()}")
+
+    tokenizer_kwargs = {}
+    input_col = dataset.feature_column
+    hf_dataset = get_dataset(dataset.path, dataset.config)
+
+    # Add shortcuts on the fly
+    if dataset.shortcut_rate is not None:
+        logger.debug(f"Adding shortcuts with {dataset.shortcut_rate=} and {dataset.shortcut_seed=}")
+        assert dataset.feature_column is not None
+        assert isinstance(dataset.shortcut_seed, int)
+        shortcut_adder = ShortcutAdder(
+            num_labels=len(np.unique(hf_dataset[splits[0]][dataset.label_column])),
+            p=dataset.shortcut_rate,
+            feature_column=dataset.feature_column,
+            label_column=dataset.label_column,
+            seed=dataset.shortcut_seed,
+        )
+        hf_dataset = hf_dataset.map(shortcut_adder)
+        input_col = shortcut_adder.new_feature_column
+        tokenizer_kwargs = {"additional_special_tokens": shortcut_adder.new_tokens}
+
     return hf_dataset, tokenizer_kwargs, input_col
 
 
@@ -101,7 +132,8 @@ def evaluate_model(
         hf_model = get_model(model_path=model.path)
         logger.debug("Loaded model")
 
-    hf_dataset, tokenizer_kwargs, input_col = prepare_dataset(dataset, splits)
+    # hf_dataset, tokenizer_kwargs, input_col = prepare_dataset(dataset, splits)
+    hf_dataset, tokenizer_kwargs, input_col = prepare_dataset2(dataset, splits)
     logger.debug("Loaded dataset")
 
     if "mem" in dataset.name:
@@ -167,10 +199,12 @@ def main(cfg: DictConfig):
     logger.debug(f"results loaded with {len(results)} model entries")
 
     for model in tqdm(models):
-        #
-        # if (model.train_dataset != "mnli_sc_rate1") or (model.seed != 4):
+
+        # if (model.train_dataset != "sst2_sc_rate0889") or (model.seed != 0):
         #     continue
-        #
+        # if (model.train_dataset == "mnli_mem_rate025") and (model.seed == 3):
+        #     # safetensors_rust.SafetensorError: Error while deserializing header: MetadataIncompleteBuffer
+        #     continue
 
         if model.id not in results:
             results[model.id] = {}
@@ -188,7 +222,7 @@ def main(cfg: DictConfig):
                 logger.info(f"{model.id} already evaluated on {ds_to_eval_on}. Skipping.")
                 continue
 
-            splits = cfg.splits[dataset_key]
+            splits = cfg.splits[dataset_key].copy()
             if "mem" in ds_to_eval_on and "mnli" in ds_to_eval_on:
                 splits += ["train"]
 
