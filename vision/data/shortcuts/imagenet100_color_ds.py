@@ -103,9 +103,9 @@ class ColorDotImageNet100Dataset(Dataset):
         :return:
         """
         data_root_dir = self.root
-        if split in ["train"]:
+        if split in ["train", "val"]:
             data_dir = data_root_dir / "train"
-        elif split == "val":
+        elif split == "test":
             data_dir = data_root_dir / "val"
         else:
             raise ValueError(f"Got faulty split: {split} passed.")

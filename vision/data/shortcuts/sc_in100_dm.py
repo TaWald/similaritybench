@@ -63,7 +63,7 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
         """Get a validation dataloader"""
         dataset = ColorDotImageNet100Dataset(
             root=self.dataset_path,
-            split="train",
+            split="val",
             kfold_split=0,
             transform=self.get_transforms(transform),
             dot_correlation=self.dot_correlation,
@@ -77,7 +77,7 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
     def test_dataloader(self, transform: ds.Augmentation = ds.Augmentation.VAL, **kwargs) -> DataLoader:
         dataset = ColorDotImageNet100Dataset(
             root=self.dataset_path,
-            split="val",
+            split="test",
             kfold_split=0,
             transform=self.get_transforms(transform),
             dot_correlation=self.dot_correlation,

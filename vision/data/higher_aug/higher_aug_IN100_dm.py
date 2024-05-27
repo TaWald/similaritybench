@@ -9,8 +9,6 @@ from albumentations import Compose
 from albumentations import GaussNoise
 from albumentations import HorizontalFlip
 from albumentations import Normalize
-from albumentations import PadIfNeeded
-from albumentations import RandomCrop
 from albumentations import RandomResizedCrop
 from albumentations import Resize
 from albumentations.pytorch import ToTensorV2
@@ -19,12 +17,8 @@ from PIL import Image
 from repsim.benchmark.paths import VISION_DATA_PATH
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
-from torchvision import transforms as trans
-from torchvision.datasets import CIFAR10
-from vision.data.base_datamodule import BaseDataModule
 from vision.data.imagenet100_dm import Imagenet100DataModule
 from vision.data.imagenet100_ds import ImageNet100Dataset
-from vision.randaugment.randaugment import CIFAR10Policy
 from vision.util import data_structs as ds
 
 
@@ -147,7 +141,7 @@ class Gauss_Max_Imagenet100DataModule(Imagenet100DataModule):
         """Get a validation dataloader"""
         dataset = IN100_AlbuDataset(
             root=self.dataset_path,
-            split="train",
+            split="val",
             kfold_split=0,
             transform=self.get_transforms(transform),
         )
@@ -158,7 +152,7 @@ class Gauss_Max_Imagenet100DataModule(Imagenet100DataModule):
     def test_dataloader(self, transform: ds.Augmentation = ds.Augmentation.VAL, **kwargs) -> DataLoader:
         dataset = IN100_AlbuDataset(
             root=self.dataset_path,
-            split="val",
+            split="test",
             kfold_split=0,
             transform=self.get_transforms(transform),
         )
