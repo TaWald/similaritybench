@@ -204,11 +204,13 @@ class ExperimentStorer:
             logger.warning(f"Multiple entries found for {comp_id}.")
             metric_values = res["metric_value"]
             metric_values = [v for v in metric_values if not np.isnan(v)]
-            if all(np.isclose(value, metric_values[0], atol=1e-6) for value in metric_values if value):
+            if len(metric_values) > 0 and all(
+                np.isclose(value, metric_values[0], atol=1e-6) for value in metric_values if value
+            ):
                 sim_value = metric_values[0]
             else:
-                logger.error("Multiple different values found for the same comparison. Returning None.")
-                sim_value = None
+                logger.error("Multiple different values found for the same comparison. Returning nan.")
+                sim_value = np.nan
         else:
             sim_value = None
 

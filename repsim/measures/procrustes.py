@@ -27,7 +27,7 @@ def orthogonal_procrustes(
     R, Rp = adjust_dimensionality(R, Rp)
     nucnorm = scipy.linalg.orthogonal_procrustes(R, Rp)[1]
     squared_dist = -2 * nucnorm + np.linalg.norm(R, ord="fro") ** 2 + np.linalg.norm(Rp, ord="fro") ** 2
-    if squared_dist < 0 and abs(squared_dist) < 1e-7:
+    if squared_dist < 0:
         warnings.warn(
             f"Squared Orthogonal Procrustes distance is less than 0, but small, likely due to numerical errors. "
             f"Exact value={squared_dist}. Rounding to zero."

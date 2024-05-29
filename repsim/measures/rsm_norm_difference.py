@@ -21,7 +21,7 @@ def rsm_norm_diff(
     R, Rp = flatten(R, Rp, shape=shape)
     R, Rp = to_numpy_if_needed(R, Rp)
     S = sklearn.metrics.pairwise_distances(R, metric=inner, n_jobs=n_jobs)  # type:ignore
-    Sp = sklearn.metrics.pairwise_distances(R, metric=inner, n_jobs=n_jobs)  # type:ignore
+    Sp = sklearn.metrics.pairwise_distances(Rp, metric=inner, n_jobs=n_jobs)  # type:ignore
     return float(np.linalg.norm(S - Sp, ord=2))  # ord=2 because pdist gives vectorized lower triangle of RSM
 
 
