@@ -84,7 +84,7 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
                 architecture_name=architecture_name,
                 num_epochs=300,
                 save_last_checkpoint=True,
-                batch_size=4096,
+                batch_size=512,
                 label_smoothing=True,
                 label_smoothing_val=0.1,
                 cosine_annealing=True,
@@ -92,12 +92,14 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
                 learning_rate=3e-3,
                 momentum=0.9,
                 nesterov=True,
-                weight_decay=0.3,
+                weight_decay=0.1,
                 split=0,
                 dataset=dataset.value,
                 gradient_clip=1,
                 optimizer={
                     "name": "adamw",
+                    "betas": (0.9, 0.999),
+                    "eps": 1e-8,
                 },
             )
         else:

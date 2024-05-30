@@ -232,12 +232,16 @@ class BaseLightningModule(pl.LightningModule, ABC):
         if self.params.optimizer is not None:
             opti_name = self.params.optimizer["name"]
             if opti_name == "adamw":
+                betas = self.params.optimizer["betas"]
+                eps = self.params.optimizer["eps"]
                 optim = torch.optim.AdamW(
                     params=parameters_to_train,
                     lr=self.params.learning_rate,
+                    betas=betas,
+                    eps=eps,
                     weight_decay=self.params.weight_decay,
                 )
-                scheduler = LinearWarmupCosineAnnealingLR(optim, warmup_epochs=15, max_epochs=self.params.num_epochs)
+                scheduler = LinearWarmupCosineAnnealingLR(optim, warmup_epochs=35, max_epochs=self.params.num_epochs)
                 return [optim], [scheduler]
 
         else:
