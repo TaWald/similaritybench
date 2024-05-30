@@ -220,25 +220,23 @@ def fft_resize(images, resize=False, new_size=None):
                            [batch_size, (new) height, (new) width, num_channels]
     """
     assert len(images.shape) == 4, "expecting images to be" "[batch_size, height, width, num_channels]"
-
-    im_complex = images.astype("complex64")
-    im_fft = np.fft.fft2(im_complex, axes=(1, 2))
-
-    # resizing images
     if resize:
-        # get fourier frequencies to threshold
-        assert im_fft.shape[1] == im_fft.shape[2], "Need images to have same" "height and width"
-        # downsample by threshold
-        width = im_fft.shape[2]
-        new_width = new_size[0]
-        freqs = np.fft.fftfreq(width, d=1.0 / width)
-        idxs = np.flatnonzero((freqs >= -new_width / 2.0) & (freqs < new_width / 2.0))
-        im_fft_downsampled = im_fft[:, :, idxs, :][:, idxs, :, :]
+        # FFT --> remove high frequencies --> inverse FFT
+        im_complex = images.astype("complex64")
+        im_fft = np.fft.fft2(im_complex, axes=(1, 2))
+        im_shifted = np.fft.fftshift(im_fft, axes=(1, 2))
 
+        center_width = im_shifted.shape[2] // 2
+        center_height = im_shifted.shape[1] // 2
+        half_w = new_size[0] // 2
+        half_h = new_size[1] // 2
+        cropped_fft = im_shifted[
+            :, center_height - half_h : center_height + half_h, center_width - half_w : center_width + half_w, :
+        ]
+        cropped_fft_shifted_back = np.fft.ifft2(cropped_fft, axes=(1, 2))
+        return cropped_fft_shifted_back.real
     else:
-        im_fft_downsampled = im_fft
-
-    return im_fft_downsampled
+        return images
 
 
 class Pipeline:
