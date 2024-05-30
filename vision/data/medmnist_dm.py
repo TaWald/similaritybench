@@ -21,9 +21,6 @@ from vision.util import data_structs as ds
 
 class DermaMNISTDataModule(BaseDataModule):
     datamodule_id = ds.Dataset.DermaMNIST
-    n_train = 89996
-    n_val = 10004
-    n_test = 7180
     n_classes = 7
 
     # If I remove split from init call:

@@ -25,8 +25,6 @@ from vision.util import data_structs as ds
 
 class ColorDot_100_CIFAR10DataModule(CIFAR10DataModule):
     datamodule_id = ds.Dataset.CIFAR10
-    n_train = 50000
-    n_test = 10000
     n_classes = 10
     dot_correlation = 100
     dot_diameter = 5
@@ -85,7 +83,7 @@ class ColorDot_100_CIFAR10DataModule(CIFAR10DataModule):
             dot_correlation=self.dot_correlation,
             dot_diameter=self.dot_diameter,
         )
-        train_ids, _ = self.get_train_val_split(split)
+        train_ids, _ = self.get_train_val_split(split, len(dataset))
         dataset = Subset(dataset, train_ids)
         return DataLoader(dataset=dataset, **kwargs)
 
@@ -104,7 +102,7 @@ class ColorDot_100_CIFAR10DataModule(CIFAR10DataModule):
             dot_correlation=self.dot_correlation,
             dot_diameter=self.dot_diameter,
         )
-        _, val_ids = self.get_train_val_split(split)
+        _, val_ids = self.get_train_val_split(split, len(dataset))
         dataset = Subset(dataset, val_ids)
         return DataLoader(dataset=dataset, **kwargs)
 

@@ -10,8 +10,6 @@ from vision.util import data_structs as ds
 
 class BaseDataModule(ABC):
     datamodule_id: ds.Dataset
-    n_train: int
-    n_test: int
     n_classes: int
 
     def __init__(self):
@@ -53,8 +51,8 @@ class BaseDataModule(ABC):
             (image_batch * np.array(self.std)[None, :, None, None]) + np.array(self.mean)[None, :, None, None]
         ) * 255
 
-    def get_train_val_split(self, split: int) -> tuple[list[int], list[int]]:
-        total_samples = self.n_train
+    def get_train_val_split(self, split: int, n_samples: int) -> tuple[list[int], list[int]]:
+        total_samples = n_samples
         # Inverse order to be backwards compatible
         split = self.max_splits - (split + 1)
         n_val = int(total_samples / self.max_splits)
