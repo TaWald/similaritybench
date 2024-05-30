@@ -3,6 +3,7 @@ from typing import Union
 import numpy as np
 import numpy.typing as npt
 import torch
+from repsim.measures.utils import align_spatial_dimensions
 from repsim.measures.utils import flatten
 from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
@@ -57,4 +58,9 @@ class IMDScore(RepresentationalSimilarityMeasure):
         approximation_steps: int = 8000,
         n_repeat: int = 5,
     ) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+
         return self.sim_func(R, Rp, shape, approximation_steps, n_repeat)  # type:ignore

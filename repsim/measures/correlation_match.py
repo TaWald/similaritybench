@@ -6,6 +6,7 @@ import scipy.optimize
 import scipy.spatial.distance
 import sklearn.metrics
 import torch
+from repsim.measures.utils import align_spatial_dimensions
 from repsim.measures.utils import center_columns
 from repsim.measures.utils import flatten
 from repsim.measures.utils import RSMSimilarityMeasure
@@ -77,6 +78,14 @@ class HardCorrelationMatch(RSMSimilarityMeasure):
             invariant_to_translation=True,
         )
 
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+
+        return self.sim_func(R, Rp, shape)
+
 
 class SoftCorrelationMatch(RSMSimilarityMeasure):
     def __init__(self):
@@ -92,3 +101,11 @@ class SoftCorrelationMatch(RSMSimilarityMeasure):
             invariant_to_isotropic_scaling=True,
             invariant_to_translation=True,
         )
+
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+
+        return self.sim_func(R, Rp, shape)

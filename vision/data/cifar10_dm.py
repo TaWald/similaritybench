@@ -22,8 +22,6 @@ from vision.util import data_structs as ds
 
 class CIFAR10DataModule(BaseDataModule):
     datamodule_id = ds.Dataset.CIFAR10
-    n_train = 50000
-    n_test = 10000
     n_classes = 10
 
     # If I remove split from init call:
@@ -91,7 +89,7 @@ class CIFAR10DataModule(BaseDataModule):
             download=False,
             transform=self.get_transforms(transform),
         )
-        train_ids, _ = self.get_train_val_split(split)
+        train_ids, _ = self.get_train_val_split(split, len(dataset))
         dataset = Subset(dataset, train_ids)
         return DataLoader(dataset=dataset, **kwargs)
 
@@ -108,7 +106,7 @@ class CIFAR10DataModule(BaseDataModule):
             download=False,
             transform=self.get_transforms(transform),
         )
-        _, val_ids = self.get_train_val_split(split)
+        _, val_ids = self.get_train_val_split(split, len(dataset))
         dataset = Subset(dataset, val_ids)
         return DataLoader(dataset=dataset, **kwargs)
 

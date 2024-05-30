@@ -16,7 +16,12 @@ from vision.util import find_datamodules as fd
 from vision.util.default_parser_args import add_vision_training_params
 from vision.util.file_io import get_vision_model_info
 
-STANDARD_DATAMODULES = [ds.Dataset.TinyIMAGENET, ds.Dataset.CIFAR10, ds.Dataset.CIFAR100, ds.Dataset.IMAGENET100]
+STANDARD_DATAMODULES = [
+    ds.Dataset.TinyIMAGENET,
+    ds.Dataset.CIFAR10,
+    ds.Dataset.CIFAR100,
+    ds.Dataset.IMAGENET100,
+]
 
 SHORTCUT_DATAMODULES = [
     ds.Dataset.CDOT100,
@@ -25,12 +30,20 @@ SHORTCUT_DATAMODULES = [
     ds.Dataset.CDOT25,
     ds.Dataset.CDOT0,
 ]
+
 IN_SHORTCUT_DATAMODULES = [
     ds.Dataset.INCDOT100,
     ds.Dataset.INCDOT75,
     ds.Dataset.INCDOT50,
     ds.Dataset.INCDOT25,
     ds.Dataset.INCDOT0,
+]
+
+IN_RANDOMLABEL_DATAMODULES = [
+    ds.Dataset.INRLABEL100,
+    ds.Dataset.INRLABEL75,
+    ds.Dataset.INRLABEL50,
+    ds.Dataset.INRLABEL25,
 ]
 
 AUGMENTATION_DATAMODULES = [
@@ -40,6 +53,7 @@ AUGMENTATION_DATAMODULES = [
     ds.Dataset.GaussS,
     ds.Dataset.GaussOff,
 ]
+
 IN_AUGMENTATION_DATAMODULES = [
     ds.Dataset.INGaussMAX,
     ds.Dataset.INGaussL,
