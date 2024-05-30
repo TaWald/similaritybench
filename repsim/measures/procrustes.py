@@ -9,6 +9,7 @@ import scipy.linalg
 import scipy.optimize
 import torch
 from repsim.measures.utils import adjust_dimensionality
+from repsim.measures.utils import align_spatial_dimensions
 from repsim.measures.utils import center_columns
 from repsim.measures.utils import flatten
 from repsim.measures.utils import normalize_matrix_norm
@@ -194,6 +195,15 @@ class OrthogonalProcrustesCenteredAndNormalized(RepresentationalSimilarityMeasur
             invariant_to_translation=True,
         )
 
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
+
+        return self.sim_func(R, Rp, shape)
+
 
 class PermutationProcrustes(RepresentationalSimilarityMeasure):
     def __init__(self):
@@ -209,6 +219,15 @@ class PermutationProcrustes(RepresentationalSimilarityMeasure):
             invariant_to_isotropic_scaling=False,
             invariant_to_translation=False,
         )
+
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
+
+        return self.sim_func(R, Rp, shape)
 
 
 class OrthogonalAngularShapeMetricCentered(RepresentationalSimilarityMeasure):
@@ -226,6 +245,15 @@ class OrthogonalAngularShapeMetricCentered(RepresentationalSimilarityMeasure):
             invariant_to_translation=True,
         )
 
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
+
+        return self.sim_func(R, Rp, shape)
+
 
 class AlignedCosineSimilarity(RepresentationalSimilarityMeasure):
     def __init__(self):
@@ -241,3 +269,12 @@ class AlignedCosineSimilarity(RepresentationalSimilarityMeasure):
             invariant_to_isotropic_scaling=False,
             invariant_to_translation=False,
         )
+
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
+
+        return self.sim_func(R, Rp, shape)
