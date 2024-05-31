@@ -14,6 +14,7 @@ from typing import TypeVar
 import numpy as np
 import torch
 from graphs.get_reps import get_gnn_output
+from graphs.get_reps import get_graph_model_layer_count
 from graphs.get_reps import get_graph_representations
 from loguru import logger
 from repsim.benchmark.paths import CACHE_PATH
@@ -308,8 +309,14 @@ class GraphModel(TrainedModel):
             representation_dataset = self.train_dataset
 
         if compute_on_demand:
+            n_layers = get_graph_model_layer_count(
+                architecture_name=self.architecture,
+                train_dataset=self.train_dataset,
+                seed=self.seed,  # type:ignore
+                setting_identifier=self.identifier,
+            )
             all_single_layer_reps = tuple(
-                [SingleLayerGraphRepresentation(layer_id=i, _shape="nd") for i in range(self.n_layers)]
+                [SingleLayerGraphRepresentation(layer_id=i, _shape="nd") for i in range(n_layers)]
             )
         else:
             plain_reps = get_graph_representations(
