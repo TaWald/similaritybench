@@ -17,6 +17,7 @@ from typing import Union
 import numpy as np
 import numpy.typing as npt
 import torch
+from einops import rearrange
 
 log = logging.getLogger(__name__)
 
@@ -152,6 +153,92 @@ def standardize(R: npt.NDArray) -> npt.NDArray:
 
 def double_center(x: npt.NDArray) -> npt.NDArray:
     return x - x.mean(axis=0, keepdims=True) - x.mean(axis=1, keepdims=True) + x.mean()
+
+
+def align_spatial_dimensions(R: npt.NDArray, Rp: npt.NDArray) -> Tuple[npt.NDArray, npt.NDArray]:
+    """
+    Aligns spatial representations by resizing them to the smallest spatial dimension.
+    Subsequent aligned spatial representations are flattened, with the spatial aligned representations
+    moving into the *sample* dimension.
+    """
+    r_tmp = rearrange(R, "n c h w -> n h w c")
+    rp_tmp = rearrange(Rp, "n c h w -> n h w c")
+    R_re, Rp_re = resize_wh_reps(r_tmp, rp_tmp)
+    R_re = rearrange(R_re, "n h w c -> (n h w) c")
+    Rp_re = rearrange(Rp_re, "n h w c -> (n h w) c")
+    return R_re, Rp_re
+
+
+def resize_wh_reps(R: npt.NDArray, Rp: npt.NDArray) -> Tuple[npt.NDArray, npt.NDArray]:
+    """
+    Function for resizing spatial representations that are not the same size.
+    Does through fourier transform and resizing.
+
+    Args:
+        R: numpy array of shape  [batch_size, height, width, num_channels]
+        RP: numpy array of shape [batch_size, height, width, num_channels]
+
+    Returns:
+        fft_acts1: numpy array of shape [batch_size, (new) height, (new) width, num_channels]
+        fft_acts2: numpy array of shape [batch_size, (new) height, (new) width, num_channels]
+
+    """
+    height1, width1 = R.shape[1], R.shape[2]
+    height2, width2 = Rp.shape[1], Rp.shape[2]
+    if height1 != height2 or width1 != width2:
+        height = min(height1, height2)
+        width = min(width1, width2)
+        new_size = [height, width]
+        resize = True
+    else:
+        height = height1
+        width = width1
+        new_size = None
+        resize = False
+
+    # resize and preprocess with fft
+    fft_acts1 = fft_resize(R, resize=resize, new_size=new_size)
+    fft_acts2 = fft_resize(Rp, resize=resize, new_size=new_size)
+    return fft_acts1, fft_acts2
+
+
+def fft_resize(images, resize=False, new_size=None):
+    """Function for applying DFT and resizing.
+
+    This function takes in an array of images, applies the 2-d fourier transform
+    and resizes them according to new_size, keeping the frequencies that overlap
+    between the two sizes.
+
+    Args:
+              images: a numpy array with shape
+                      [batch_size, height, width, num_channels]
+              resize: boolean, whether or not to resize
+              new_size: a tuple (size, size), with height and width the same
+
+    Returns:
+              im_fft_downsampled: a numpy array with shape
+                           [batch_size, (new) height, (new) width, num_channels]
+    """
+    assert len(images.shape) == 4, "expecting images to be" "[batch_size, height, width, num_channels]"
+
+    im_complex = images.astype("complex64")
+    im_fft = np.fft.fft2(im_complex, axes=(1, 2))
+
+    # resizing images
+    if resize:
+        # get fourier frequencies to threshold
+        assert im_fft.shape[1] == im_fft.shape[2], "Need images to have same" "height and width"
+        # downsample by threshold
+        width = im_fft.shape[2]
+        new_width = new_size[0]
+        freqs = np.fft.fftfreq(width, d=1.0 / width)
+        idxs = np.flatnonzero((freqs >= -new_width / 2.0) & (freqs < new_width / 2.0))
+        im_fft_downsampled = im_fft[:, :, idxs, :][:, idxs, :, :]
+
+    else:
+        im_fft_downsampled = im_fft
+
+    return im_fft_downsampled
 
 
 class Pipeline:

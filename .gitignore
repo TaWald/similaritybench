@@ -39,3 +39,6 @@ vision/data/shortcuts/example_imgs
 vision/_train_submit_to_cluster.py
 
 manual_data_introspection
+*_pac_api.py
+vision/_model_status_check.py
+vision/_train_model_submission.py

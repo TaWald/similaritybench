@@ -38,6 +38,11 @@ class ShortcutTrainer:
         self.prog_bar = False if "LSB_JOBID" in os.environ else True
         self.logger = CSVLogger(self.model_info.path_train_log / "log.log")
 
+        self.accumulate_grad_batches = 1
+        if self.params.architecture_name in ["ViT_B16", "ViT_B32", "ViT_L16", "ViT_L32"]:
+            self.accumulate_grad_batches = self.params.batch_size // 128
+            self.params.batch_size = 128
+
         # Create them. Should not exist though or overwrite would happen!
         self.model_info.path_root.mkdir(exist_ok=True, parents=True)
         self.model_info.path_activations.mkdir(exist_ok=True, parents=True)
@@ -85,6 +90,7 @@ class ShortcutTrainer:
             enable_progress_bar=self.prog_bar,
             logger=self.logger,
             profiler=None,
+            accumulate_grad_batches=self.accumulate_grad_batches,
         )
         self.model.cuda()
         loguru_logger.info("Starting training")

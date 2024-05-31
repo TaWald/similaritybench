@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytorch_lightning as pl
 import torch
+from pl_bolts.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler  # noqa
 from torch.utils.tensorboard.writer import SummaryWriter
 from vision.arch.abstract_acti_extr import AbsActiExtrArch
@@ -228,16 +229,32 @@ class BaseLightningModule(pl.LightningModule, ABC):
         else:
             parameters_to_train = self.net.parameters()
 
-        optim = torch.optim.SGD(
-            params=parameters_to_train,
-            lr=self.params.learning_rate,
-            momentum=self.params.momentum,
-            weight_decay=self.params.weight_decay,
-            nesterov=self.params.nesterov,
-        )
-        if self.params.cosine_annealing:
-            total_epochs = self.params.num_epochs
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=total_epochs, eta_min=0)
-            return [optim], [scheduler]
+        if self.params.optimizer is not None:
+            opti_name = self.params.optimizer["name"]
+            if opti_name == "adamw":
+                betas = self.params.optimizer["betas"]
+                eps = self.params.optimizer["eps"]
+                optim = torch.optim.AdamW(
+                    params=parameters_to_train,
+                    lr=self.params.learning_rate,
+                    betas=betas,
+                    eps=eps,
+                    weight_decay=self.params.weight_decay,
+                )
+                scheduler = LinearWarmupCosineAnnealingLR(optim, warmup_epochs=35, max_epochs=self.params.num_epochs)
+                return [optim], [scheduler]
+
         else:
-            return [optim]
+            optim = torch.optim.SGD(
+                params=parameters_to_train,
+                lr=self.params.learning_rate,
+                momentum=self.params.momentum,
+                weight_decay=self.params.weight_decay,
+                nesterov=self.params.nesterov,
+            )
+            if self.params.cosine_annealing:
+                total_epochs = self.params.num_epochs
+                scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=total_epochs, eta_min=0)
+                return [optim], [scheduler]
+            else:
+                return [optim]

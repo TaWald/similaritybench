@@ -9,6 +9,7 @@ import scipy.spatial.distance
 import sklearn.metrics
 import sklearn.neighbors
 import torch
+from repsim.measures.utils import align_spatial_dimensions
 from repsim.measures.utils import flatten
 from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
@@ -190,6 +191,13 @@ class JaccardSimilarity(RepresentationalSimilarityMeasure):
         n_jobs: int = 8,
     ) -> float:
         # TODO: If inner != "cosine", the invariances change
+
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
+
         return self.sim_func(R, Rp, shape, k=k, inner=inner, n_jobs=n_jobs)
 
 
@@ -218,6 +226,12 @@ class SecondOrderCosineSimilarity(RepresentationalSimilarityMeasure):
         k: int = 10,
         n_jobs: int = 1,
     ) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
+
         return self.sim_func(R, Rp, shape, k=k, n_jobs=n_jobs)  # type: ignore
 
 
@@ -247,5 +261,10 @@ class RankSimilarity(RepresentationalSimilarityMeasure):
         inner: str = "cosine",
         n_jobs: int = 8,
     ) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
         # TODO: If inner != "cosine", the invariances change
         return self.sim_func(R, Rp, shape, k=k, inner=inner, n_jobs=n_jobs)
