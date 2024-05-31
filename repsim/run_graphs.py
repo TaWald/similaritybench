@@ -116,7 +116,7 @@ def build_graph_config(
         },
     }
     if measures is None:
-        yaml_dict[CONFIG_EXCLUDED_MEASURES_KEY] = ["IMDScore", "GeometryScore", "PWCCA"]
+        yaml_dict[CONFIG_EXCLUDED_MEASURES_KEY] = ["RSMNormDifference", "IMDScore", "GeometryScore", "PWCCA"]
     else:
         yaml_dict[CONFIG_INCLUDED_MEASURES_KEY] = measures
 
