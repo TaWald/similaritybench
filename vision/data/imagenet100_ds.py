@@ -115,6 +115,7 @@ class ImageNet100Dataset(Dataset):
         else:
             raise ValueError(f"Got faulty split: {split} passed.")
 
+        logger.info(f"Collecting samples from {data_dir}")
         all_samples = []
         for wnid, class_id in self.wnid_to_id.items():
             class_path = data_dir / wnid
@@ -129,14 +130,7 @@ class ImageNet100Dataset(Dataset):
         return
 
     def __getitem__(self, item: int) -> tuple[Any, int]:
-        try:
-            im: Image.Image = Image.open(self.samples[item][0])
-        except IndexError as e:
-            logger.info(f"Item id: {item}")
-            logger.info(f"Length of samples: {len(self.samples)}")
-            logger.info(f"Shape {len(self.samples[0])}")
-            raise e
-
+        im: Image.Image = Image.open(self.samples[item][0])
         if im.mode != "RGB":
             im = im.convert("RGB")
         trans_im = self.transforms(im)

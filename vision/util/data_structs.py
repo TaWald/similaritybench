@@ -7,6 +7,7 @@ from dataclasses import field
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from typing import Literal
 
 from vision.util import name_conventions as nc
 from vision.util.status_check import output_json_has_nans
@@ -68,6 +69,10 @@ class Dataset(Enum):
     INGaussM = "Gauss_M_ImageNet100DataModule"
     INGaussS = "Gauss_S_ImageNet100DataModule"
     INGaussOff = "Gauss_Off_ImageNet100DataModule"
+    INRLABEL100 = "RandomLabel_100_IN100_DataModule"
+    INRLABEL75 = "RandomLabel_75_IN100_DataModule"
+    INRLABEL50 = "RandomLabel_50_IN100_DataModule"
+    INRLABEL25 = "RandomLabel_25_IN100_DataModule"
 
 
 class BaseArchitecture(Enum):
@@ -182,6 +187,7 @@ class Params:
     dataset: str
     advanced_da: bool = True
     optimizer: dict[str, Any] | None = None
+    gradient_clip: float | None = None
 
 
 @dataclass

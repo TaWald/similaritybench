@@ -26,7 +26,6 @@ from vision.util import data_structs as ds
 
 
 class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
-    datamodule_id = ds.Dataset.CIFAR10
     dot_correlation = 100
     dot_diameter = 5
 
@@ -34,13 +33,6 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
     #   I will have to make the Subclasses of the Cifar10BaseMergingModule
     #   override wherever the splitting takes place.
     #   Because this is where the KFold and Disjoint DataModule differ!
-
-    def __init__(
-        self,
-        advanced_da: bool,
-    ):
-        """ """
-        super().__init__(advanced_da)
 
     def train_dataloader(
         self,
@@ -57,7 +49,7 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
             dot_correlation=self.dot_correlation,
             dot_diameter=self.dot_diameter,
         )
-        train_ids, _ = self.get_train_val_split(split)
+        train_ids, _ = self.get_train_val_split(split, len(dataset))
         dataset = Subset(dataset, train_ids)
         logger.info(f"Length of train dataset: {len(dataset)}")
         return DataLoader(dataset=dataset, **kwargs)
@@ -71,13 +63,13 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
         """Get a validation dataloader"""
         dataset = ColorDotImageNet100Dataset(
             root=self.dataset_path,
-            split="train",
+            split="val",
             kfold_split=0,
             transform=self.get_transforms(transform),
             dot_correlation=self.dot_correlation,
             dot_diameter=self.dot_diameter,
         )
-        _, val_ids = self.get_train_val_split(split)
+        _, val_ids = self.get_train_val_split(split, len(dataset))
         dataset = Subset(dataset, val_ids)
         logger.info(f"Length of val dataset: {len(dataset)}")
         return DataLoader(dataset=dataset, **kwargs)
@@ -85,7 +77,7 @@ class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
     def test_dataloader(self, transform: ds.Augmentation = ds.Augmentation.VAL, **kwargs) -> DataLoader:
         dataset = ColorDotImageNet100Dataset(
             root=self.dataset_path,
-            split="train",
+            split="test",
             kfold_split=0,
             transform=self.get_transforms(transform),
             dot_correlation=self.dot_correlation,

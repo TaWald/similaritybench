@@ -29,8 +29,6 @@ class TestDataset(Dataset):
 
 class TestDataModule(BaseDataModule):
     datamodule_id = ds.Dataset.TEST
-    n_train = 300
-    n_test = 300
     n_classes = 10
 
     # If I remove split from init call:

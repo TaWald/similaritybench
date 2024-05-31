@@ -15,6 +15,10 @@ from vision.data.imagenet100_dm import Imagenet100DataModule
 from vision.data.imagenet_dm import ImagenetDataModule
 from vision.data.medmnist_dm import DermaMNISTDataModule
 from vision.data.random_labels.rl_c10_dm import RandomLabel_CIFAR10DataModule
+from vision.data.random_labels.rl_in100_dm import RandomLabel_100_IN100_DataModule
+from vision.data.random_labels.rl_in100_dm import RandomLabel_25_IN100_DataModule
+from vision.data.random_labels.rl_in100_dm import RandomLabel_50_IN100_DataModule
+from vision.data.random_labels.rl_in100_dm import RandomLabel_75_IN100_DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_0_CIFAR10DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_100_CIFAR10DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_25_CIFAR10DataModule
@@ -92,6 +96,14 @@ def get_datamodule(dataset: ds.Dataset | str, advanced_da: bool = True) -> BaseD
         return ColorDot_25_IN100Datamodule(advanced_da)
     elif dataset == ds.Dataset.INCDOT0:
         return ColorDot_0_IN100Datamodule(advanced_da)
+    elif dataset == ds.Dataset.INRLABEL100:
+        return RandomLabel_100_IN100_DataModule(advanced_da)
+    elif dataset == ds.Dataset.INRLABEL75:
+        return RandomLabel_75_IN100_DataModule(advanced_da)
+    elif dataset == ds.Dataset.INRLABEL50:
+        return RandomLabel_50_IN100_DataModule(advanced_da)
+    elif dataset == ds.Dataset.INRLABEL25:
+        return RandomLabel_25_IN100_DataModule(advanced_da)
     else:
         raise ValueError
 
