@@ -96,6 +96,9 @@ class OutputCorrelationExperiment(AbstractExperiment):
                 repsims = repsims[~comparisons_with_at_least_one_nan]
                 funcsims = funcsims[~comparisons_with_at_least_one_nan]
 
+                if not repsim_measure.larger_is_more_similar:
+                    repsims = -1 * repsims
+
                 for corr_func in [scipy.stats.pearsonr, scipy.stats.spearmanr, scipy.stats.kendalltau]:
                     result = corr_func(repsims, funcsims)
                     measure_wise_results.append(
