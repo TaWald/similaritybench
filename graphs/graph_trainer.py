@@ -286,9 +286,9 @@ class LayerTestTrainer(GraphTrainer):
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         seed: EXPERIMENT_SEED,
-        n_layers: int = None,
+        n_layers: int = LAYER_EXPERIMENT_N_LAYERS,
     ):
-        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
+        self.n_layers = n_layers
 
         GraphTrainer.__init__(
             self,
