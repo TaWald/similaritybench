@@ -16,6 +16,7 @@ from repsim.benchmark.types_globals import GROUP_SEPARATION_EXPERIMENT
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import MONOTONICITY_EXPERIMENT
 from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT
+from repsim.benchmark.types_globals import STANDARD_SETTING
 from repsim.benchmark.types_globals import THREE_GROUP_EXPERIMENT_DICT
 from repsim.benchmark.types_globals import TWO_GROUP_EXPERIMENT_DICT
 from repsim.measures import ALL_MEASURES
@@ -65,18 +66,24 @@ def PARQUET_FILE_NAME(experiment, comparison_type, dataset):
 
 
 def FULL_DF_FILE_NAME(experiment, comparison_type, dataset, groups=5):
+    if groups == 1:
+        return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_seedvar_full.csv"
     if groups < 5:
         return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_{groups}groups_full.csv"
     return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_full.csv"
 
 
 def AGG_DF_FILE_NAME(experiment, comparison_type, dataset, groups=5):
+    if groups == 1:
+        return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_seedvar.csv"
     if groups < 5:
         return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_{groups}groups.csv"
     return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.csv"
 
 
 def YAML_CONFIG_FILE_NAME(experiment, comparison_type, dataset, groups=5):
+    if groups == 1:
+        return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_seedvar.yaml"
     if groups < 5:
         return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}_{groups}groups.yaml"
     return f"{experiment}_{CONFIG_COMPARISON_TYPE_STR_DICT[comparison_type]}_{dataset}.yaml"
@@ -95,8 +102,10 @@ def build_graph_config(
         experiment_settings = EXPERIMENT_DICT[experiment]
     elif groups == 3:
         experiment_settings = THREE_GROUP_EXPERIMENT_DICT[experiment]
-    else:
+    elif groups == 2:
         experiment_settings = TWO_GROUP_EXPERIMENT_DICT[experiment]
+    else:
+        experiment_settings = [STANDARD_SETTING]
 
     save_agg_table = True if comparison_type != OUTPUT_CORRELATION_EXPERIMENT else False
     yaml_dict = {
@@ -172,7 +181,9 @@ def parse_args():
     )
     parser.add_argument(
         "--output_corr",
-        action="store_true",
+        type=str,
+        choices=["seedvar", "all_settings"],
+        default=None,
         help="Whether to retrain existing models.",
     )
     parser.add_argument(
@@ -180,7 +191,7 @@ def parse_args():
         type=int,
         choices=[2, 3, 5],
         default=5,
-        help="Number of grpups to separate per experiment.",
+        help="Number of groups to separate per experiment.",
     )
     return parser.parse_args()
 
@@ -188,12 +199,16 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    if not args.output_corr:
+    n_groups = args.groups
+
+    if args.output_corr is None:
         if args.experiment == LAYER_EXPERIMENT_NAME:
             exp_type = MONOTONICITY_EXPERIMENT
         else:
             exp_type = GROUP_SEPARATION_EXPERIMENT
     else:
+        if args.output_corr == "seedvar":
+            n_groups = 1
         exp_type = OUTPUT_CORRELATION_EXPERIMENT
         base_comp_type = (
             MONOTONICITY_EXPERIMENT if args.experiment == LAYER_EXPERIMENT_NAME else GROUP_SEPARATION_EXPERIMENT
@@ -216,7 +231,7 @@ if __name__ == "__main__":
         comparison_type=exp_type,
         dataset=args.dataset,
         measures=args.measures,
-        groups=args.groups,
+        groups=n_groups,
     )
 
     config_path = os.path.join(
