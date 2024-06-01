@@ -119,7 +119,7 @@ class GraphTrainer(ABC):
         return model
 
     def get_layer_count(self):
-        return self.gnn_params[GNN_PARAMS_N_LAYERS_KEY]
+        return self.gnn_params[GNN_PARAMS_N_LAYERS_KEY] - 1
 
     @staticmethod
     def get_data(dataset_name: GRAPH_DATASET_TRAINED_ON):
