@@ -16,6 +16,7 @@ from graphs.config import GNN_PARAMS_DICT
 from graphs.config import GNN_PARAMS_N_LAYERS_KEY
 from graphs.config import OPTIMIZER_PARAMS_DECAY_KEY
 from graphs.config import OPTIMIZER_PARAMS_DICT
+from graphs.config import OPTIMIZER_PARAMS_LR_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
@@ -41,6 +42,7 @@ class GNNTester:
         seed: EXPERIMENT_SEED,
         model_name: str,
         n_layers: int = None,
+        lr: float = None,
         decay: float = None,
         device: int | str = 0,
     ):
@@ -67,6 +69,9 @@ class GNNTester:
 
         if decay is not None:
             self.optimizer_params[OPTIMIZER_PARAMS_DECAY_KEY] = decay
+
+        if lr is not None:
+            self.optimizer_params[OPTIMIZER_PARAMS_LR_KEY] = lr
 
         model_dataset_path = RES_DIR / self.dataset_name
         Path(model_dataset_path).mkdir(parents=True, exist_ok=True)
@@ -166,7 +171,9 @@ def parse_args():
 
     parser.add_argument("--device", type=int, default=0, help="Number of Layers to benchmark")
 
-    parser.add_argument("--try_decays", action="store_true")
+    parser.add_argument("--decays", type=float, nargs="*", default=None)
+
+    parser.add_argument("--learning_rates", type=float, nargs="*", default=None)
 
     return parser.parse_args()
 
@@ -176,9 +183,12 @@ if __name__ == "__main__":
     args = parse_args()
     for architecture, dataset in itertools.product(args.architectures, args.datasets):
 
-        if not args.try_decays:
+        decays = [None] if args.decays is None else args.decays
+        lrs = [None] if args.learning_rates is None else args.learning_rates
+
+        for decay, lr in itertools.product(decays, lrs):
             test_accs = []
-            model_str = f"model_{strftime('%Y-%m-%d_%H-%M-%S', localtime())}"
+            model_str = f"model_dec-{decay}_{strftime('%Y-%m-%d_%H-%M-%S', localtime())}"
             for s in SEEDS:
                 print("seed is", s)
                 trainer = GNNTester(
@@ -187,6 +197,8 @@ if __name__ == "__main__":
                     seed=s,
                     model_name=model_str,
                     n_layers=args.n_layers,
+                    decay=decay,
+                    lr=lr,
                 )
                 test_accuracy = trainer.train_test_model()
                 test_accs.append(test_accuracy)
@@ -196,30 +208,5 @@ if __name__ == "__main__":
                 for layer_id, rep in plain_reps.items():
                     all_single_layer_reps.append(rep)
 
-            print(f"Mean Test Accuracy for {architecture} on {dataset} is:")
+            print(f"Mean Test Accuracy for {architecture} on {dataset} with decay {decay} is:")
             print(np.mean(test_accs))
-
-        else:
-            for decay in [1e-08, 1e-10, 1e-12, 1e-14]:
-                test_accs = []
-                model_str = f"model_dec-{decay}_{strftime('%Y-%m-%d_%H-%M-%S', localtime())}"
-                for s in SEEDS:
-                    print("seed is", s)
-                    trainer = GNNTester(
-                        architecture_type=architecture,
-                        dataset_name=dataset,
-                        seed=s,
-                        model_name=model_str,
-                        n_layers=args.n_layers,
-                        decay=decay,
-                    )
-                    test_accuracy = trainer.train_test_model()
-                    test_accs.append(test_accuracy)
-                    plain_reps = trainer.get_test_representations()
-
-                    all_single_layer_reps = []
-                    for layer_id, rep in plain_reps.items():
-                        all_single_layer_reps.append(rep)
-
-                print(f"Mean Test Accuracy for {architecture} on {dataset} with decay {decay} is:")
-                print(np.mean(test_accs))
