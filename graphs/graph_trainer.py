@@ -493,7 +493,7 @@ def parse_args():
         "--test",
         type=str,
         choices=BENCHMARK_EXPERIMENTS_LIST,
-        default=LAYER_EXPERIMENT_NAME,
+        default=None,
         help="Tests to run.",
     )
     parser.add_argument(
@@ -532,7 +532,9 @@ GRAPH_TRAINER_DICT = {
 if __name__ == "__main__":
     args = parse_args()
 
+    trainer_class = StandardTrainer if args.test is None else GRAPH_TRAINER_DICT[args.test]
+
     for architecture, dataset in product(args.architectures, args.datasets):
         for s in args.seeds:
-            trainer = GRAPH_TRAINER_DICT[args.test](architecture_type=architecture, dataset_name=dataset, seed=s)
+            trainer = trainer_class(architecture_type=architecture, dataset_name=dataset, seed=s)
             trainer.train_models(settings=args.settings, retrain=args.retrain)
