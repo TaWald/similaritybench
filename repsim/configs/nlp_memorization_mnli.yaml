@@ -3,7 +3,7 @@ excluded_measures:
   # - EigenspaceOverlapScore
   - GeometryScore
   - IMDScore
-  - LinearRegression
+  # - LinearRegression
 threads: 1
 cache_to_disk: False
 cache_to_mem: True
