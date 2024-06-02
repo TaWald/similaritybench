@@ -178,7 +178,7 @@ def parse_args():
         "--groups",
         type=int,
         choices=[2, 3, 5],
-        default=5,
+        default=3,
         help="Number of groups to separate per experiment.",
     )
     return parser.parse_args()
