@@ -451,6 +451,19 @@ def all_trained_graph_models() -> list[TrainedModel]:
                             additional_kwargs={},
                         )
                     )
+    for i in [5, 6, 7, 8, 9]:
+        for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
+            for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
+                all_trained_models.append(
+                    GraphModel(
+                        domain=GRAPH_DOMAIN,
+                        architecture=arch,
+                        train_dataset=dataset,
+                        identifier=STANDARD_SETTING,
+                        seed=i,
+                        additional_kwargs={},
+                    )
+                )
     return all_trained_models
 
 
