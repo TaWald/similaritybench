@@ -50,6 +50,7 @@ from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import REDDIT_DATASET_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
@@ -313,6 +314,37 @@ class LayerTestTrainer(GraphTrainer):
         return self.data.clone()
 
 
+class StandardTrainer(GraphTrainer):
+
+    def __init__(
+        self,
+        architecture_type: GRAPH_ARCHITECTURE_TYPE,
+        dataset_name: GRAPH_DATASET_TRAINED_ON,
+        seed: EXPERIMENT_SEED,
+    ):
+
+        GraphTrainer.__init__(
+            self,
+            architecture_type=architecture_type,
+            dataset_name=dataset_name,
+            seed=seed,
+            test_name=OUTPUT_CORRELATION_EXPERIMENT_NAME,
+        )
+
+    def _get_gnn_params(self):
+
+        gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
+        gnn_params["in_channels"] = self.data.num_features
+        gnn_params["out_channels"] = self.n_classes
+
+        optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
+
+        return gnn_params, optimizer_params
+
+    def _get_setting_data(self, setting: SETTING_IDENTIFIER):
+        return self.data.clone()
+
+
 class LabelTestTrainer(GraphTrainer):
 
     def __init__(
@@ -494,6 +526,7 @@ GRAPH_TRAINER_DICT = {
     LAYER_EXPERIMENT_NAME: LayerTestTrainer,
     LABEL_EXPERIMENT_NAME: LabelTestTrainer,
     SHORTCUT_EXPERIMENT_NAME: ShortCutTestTrainer,
+    OUTPUT_CORRELATION_EXPERIMENT_NAME: StandardTrainer,
 }
 
 if __name__ == "__main__":
