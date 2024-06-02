@@ -239,6 +239,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             seed=i,
             path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos=0,
         )
         for i in range(10)
     ]
@@ -249,8 +250,9 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             seed=i,
             path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos=0,
         )
-        for i in range(5)
+        for i in range(10)
     ]
 
     shortcut_sst2_models = []
