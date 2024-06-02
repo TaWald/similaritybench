@@ -9,6 +9,7 @@ from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import DEFAULT_SEEDS
 from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
+from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GROUP_SEPARATION_EXPERIMENT
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
@@ -92,6 +93,7 @@ def build_graph_config(
     save_to_memory=True,
     save_to_disk=False,
     groups: int = 5,
+    seeds=DEFAULT_SEEDS,
 ):
     if groups == 5:
         experiment_settings = EXPERIMENT_DICT[experiment]
@@ -116,7 +118,7 @@ def build_graph_config(
                 CONFIG_EXPERIMENTS_FILTER_SUBKEY: {
                     CONFIG_EXPERIMENTS_IDENTIFIER_SUBKEY: experiment_settings,
                     CONFIG_EXPERIMENTS_TRAIN_DATA_SUBKEY: [dataset],
-                    CONFIG_EXPERIMENTS_SEEDS_SUBKEY: DEFAULT_SEEDS,
+                    CONFIG_EXPERIMENTS_SEEDS_SUBKEY: seeds,
                     CONFIG_EXPERIMENTS_DOMAIN_SUBKEY: "GRAPHS",
                 },
                 CONFIG_EXPERIMENTS_GROUPING_SUBKEY: ["identifier"],
@@ -181,6 +183,13 @@ def parse_args():
         default=3,
         help="Number of groups to separate per experiment.",
     )
+    parser.add_argument(
+        "--seeds",
+        type=int,
+        choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        default=None,
+        help="Number of groups to separate per experiment.",
+    )
     return parser.parse_args()
 
 
@@ -188,12 +197,10 @@ if __name__ == "__main__":
     args = parse_args()
 
     n_groups = args.groups
+    seed_list = DEFAULT_SEEDS if args.seeds is None else list(get_args(EXPERIMENT_SEED))[: args.seeds]
 
     yaml_config = build_graph_config(
-        experiment=args.experiment,
-        dataset=args.dataset,
-        measures=args.measures,
-        groups=n_groups,
+        experiment=args.experiment, dataset=args.dataset, measures=args.measures, groups=n_groups, seeds=seed_list
     )
 
     config_path = os.path.join("repsim", "configs", YAML_CONFIG_FILE_NAME(args.experiment, args.dataset, args.groups))
