@@ -88,12 +88,28 @@ class AbstractExperiment:
                     try:
                         vals_a = getattr(obj_src, value_attr_name)
                         vals_b = getattr(obj_tgt, value_attr_name)
+                        shape = getattr(obj_src, "shape", None)
+                        if obj_src.origin_model.domain == "VISION":
+                            if len(vals_a.shape) != len(vals_b.shape):
+                                max_shape = max(len(vals_a.shape), len(vals_b.shape))
+                                if max_shape == 4:
+                                    if len(vals_a.shape) == 2:
+                                        vals_a = vals_a[..., None, None]
+                                        shape = "nchw"  # we only need to set this here, as this shape is taken as reference.
+                                    if len(vals_b.shape) == 2:
+                                        vals_b = vals_b[..., None, None]
+                                elif max_shape == 3:
+                                    if len(vals_a.shape) == 2:
+                                        vals_a = vals_a[:, None, :]
+                                        shape = "ntd"  # we only need to set this here, as this shape is taken as reference.
+                                    if len(vals_b.shape) == 2:
+                                        vals_b = vals_b[:, None, :]
                         if self.only_extract_reps:
                             logger.info("Only extracting representations. Skipping comparison.")
                             # Break as all measures use the same rep.
                             pbar.update(len(measures))
                             break  # Skip the actual comparison and prepare all reps for e.g. a CPU only machine.
-                        shape = getattr(obj_src, "shape", None)
+
                         logger.debug(f"Starting: {measure.name}")
                         start_time = time.perf_counter()
                         with suppress():  # Mute printouts of the measures
