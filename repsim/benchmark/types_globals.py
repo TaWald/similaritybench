@@ -10,7 +10,7 @@ NLP_DOMAIN: DOMAIN_TYPE = "NLP"
 GRAPH_DOMAIN: DOMAIN_TYPE = "GRAPHS"
 
 # ----------------------------- All Architectures ---------------------------- #
-VISION_ARCHITECTURE_TYPE = Literal["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19", "ViT-b19"]
+VISION_ARCHITECTURE_TYPE = Literal["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19", "ViT_B32", "ViT_L32"]
 NLP_ARCHITECTURE_TYPE = Literal["BERT-L", "BERT-Base"]
 GRAPH_ARCHITECTURE_TYPE = Literal["GCN", "GAT", "GraphSAGE"]
 
