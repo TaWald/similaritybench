@@ -111,6 +111,16 @@ def extract_single_layer_representations(
     reps = torch.cat(reps, dim=0)
     if not remain_spatial:
         reps = torch.reshape(reps, (reps.shape[0], -1))  # Flatten the into Samples x Features
+
+    # If we use high dimensional representations, we might run out of memory.
+    # Hence we downsample them to a maximum spatial extent of 8x8.
+
+    if len(reps.shape) == 4 and reps.shape[2] > 7:
+        reps = torch.nn.functional.adaptive_avg_pool2d(reps, (7, 7))
+
+    if len(reps.shape) == 3:
+        reps = reps[:, 0, :]  # Just take cls token, resulting in nd shape.
+
     out = {"reps": reps}
     if meta_info:
         out["logits"] = torch.cat(logits, dim=0)
