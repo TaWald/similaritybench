@@ -183,7 +183,7 @@ class ExperimentStorer:
                 metric_value=res["metric_value"],
                 runtime=res["runtime"],
             )
-            self.save_to_file()
+            # self.save_to_file()
         elif (not normal_exists) and symm_exists and metric.is_symmetric:
             res = experiment.loc[symm_comp_id]
             self.add_results(
@@ -193,7 +193,7 @@ class ExperimentStorer:
                 metric_value=res["metric_value"],
                 runtime=res["runtime"],
             )
-            self.save_to_file()
+            # self.save_to_file()
         else:
             raise ValueError("Comparison does not exist in the dataframe.")
 

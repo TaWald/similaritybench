@@ -58,6 +58,9 @@ SETTING_IDENTIFIER = Literal[
     "Augmentation_50",
     "Augmentation_75",
     "Augmentation_100",
+    "GaussNoise",
+    "Randomlabel",
+    "Shortcut",
 ]
 
 STANDARD_SETTING: SETTING_IDENTIFIER = "Normal"

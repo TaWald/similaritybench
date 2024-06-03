@@ -175,6 +175,7 @@ def run(config_path: str):
         if experiment["type"] == "OutputCorrelationExperiment":
             filter_key_vals = experiment.get("filter_key_vals", None)
             separation_keys = experiment.get("separation_keys", None)
+            compare_accs = experiment.get("use_acc_comparison", False)
 
             models = _filter_models(ALL_TRAINED_MODELS, filter_key_vals)
             model_sets = _separate_models_by_keys(models, separation_keys)
@@ -190,6 +191,7 @@ def run(config_path: str):
                     cache_to_mem=cache_to_mem,
                     only_extract_reps=only_extract_reps,
                     rerun_nans=rerun_nans,
+                    use_acc_comparison=compare_accs,
                 )
                 all_experiments.append(exp)
 

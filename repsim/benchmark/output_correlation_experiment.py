@@ -9,8 +9,10 @@ import scipy.stats
 from loguru import logger
 from repsim.benchmark.abstract_experiment import AbstractExperiment
 from repsim.benchmark.utils import ExperimentStorer
+from repsim.measures import AbsoluteAccDiff
 from repsim.measures.utils import FunctionalSimilarityMeasure
 from repsim.measures.utils import RepresentationalSimilarityMeasure
+from repsim.utils import Accuracy
 from repsim.utils import Prediction
 from repsim.utils import SingleLayerRepresentation
 from tqdm import tqdm
@@ -31,6 +33,7 @@ class OutputCorrelationExperiment(AbstractExperiment):
         cache_to_mem: bool = False,
         only_extract_reps: bool = False,
         rerun_nans: bool = False,
+        use_acc_comparison: bool = False,
         **kwargs,
     ) -> None:
         """Collect all the models and datasets to be used in the experiment"""
@@ -45,11 +48,13 @@ class OutputCorrelationExperiment(AbstractExperiment):
             functional_measures=functional_measures,
             rerun_nans=rerun_nans,
         )
+        self.accuracy_based_measures = [AbsoluteAccDiff()] if use_acc_comparison else []
         self.models = models
         self.meta_data = meta_data
         self.kwargs = kwargs
         self.rep_cache = {}  # lookup table for representations, so we can reuse computed representations
         self.output_cache = {}
+        self.accuracy_cache = {}
 
     def eval(self) -> list[dict]:
         """Evaluate the results of the experiment.
@@ -69,11 +74,12 @@ class OutputCorrelationExperiment(AbstractExperiment):
         if self.meta_data is not None:
             meta_data.update(self.meta_data)
 
+        all_funcsim_measures = self.functional_measures + self.accuracy_based_measures
         with ExperimentStorer(self.storage_path) as storer:
             for repsim_measure, funcsim_measure in tqdm(
-                product(self.measures, self.functional_measures),
+                product(self.measures, all_funcsim_measures),
                 desc="Evaluating quality of measures",
-                total=len(self.measures) * len(self.functional_measures),
+                total=len(self.measures) * len(all_funcsim_measures),
             ):
                 repsims, funcsims = [], []
                 if repsim_measure.is_symmetric and funcsim_measure.is_symmetric:
@@ -86,7 +92,10 @@ class OutputCorrelationExperiment(AbstractExperiment):
                     if model_pair[0] == model_pair[1]:
                         continue
                     slr_a, slr_b = [self._get_final_layer_representation(m, self.cache_to_mem) for m in model_pair]
-                    pred_a, pred_b = [self._get_model_output(m, self.cache_to_mem) for m in model_pair]
+                    if isinstance(funcsim_measure, AbsoluteAccDiff):
+                        pred_a, pred_b = [self._get_model_accuracy(m, self.cache_to_mem) for m in model_pair]
+                    else:
+                        pred_a, pred_b = [self._get_model_output(m, self.cache_to_mem) for m in model_pair]
                     repsims.append(storer.get_comp_result(slr_a, slr_b, repsim_measure))
                     funcsims.append(storer.get_comp_result(pred_a, pred_b, funcsim_measure))
 
@@ -96,7 +105,8 @@ class OutputCorrelationExperiment(AbstractExperiment):
                 repsims = repsims[~comparisons_with_at_least_one_nan]
                 funcsims = funcsims[~comparisons_with_at_least_one_nan]
 
-                if not repsim_measure.larger_is_more_similar:
+                if repsim_measure.larger_is_more_similar:
+                    # make similarities into distances
                     repsims = -1 * repsims
 
                 for corr_func in [scipy.stats.pearsonr, scipy.stats.spearmanr, scipy.stats.kendalltau]:
@@ -134,8 +144,18 @@ class OutputCorrelationExperiment(AbstractExperiment):
                 self.output_cache[model.id] = output
         return output
 
+    def _get_model_accuracy(
+        self, model: repsim.benchmark.registry.TrainedModel, cache_to_mem: bool = False
+    ) -> Accuracy:
+        acc = self.accuracy_cache.get(model.id, None)
+        if acc is None:
+            acc = model.get_accuracy(self.representation_dataset, **self.kwargs)
+            if cache_to_mem:
+                self.accuracy_cache[model.id] = acc
+        return acc
+
     def _get_todo_combos(
-        self, combos, storer: ExperimentStorer, type: Literal["representations", "predictions"]
+        self, combos, storer: ExperimentStorer, type: Literal["representations", "predictions", "accuracy"]
     ) -> tuple[
         list[
             tuple[
@@ -148,15 +168,26 @@ class OutputCorrelationExperiment(AbstractExperiment):
                 SingleLayerRepresentation,
                 list[RepresentationalSimilarityMeasure],
             ]
+            | tuple[
+                Accuracy,
+                Accuracy,
+                list[FunctionalSimilarityMeasure],
+            ]
         ],
         int,
     ]:
         if type == "representations":
+            logger.debug("Checking for representation TODOs.")
             get_obj_func = self._get_final_layer_representation
             measures = self.measures
         elif type == "predictions":
+            logger.debug("Checking for prediction TODOs.")
             get_obj_func = self._get_model_output
             measures = self.functional_measures
+        elif type == "accuracy":
+            logger.debug("Checking for accuracy TODOs.")
+            get_obj_func = self._get_model_accuracy
+            measures = self.accuracy_based_measures
         else:
             raise ValueError(f"Unexpected {type=}. Must be one of ['representations', 'predictions'].")
 
@@ -176,7 +207,7 @@ class OutputCorrelationExperiment(AbstractExperiment):
                     todo_by_measure.append(measure)
                     n_total += 1
                 elif self.rerun_nans:
-                    if np.isnan(storer.get_comp_result(obj_source, obj_target, measure)):
+                    if np.isnan(storer.get_comp_result(obj_source, obj_target, measure)):  # type:ignore
                         todo_by_measure.append(measure)
                         n_total += 1
             if len(todo_by_measure) > 0:
@@ -196,4 +227,8 @@ class OutputCorrelationExperiment(AbstractExperiment):
             combos = product(self.models, self.models)
             todo_combos, n_total = self._get_todo_combos(combos, storer, type="predictions")
             self.compare_combos(todo_combos, n_total, storer, tqdm_descr="Comparing predictions")
+
+            combos = product(self.models, self.models)
+            todo_combos, n_total = self._get_todo_combos(combos, storer, type="accuracy")
+            self.compare_combos(todo_combos, n_total, storer, tqdm_descr="Comparing accuracy")
         return

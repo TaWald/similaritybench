@@ -177,8 +177,8 @@ NLP_REPRESENTATION_DATASETS = {
 def all_trained_vision_models() -> list[VisionModel]:
     all_trained_vision_models = []
     for i in range(10):
-        for arch in ["VGG11", "ResNet18", "ResNet34"]:
-            for dataset in ["CIFAR10", "CIFAR100"]:
+        for arch in ["VGG11", "VGG19", "ResNet18", "ResNet34", "ResNet101"]:
+            for dataset in ["CIFAR10", "CIFAR100", "ImageNet100"]:
                 for identifier in [STANDARD_SETTING]:
                     all_trained_vision_models.append(
                         VisionModel(
@@ -198,7 +198,7 @@ def all_trained_vision_models() -> list[VisionModel]:
                 "ColorDot_25_CIFAR10DataModule",
                 "ColorDot_0_CIFAR10DataModule",
             ]:
-                for identifier in ["Shortcut_ColorDot"]:
+                for identifier in ["Shortcut"]:
                     all_trained_vision_models.append(
                         VisionModel(
                             domain="VISION",
@@ -209,7 +209,7 @@ def all_trained_vision_models() -> list[VisionModel]:
                         )
                     )
     for i in range(5):
-        for arch in ["ResNet18", "ResNet34", "VGG11"]:
+        for arch in ["ResNet18", "ResNet34", "ResNet101" "VGG11"]:
             for dataset in [
                 "Gauss_Max_CIFAR10DataModule",
                 "Gauss_L_CIFAR10DataModule",
@@ -227,6 +227,59 @@ def all_trained_vision_models() -> list[VisionModel]:
                             seed=i,
                         )
                     )
+    for i in range(5):
+        for arch in ["ResNet18", "ResNet34", "ResNet101", "VGG19"]:
+            for dataset in [
+                "Gauss_Max_ImageNet100DataModule",
+                "Gauss_L_ImageNet100DataModule",
+                "Gauss_M_ImageNet100DataModule",
+                "Gauss_S_ImageNet100DataModule",
+                "Gauss_Off_ImageNet100DataModule",  # N
+            ]:
+                all_trained_vision_models.append(
+                    VisionModel(
+                        domain="VISION",
+                        architecture=arch,
+                        train_dataset=dataset,
+                        identifier="GaussNoise",
+                        seed=i,
+                    )
+                )
+    for i in range(5):
+        for arch in ["ResNet18", "ResNet34", "ResNet101", "VGG19"]:
+            for dataset in [
+                "ColorDot_100_ImageNet100DataModule",
+                "ColorDot_75_ImageNet100DataModule",
+                "ColorDot_50_ImageNet100DataModule",
+                "ColorDot_25_ImageNet100DataModule",
+                "ColorDot_0_ImageNet100DataModule",  # N
+            ]:
+                all_trained_vision_models.append(
+                    VisionModel(
+                        domain="VISION",
+                        architecture=arch,
+                        train_dataset=dataset,
+                        identifier="Shortcut",
+                        seed=i,
+                    )
+                )
+    for i in range(5):
+        for arch in ["ResNet18", "ResNet34", "ResNet101", "VGG19"]:
+            for dataset in [
+                "RandomLabel_100_IN100_DataModule",
+                "RandomLabel_75_IN100_DataModule",
+                "RandomLabel_50_IN100_DataModule",
+                "RandomLabel_25_IN100_DataModule",
+            ]:
+                all_trained_vision_models.append(
+                    VisionModel(
+                        domain="VISION",
+                        architecture=arch,
+                        train_dataset=dataset,
+                        identifier="Randomlabel",
+                        seed=i,
+                    )
+                )
 
     return all_trained_vision_models
 

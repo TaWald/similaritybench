@@ -128,7 +128,7 @@ class BaseTrainer:
                 tbt_ke_dict[k] = v
         file_io.save_json(tbt_ke_dict, self.model_info.path_train_info_json)
 
-    def train(self):
+    def train(self, just_load_checkpoint: bool = False):
         """Trains a model and keeps it as attribute self.model
          After finishing training saves checkpoint and a short Hyperparameter summary
          to the model directory.
@@ -147,21 +147,25 @@ class BaseTrainer:
             profiler=None,
             accumulate_grad_batches=self.accumulate_grad_batches,
         )
-        loguru_logger.info("Starting fitting.")
         self.model.cuda()
-        trainer.fit(
-            self.model,
-            train_dataloaders=self.datamodule.train_dataloader(
-                split=self.params.split,
-                transform=ds.Augmentation.TRAIN,
-                **self.train_kwargs,
-            ),
-            val_dataloaders=self.datamodule.val_dataloader(
-                split=self.params.split,
-                transform=ds.Augmentation.VAL,
-                **self.val_kwargs,
-            ),
-        )
+        if just_load_checkpoint:
+            loguru_logger.info("Skipping fitting.")
+            self.model.load_latest_checkpoint()
+        else:
+            loguru_logger.info("Starting fitting.")
+            trainer.fit(
+                self.model,
+                train_dataloaders=self.datamodule.train_dataloader(
+                    split=self.params.split,
+                    transform=ds.Augmentation.TRAIN,
+                    **self.train_kwargs,
+                ),
+                val_dataloaders=self.datamodule.val_dataloader(
+                    split=self.params.split,
+                    transform=ds.Augmentation.VAL,
+                    **self.val_kwargs,
+                ),
+            )
         loguru_logger.info("Beginning Evaluation (Val)")
         self.model.cuda()
         self.model.eval()
