@@ -58,6 +58,7 @@ class AbstractActiViT(AbsActiExtrArch):
 
 class VIT_B16(AbstractActiViT):
     architecture_id = BaseArchitecture.VIT_B16
+    n_hooks = 13
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -73,6 +74,7 @@ class VIT_B16(AbstractActiViT):
 
 class VIT_B32(AbstractActiViT):
     architecture_id = BaseArchitecture.VIT_B32
+    n_hooks = 13
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -88,6 +90,7 @@ class VIT_B32(AbstractActiViT):
 
 class VIT_L16(AbstractActiViT):
     architecture_id = BaseArchitecture.VIT_L16
+    n_hooks = 13
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -103,6 +106,7 @@ class VIT_L16(AbstractActiViT):
 
 class VIT_L32(AbstractActiViT):
     architecture_id = BaseArchitecture.VIT_L32
+    n_hooks = 13
 
     def __init__(self, **kwargs):
         super().__init__()
