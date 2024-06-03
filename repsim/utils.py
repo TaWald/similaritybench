@@ -724,7 +724,13 @@ class GraphModelAccuracy(Accuracy):
 
     def _extract_output(self) -> float:
         assert self.origin_model is not None
-        return
+        _, acc = get_gnn_output(
+            architecture_name=self.origin_model.architecture,
+            train_dataset=self.origin_model.train_dataset,
+            seed=self.origin_model.seed,  # type:ignore
+            setting_identifier=self.origin_model.identifier,
+        )
+        return acc
 
 
 def convert_to_path_compatible(s: str) -> str:

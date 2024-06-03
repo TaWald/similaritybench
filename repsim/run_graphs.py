@@ -35,6 +35,7 @@ CONFIG_REPRESENTATION_DATASET_KEY = "representation_dataset"
 CONFIG_EXPERIMENTS_KEY = "experiments"
 CONFIG_EXPERIMENTS_NAME_SUBKEY = "name"
 CONFIG_EXPERIMENTS_TYPE_SUBKEY = "type"
+CONFIG_EXPERIMENTS_USE_ACC_SUBKEY = "use_acc_comparison"
 CONFIG_EXPERIMENTS_FILTER_SUBKEY = "filter_key_vals"
 CONFIG_EXPERIMENTS_TRAIN_DATA_SUBKEY = "train_dataset"
 CONFIG_EXPERIMENTS_SEEDS_SUBKEY = "seed"
@@ -141,6 +142,9 @@ def build_graph_config(
         yaml_dict[CONFIG_EXCLUDED_MEASURES_KEY] = ["RSMNormDifference", "IMDScore", "GeometryScore", "PWCCA"]
     else:
         yaml_dict[CONFIG_INCLUDED_MEASURES_KEY] = measures
+
+    if experiment == OUTPUT_CORRELATION_EXPERIMENT_NAME:
+        yaml_dict[CONFIG_EXPERIMENTS_KEY][CONFIG_EXPERIMENTS_USE_ACC_SUBKEY] = True
 
     return yaml_dict
 
