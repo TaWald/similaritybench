@@ -94,6 +94,7 @@ class AbstractExperiment:
                             pbar.update(len(measures))
                             break  # Skip the actual comparison and prepare all reps for e.g. a CPU only machine.
                         shape = getattr(obj_src, "shape", None)
+                        logger.debug(f"Starting: {measure.name}")
                         start_time = time.perf_counter()
                         with suppress():  # Mute printouts of the measures
                             if shape is not None:
