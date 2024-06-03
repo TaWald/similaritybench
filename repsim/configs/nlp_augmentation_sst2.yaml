@@ -1,13 +1,14 @@
 # Holds all information needed to run experiments.
 excluded_measures:
   # - EigenspaceOverlapScore
-  # - GeometryScore
+  - GeometryScore
   # - IMDScore
-  - LinearRegression
+  # - LinearRegression
 threads: 1
 cache_to_disk: False
 cache_to_mem: True
 only_extract_reps: False
+rerun_nans: True
 experiments:
   - name: NLP SST2 Augmentation Experiments
     type: GroupSeparationExperiment # Defines the type of experiment class to use
@@ -31,11 +32,11 @@ experiments:
         - 2
         - 3
         - 4
-        - 5
-        - 6
-        - 7
-        - 8
-        - 9
+        # - 5
+        # - 6
+        # - 7
+        # - 8
+        # - 9
       domain: NLP
     grouping_keys: # Separates the trained models by this key into groups for the `GroupSeparationExperiment`.
       - train_dataset

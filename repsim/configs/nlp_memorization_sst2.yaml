@@ -1,13 +1,14 @@
 # Holds all information needed to run experiments.
 excluded_measures:
   # - EigenspaceOverlapScore
-  # - GeometryScore
+  - GeometryScore
   # - IMDScore
-  - LinearRegression
+  # - LinearRegression
 threads: 1
 cache_to_disk: False
 cache_to_mem: True
 only_extract_reps: False
+rerun_nans: True
 experiments:
   - name: NLP SST2 Memorization Experiments
     type: GroupSeparationExperiment # Defines the type of experiment class to use
