@@ -554,6 +554,7 @@ class SVCCA(RepresentationalSimilarityMeasure):
             # Move spatial dimensions into the sample dimension
             # If not the same spatial dimension, resample via FFT.
             R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
 
         return self.sim_func(R, Rp, shape)
 
@@ -578,5 +579,6 @@ class PWCCA(RepresentationalSimilarityMeasure):
             # Move spatial dimensions into the sample dimension
             # If not the same spatial dimension, resample via FFT.
             R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
 
         return self.sim_func(R, Rp, shape)

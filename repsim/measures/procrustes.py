@@ -179,6 +179,15 @@ class ProcrustesSizeAndShapeDistance(RepresentationalSimilarityMeasure):
             invariant_to_translation=True,
         )
 
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+            R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
+
+        return self.sim_func(R, Rp, shape)
+
 
 class OrthogonalProcrustesCenteredAndNormalized(RepresentationalSimilarityMeasure):
     def __init__(self):

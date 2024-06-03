@@ -18,6 +18,7 @@ import numpy as np
 import numpy.typing as npt
 import torch
 from einops import rearrange
+from loguru import logger
 
 log = logging.getLogger(__name__)
 
@@ -161,12 +162,26 @@ def align_spatial_dimensions(R: npt.NDArray, Rp: npt.NDArray) -> Tuple[npt.NDArr
     Subsequent aligned spatial representations are flattened, with the spatial aligned representations
     moving into the *sample* dimension.
     """
-    r_tmp = rearrange(R, "n c h w -> n h w c")
-    rp_tmp = rearrange(Rp, "n c h w -> n h w c")
-    R_re, Rp_re = resize_wh_reps(r_tmp, rp_tmp)
-    R_re = rearrange(R_re, "n h w c -> (n h w) c")
-    Rp_re = rearrange(Rp_re, "n h w c -> (n h w) c")
+    R_re, Rp_re = resize_wh_reps(R, Rp)
+    R_re = rearrange(R_re, "n c h w -> (n h w) c")
+    Rp_re = rearrange(Rp_re, "n c h w -> (n h w) c")
+    if R_re.shape[0] > 5000:
+        logger.info(f"Got {R_re.shape[0]} samples in N after flattening. Subsampling to reduce compute.")
+        subsample = R_re.shape[0] // 5000
+        R_re = R_re[::subsample]
+        Rp_re = Rp_re[::subsample]
+
     return R_re, Rp_re
+
+
+def average_pool_downsample(R, resize: bool, new_size: tuple[int, int]):
+    if not resize:
+        return R  # do nothing
+    else:
+        is_numpy = isinstance(R, np.ndarray)
+        R_torch = torch.from_numpy(R) if is_numpy else R
+        R_torch = torch.nn.functional.adaptive_avg_pool2d(R_torch, new_size)
+        return R_torch.numpy() if is_numpy else R_torch
 
 
 def resize_wh_reps(R: npt.NDArray, Rp: npt.NDArray) -> Tuple[npt.NDArray, npt.NDArray]:
@@ -183,8 +198,8 @@ def resize_wh_reps(R: npt.NDArray, Rp: npt.NDArray) -> Tuple[npt.NDArray, npt.ND
         fft_acts2: numpy array of shape [batch_size, (new) height, (new) width, num_channels]
 
     """
-    height1, width1 = R.shape[1], R.shape[2]
-    height2, width2 = Rp.shape[1], Rp.shape[2]
+    height1, width1 = R.shape[2], R.shape[3]
+    height2, width2 = Rp.shape[2], Rp.shape[3]
     if height1 != height2 or width1 != width2:
         height = min(height1, height2)
         width = min(width1, width2)
@@ -197,9 +212,9 @@ def resize_wh_reps(R: npt.NDArray, Rp: npt.NDArray) -> Tuple[npt.NDArray, npt.ND
         resize = False
 
     # resize and preprocess with fft
-    fft_acts1 = fft_resize(R, resize=resize, new_size=new_size)
-    fft_acts2 = fft_resize(Rp, resize=resize, new_size=new_size)
-    return fft_acts1, fft_acts2
+    avg_ds1 = average_pool_downsample(R, resize=resize, new_size=new_size)
+    avg_ds2 = average_pool_downsample(Rp, resize=resize, new_size=new_size)
+    return avg_ds1, avg_ds2
 
 
 def fft_resize(images, resize=False, new_size=None):

@@ -5,6 +5,7 @@ import numpy as np
 import numpy.typing as npt
 import sklearn.metrics
 import torch
+from repsim.measures.utils import align_spatial_dimensions
 from repsim.measures.utils import flatten
 from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import RSMSimilarityMeasure
@@ -133,6 +134,17 @@ class UniformityDifference(RSMSimilarityMeasure):
             invariant_to_isotropic_scaling=False,
             invariant_to_translation=True,
         )
+
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        if shape == "nchw":
+            # Move spatial dimensions into the sample dimension
+            # If not the same spatial dimension, resample via FFT.
+
+            # RSM base measures should be invariant to this intheory, but Uniformity takes too long to reasonably handle it.
+            R, Rp = align_spatial_dimensions(R, Rp)
+            shape = "nd"
+
+        return self.sim_func(R, Rp, shape)
 
 
 class ConcentricityDifference(RepresentationalSimilarityMeasure):
