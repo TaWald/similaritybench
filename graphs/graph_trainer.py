@@ -15,6 +15,7 @@ from graphs.config import DEFAULT_DATASET_LIST
 from graphs.config import GNN_DICT
 from graphs.config import GNN_LIST
 from graphs.config import GNN_PARAMS_DICT
+from graphs.config import GNN_PARAMS_N_LAYERS_KEY
 from graphs.config import LAYER_EXPERIMENT_N_LAYERS
 from graphs.config import MAX_TEST_SIZE
 from graphs.config import OPTIMIZER_PARAMS_DICT
@@ -49,6 +50,7 @@ from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import REDDIT_DATASET_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
@@ -117,6 +119,9 @@ class GraphTrainer(ABC):
 
         return model
 
+    def get_layer_count(self):
+        return self.gnn_params[GNN_PARAMS_N_LAYERS_KEY] - 1
+
     @staticmethod
     def get_data(dataset_name: GRAPH_DATASET_TRAINED_ON):
 
@@ -129,7 +134,9 @@ class GraphTrainer(ABC):
 
             split_idx = pyg_dataset.get_idx_split()
             split_idx[SPLIT_IDX_BENCHMARK_TEST_KEY] = subsample_torch_index(
-                split_idx[SPLIT_IDX_TEST_KEY], size=MAX_TEST_SIZE, seed=SINGLE_SAMPLE_SEED
+                split_idx[SPLIT_IDX_TEST_KEY],
+                size=MAX_TEST_SIZE,
+                seed=SINGLE_SAMPLE_SEED,
             )
 
             return pyg_dataset[0], pyg_dataset.num_classes, split_idx
@@ -137,7 +144,9 @@ class GraphTrainer(ABC):
 
             if dataset_name == CORA_DATASET_NAME:
                 pyg_dataset = torch_geometric.datasets.Planetoid(
-                    root=GRAPHS_DATA_PATH / dataset_name, name="Cora", transform=t.NormalizeFeatures()
+                    root=GRAPHS_DATA_PATH / dataset_name,
+                    name="Cora",
+                    transform=t.NormalizeFeatures(),
                 )
             elif dataset_name == REDDIT_DATASET_NAME:
                 pyg_dataset = torch_geometric.datasets.Reddit2(root=GRAPHS_DATA_PATH / dataset_name)
@@ -167,7 +176,14 @@ class GraphTrainer(ABC):
 
     def _log_train_results(self, train_results, setting):
         df_train = pd.DataFrame(
-            train_results, columns=["Epoch", "Loss", "Training_Accuracy", "Validation_Accuracy", "Test_accuracy"]
+            train_results,
+            columns=[
+                "Epoch",
+                "Loss",
+                "Training_Accuracy",
+                "Validation_Accuracy",
+                "Test_accuracy",
+            ],
         )
         df_train.to_csv(
             self.setting_paths[setting] / TRAIN_LOG_FILE_NAME_SEED(self.seed),
@@ -244,7 +260,7 @@ class GraphTrainer(ABC):
             data=setting_data,
             device=self.device,
             test_idx=self.split_idx[SPLIT_IDX_BENCHMARK_TEST_KEY],
-            layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
+            layer_ids=list(range(self.gnn_params[GNN_PARAMS_N_LAYERS_KEY] - 1)),
         )
 
         return reps
@@ -271,9 +287,9 @@ class LayerTestTrainer(GraphTrainer):
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         seed: EXPERIMENT_SEED,
-        n_layers: int = None,
+        n_layers: int = LAYER_EXPERIMENT_N_LAYERS,
     ):
-        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
+        self.n_layers = n_layers
 
         GraphTrainer.__init__(
             self,
@@ -288,7 +304,38 @@ class LayerTestTrainer(GraphTrainer):
         gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
         gnn_params["in_channels"] = self.data.num_features
         gnn_params["out_channels"] = self.n_classes
-        gnn_params["num_layers"] = self.n_layers
+        gnn_params[GNN_PARAMS_N_LAYERS_KEY] = self.n_layers
+
+        optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
+
+        return gnn_params, optimizer_params
+
+    def _get_setting_data(self, setting: SETTING_IDENTIFIER):
+        return self.data.clone()
+
+
+class StandardTrainer(GraphTrainer):
+
+    def __init__(
+        self,
+        architecture_type: GRAPH_ARCHITECTURE_TYPE,
+        dataset_name: GRAPH_DATASET_TRAINED_ON,
+        seed: EXPERIMENT_SEED,
+    ):
+
+        GraphTrainer.__init__(
+            self,
+            architecture_type=architecture_type,
+            dataset_name=dataset_name,
+            seed=seed,
+            test_name=OUTPUT_CORRELATION_EXPERIMENT_NAME,
+        )
+
+    def _get_gnn_params(self):
+
+        gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
+        gnn_params["in_channels"] = self.data.num_features
+        gnn_params["out_channels"] = self.n_classes
 
         optimizer_params = copy.deepcopy(OPTIMIZER_PARAMS_DICT[self.architecture_type][self.dataset_name])
 
@@ -305,9 +352,7 @@ class LabelTestTrainer(GraphTrainer):
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         seed: EXPERIMENT_SEED,
-        n_layers: int = None,
     ):
-        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
             self,
             architecture_type=architecture_type,
@@ -344,9 +389,7 @@ class ShortCutTestTrainer(GraphTrainer):
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         seed: EXPERIMENT_SEED,
-        n_layers: int = None,
     ):
-        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
             self,
             architecture_type=architecture_type,
@@ -395,9 +438,7 @@ class AugmentationTrainer(GraphTrainer):
         architecture_type: GRAPH_ARCHITECTURE_TYPE,
         dataset_name: GRAPH_DATASET_TRAINED_ON,
         seed: EXPERIMENT_SEED,
-        n_layers: int = None,
     ):
-        self.n_layers = LAYER_EXPERIMENT_N_LAYERS if n_layers is None else n_layers
         GraphTrainer.__init__(
             self,
             architecture_type=architecture_type,
@@ -430,7 +471,13 @@ def parse_args():
 
     # Test parameters
     parser.add_argument(
-        "-a", "--architectures", nargs="*", type=str, choices=GNN_LIST, default=GNN_LIST, help="GNN methods to train"
+        "-a",
+        "--architectures",
+        nargs="*",
+        type=str,
+        choices=GNN_LIST,
+        default=GNN_LIST,
+        help="GNN methods to train",
     )
     parser.add_argument(
         "-d",
@@ -446,7 +493,7 @@ def parse_args():
         "--test",
         type=str,
         choices=BENCHMARK_EXPERIMENTS_LIST,
-        default=LAYER_EXPERIMENT_NAME,
+        default=None,
         help="Tests to run.",
     )
     parser.add_argument(
@@ -479,12 +526,15 @@ GRAPH_TRAINER_DICT = {
     LAYER_EXPERIMENT_NAME: LayerTestTrainer,
     LABEL_EXPERIMENT_NAME: LabelTestTrainer,
     SHORTCUT_EXPERIMENT_NAME: ShortCutTestTrainer,
+    OUTPUT_CORRELATION_EXPERIMENT_NAME: StandardTrainer,
 }
 
 if __name__ == "__main__":
     args = parse_args()
 
+    trainer_class = StandardTrainer if args.test is None else GRAPH_TRAINER_DICT[args.test]
+
     for architecture, dataset in product(args.architectures, args.datasets):
         for s in args.seeds:
-            trainer = GRAPH_TRAINER_DICT[args.test](architecture_type=architecture, dataset_name=dataset, seed=s)
+            trainer = trainer_class(architecture_type=architecture, dataset_name=dataset, seed=s)
             trainer.train_models(settings=args.settings, retrain=args.retrain)

@@ -14,6 +14,7 @@ from typing import TypeVar
 import numpy as np
 import torch
 from graphs.get_reps import get_gnn_output
+from graphs.get_reps import get_graph_model_layer_count
 from graphs.get_reps import get_graph_representations
 from loguru import logger
 from repsim.benchmark.paths import CACHE_PATH
@@ -296,7 +297,10 @@ class GraphModel(TrainedModel):
         return f"{self.domain}_{self.architecture}_{self.train_dataset}_{self.identifier}_{self.seed}"
 
     def get_representation(
-        self, representation_dataset: Optional[GRAPH_DATASET_TRAINED_ON] = None, **kwargs
+        self,
+        representation_dataset: Optional[GRAPH_DATASET_TRAINED_ON] = None,
+        compute_on_demand: bool = True,
+        **kwargs,
     ) -> ModelRepresentations:
         """
         This function should return the representation of the model.
@@ -304,18 +308,29 @@ class GraphModel(TrainedModel):
         if representation_dataset is None:
             representation_dataset = self.train_dataset
 
-        plain_reps = get_graph_representations(
-            architecture_name=self.architecture,
-            train_dataset=self.train_dataset,
-            seed=self.seed,
-            setting_identifier=self.identifier,
-        )
-
-        all_single_layer_reps = []
-        for layer_id, rep in plain_reps.items():
-            all_single_layer_reps.append(
-                SingleLayerRepresentation(_representation=rep, _shape=ND_SHAPE, layer_id=layer_id)
+        if compute_on_demand:
+            n_layers = get_graph_model_layer_count(
+                architecture_name=self.architecture,
+                train_dataset=self.train_dataset,
+                seed=self.seed,  # type:ignore
+                setting_identifier=self.identifier,
             )
+            all_single_layer_reps = tuple(
+                [SingleLayerGraphRepresentation(layer_id=i, _shape="nd") for i in range(n_layers)]
+            )
+        else:
+            plain_reps = get_graph_representations(
+                architecture_name=self.architecture,
+                train_dataset=self.train_dataset,
+                seed=self.seed,  # type:ignore
+                setting_identifier=self.identifier,
+            )
+
+            all_single_layer_reps = []
+            for layer_id, rep in plain_reps.items():
+                all_single_layer_reps.append(
+                    SingleLayerRepresentation(_representation=rep, _shape=ND_SHAPE, layer_id=layer_id)
+                )
 
         return ModelRepresentations(
             origin_model=self,
@@ -474,6 +489,19 @@ class SingleLayerNLPRepresentation(SingleLayerRepresentation):
             feature_column=representation_dataset.feature_column,
         )
         return all_layer_reps[self.layer_id]
+
+
+class SingleLayerGraphRepresentation(SingleLayerRepresentation):
+    def _extract_representation(self) -> torch.Tensor:
+        assert isinstance(self.origin_model, GraphModel)
+
+        plain_reps = get_graph_representations(
+            architecture_name=self.origin_model.architecture,
+            train_dataset=self.origin_model.train_dataset,
+            seed=self.origin_model.seed,  # type:ignore
+            setting_identifier=self.origin_model.identifier,
+        )
+        return plain_reps[self.layer_id]
 
 
 @dataclass

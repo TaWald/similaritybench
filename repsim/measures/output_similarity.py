@@ -11,7 +11,7 @@ from repsim.measures.utils import to_numpy_if_needed
 
 def check_has_two_axes(x: npt.NDArray | torch.Tensor):
     if len(x.shape) != 2:
-        raise ValueError(f"Matrix must have two dimensions, but has {len(x)}")
+        raise ValueError(f"Matrix must have two dimensions, but has {len(x.shape)}")
 
 
 # adapted implementation from scipy to always return non-negative values, and to change to log base 2

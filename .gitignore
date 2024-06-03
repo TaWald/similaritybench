@@ -8,6 +8,7 @@
 /.cache
 /figures
 /runs
+/figs
 
 build/
 nlp/multirun
