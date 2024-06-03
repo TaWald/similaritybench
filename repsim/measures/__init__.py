@@ -27,6 +27,7 @@ from .nearest_neighbor import rank_similarity
 from .nearest_neighbor import RankSimilarity
 from .nearest_neighbor import second_order_cosine_similarity
 from .nearest_neighbor import SecondOrderCosineSimilarity
+from .output_similarity import AbsoluteAccDiff
 from .output_similarity import Disagreement
 from .output_similarity import JSD
 from .procrustes import aligned_cossim

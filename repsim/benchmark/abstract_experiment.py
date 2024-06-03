@@ -7,6 +7,7 @@ from loguru import logger
 from repsim.benchmark.utils import ExperimentStorer
 from repsim.measures.utils import FunctionalSimilarityMeasure
 from repsim.measures.utils import RepresentationalSimilarityMeasure
+from repsim.utils import Accuracy
 from repsim.utils import Prediction
 from repsim.utils import SingleLayerRepresentation
 from repsim.utils import suppress
@@ -60,6 +61,11 @@ class AbstractExperiment:
                 SingleLayerRepresentation,
                 SingleLayerRepresentation,
                 list[RepresentationalSimilarityMeasure],
+            ]
+            | tuple[
+                Accuracy,
+                Accuracy,
+                list[FunctionalSimilarityMeasure],
             ]
         ],
         n_total: int,

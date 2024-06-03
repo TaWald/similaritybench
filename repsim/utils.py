@@ -1,3 +1,4 @@
+import json
 import os
 from abc import ABC
 from abc import abstractmethod
@@ -18,6 +19,7 @@ from graphs.get_reps import get_graph_model_layer_count
 from graphs.get_reps import get_graph_representations
 from loguru import logger
 from repsim.benchmark.paths import CACHE_PATH
+from repsim.benchmark.paths import NLP_MODEL_PATH
 from repsim.benchmark.types_globals import DOMAIN_TYPE
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
@@ -45,6 +47,7 @@ else:
 # reordering classes does not help, because of cyclical dependencies
 ModelRepresentations = TypeVar("ModelRepresentations")
 Prediction = TypeVar("Prediction")
+Accuracy = TypeVar("Accuracy")
 
 
 @dataclass
@@ -73,6 +76,9 @@ class TrainedModel:
         raise NotImplementedError()
 
     def get_output(self, representation_dataset: Optional[str] = None, **kwargs) -> Prediction:
+        raise NotImplementedError()
+
+    def get_accuracy(self, representation_dataset: Optional[str] = None, **kwargs) -> Accuracy:
         raise NotImplementedError()
 
     def _get_unique_model_identifier(self) -> str:
@@ -157,6 +163,7 @@ class NLPModel(TrainedModel):
     )
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     train_dataset_obj: NLPDataset = field(init=False)
+    eval_results: None | dict[str, float] = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -238,6 +245,9 @@ class NLPModel(TrainedModel):
             output = Prediction(origin_model=self, _representation_dataset=representation_dataset_id, _output=logits)
         return output
 
+    def get_accuracy(self, representation_dataset_id: str, **kwargs) -> Accuracy:
+        return NLPModelAccuracy(origin_model=self, _representation_dataset=representation_dataset_id)
+
 
 class VisionModel(TrainedModel):
 
@@ -283,6 +293,13 @@ class VisionModel(TrainedModel):
             _representation_dataset=representation_dataset,
         )
         return out
+
+    def get_accuracy(self, representation_dataset: Optional[str] = None, **kwargs) -> Accuracy:
+        acc = VisionModelAccuracy(
+            origin_model=self,
+            _representation_dataset=representation_dataset,
+        )
+        return acc
 
 
 class GraphModel(TrainedModel):
@@ -342,6 +359,12 @@ class GraphModel(TrainedModel):
         return GraphModelOutput(
             origin_model=self,
             cache=True,
+            _representation_dataset=representation_dataset,
+        )
+
+    def get_accuracy(self, representation_dataset: Optional[str] = None, **kwargs) -> Accuracy:
+        return GraphModelAccuracy(
+            origin_model=self,
             _representation_dataset=representation_dataset,
         )
 
@@ -550,6 +573,7 @@ class Prediction(BaseModelOutput):
                 self._output = self._extract_output()
                 if self.cache:
                     np.savez(cache_path, output=self._output)
+        assert self._output is not None
         return self._output
 
     @output.setter
@@ -618,9 +642,89 @@ class GraphModelOutput(Prediction):
         return get_gnn_output(
             architecture_name=self.origin_model.architecture,
             train_dataset=self.origin_model.train_dataset,
-            seed=self.origin_model.seed,
+            seed=self.origin_model.seed,  # type:ignore
             setting_identifier=self.origin_model.identifier,
         )
+
+
+@dataclass
+class Accuracy(BaseModelOutput):
+    origin_model: TrainedModel | None = None
+    cache: bool = False
+    _representation_dataset: str | None = None
+    _acc: float | None = None
+
+    def value_attr_name(self) -> str:
+        return "accuracy"
+
+    @property
+    def accuracy(self) -> float:
+        """
+        Allows omission of setting outputs when creating, and creating on demand.
+        """
+        if self._acc is None:
+            assert self._extract_output is not None, "No extraction function provided."
+            unique_id = self.unique_identifier()
+            cache_path = os.path.join(CACHE_PATH, unique_id + ".npz")
+            if self.cache and os.path.exists(cache_path):
+                self._acc = np.load(cache_path)["output"]
+            else:
+                self._acc = self._extract_output()
+                if self.cache:
+                    np.savez(cache_path, output=self._acc)
+        assert self._acc is not None
+        return self._acc
+
+    @accuracy.setter
+    def accuracy(self, v: float) -> None:
+        self._acc = v
+
+    @abstractmethod
+    def _extract_output(self) -> float:
+        raise NotImplementedError
+
+    def unique_identifier(self) -> str:
+        """
+        Generates a unique identifier for this object.
+
+        Returns:
+            A string representing the unique identifier.
+        """
+        assert self.origin_model is not None, "origin_model is not set"
+        assert self._representation_dataset is not None, "representation_dataset not set"
+        return "__".join([self.origin_model.id, self._representation_dataset, "accuracy"])
+
+
+class NLPModelAccuracy(Accuracy):
+    def _extract_output(self) -> float:
+        assert isinstance(self.origin_model, NLPModel)
+        assert self._representation_dataset is not None
+
+        from repsim.benchmark.registry import NLP_REPRESENTATION_DATASETS
+
+        split = NLP_REPRESENTATION_DATASETS[self._representation_dataset].split
+
+        with (NLP_MODEL_PATH / "eval_results.json").open("r") as f:
+            try:
+                eval_results = json.load(f)[self.origin_model.id]
+                return eval_results[self._representation_dataset][split]["accuracy"]
+            except KeyError as e:
+                logger.error(f"Unable to load eval results of {self.origin_model.id}: {e}")
+                return np.nan
+
+
+class VisionModelAccuracy(Accuracy):
+    def _extract_output(self) -> float:
+        assert self.origin_model is not None
+        return
+
+
+class GraphModelAccuracy(Accuracy):
+    origin_model: GraphModel | None = None
+
+    def _extract_output(self) -> float:
+        assert self.origin_model is not None
+        return
 
 
 def convert_to_path_compatible(s: str) -> str:
