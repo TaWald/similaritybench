@@ -93,7 +93,6 @@ def build_graph_config(
     save_to_memory=True,
     save_to_disk=False,
     groups: int = 5,
-    seeds=DEFAULT_SEEDS,
 ):
     if groups == 5:
         experiment_settings = EXPERIMENT_DICT[experiment]
@@ -103,6 +102,7 @@ def build_graph_config(
         experiment_settings = TWO_GROUP_EXPERIMENT_DICT[experiment]
 
     experiment_type = EXPERIMENT_TYPE_DICT[experiment]
+    seeds = list(get_args(EXPERIMENT_SEED)) if experiment == OUTPUT_CORRELATION_EXPERIMENT else DEFAULT_SEEDS
 
     save_agg_table = True if experiment_type != OUTPUT_CORRELATION_EXPERIMENT else False
     yaml_dict = {
@@ -183,13 +183,6 @@ def parse_args():
         default=3,
         help="Number of groups to separate per experiment.",
     )
-    parser.add_argument(
-        "--seeds",
-        type=int,
-        choices=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        default=None,
-        help="Number of groups to separate per experiment.",
-    )
     return parser.parse_args()
 
 
@@ -197,10 +190,9 @@ if __name__ == "__main__":
     args = parse_args()
 
     n_groups = args.groups
-    seed_list = DEFAULT_SEEDS if args.seeds is None else list(get_args(EXPERIMENT_SEED))[: args.seeds]
 
     yaml_config = build_graph_config(
-        experiment=args.experiment, dataset=args.dataset, measures=args.measures, groups=n_groups, seeds=seed_list
+        experiment=args.experiment, dataset=args.dataset, measures=args.measures, groups=n_groups
     )
 
     config_path = os.path.join("repsim", "configs", YAML_CONFIG_FILE_NAME(args.experiment, args.dataset, args.groups))
