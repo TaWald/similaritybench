@@ -103,7 +103,7 @@ def build_graph_config(
         experiment_settings = TWO_GROUP_EXPERIMENT_DICT[experiment]
 
     experiment_type = EXPERIMENT_TYPE_DICT[experiment]
-    seeds = list(get_args(EXPERIMENT_SEED)) if experiment == OUTPUT_CORRELATION_EXPERIMENT else DEFAULT_SEEDS
+    seeds = list(get_args(EXPERIMENT_SEED)) if experiment == OUTPUT_CORRELATION_EXPERIMENT_NAME else DEFAULT_SEEDS
 
     save_agg_table = True if experiment_type != OUTPUT_CORRELATION_EXPERIMENT else False
     yaml_dict = {
