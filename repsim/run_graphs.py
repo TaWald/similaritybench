@@ -144,7 +144,7 @@ def build_graph_config(
         yaml_dict[CONFIG_INCLUDED_MEASURES_KEY] = measures
 
     if experiment == OUTPUT_CORRELATION_EXPERIMENT_NAME:
-        yaml_dict[CONFIG_EXPERIMENTS_KEY][CONFIG_EXPERIMENTS_USE_ACC_SUBKEY] = True
+        yaml_dict[CONFIG_EXPERIMENTS_KEY][0][CONFIG_EXPERIMENTS_USE_ACC_SUBKEY] = True
 
     return yaml_dict
 
