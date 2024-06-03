@@ -185,6 +185,7 @@ def get_test_output(model, data, device, test_idx, return_accuracy=False):
 
     if return_accuracy:
         pred = out.argmax(dim=-1, keepdim=True)
-        return out, multiclass_accuracy(pred.squeeze(1), data.y.squeeze(1)[test_idx]).detach().cpu().numpy()
+        acc = multiclass_accuracy(pred.squeeze(1), data.y.squeeze(1)[test_idx]).detach().cpu().numpy()
+        return out, float(acc)
 
     return out

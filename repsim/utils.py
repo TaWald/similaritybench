@@ -729,6 +729,7 @@ class GraphModelAccuracy(Accuracy):
             train_dataset=self.origin_model.train_dataset,
             seed=self.origin_model.seed,  # type:ignore
             setting_identifier=self.origin_model.identifier,
+            return_accuracy=True,
         )
         return acc
 
