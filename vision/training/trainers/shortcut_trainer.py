@@ -73,7 +73,7 @@ class ShortcutTrainer:
             "persistent_workers": True,
         }
 
-    def train(self):
+    def train(self, just_load_checkpoint=False):
         """Trains a model and keeps it as attribute self.model
          After finishing training saves checkpoint and a short Hyperparameter summary
          to the model directory.
@@ -93,20 +93,25 @@ class ShortcutTrainer:
             accumulate_grad_batches=self.accumulate_grad_batches,
         )
         self.model.cuda()
-        loguru_logger.info("Starting training")
-        trainer.fit(
-            self.model,
-            train_dataloaders=self.datamodule.train_dataloader(
-                split=self.params.split,
-                transform=ds.Augmentation.TRAIN,
-                **self.train_kwargs,
-            ),
-            val_dataloaders=self.datamodule.val_dataloader(
-                split=self.params.split,
-                transform=ds.Augmentation.VAL,
-                **self.val_kwargs,
-            ),
-        )
+
+        if just_load_checkpoint:
+            loguru_logger.info("Skipping fitting.")
+            self.model.load_latest_checkpoint()
+        else:
+            loguru_logger.info("Starting training")
+            trainer.fit(
+                self.model,
+                train_dataloaders=self.datamodule.train_dataloader(
+                    split=self.params.split,
+                    transform=ds.Augmentation.TRAIN,
+                    **self.train_kwargs,
+                ),
+                val_dataloaders=self.datamodule.val_dataloader(
+                    split=self.params.split,
+                    transform=ds.Augmentation.VAL,
+                    **self.val_kwargs,
+                ),
+            )
         loguru_logger.info("Starting Validation of Val dataset")
         self.model.cuda()
         self.model.eval()
