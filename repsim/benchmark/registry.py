@@ -177,7 +177,7 @@ NLP_REPRESENTATION_DATASETS = {
 def all_trained_vision_models() -> list[VisionModel]:
     all_trained_vision_models = []
     for i in range(10):
-        for arch in ["VGG11", "VGG19", "ResNet18", "ResNet34", "ResNet101"]:
+        for arch in ["VGG11", "VGG19", "ResNet18", "ResNet34", "ResNet101", "ViT_B32", "ViT_L32"]:
             for dataset in ["CIFAR10", "CIFAR100", "ImageNet100"]:
                 for identifier in [STANDARD_SETTING]:
                     all_trained_vision_models.append(
