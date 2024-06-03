@@ -30,10 +30,7 @@ class ColorDotImageNet100Dataset(Dataset):
         :param transform: optional transforms that are to be applied when getting items
         """
         super().__init__()
-        assert split in [
-            "train",
-            "val",
-        ], "Has to be either 'train' or 'val' "
+        assert split in ["train", "val", "test"], "Has to be either 'train' or 'val' "
 
         self.resize_transform = transforms.Resize((224, 224))
         self.transforms: transforms.Compose = transform

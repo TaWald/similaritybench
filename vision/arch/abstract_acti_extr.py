@@ -63,14 +63,12 @@ class AbsActiExtrArch(nn.Module):
         self.activations = []
         return None
 
-    def register_parallel_rep_hooks(self, hook: Hook, save_container: list, remain_spatial=False):
-        self.slice_shift = 0
+    def register_parallel_rep_hooks(self, hook: Hook, save_container: list):
+
         desired_module = self.get_wanted_module(hook)
         handle = desired_module.register_forward_hook(
             self.get_layer_output_parallel(
                 save_container,
-                wanted_spatial=int(0),
-                remain_spatial=remain_spatial,
                 at_input=hook.at_input,
             )
         )
@@ -184,9 +182,7 @@ class AbsActiExtrArch(nn.Module):
 
         return hook
 
-    def get_layer_output_parallel(
-        self, container: list, wanted_spatial: int = 0, remain_spatial: bool = False, at_input=False
-    ):
+    def get_layer_output_parallel(self, container: list, at_input=False):
         def hook(model, inp, output):
             """
             Attaches a forward hook that takes the output of a layer,
@@ -199,23 +195,9 @@ class AbsActiExtrArch(nn.Module):
             # self.activations.append(output.detach().cpu().numpy())
             if at_input:
                 output = inp
-            output_shape = output.shape  # Batch x Channel x Width x Height?
-            wh_pixel = output_shape[2] * output_shape[3]
-            if remain_spatial:
-                flat_output = output
-            else:
-                flat_output = torch.reshape(output, [output_shape[0], output_shape[1], -1])
-                if wanted_spatial < wh_pixel and wanted_spatial != 0:  # Undersample
-                    ids = np.sort(
-                        np.floor(
-                            (np.linspace(0, wh_pixel, wanted_spatial, endpoint=False) + self.slice_shift) % wh_pixel
-                        )
-                    ).astype(int)
-                    flat_output = flat_output[:, :, ids]
-                    self.slice_shift = self.slice_shift + 1
-                    if self.slice_shift - 1 >= wanted_spatial:
-                        self.slice_shift = 0
-            container.append(flat_output.cpu())
+            if isinstance(output, tuple):
+                output = output[0]  # VGG19 has a tuple as output of its linear layer...
+            container.append(output.cpu())
 
         return hook
 

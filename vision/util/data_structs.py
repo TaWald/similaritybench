@@ -154,6 +154,14 @@ class ModelInfo:
         """Checks whether the model has finished training."""
         return self.path_output_json.exists()
 
+    def has_final_metrics(self) -> bool:
+        """
+        Check if the model has `final_metrics.json` written.
+        This is an indicator that the final test_set evaluation crashed
+        (e.g. due to not pulling changes to test_dataloader in-time...)
+        """
+        return self.path_last_metrics_json.exists()
+
     def info_file_exists(self) -> bool:
         """Checks whether the info file exists."""
         return self.path_train_info_json.exists()

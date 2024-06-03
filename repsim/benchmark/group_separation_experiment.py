@@ -226,7 +226,7 @@ class GroupSeparationExperiment(AbstractExperiment):
         if self.threads == 1:
             self._run_single_threaded()
         else:
-            self._run_multiprocessed()
+            raise NotImplementedError("Multithreading was removed as compute intensive measures do it themselves.")
 
     def _get_todo_combos(self, combos, storer: ExperimentStorer) -> tuple[
         list[
@@ -290,55 +290,5 @@ class GroupSeparationExperiment(AbstractExperiment):
         with ExperimentStorer(self.storage_path) as storer:
             todo_combos, n_total = self._get_todo_combos(combos, storer)
             self.compare_combos(todo_combos, n_total, storer, tqdm_descr="Comparing representations")
-
-        return
-
-    def _run_multiprocessed(self) -> None:
-        """Run the experiment. Results can be accessed afterwards via the .results attribute"""
-        warnings.warn("This method should not be used. Set threads in your config to 1.", category=DeprecationWarning)
-
-        flat_models = flatten_nested_list(self.groups_of_models)
-        combos = product(flat_models, flat_models)  # Necessary for non-symmetric values
-
-        BaseManager.register("ExperimentStorer", ExperimentStorer)
-        BaseManager.register("Lock", multiprocessing.Lock)
-
-        total_comps = 0
-        with BaseManager() as manager:
-            # Create a lock using the Manager
-            rep_lock = manager.Lock()
-            storage_lock = manager.Lock()
-            storer = manager.ExperimentStorer(self.storage_path)
-
-            comparisons_to_do = []
-            for model_src, model_tgt in combos:
-                if model_src == model_tgt:
-                    continue  # Skip self-comparisons
-                model_reps_src = model_src.get_representation(self.representation_dataset, **self.kwargs)
-                sngl_rep_src: repsim.utils.SingleLayerRepresentation = model_reps_src.representations[-1]
-                model_reps_tgt = model_tgt.get_representation(self.representation_dataset, **self.kwargs)
-                sngl_rep_tgt: repsim.utils.SingleLayerRepresentation = model_reps_tgt.representations[-1]
-
-                todo_by_measure = []
-                for measure in self.measures:
-                    if storer.comparison_exists(sngl_rep_src, sngl_rep_tgt, measure):
-                        pass
-                    else:
-                        todo_by_measure.append((sngl_rep_src, sngl_rep_tgt, measure))
-                        total_comps += 1
-                comparisons_to_do.append((todo_by_measure, rep_lock, storage_lock, storer))
-            n_comparisons = len(comparisons_to_do)
-            logger.info(f"{n_comparisons} model comparisons remaining. {total_comps} singular comparisons.")
-
-            with tqdm(total=n_comparisons, desc="Comparing representations") as pbar:
-                with multiprocessing.get_context("spawn").Pool(
-                    self.threads, initargs=(rep_lock, storage_lock, storer)
-                ) as p:
-                    results = []
-                    for comp in comparisons_to_do:
-                        results.append(p.apply_async(compare, comp, callback=lambda _: pbar.update(1)))
-                        # Add mutex to args
-                    for res in results:
-                        res.wait()
 
         return

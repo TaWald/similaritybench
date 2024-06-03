@@ -118,7 +118,10 @@ def train_vision_model(
         model_info=model_info,
         arch_params=arch_params,
     )
-    trainer.train()
+    just_load_checkpoint = False
+    if model_info.has_final_metrics():
+        just_load_checkpoint = True
+    trainer.train(just_load_checkpoint)
 
 
 if __name__ == "__main__":
