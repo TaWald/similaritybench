@@ -15,7 +15,7 @@ def check_has_two_axes(x: npt.NDArray | torch.Tensor):
 
 
 # adapted implementation from scipy to always return non-negative values, and to change to log base 2
-def jensen_shannon_divergence(p: npt.NDArray, q: npt.NDArray, axis=0, keepdims=False):
+def jensen_shannon_divergence(p: npt.NDArray, q: npt.NDArray, axis=0, keepdims=False) -> float:
     p = p / np.sum(p, axis=axis, keepdims=True)
     q = q / np.sum(q, axis=axis, keepdims=True)
     m = (p + q) / 2.0
@@ -53,3 +53,11 @@ class Disagreement(FunctionalSimilarityMeasure):
 
         output_a, output_b = to_numpy_if_needed(output_a, output_b)
         return (output_a.argmax(axis=1) != output_b.argmax(axis=1)).sum() / len(output_a)
+
+
+class AbsoluteAccDiff(FunctionalSimilarityMeasure):
+    def __init__(self):
+        super().__init__(larger_is_more_similar=False, is_symmetric=True)
+
+    def __call__(self, acc_a: float, acc_b: float) -> Any:
+        return np.abs(acc_a - acc_b)

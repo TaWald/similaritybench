@@ -175,11 +175,17 @@ def get_representations(model, data, device, test_idx, layer_ids):
 
 
 @torch.no_grad()
-def get_test_output(model, data, device, test_idx):
+def get_test_output(model, data, device, test_idx, return_accuracy=False):
     model = model.to(device)
     data = data.to(device)
     test_idx = test_idx.to(device)
 
     model.eval()
+    out = model(data.x, data.adj_t)[test_idx]
 
-    return model(data.x, data.adj_t)[test_idx]
+    if return_accuracy:
+        pred = out.argmax(dim=-1, keepdim=True)
+        acc = multiclass_accuracy(pred.squeeze(1), data.y.squeeze(1)[test_idx]).detach().cpu().numpy()
+        return out, float(acc)
+
+    return out

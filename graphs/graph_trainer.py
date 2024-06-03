@@ -265,19 +265,18 @@ class GraphTrainer(ABC):
 
         return reps
 
-    def get_test_output(self, setting: SETTING_IDENTIFIER):
+    def get_test_output(self, setting: SETTING_IDENTIFIER, return_accuracy=False):
 
         model = self._load_model(setting)
         setting_data = self._get_setting_data(setting)
 
-        reps = get_test_output(
+        return get_test_output(
             model=model,
             data=setting_data,
             device=self.device,
             test_idx=self.split_idx[SPLIT_IDX_BENCHMARK_TEST_KEY],
+            return_accuracy=return_accuracy,
         )
-
-        return reps
 
 
 class LayerTestTrainer(GraphTrainer):

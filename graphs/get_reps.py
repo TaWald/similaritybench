@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Tuple
 
 import torch
 from graphs.graph_trainer import GRAPH_TRAINER_DICT
@@ -70,13 +70,15 @@ def get_gnn_output(
     train_dataset: GRAPH_DATASET_TRAINED_ON,
     seed: EXPERIMENT_SEED,
     setting_identifier: SETTING_IDENTIFIER,
-) -> torch.Tensor:
+    return_accuracy: bool = False,
+) -> torch.Tensor | Tuple[torch.Tensor, float]:
     """
     Computes the logit/softmax output of a given model on some given test data
     :param architecture_name: The name of the architecture.
     :param seed: The seed used to train the model.
     :param train_dataset: The name of the dataset.
     :param setting_identifier: Identifier indicating the experiment
+    :param return_accuracy: whether to also return test accuracy of the model
     """
 
     experiment_identifier = ""
@@ -88,4 +90,4 @@ def get_gnn_output(
     graph_trainer = GRAPH_TRAINER_DICT[experiment_identifier](
         architecture_type=architecture_name, dataset_name=train_dataset, seed=seed
     )
-    return graph_trainer.get_test_output(setting_identifier)
+    return graph_trainer.get_test_output(setting=setting_identifier, return_accuracy=return_accuracy)
