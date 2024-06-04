@@ -25,6 +25,11 @@ from vision.util import data_structs as ds
 # from ke.data import cutout_aug
 
 
+# DISCLAIMER:
+# Currently the Correlation is inverted.
+# 100 means no correlation, 0 means full correlation.
+
+
 class ColorDot_100_IN100Datamodule(Imagenet100DataModule):
     dot_correlation = 100
     dot_diameter = 5
