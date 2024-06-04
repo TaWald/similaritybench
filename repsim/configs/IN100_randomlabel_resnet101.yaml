@@ -32,11 +32,11 @@ experiments:
       - train_dataset
     separation_keys: # Creates a separate experiment for each unique value of the key.
       - architecture
-raw_results_filename: in100_randomlabel.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
+raw_results_filename: in100_randomlabel_resnet101.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
 
 table_creation:
   save_full_df: True
-  full_df_filename: in100_randomlabel.csv
+  full_df_filename: in100_randomlabel_resnet101.csv
   # ---
   save_aggregated_df: True
   row_index: similarity_measure # The key to use as the row index in the table.
@@ -46,4 +46,4 @@ table_creation:
     - quality_measure
     - architecture
   value_key: value # The key specifying the value that fills the table (non-header/index values)
-  filename: in100_randomlabel.xlsx # Can be [.xlsx / .csv / .tex] file extension
+  filename: in100_randomlabel_resnet101.xlsx # Can be [.xlsx / .csv / .tex] file extension
