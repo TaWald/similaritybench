@@ -96,7 +96,9 @@ class AbstractExperiment:
                         vals_b = getattr(obj_tgt, value_attr_name)
                         shape = getattr(obj_src, "shape", None)
                         if obj_src.origin_model.domain == "VISION":
-                            if len(vals_a.shape) != len(vals_b.shape):
+                            if isinstance(obj_src, Accuracy):  # Don't do anything if accuracy measure
+                                pass
+                            elif len(vals_a.shape) != len(vals_b.shape):
                                 max_shape = max(len(vals_a.shape), len(vals_b.shape))
                                 if max_shape == 4:
                                     if len(vals_a.shape) == 2:
