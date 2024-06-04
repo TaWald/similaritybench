@@ -1,6 +1,5 @@
 # Holds all information needed to run experiments.
 excluded_measures:
-  - PWCCA
   - GeometryScore
   - IMDScore
 threads: 1
