@@ -31,6 +31,7 @@ from repsim.benchmark.types_globals import VISION_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import VISION_DATASET_TRAINED_ON
 from repsim.measures.utils import ND_SHAPE
 from repsim.measures.utils import SHAPE_TYPE
+from vision.util.data_structs import load_json
 from vision.util.file_io import get_vision_model_info
 from vision.util.find_architectures import get_base_arch
 from vision.util.vision_rep_extraction import get_single_layer_vision_representation_on_demand
@@ -715,8 +716,15 @@ class NLPModelAccuracy(Accuracy):
 
 class VisionModelAccuracy(Accuracy):
     def _extract_output(self) -> float:
+
         assert self.origin_model is not None
-        return
+        og_model = self.origin_model
+        info = get_vision_model_info(
+            og_model.train_dataset, og_model.architecture, og_model.seed, og_model.identifier
+        ).path_output_json
+        assert info.exists(), "Output json does not exist -- Can't load accuracy"
+        acc = load_json(info)["test"]["accuracy"]
+        return acc
 
 
 class GraphModelAccuracy(Accuracy):
