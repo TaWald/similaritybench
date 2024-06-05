@@ -18,9 +18,7 @@ experiments:
     filter_key_vals:  # Only keeps models that have any of the values for the keys.
       train_dataset:
         - RandomLabel_100_IN100_DataModule
-        - RandomLabel_75_IN100_DataModule
         - RandomLabel_50_IN100_DataModule
-        - RandomLabel_25_IN100_DataModule
         - ImageNet100
       architecture:
         - ResNet34

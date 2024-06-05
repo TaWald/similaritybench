@@ -23,8 +23,8 @@ experiments:
   - architecture
   type: GroupSeparationExperiment
 included_measures:
-- RSMNormDifference
 - DistanceCorrelation
+- RSMNormDifference
 only_extract_reps: false
 raw_results_filename: in100_augment_resnet18.parquet
 rerun_nans: true

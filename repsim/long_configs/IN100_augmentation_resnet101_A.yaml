@@ -23,10 +23,10 @@ experiments:
   - architecture
   type: GroupSeparationExperiment
 included_measures:
-- SVCCA
-- PWCCA
-- CKA
 - RSA
+- SVCCA
+- CKA
+- PWCCA
 only_extract_reps: false
 raw_results_filename: in100_augment_resnet101.parquet
 rerun_nans: true

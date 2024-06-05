@@ -13,9 +13,7 @@ experiments:
     - 4
     train_dataset:
     - RandomLabel_100_IN100_DataModule
-    - RandomLabel_75_IN100_DataModule
     - RandomLabel_50_IN100_DataModule
-    - RandomLabel_25_IN100_DataModule
     - ImageNet100
   grouping_keys:
   - train_dataset
@@ -25,8 +23,8 @@ experiments:
   - architecture
   type: GroupSeparationExperiment
 included_measures:
-- RSMNormDifference
 - DistanceCorrelation
+- RSMNormDifference
 only_extract_reps: false
 raw_results_filename: in100_randomlabel_resnet34.parquet
 rerun_nans: true

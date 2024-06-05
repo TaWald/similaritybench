@@ -27,10 +27,10 @@ experiments:
   type: MonotonicityExperiment
 included_measures:
 - CKA
-- RSA
-- RSMNormDifference
 - DistanceCorrelation
+- RSMNormDifference
 - IMDScore
+- RSA
 only_extract_reps: false
 raw_results_filename: in100_monotonicity_vgg19.parquet
 rerun_nans: true
