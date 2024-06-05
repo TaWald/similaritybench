@@ -39,7 +39,7 @@ table_creation:
   save_full_df: True
   full_df_filename: in100_monotonicity.csv
   # ---
-  save_aggregated_df: False
+  save_aggregated_df: True
   row_index: similarity_measure # The key to use as the row index in the table.
   columns: # The keys to use as columns (can be list[str] or a str)
     - quality_measure
