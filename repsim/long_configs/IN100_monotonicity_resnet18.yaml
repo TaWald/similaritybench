@@ -1,0 +1,51 @@
+# Holds all information needed to run experiments.
+excluded_measures:
+  - GeometryScore
+  - IMDScore
+  - RSMNormDifference
+  - DistanceCorrelation
+  - RSA
+  - CKA
+threads: 1
+cache_to_disk: True
+cache_to_mem: False
+only_extract_reps: False
+rerun_nans: True
+experiments:
+  - name: Monotonicity Experiment
+    type: MonotonicityExperiment # Defines the type of experiment class to use
+    representation_dataset: "ImageNet100"
+    filter_key_vals:  # Only keeps models that have any of the values for the keys.
+      train_dataset:
+        - ImageNet100
+      architecture:
+        - ResNet18
+      seed:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+      domain: VISION
+    grouping_keys: # Separates the trained models by this key into groups for the `GroupSeparationExperiment`.
+      - train_dataset
+    separation_keys: # Creates a separate experiment for each unique value of the key.
+      - architecture
+raw_results_filename: in100_monotonicity_resnet18.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
+
+table_creation:
+  save_full_df: True
+  full_df_filename: in100_monotonicity_resnet18.csv
+  # ---
+  save_aggregated_df: False
+  row_index: similarity_measure # The key to use as the row index in the table.
+  columns: # The keys to use as columns (can be list[str] or a str)
+    - quality_measure
+    - architecture
+  value_key: value # The key specifying the value that fills the table (non-header/index values)
+  filename: in100_monotonicity_resnet18.csv # Can be [.xlsx / .csv / .tex] file extension

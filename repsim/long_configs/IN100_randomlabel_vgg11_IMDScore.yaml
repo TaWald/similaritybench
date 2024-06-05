@@ -1,0 +1,45 @@
+cache_to_disk: true
+cache_to_mem: false
+experiments:
+- filter_key_vals:
+    architecture:
+    - VGG11
+    domain: VISION
+    seed:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    train_dataset:
+    - RandomLabel_100_IN100_DataModule
+    - RandomLabel_75_IN100_DataModule
+    - RandomLabel_50_IN100_DataModule
+    - RandomLabel_25_IN100_DataModule
+    - ImageNet100
+  grouping_keys:
+  - train_dataset
+  name: Vision Short Cut Correlation Experiments
+  representation_dataset: ImageNet100
+  separation_keys:
+  - architecture
+  type: GroupSeparationExperiment
+included_measures:
+- IMDScore
+only_extract_reps: false
+raw_results_filename: in100_randomlabel_vgg11.parquet
+rerun_nans: true
+save_full_df: false
+table_creation:
+  columns:
+  - identifier
+  - representation_dataset
+  - quality_measure
+  - architecture
+  filename: in100_randomlabel_vgg11.xlsx
+  full_df_filename: in100_randomlabel_vgg11.csv
+  row_index: similarity_measure
+  save_aggregated_df: true
+  save_full_df: true
+  value_key: value
+threads: 1
