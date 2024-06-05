@@ -1,8 +1,6 @@
 # Holds all information needed to run experiments.
 excluded_measures:
-  - PWCCA
   - GeometryScore
-  - IMDScore
 threads: 1
 cache_to_disk: True
 cache_to_mem: False
@@ -16,8 +14,6 @@ experiments:
       train_dataset:
         - ColorDot_100_ImageNet100DataModule
         - ColorDot_75_ImageNet100DataModule
-        - ColorDot_50_ImageNet100DataModule
-        - ColorDot_25_ImageNet100DataModule
         - ColorDot_0_ImageNet100DataModule
       architecture:
         - ViT_B32
