@@ -25,8 +25,7 @@ experiments:
   - architecture
   type: GroupSeparationExperiment
 included_measures:
-- RSA
-- CKA
+- IMDScore
 only_extract_reps: false
 raw_results_filename: in100_randomlabel_vitb32.parquet
 rerun_nans: true
