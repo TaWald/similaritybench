@@ -145,6 +145,7 @@ class AbstractExperiment:
 
                 # TODO: should be able to be removed without OOM, because self.rep_cache keeps reps more efficiently
                 # than before
+                storer.save_to_file()
                 if (
                     self.cache_to_disk
                     and isinstance(obj_src, SingleLayerRepresentation)
