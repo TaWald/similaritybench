@@ -138,6 +138,7 @@ def run(config_path: str):
         os.path.join(EXPERIMENT_RESULTS_PATH, raw_results_filename) if raw_results_filename is not None else None
     )
     only_extract_reps = config.get("only_extract_reps", False)
+    only_eval = config.get("only_eval", False)
 
     logger.info(f"Running with {threads} Threads! Reduce if running OOM or set to 1 for single threaded execution.")
 
@@ -216,7 +217,8 @@ def run(config_path: str):
     # -------------------- Now compare/eval the grouped models ------------------- #
     exp_results = []
     for ex in all_experiments:
-        ex.run()
+        if not only_eval:
+            ex.run()
         if not only_extract_reps:
             exp_results.extend(ex.eval())
 
