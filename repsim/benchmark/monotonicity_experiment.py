@@ -218,6 +218,10 @@ class MonotonicityExperiment(AbstractExperiment):
         else:
             reps = self.rep_cache[model.id]
 
+        if model.domain == "VISION":
+            # Only use that last 5 layers for monotonicity to keep spatial extent low.
+            reps.representations = self._only_lowres_vision_layers(model, reps)
+
         if cache_to_mem:
             self.rep_cache[model.id] = reps
 
@@ -255,14 +259,15 @@ class MonotonicityExperiment(AbstractExperiment):
     def _only_lowres_vision_layers(
         self, model: repsim.utils.TrainedModel, modelreps: repsim.utils.ModelRepresentations
     ) -> tuple[repsim.utils.SingleLayerVisionRepresentation]:
-        if model.architecture == "VGG11":
-            n_last = 5
-        elif model.architecture == "VGG19":
-            n_last = 8
-        elif model.architecture == "ResNet18":
-            n_last = 5
-        else:  # We don't use anymore than the 10 last layers.
-            n_last = 10
+        # if model.architecture == "VGG11":
+        #     n_last = 5
+        # elif model.architecture == "VGG19":
+        #     n_last = 8
+        # elif model.architecture == "ResNet18":
+        #     n_last = 5
+        # else:  # We don't use anymore than the 10 last layers.
+        #     n_last = 10
+        n_last = 5
 
         return modelreps.representations[-n_last:]
 
@@ -278,16 +283,10 @@ class MonotonicityExperiment(AbstractExperiment):
     ]:
         # First check todos with potentially not-yet-computed representations
         modelreps = self._get_all_layer_representations(model, self.cache_to_mem, do_forward_pass=False)
-        if model.domain == "VISION":
-            # Skip the first 4 layers for memory reasons.
-            modelreps.representations = self._only_lowres_vision_layers(model, modelreps)
         comparisons_todo, n_total = self._find_todos(modelreps.representations, storer)
         if n_total > 0:
             # Populate the reps for all SingleLayerRepresentations. Before might have been None to skip the forward pass.
             modelreps = self._get_all_layer_representations(model, self.cache_to_mem, do_forward_pass=True)
-            if model.domain == "VISION":
-                # Skip the first 4 layers for memory reasons.
-                modelreps.representations = self._only_lowres_vision_layers(model, modelreps)
             comparisons_todo, n_total = self._find_todos(modelreps.representations, storer)
 
         return comparisons_todo, n_total
