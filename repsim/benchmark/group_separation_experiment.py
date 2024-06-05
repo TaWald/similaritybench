@@ -199,7 +199,9 @@ class GroupSeparationExperiment(AbstractExperiment):
         }
         if self.meta_data is not None:
             meta_data.update(self.meta_data)
-
+        logger.info(
+            f"Starting to evaluate quality measures of {examplary_model.architecture} on {self.representation_dataset}"
+        )
         for measure in tqdm(self.measures, desc="Evaluating quality of measures"):
             violation_rate = self.measure_violation_rate(measure)
             measure_wise_results.append(
