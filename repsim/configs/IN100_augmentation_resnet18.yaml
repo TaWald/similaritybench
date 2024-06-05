@@ -1,6 +1,11 @@
 # Holds all information needed to run experiments.
 excluded_measures:
   - GeometryScore
+  - IMDScore
+  - RSMNormDifference
+  - DistanceCorrelation
+  - RSA
+  - CKA
 threads: 1
 cache_to_disk: True
 cache_to_mem: False

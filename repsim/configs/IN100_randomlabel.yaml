@@ -1,14 +1,7 @@
 # Holds all information needed to run experiments.
 excluded_measures:
-  - PWCCA
   - GeometryScore
-  - IMDScore
-  - IMDScore
-threads: 1
-cache_to_disk: True
-cache_to_mem: False
-only_extract_reps: True
-rerun_nans: False
+only_eval: True
 experiments:
   - name: Vision Short Cut Correlation Experiments
     type: GroupSeparationExperiment # Defines the type of experiment class to use
@@ -39,7 +32,7 @@ experiments:
       - train_dataset
     separation_keys: # Creates a separate experiment for each unique value of the key.
       - architecture
-raw_results_filename: in100_randomlabel.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
+raw_results_filename: final.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
 
 table_creation:
   save_full_df: True
