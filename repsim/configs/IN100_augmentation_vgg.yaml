@@ -14,10 +14,8 @@ experiments:
     filter_key_vals:  # Only keeps models that have any of the values for the keys.
       train_dataset:
         - Gauss_Max_ImageNet100DataModule
-        - Gauss_L_ImageNet100DataModule
         - Gauss_M_ImageNet100DataModule
         - Gauss_S_ImageNet100DataModule
-        - Gauss_Off_ImageNet100DataModule
       architecture:
         - VGG11
         - VGG19

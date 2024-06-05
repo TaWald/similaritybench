@@ -1,7 +1,6 @@
 # Holds all information needed to run experiments.
 excluded_measures:
   - GeometryScore
-  - IMDScore
 threads: 1
 cache_to_disk: True
 cache_to_mem: False
@@ -14,10 +13,8 @@ experiments:
     filter_key_vals:  # Only keeps models that have any of the values for the keys.
       train_dataset:
         - Gauss_Max_ImageNet100DataModule
-        - Gauss_L_ImageNet100DataModule
         - Gauss_M_ImageNet100DataModule
         - Gauss_S_ImageNet100DataModule
-        - Gauss_Off_ImageNet100DataModule
       architecture:
         - ResNet34
       seed:
