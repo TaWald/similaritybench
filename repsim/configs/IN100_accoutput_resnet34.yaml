@@ -5,6 +5,7 @@ threads: 1
 cache_to_disk: True
 cache_to_mem: False
 only_extract_reps: False
+rerun_nans: True
 experiments:
   - name: Vision Output Correlation
     type: OutputCorrelationExperiment  # Defines the type of experiment class to use
