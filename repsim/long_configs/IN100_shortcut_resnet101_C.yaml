@@ -26,7 +26,7 @@ included_measures:
 - IMDScore
 only_extract_reps: false
 raw_results_filename: in100_shortcut_resnet101.parquet
-rerun_nans: true
+rerun_nans: false
 save_full_df: false
 table_creation:
   columns:
