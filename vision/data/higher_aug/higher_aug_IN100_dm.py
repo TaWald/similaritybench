@@ -178,11 +178,21 @@ class Gauss_Off_Imagenet100DataModule(Gauss_Max_Imagenet100DataModule):
 if __name__ == "__main__":
     # Plot the Gauss Max Datamodule and produce some examplary images.
     # Load 20 images for each datamodule and save to disk
-    dmoff = Gauss_Off_Imagenet100DataModule(advanced_da=True)
-    dms = Gauss_S_Imagenet100DataModule(advanced_da=True)
-    dmm = Gauss_M_Imagenet100DataModule(advanced_da=True)
-    dml = Gauss_L_Imagenet100DataModule(advanced_da=True)
-    dmmax = Gauss_Max_Imagenet100DataModule(advanced_da=True)
+    cur_cls = Gauss_Off_Imagenet100DataModule
+    # cur_cls.var_limit[0] = cur_cls.var_limit[1]
+    dmoff = cur_cls(advanced_da=True)
+    cur_cls = Gauss_S_Imagenet100DataModule
+    cur_cls.var_limit = (cur_cls.var_limit[1], cur_cls.var_limit[1])
+    dms = cur_cls(advanced_da=True)
+    cur_cls = Gauss_M_Imagenet100DataModule
+    cur_cls.var_limit = (cur_cls.var_limit[1], cur_cls.var_limit[1])
+    dmm = cur_cls(advanced_da=True)
+    cur_cls = Gauss_L_Imagenet100DataModule
+    cur_cls.var_limit = (cur_cls.var_limit[1], cur_cls.var_limit[1])
+    dml = cur_cls(advanced_da=True)
+    cur_cls = Gauss_Max_Imagenet100DataModule
+    cur_cls.var_limit = (cur_cls.var_limit[1], cur_cls.var_limit[1])
+    dmmax = cur_cls(advanced_da=True)
 
     # Load train dataloader for each datamodule
     tmp = dml.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=10, shuffle=False)
@@ -191,11 +201,11 @@ if __name__ == "__main__":
             break
         print(batch[0].shape)
 
-    train_max = dmmax.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1, shuffle=False)
-    train_l = dml.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1, shuffle=False)
-    train_m = dmm.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1, shuffle=False)
-    train_s = dms.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1, shuffle=False)
-    train_off = dmoff.val_dataloader(split=0, transform=ds.Augmentation.TRAIN, batch_size=1, shuffle=False)
+    train_max = dmmax.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
+    train_l = dml.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
+    train_m = dmm.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
+    train_s = dms.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
+    train_off = dmoff.val_dataloader(split=0, transform=ds.Augmentation.VAL, batch_size=1, shuffle=False)
 
     # Save 20 images from each dataloader to disk
     save_dir = os.path.join(os.path.dirname(__file__), "IN100_GaussExamples")
