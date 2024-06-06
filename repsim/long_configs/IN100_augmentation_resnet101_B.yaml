@@ -1,0 +1,44 @@
+cache_to_disk: true
+cache_to_mem: false
+experiments:
+- filter_key_vals:
+    architecture:
+    - ResNet101
+    domain: VISION
+    seed:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    train_dataset:
+    - Gauss_Max_ImageNet100DataModule
+    - Gauss_M_ImageNet100DataModule
+    - Gauss_S_ImageNet100DataModule
+  grouping_keys:
+  - train_dataset
+  name: Vision Gauss R18 IN100 Experiments
+  representation_dataset: Gauss_Off_ImageNet100DataModule
+  separation_keys:
+  - architecture
+  type: GroupSeparationExperiment
+included_measures:
+- DistanceCorrelation
+- RSMNormDifference
+only_extract_reps: false
+raw_results_filename: in100_augment_resnet101.parquet
+rerun_nans: false
+save_full_df: false
+table_creation:
+  columns:
+  - identifier
+  - representation_dataset
+  - quality_measure
+  - architecture
+  filename: in100_augment_resnet101.xlsx
+  full_df_filename: in100_augment_resnet101.csv
+  row_index: similarity_measure
+  save_aggregated_df: false
+  save_full_df: true
+  value_key: value
+threads: 1

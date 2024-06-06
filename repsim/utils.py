@@ -302,6 +302,14 @@ class VisionModel(TrainedModel):
         )
         return acc
 
+    def get_vision_model_info(self):
+        return get_vision_model_info(
+            architecture_name=self.architecture,
+            dataset=self.train_dataset,
+            seed_id=self.seed,
+            setting_identifier=self.identifier,
+        )
+
 
 class GraphModel(TrainedModel):
     domain: DOMAIN_TYPE = GRAPH_DOMAIN

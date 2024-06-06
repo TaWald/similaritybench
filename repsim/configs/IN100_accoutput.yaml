@@ -1,12 +1,8 @@
 # Holds all information needed to run experiments.
 excluded_measures:
   - GeometryScore
-  - IMDScore
-threads: 1
-cache_to_disk: False
-cache_to_mem: False
-only_extract_reps: False
-rerun_nans: True
+only_eval: True
+cache_to_disk: True
 experiments:
   - name: Vision Output Correlation
     type: OutputCorrelationExperiment  # Defines the type of experiment class to use
@@ -37,7 +33,7 @@ experiments:
       domain: VISION
     separation_keys:  # Creates a separate experiment for each unique value of the key.
       - architecture
-raw_results_filename: in100_output.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
+raw_results_filename: final.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
 
 
 table_creation:

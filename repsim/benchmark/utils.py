@@ -166,8 +166,12 @@ class ExperimentStorer:
         """
         comp_id = self._get_comparison_id(src_single_rep, tgt_single_rep, metric.name)
         symm_comp_id = self._get_comparison_id(tgt_single_rep, src_single_rep, metric.name)
-
-        experiment = pd.concat([self._old_experiments, self._new_experiments], ignore_index=False)
+        if len(self._new_experiments) > 0:
+            experiment = pd.concat([self._old_experiments, self._new_experiments], ignore_index=False)
+        else:
+            experiment = (
+                self._old_experiments
+            )  # pd.concat([self._old_experiments, self._new_experiments], ignore_index=False)
         normal_exists = comp_id in experiment.index
         symm_exists = symm_comp_id in experiment.index
 
@@ -195,7 +199,9 @@ class ExperimentStorer:
             )
             # self.save_to_file()
         else:
-            raise ValueError("Comparison does not exist in the dataframe.")
+            logger.warning(f"Comparison {comp_id} does not exist in the dataframe. -- Skipping")
+            return None
+            # raise ValueError("Comparison does not exist in the dataframe.")
 
         metric_values = res["metric_value"]
         if isinstance(metric_values, (np.float32, np.float64, np.float16, float)):
@@ -286,19 +292,29 @@ def get_in_group_cross_group_sims(
         in_group_sims: List of in-group similarities.
         cross_group_sims: List of cross-group similarities.
     """
-    in_group_comps = combinations(in_group_slrs, 2)
-    cross_group_comps = product(in_group_slrs, out_group_slrs)
-    assert all(
-        [storer.comparison_exists(slr1, slr2, measure) for slr1, slr2 in in_group_comps]
-    ), "Not all in-group comparisons exist."
-    assert all(
-        [storer.comparison_exists(slr1, slr2, measure) for slr1, slr2 in cross_group_comps]
-    ), "Not all cross-group comparisons exist."
+    in_group_comps = list(combinations(in_group_slrs, 2))
+    in_group_comps_existing = [
+        (slr1, slr2) for slr1, slr2 in in_group_comps if storer.comparison_exists(slr1, slr2, measure)
+    ]
+
+    cross_group_comps = list(product(in_group_slrs, out_group_slrs))
+    cross_group_comps_existing = [
+        (slr1, slr2) for slr1, slr2 in cross_group_comps if storer.comparison_exists(slr1, slr2, measure)
+    ]
+
+    if len(in_group_comps) != len(in_group_comps_existing):
+        logger.warning(f"Only {len(cross_group_comps)} out of {len(in_group_comps)} in-group comparisons exist.")
+
+    if len(cross_group_comps) != len(cross_group_comps_existing):
+        logger.warning(
+            f"Only {len(cross_group_comps_existing)} out of {len(cross_group_comps)} cross-group comparisons exist."
+        )
+
     # Redo to not have empty iterable
-    in_group_comps = combinations(in_group_slrs, 2)
-    cross_group_comps = product(in_group_slrs, out_group_slrs)
-    in_group_sims = [storer.get_comp_result(slr1, slr2, measure) for slr1, slr2 in in_group_comps]
-    cross_group_sims = [storer.get_comp_result(slr1, slr2, measure) for slr1, slr2 in cross_group_comps]
+    # in_group_comps = combinations(in_group_slrs, 2)
+    # cross_group_comps = product(in_group_slrs, out_group_slrs)
+    in_group_sims = [storer.get_comp_result(slr1, slr2, measure) for slr1, slr2 in in_group_comps_existing]
+    cross_group_sims = [storer.get_comp_result(slr1, slr2, measure) for slr1, slr2 in cross_group_comps_existing]
 
     # ToDo: Make sure that the None values are handled correctly.
     not_none_in_group_sims = [sim for sim in in_group_sims if sim is not None]

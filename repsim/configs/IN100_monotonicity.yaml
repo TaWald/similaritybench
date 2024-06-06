@@ -1,13 +1,7 @@
 # Holds all information needed to run experiments.
 excluded_measures:
-  - PWCCA
   - GeometryScore
-  - IMDScore
-threads: 1
-cache_to_disk: True
-cache_to_mem: False
-only_extract_reps: False
-rerun_nans: True
+only_eval: True
 experiments:
   - name: Monotonicity Experiment
     type: MonotonicityExperiment # Defines the type of experiment class to use
@@ -39,13 +33,13 @@ experiments:
       - train_dataset
     separation_keys: # Creates a separate experiment for each unique value of the key.
       - architecture
-raw_results_filename: in100_monotonicity.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
+raw_results_filename: final.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
 
 table_creation:
   save_full_df: True
   full_df_filename: in100_monotonicity.csv
   # ---
-  save_aggregated_df: False
+  save_aggregated_df: True
   row_index: similarity_measure # The key to use as the row index in the table.
   columns: # The keys to use as columns (can be list[str] or a str)
     - quality_measure
