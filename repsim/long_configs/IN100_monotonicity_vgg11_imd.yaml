@@ -41,7 +41,4 @@ table_creation:
   filename: in100_monotonicity_vgg11.csv
 save_full_df: false
 included_measures:
-- CKA
-- RSMNormDifference
-- RSA
-- DistanceCorrelation
+- IMDScore

@@ -1,10 +1,17 @@
+threads: 1
 cache_to_disk: true
 cache_to_mem: false
+only_extract_reps: false
+rerun_nans: false
 experiments:
-- filter_key_vals:
+- name: Monotonicity Experiment
+  type: MonotonicityExperiment
+  representation_dataset: ImageNet100
+  filter_key_vals:
+    train_dataset:
+    - ImageNet100
     architecture:
     - ViT_B32
-    domain: VISION
     seed:
     - 0
     - 1
@@ -16,33 +23,25 @@ experiments:
     - 7
     - 8
     - 9
-    train_dataset:
-    - ImageNet100
+    domain: VISION
   grouping_keys:
   - train_dataset
-  name: Monotonicity Experiment
-  representation_dataset: ImageNet100
   separation_keys:
   - architecture
-  type: MonotonicityExperiment
-included_measures:
-- CKA
-- DistanceCorrelation
-- RSMNormDifference
-- IMDScore
-- RSA
-only_extract_reps: false
 raw_results_filename: in100_monotonicity_vitb32.parquet
-rerun_nans: false
-save_full_df: false
 table_creation:
+  save_full_df: true
+  full_df_filename: in100_monotonicity_vitb32.csv
+  save_aggregated_df: false
+  row_index: similarity_measure
   columns:
   - quality_measure
   - architecture
-  filename: in100_monotonicity_vitb32.csv
-  full_df_filename: in100_monotonicity_vitb32.csv
-  row_index: similarity_measure
-  save_aggregated_df: false
-  save_full_df: true
   value_key: value
-threads: 1
+  filename: in100_monotonicity_vitb32.csv
+save_full_df: false
+included_measures:
+- CKA
+- RSMNormDifference
+- RSA
+- DistanceCorrelation

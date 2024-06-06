@@ -11,7 +11,7 @@ experiments:
     train_dataset:
     - ImageNet100
     architecture:
-    - VGG11
+    - ResNet34
     seed:
     - 0
     - 1
@@ -28,20 +28,17 @@ experiments:
   - train_dataset
   separation_keys:
   - architecture
-raw_results_filename: in100_monotonicity_vgg11.parquet
+raw_results_filename: in100_monotonicity_resnet34.parquet
 table_creation:
   save_full_df: true
-  full_df_filename: in100_monotonicity_vgg11.csv
+  full_df_filename: in100_monotonicity_resnet34.csv
   save_aggregated_df: false
   row_index: similarity_measure
   columns:
   - quality_measure
   - architecture
   value_key: value
-  filename: in100_monotonicity_vgg11.csv
+  filename: in100_monotonicity_resnet34.csv
 save_full_df: false
 included_measures:
-- CKA
-- RSMNormDifference
-- RSA
-- DistanceCorrelation
+- IMDScore
