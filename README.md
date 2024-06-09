@@ -1,89 +1,53 @@
-# similaritybench
-Representational Similarity Benchmark
-
-## Meeting 15.05.24:
-#### Choice of Measures:
-Wir wollen folgende Maße rausnehmen:
-- Geometry score (absurd langsam)
-- Linear Regression (nochmal testen)
-- IMD Score (Tobias lässt das laufen)
-- RSMNormDiff (fast immer 0)
-- PWCCA (SVD failt immer)
-
-#### To-Dos:
-- Max: Implementierung Monotonicity-Text
-- Tilo: Implementierung Alternative Output-Correlation
-- Tobias: Automatisierte Graph-Config, re-run Shortcut-Test, adapt default measure, begin writing
+# ReSi: A Comprehensive Benchmark for Representatinal Similarity Measures
+In the following, we describe how the experiments from our Benchmark Paper can be reprduced, and how additional measures could be added.
 
 
-## Meeting April:
+## 1. Setting up the Repository
 
-### Ideas/Points of discussion
-- Currently differentiation seems to be quite easy?
-  - Shortcut difficulty increase could be achieved
-    - Make shortcut only for a subset of the classes
-    - Test if one can identify it earlier in the network instead of the last layer only?
-    - Use a "bigger" Dataset with more & more complex classes?
-- Add bigger Dataset (ImageNet/IN100) and start with pre-trained models to keep things fast
-
-
-
-### ToDo's
-- [ ] (Tassilo) Retrain Vision GaussL experiments on C10.
-   - Current GaussL model were trained with wrong noise variance making them actually not correct (could alslo just be excluded from evaluation for now)
-
-- [ ] (All) Run the evaluation to get proper results (Shortcuts; Memorization; Monotonicity; Augmentation)
-  - [ ] Vision: Add a ViT model for Datasets (all)
-- [ ] (Max) Merge TrainedModel with ModelRepresentation
-
-### Overall ToDO's
-- [ ] Add functional measures for connection between reps and functional similarity
-- [ ] Think about the grouping some more. Does it make more sense to move to "Shortcut Affinity" (Acc with 100 vs 0 SC?) --> Allows for continuous measures
-
-- Proxy for:
-  - Stitching Accuracy -- Fine-tuning of linear layer
-  - Predictive Similarity (Jensen-Shannon) -- No Finetung (but Linear Probe)
-  - Cohens Kappa  - Linear Probe
-  - Error Similarity (at that layer) - Linear Probe
-  - Pruning (of layers with least change)
-  - Rel. ensemble accuracy. (No training)
-  - Vision Language Alignment? (How would one test this?)
-  - "Foolability" of a metric -- High dissimilarity despite same predictions
-    - (Would require differentiability and training)
-
-Linear Probes only necessary if not used at the very last layer
-## Structure
-
-- Library (`repsim`)
-  - utils
-  - Ähnlichkeitsmaße (`measures`)
-    - utils für Maße wie padding und preprocessing
-- Tests der Maße
-  - Invarianzen korrekt
-  - Richtige scores für gleiche bzw unterschiedliche inputs
-- Benchmark
-  - Evaluierungsskripts der einzelnen Experimente
-- Vision
-- NLP
-- Graph
-- utils: quasi config, wo wird gespeichert, laden von Ergebnissen/speichern, ...
-
-
-## Virtual environment
+### 1.1 Virtual environment
 Skip the conda rows if you already have the correct Python version installed.
 ```shell
 conda create -n ENVNAME python=3.10
 conda active ENVNAME
 python -m venv .venv
 source .venv/bin/activate
-pip install torch=2.0.1 torchvision torchaudio hydra-core ipykernel flake8 black huggingface-hub ipywidgets matplotlib seaborn numpy scipy pyarrow tokenizers datasets transformers pytest Cython gudhi scikit-learn evaluate accelerate pre-commit
-pip install -e .
+pip install -r requirements.txt .
 ```
 
-(Max: Die GPU Treiber sind veraltet bei uns, weswegen keine höhere pytorch Version funktioniert.)
 
-Additional dependencies for some measures:
-```shell
-git clone https://github.com/KhrulkovV/geometry-score.git && cd geometry-score && pip install .
-git clone https://github.com/xgfs/imd.git && cd imd && pip install .
+### 1.2 Loading Result Files
+
+parquets are stored in dir xyz, bla
+
+### 1.3 Loading Datasets
+
+For NLP and Vision, you need to load x into y.
+
+For the graph domain, we chose datasts that are already included in either the `pythorch geometric`or `ogb` packages. Upon extracting representations for the first time, these datasts will be downloaded automatically.
+
+
+### 1.3 Loading Model Files
+
+download from zenodo here and store in subdirectory xyz
+
+
+## 2. Running the Benchmark
+
+To rerun experiments using the consifg, run
+```bash
+    python3 -m repsim.run -c path/to/config.yaml
 ```
+
+For the graph domain, another option to re-run individual tests on a given dataset is to run
+
+```bash
+    python3 -m repsim.run -t {test_name} -d {dataset} -m {measures}
+```
+where the latter flag for measures is optional, and by default, all measures will be used.
+
+### 2.2 Instructions on config files
+
+
+### Plotting Results
+
+After all computations are done, plots can be produced via the `xyz.ipynb` notebook
