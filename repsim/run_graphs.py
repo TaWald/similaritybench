@@ -75,8 +75,8 @@ def BASE_FILE_NAME(test, dataset, groups: int = 3, measures: List = None):
     return fname_base
 
 
-def PARQUET_FILE_NAME(test, dataset, groups: int = 3, measures: List = None):
-    return f"{BASE_FILE_NAME(test, dataset, groups, measures)}.parquet"
+def PARQUET_FILE_NAME(test, dataset, measures: List = None):
+    return f"{BASE_FILE_NAME(test, dataset, measures = measures)}.parquet"
 
 
 def FULL_DF_FILE_NAME(test, dataset, groups: int = 3, measures: List = None):
@@ -87,8 +87,8 @@ def AGG_DF_FILE_NAME(test, dataset, groups: int = 3, measures: List = None):
     return f"{BASE_FILE_NAME(test, dataset, groups, measures)}.csv"
 
 
-def YAML_CONFIG_FILE_NAME(test, dataset, measures: List = None):
-    return f"{BASE_FILE_NAME(test, dataset, measures=measures)}.yaml"
+def YAML_CONFIG_FILE_NAME(test, dataset, groups: int = 3, measures: List = None):
+    return f"{BASE_FILE_NAME(test, dataset, groups, measures)}.yaml"
 
 
 def build_graph_config(
@@ -182,7 +182,7 @@ def parse_args():
         nargs="*",
         choices=list(ALL_MEASURES.keys()),
         default=None,
-        help="Test to run.",
+        help="Measures to test - if none are specified, all benchmark measures will be used.",
     )
     parser.add_argument(
         "--groups",
@@ -201,7 +201,9 @@ if __name__ == "__main__":
 
     yaml_config = build_graph_config(test=args.test, dataset=args.dataset, measures=args.measures, groups=n_groups)
 
-    config_path = os.path.join("configs", YAML_CONFIG_FILE_NAME(args.test, args.dataset, args.groups))
+    config_path = os.path.join(
+        "configs", "graphs", YAML_CONFIG_FILE_NAME(test=args.test, dataset=args.dataset, groups=args.groups)
+    )
     with open(config_path, "w") as file:
         yaml.dump(yaml_config, file)
 
