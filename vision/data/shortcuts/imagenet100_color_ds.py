@@ -9,6 +9,7 @@ from loguru import logger
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
+from vision.data.imagenet100_ds import IN100_LABELS
 from vision.data.shortcuts.shortcut_transforms import ColorDotShortcut
 from vision.util.file_io import load_json
 
@@ -42,7 +43,7 @@ class ColorDotImageNet100Dataset(Dataset):
 
         self.sanity_check()
 
-        metafile = load_json(self.root / "Labels.json")
+        metafile = IN100_LABELS
         classes = list(sorted(metafile.keys()))  # Always the same classes
         self.wnid_to_id = {dk: cnt for cnt, dk in enumerate(classes)}
 
