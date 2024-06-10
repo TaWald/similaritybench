@@ -1,0 +1,13 @@
+,similarity_measure,quality_measure,value,domain,architecture,representation_dataset,identifier
+0,RSMNormDifference,violation_rate,0.3033333333333333,GRAPHS,GCN,cora,Shortcut_0
+1,RSMNormDifference,AUPRC,0.46237586868593733,GRAPHS,GCN,cora,Shortcut_0
+2,IMDScore,violation_rate,0.072,GRAPHS,GCN,cora,Shortcut_0
+3,IMDScore,AUPRC,0.731715879245549,GRAPHS,GCN,cora,Shortcut_0
+4,RSMNormDifference,violation_rate,0.09066666666666667,GRAPHS,GAT,cora,Shortcut_0
+5,RSMNormDifference,AUPRC,0.6886116661116661,GRAPHS,GAT,cora,Shortcut_0
+6,IMDScore,violation_rate,0.12,GRAPHS,GAT,cora,Shortcut_0
+7,IMDScore,AUPRC,0.6009644698544129,GRAPHS,GAT,cora,Shortcut_0
+8,RSMNormDifference,violation_rate,0.24333333333333332,GRAPHS,GraphSAGE,cora,Shortcut_0
+9,RSMNormDifference,AUPRC,0.49706546021622017,GRAPHS,GraphSAGE,cora,Shortcut_0
+10,IMDScore,violation_rate,0.043333333333333335,GRAPHS,GraphSAGE,cora,Shortcut_0
+11,IMDScore,AUPRC,0.793495175848117,GRAPHS,GraphSAGE,cora,Shortcut_0
