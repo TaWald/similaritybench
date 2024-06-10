@@ -17,23 +17,23 @@ pip install -r requirements.txt .
 
 ### 1.2 Loading Result Files
 
-parquets are stored in dir xyz, bla
-
-### 1.3 Loading Datasets
-
-For NLP and Vision, you need to load x into y.
-
-For the graph domain, we chose datasts that are already included in either the `pythorch geometric`or `ogb` packages. Upon extracting representations for the first time, these datasts will be downloaded automatically.
+The results from all our experiments are stored in a `results.parquet` file, which is located in the èxperiments/results/` directory. Based on this, the plots can be reproduced, and if you want to implement a text a new measure, you can simply add the corresponding results to this file.
 
 
-### 1.3 Loading Model Files
+### 1.3 Loading Datasets and Models
 
-download from zenodo here and store in subdirectory xyz
+If you want to rerun our experiments from scratch, or test a measure that you have implemented, it is required that the necessary models and datasets have been downloaded.
+Regarding the dataset, for the 
+* NLP domain, you need to load x into y
+* Vision domain, you need to...
+* Graph domain, we chose datasts that are already included in either the `pythorch geometric`or `ogb` packages. Upon extracting representations for the first time, these datasts will be downloaded automatically into the `experiments/datasets/graphs/`subdirectory.
+
+Regarding the models, you need to download the model files from --ZENODO-LINK(S)-- and unpack the zipped files into corresponding subdirectories of ´experiments/models`.
 
 
 ## 2. Running the Benchmark
 
-To rerun experiments using the consifg, run
+To rerun experiments using the consig, run
 ```bash
     python3 -m repsim.run -c path/to/config.yaml
 ```
@@ -45,9 +45,14 @@ For the graph domain, another option to re-run individual tests on a given datas
 ```
 where the latter flag for measures is optional, and by default, all measures will be used.
 
-### 2.2 Instructions on config files
+### 2.2 Instructions on Config files
 
 
-### Plotting Results
+### 2.3 Plotting Results
 
 After all computations are done, plots can be produced via the `xyz.ipynb` notebook
+
+
+## 3 Adding a new Measure
+
+
