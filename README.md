@@ -92,20 +92,17 @@ class YourMeasure(RepresentationalSimilarityMeasure):
     def __init__(self):
         super().__init__(
             sim_func=your_measure,
-            # all the following attributes are bool variables, fill in the correct values for your measure
-            larger_is_more_similar=False # Fill in True iff for your measure, higher values indicate more similarity  
-            is_metric=True, # Fill in True iff for your measure satisfies the properties of a distance metric. 
-            is_symmetric=True, # Fill in True iff for your measure is symmetric, i.e., m(R, Rp) = m(Rp,R)
-            # for the following attributes, fill in True if your measure in invariant to the corresponding transformations
-            invariant_to_affine=True, 
-            invariant_to_invertible_linear=True,
-            invariant_to_ortho=True,
-            invariant_to_permutation=True,
-            invariant_to_isotropic_scaling=True,
-            invariant_to_translation=True,
+            larger_is_more_similar=False             # Fill in True iff for your measure, higher values indicate more similarity  
+            is_metric=True,                          # Fill in True iff for your measure satisfies the properties of a distance metric. 
+            is_symmetric=True,                       # Fill in True iff for your measure is symmetric, i.e., m(R, Rp) = m(Rp,R)
+            invariant_to_affine=True,                # Fill in True iff for your measure is invariant to affine transformations
+            invariant_to_invertible_linear=True,     # Fill in True iff for your measure is invariant to invertible linear transformations
+            invariant_to_ortho=True,                 # Fill in True iff for your measure is invariant to orthogonal transformations
+            invariant_to_permutation=True,           # Fill in True iff for your measure is invariant to permutations
+            invariant_to_isotropic_scaling=True,     # Fill in True iff for your measure is invariant to isotropic scaling
+            invariant_to_translation=True,           # Fill in True iff for your measure is invariant to translations
         )
 
-    # this makes sure that we can call you similarity function by the class name later
     def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
 
         # here you can, in priciple, conduct some preprocessing already, such as aligning spatial dimensions for vision inputs
