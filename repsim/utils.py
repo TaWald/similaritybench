@@ -548,7 +548,8 @@ class ModelRepresentations:
             self._set_single_layer_infos()
         else:
             logger.warning(
-                """ModelRepresentations has not been set with the necessary information. Make sure to call `_set_single_layer_infos` or saving will fail!"""
+                """ModelRepresentations has not been set with the necessary information. Make sure to call
+                `_set_single_layer_infos` or saving will fail!"""
             )
 
     def _set_single_layer_infos(self):

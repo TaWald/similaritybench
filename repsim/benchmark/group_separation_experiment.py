@@ -143,9 +143,14 @@ class GroupSeparationExperiment(AbstractExperiment):
                     storer,
                 )
 
+                in_group_sims = [sim for sim in in_group_sims if not np.isnan(sim)]  # <--- This changed
+                cross_group_sims = [sim for sim in cross_group_sims if not np.isnan(sim)]  # <--- This changed
                 # We remove NaNs and return Nones if stuff failed, so if the metric has these, we skip it! the similarity lists
                 if len(in_group_sims) == 0 or len(cross_group_sims) == 0:
-                    continue
+                    logger.info(
+                        "One group was all NaN! Metric is assigned NaN as one cluster can't be compared to others making the task easier or harder."
+                    )
+                    return float(np.nan)
 
                 # Calculate the violations, i.e. the number of times the in-group similarity is lower than the cross-group similarity
                 group_violations.append(
@@ -153,10 +158,8 @@ class GroupSeparationExperiment(AbstractExperiment):
                         in_group_sims, cross_group_sims, larger_is_more_similar=measure.larger_is_more_similar
                     )
                 )
-        if len(group_violations) == 0:
-            return float(np.nan)
-
-        return float(np.mean(group_violations))
+        # If one quality measure returned NaN, we set all to NaN, as it might make stuff easier or harder for the test.
+        return float(np.mean(group_violations))  # <--- This changed
 
     def auprc(self, measure: RepresentationalSimilarityMeasure) -> float:
         """Calculate the mean auprc for the in-group and cross-group similarities"""
@@ -176,14 +179,17 @@ class GroupSeparationExperiment(AbstractExperiment):
                     measure,
                     storer,
                 )
+                in_group_sims = [sim for sim in in_group_sims if not np.isnan(sim)]
+                cross_group_sims = [sim for sim in cross_group_sims if not np.isnan(sim)]
+                # We remove NaNs and return Nones if stuff failed, so if the metric has these, we skip it! the similarity lists
                 if len(in_group_sims) == 0 or len(cross_group_sims) == 0:
-                    continue
+                    logger.info(
+                        "One group was all NaN! Metric is assigned NaN as one cluster can't be compared to others making the task easier or harder."
+                    )
+                    return float(np.nan)
                 # Calculate the area under the precision-recall curve for the in-group and cross-group similarities
                 group_auprcs.append(auprc(in_group_sims, cross_group_sims, measure.larger_is_more_similar))
-
-        if len(group_auprcs) == 0:
-            return float(np.nan)
-
+        # If one quality measure returned NaN, we set all to NaN, as it might make stuff easier or harder for the test.
         return float(np.mean(group_auprcs))
 
     def eval(self) -> list[dict]:

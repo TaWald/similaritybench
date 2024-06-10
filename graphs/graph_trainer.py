@@ -43,11 +43,11 @@ from repsim.benchmark.types_globals import AUGMENTATION_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import CORA_DATASET_NAME
 from repsim.benchmark.types_globals import DEFAULT_SEEDS
-from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_FIVE_GROUPS_DICT
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT_NAME
@@ -71,7 +71,7 @@ class GraphTrainer(ABC):
     ):
 
         self.test_name = test_name
-        self.settings = EXPERIMENT_DICT[test_name]
+        self.settings = GRAPH_EXPERIMENT_FIVE_GROUPS_DICT[test_name]
         self.architecture_type = architecture_type
         self.seed = seed
         self.dataset_name: GRAPH_DATASET_TRAINED_ON = dataset_name

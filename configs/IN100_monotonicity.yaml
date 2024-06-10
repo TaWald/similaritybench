@@ -33,11 +33,11 @@ experiments:
       - train_dataset
     separation_keys: # Creates a separate experiment for each unique value of the key.
       - architecture
-raw_results_filename: final.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
+raw_results_filename: vision_monotonicity_paper_final.parquet # Must end with .parquet. The full results of all comparisons are stored in the results directory with this name
 
 table_creation:
   save_full_df: True
-  full_df_filename: in100_monotonicity.csv
+  full_df_filename: in100_paper_monotonicity.csv
   # ---
   save_aggregated_df: True
   row_index: similarity_measure # The key to use as the row index in the table.
@@ -45,4 +45,4 @@ table_creation:
     - quality_measure
     - architecture
   value_key: value # The key specifying the value that fills the table (non-header/index values)
-  filename: in100_monotonicity.csv # Can be [.xlsx / .csv / .tex] file extension
+  filename: in100_paper_monotonicity.xlsx # Can be [.xlsx / .csv / .tex] file extension

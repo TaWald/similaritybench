@@ -1,12 +1,13 @@
-from typing import Dict, Tuple
+from typing import Dict
+from typing import Tuple
 
 import torch
 from graphs.graph_trainer import GRAPH_TRAINER_DICT
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
-from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_FIVE_GROUPS_DICT
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 
 
@@ -26,7 +27,7 @@ def get_graph_model_layer_count(
 
     experiment_identifier = ""
     for exp in BENCHMARK_EXPERIMENTS_LIST:
-        if setting_identifier in EXPERIMENT_DICT[exp]:
+        if setting_identifier in GRAPH_EXPERIMENT_FIVE_GROUPS_DICT[exp]:
             experiment_identifier = exp
             break
 
@@ -53,7 +54,7 @@ def get_graph_representations(
 
     experiment_identifier = ""
     for exp in BENCHMARK_EXPERIMENTS_LIST:
-        if setting_identifier in EXPERIMENT_DICT[exp]:
+        if setting_identifier in GRAPH_EXPERIMENT_FIVE_GROUPS_DICT[exp]:
             experiment_identifier = exp
             break
 
@@ -83,7 +84,7 @@ def get_gnn_output(
 
     experiment_identifier = ""
     for exp in BENCHMARK_EXPERIMENTS_LIST:
-        if setting_identifier in EXPERIMENT_DICT[exp]:
+        if setting_identifier in GRAPH_EXPERIMENT_FIVE_GROUPS_DICT[exp]:
             experiment_identifier = exp
             break
 

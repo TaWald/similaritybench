@@ -110,17 +110,29 @@ class OutputCorrelationExperiment(AbstractExperiment):
                     repsims = -1 * repsims
 
                 for corr_func in [scipy.stats.pearsonr, scipy.stats.spearmanr, scipy.stats.kendalltau]:
-                    result = corr_func(repsims, funcsims)
-                    measure_wise_results.append(
-                        {
-                            "similarity_measure": repsim_measure.name,
-                            "functional_similarity_measure": funcsim_measure.name,
-                            "quality_measure": corr_func.__name__,
-                            "corr": result.statistic,
-                            "pval": result.pvalue,
-                            **meta_data,
-                        }
-                    )
+                    if len(repsims) == 0:
+                        measure_wise_results.append(
+                            {
+                                "similarity_measure": repsim_measure.name,
+                                "functional_similarity_measure": funcsim_measure.name,
+                                "quality_measure": corr_func.__name__,
+                                "corr": float("nan"),
+                                "pval": float("nan"),
+                                **meta_data,
+                            }
+                        )
+                    else:
+                        result = corr_func(repsims, funcsims)
+                        measure_wise_results.append(
+                            {
+                                "similarity_measure": repsim_measure.name,
+                                "functional_similarity_measure": funcsim_measure.name,
+                                "quality_measure": corr_func.__name__,
+                                "corr": result.statistic,
+                                "pval": result.pvalue,
+                                **meta_data,
+                            }
+                        )
 
         return measure_wise_results
 

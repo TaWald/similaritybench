@@ -7,10 +7,12 @@ import yaml
 from repsim.benchmark.types_globals import AUGMENTATION_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import BENCHMARK_EXPERIMENTS_LIST
 from repsim.benchmark.types_globals import DEFAULT_SEEDS
-from repsim.benchmark.types_globals import EXPERIMENT_DICT
 from repsim.benchmark.types_globals import EXPERIMENT_IDENTIFIER
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_DEFAULT_DICT
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_FIVE_GROUPS_DICT
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_TWO_GROUPS_DICT
 from repsim.benchmark.types_globals import GROUP_SEPARATION_EXPERIMENT
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
@@ -18,8 +20,6 @@ from repsim.benchmark.types_globals import MONOTONICITY_EXPERIMENT
 from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT
 from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
-from repsim.benchmark.types_globals import THREE_GROUP_EXPERIMENT_DICT
-from repsim.benchmark.types_globals import TWO_GROUP_EXPERIMENT_DICT
 from repsim.measures import ALL_MEASURES
 from repsim.run import run
 
@@ -96,11 +96,11 @@ def build_graph_config(
     groups: int = 5,
 ):
     if groups == 5:
-        experiment_settings = EXPERIMENT_DICT[experiment]
+        experiment_settings = GRAPH_EXPERIMENT_FIVE_GROUPS_DICT[experiment]
     elif groups == 3:
-        experiment_settings = THREE_GROUP_EXPERIMENT_DICT[experiment]
+        experiment_settings = GRAPH_EXPERIMENT_DEFAULT_DICT[experiment]
     else:
-        experiment_settings = TWO_GROUP_EXPERIMENT_DICT[experiment]
+        experiment_settings = GRAPH_EXPERIMENT_TWO_GROUPS_DICT[experiment]
 
     experiment_type = EXPERIMENT_TYPE_DICT[experiment]
     seeds = list(get_args(EXPERIMENT_SEED)) if experiment == OUTPUT_CORRELATION_EXPERIMENT_NAME else DEFAULT_SEEDS
