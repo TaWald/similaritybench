@@ -65,30 +65,34 @@ EXPERIMENT_TYPE_DICT = {
 }
 
 
-def PARQUET_FILE_NAME(experiment, dataset):
-    return f"results_{experiment}_{dataset}.parquet"
+def BASE_FILE_NAME(test, dataset, groups: int = 3, measures: List = None):
+    fname_base = f"graphs_{test}_{dataset}"
+    if groups != 3 and test != OUTPUT_CORRELATION_EXPERIMENT:
+        fname_base += "_{groups}groups"
+    if measures is not None:
+        for m in measures:
+            fname_base += f"_{m}"
+    return fname_base
 
 
-def FULL_DF_FILE_NAME(experiment, dataset, groups=5):
-    if groups != 3 and experiment != OUTPUT_CORRELATION_EXPERIMENT:
-        return f"{experiment}_{dataset}_{groups}groups_full.csv"
-    return f"{experiment}_{dataset}_full.csv"
+def PARQUET_FILE_NAME(test, dataset, groups: int = 3, measures: List = None):
+    return f"{BASE_FILE_NAME(test, dataset, groups, measures)}.parquet"
 
 
-def AGG_DF_FILE_NAME(experiment, dataset, groups=3):
-    if groups != 3 and experiment != OUTPUT_CORRELATION_EXPERIMENT:
-        return f"{experiment}_{dataset}_{groups}groups.csv"
-    return f"{experiment}_{dataset}.csv"
+def FULL_DF_FILE_NAME(test, dataset, groups: int = 3, measures: List = None):
+    return f"{BASE_FILE_NAME(test, dataset, groups, measures)}_full.csv"
 
 
-def YAML_CONFIG_FILE_NAME(experiment, dataset, groups=3):
-    if groups != 3 and experiment != OUTPUT_CORRELATION_EXPERIMENT:
-        return f"{experiment}_{dataset}_{groups}groups.yaml"
-    return f"{experiment}_{dataset}.yaml"
+def AGG_DF_FILE_NAME(test, dataset, groups: int = 3, measures: List = None):
+    return f"{BASE_FILE_NAME(test, dataset, groups, measures)}.csv"
+
+
+def YAML_CONFIG_FILE_NAME(test, dataset, measures: List = None):
+    return f"{BASE_FILE_NAME(test, dataset, measures=measures)}.yaml"
 
 
 def build_graph_config(
-    experiment: EXPERIMENT_IDENTIFIER,
+    test: EXPERIMENT_IDENTIFIER,
     dataset: GRAPH_DATASET_TRAINED_ON,
     measures: List = None,
     save_to_memory=True,
@@ -96,14 +100,14 @@ def build_graph_config(
     groups: int = 5,
 ):
     if groups == 5:
-        experiment_settings = GRAPH_EXPERIMENT_FIVE_GROUPS_DICT[experiment]
+        experiment_settings = GRAPH_EXPERIMENT_FIVE_GROUPS_DICT[test]
     elif groups == 3:
-        experiment_settings = GRAPH_EXPERIMENT_DEFAULT_DICT[experiment]
+        experiment_settings = GRAPH_EXPERIMENT_DEFAULT_DICT[test]
     else:
-        experiment_settings = GRAPH_EXPERIMENT_TWO_GROUPS_DICT[experiment]
+        experiment_settings = GRAPH_EXPERIMENT_TWO_GROUPS_DICT[test]
 
-    experiment_type = EXPERIMENT_TYPE_DICT[experiment]
-    seeds = list(get_args(EXPERIMENT_SEED)) if experiment == OUTPUT_CORRELATION_EXPERIMENT_NAME else DEFAULT_SEEDS
+    experiment_type = EXPERIMENT_TYPE_DICT[test]
+    seeds = list(get_args(EXPERIMENT_SEED)) if test == OUTPUT_CORRELATION_EXPERIMENT_NAME else DEFAULT_SEEDS
 
     save_agg_table = True if experiment_type != OUTPUT_CORRELATION_EXPERIMENT else False
     yaml_dict = {
@@ -113,7 +117,7 @@ def build_graph_config(
         CONFIG_EXTRACT_REPS_ONLY_KEY: False,
         CONFIG_EXPERIMENTS_KEY: [
             {
-                CONFIG_EXPERIMENTS_NAME_SUBKEY: f"{experiment} {dataset}",
+                CONFIG_EXPERIMENTS_NAME_SUBKEY: f"{test} {dataset}",
                 CONFIG_EXPERIMENTS_TYPE_SUBKEY: experiment_type,
                 CONFIG_REPRESENTATION_DATASET_KEY: dataset,
                 CONFIG_EXPERIMENTS_FILTER_SUBKEY: {
@@ -126,24 +130,24 @@ def build_graph_config(
                 CONFIG_EXPERIMENTS_SEPARATION_SUBKEY: ["architecture"],
             },
         ],
-        CONFIG_RAW_RESULTS_FILENAME_KEY: PARQUET_FILE_NAME(experiment, dataset),
+        CONFIG_RAW_RESULTS_FILENAME_KEY: PARQUET_FILE_NAME(test, dataset, measures=measures),
         #
         CONFIG_RES_TABLE_CREATION_KEY: {
             CONFIG_RES_TABLE_SAVE_SUBKEY: True,
-            CONFIG_RES_TABLE_FILENAME_SUBKEY: FULL_DF_FILE_NAME(experiment, dataset, groups),
+            CONFIG_RES_TABLE_FILENAME_SUBKEY: FULL_DF_FILE_NAME(test, dataset, groups, measures),
             CONFIG_AGG_TABLE_SAVE_SUBKEY: save_agg_table,
             CONFIG_AGG_TABLE_INDEX_SUBKEY: "similarity_measure",
             CONFIG_AGG_TABLE_COLUMNS_SUBKEY: ["quality_measure", "architecture"],
             CONFIG_AGG_TABLE_VALUE_SUBKEY: "value",
-            CONFIG_AGG_TABLE_FILENAME_SUBKEY: AGG_DF_FILE_NAME(experiment, dataset, groups),
+            CONFIG_AGG_TABLE_FILENAME_SUBKEY: AGG_DF_FILE_NAME(test, dataset, groups, measures),
         },
     }
     if measures is None:
-        yaml_dict[CONFIG_EXCLUDED_MEASURES_KEY] = ["RSMNormDifference", "IMDScore", "GeometryScore", "PWCCA"]
+        yaml_dict[CONFIG_EXCLUDED_MEASURES_KEY] = ["GeometryScore"]
     else:
         yaml_dict[CONFIG_INCLUDED_MEASURES_KEY] = measures
 
-    if experiment == OUTPUT_CORRELATION_EXPERIMENT_NAME:
+    if test == OUTPUT_CORRELATION_EXPERIMENT_NAME:
         yaml_dict[CONFIG_EXPERIMENTS_KEY][0][CONFIG_EXPERIMENTS_USE_ACC_SUBKEY] = True
 
     return yaml_dict
@@ -165,8 +169,8 @@ def parse_args():
         help="Datasets used in evaluation.",
     )
     parser.add_argument(
-        "-e",
-        "--experiment",
+        "-t",
+        "--test",
         type=str,
         choices=BENCHMARK_EXPERIMENTS_LIST,
         help="Test to run.",
@@ -185,7 +189,7 @@ def parse_args():
         type=int,
         choices=[2, 3, 5],
         default=3,
-        help="Number of groups to separate per experiment.",
+        help="Number of groups to separate per test.",
     )
     return parser.parse_args()
 
@@ -195,11 +199,9 @@ if __name__ == "__main__":
 
     n_groups = args.groups
 
-    yaml_config = build_graph_config(
-        experiment=args.experiment, dataset=args.dataset, measures=args.measures, groups=n_groups
-    )
+    yaml_config = build_graph_config(test=args.test, dataset=args.dataset, measures=args.measures, groups=n_groups)
 
-    config_path = os.path.join("repsim", "configs", YAML_CONFIG_FILE_NAME(args.experiment, args.dataset, args.groups))
+    config_path = os.path.join("configs", YAML_CONFIG_FILE_NAME(args.test, args.dataset, args.groups))
     with open(config_path, "w") as file:
         yaml.dump(yaml_config, file)
 
