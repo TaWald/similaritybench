@@ -69,16 +69,47 @@ After all computations are done, plots can be produced via the `xyz.ipynb` noteb
 
 If you want to use our benchmark on a measure that has not been implemented yet, you can easily add your measure to the benchmark with the following steps:
 
-#### 1. Implement a similarity function that fits the following signature:
+#### 1. Set up a Script
+Add a python script `your_measure.py` to the `repsim.measures` module, in which your similarity measure will be implemented.
+
+#### 2. Implement the similarity function:
+In your script, you need to implement a your similariy measure in a function of the following signature
 ```
-def measure(
+def your_measure(
     R: Union[torch.Tensor, npt.NDArray],
     Rp: Union[torch.Tensor, npt.NDArray],
     shape: SHAPE_TYPE,
 ) -> float:
 ```
-where the shape parameter of type `SHAPE_TYPE = Literal["nd", "ntd", "nchw"]` defines input format of the given representations - `"nd"` represents input matrices in the $n \times d$ format, the other types corresponding higher-dimensional input formats, as common in the vision domain. Your measure should be able to process shapes of all these types. If higher-dimension inputs should simply be flattened to the `"nd"` format, you can use the `flatten` function that we pricive in `repsim.measures.utils`.
+where the shape parameter of type `SHAPE_TYPE = Literal["nd", "ntd", "nchw"]` defines input format of the given representations - `"nd"` represents input matrices in the $n \times d$ format, the other types corresponding higher-dimensional input formats, as common in the vision domain. Your measure should be able to process shapes of all these types. If higher-dimension inputs should simply be flattened to the `"nd"` format, you can use the `flatten` function that we provide in `repsim.measures.utils`. We further provide additional functions for preprocessing/normalizing inputs in this module.
 
+#### 3. Wrap your Function into a class that inherits from `RepresentationalSimilarityMeasure`:
 
+To properly fit into our framework, it is crucial that you implement a class for your measure, such that, for instance, the invariance or the semantics of your measure, i.e., whether a higher value indicates more similarity, can be considered.
+The `RepresentationalSimilarityMeasure` class, as well as its `BaseSimilarityMeasure` parent class, are implemented in and can be imported from `repsim.benchmark.utils`. To wrap your function into such a class, using the following template should be sufficient:
+```
+class YourMeasure(RepresentationalSimilarityMeasure):
+    def __init__(self):
+        super().__init__(
+            sim_func=your_measure,
+            # all the following attributes are bool variables, fill in the correct values for your measure
+            larger_is_more_similar=False # Fill in True iff for your measure, higher values indicate more similarity  
+            is_metric=True, # Fill in True iff for your measure satisfies the properties of a distance metric. 
+            is_symmetric=True, # Fill in True iff for your measure is symmetric, i.e., m(R, Rp) = m(Rp,R)
+            # for the following attributes, fill in True if your measure in invariant to the corresponding transformations
+            invariant_to_affine=True, 
+            invariant_to_invertible_linear=True,
+            invariant_to_ortho=True,
+            invariant_to_permutation=True,
+            invariant_to_isotropic_scaling=True,
+            invariant_to_translation=True,
+        )
 
-2. 
+    # this makes sure that we can call you similarity function by the class name later
+    def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+
+        # here you can, in priciple, conduct some preprocessing already, such as aligning spatial dimensions for vision inputs
+        
+        return self.sim_func(R, Rp, shape)
+```
+ 
