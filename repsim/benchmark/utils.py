@@ -372,26 +372,3 @@ def create_pivot_excel_table(
 def save_full_table(eval_result: list[dict], full_df_filename: str):
     df = pd.DataFrame.from_records(eval_result)
     df.to_csv(os.path.join(EXPERIMENT_RESULTS_PATH, full_df_filename))
-
-
-def name_of_measure(obj):
-    warnings.warn(
-        "Use the class implementations of the similarity measures instead and replace calls of this function with the .name attribute",
-        category=DeprecationWarning,
-    )
-    if isinstance(obj, RepresentationalSimilarityMeasure):
-        return name_of_measure(obj.sim_func)
-    elif hasattr(obj, "__name__"):
-        # repsim.measures.utils.Pipeline
-        return obj.__name__
-    elif hasattr(obj, "func"):
-        # functools.partial
-        if hasattr(obj.func, "__name__"):
-            # pure function
-            return obj.func.__name__
-        else:
-            # TODO: Not sure this still works. Remove?
-            # on a callable class instance
-            return str(obj.func)
-    else:
-        return str(obj)
