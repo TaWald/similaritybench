@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from repsim.benchmark.paths import VISION_DATA_PATH
 from torch.utils.data import DataLoader
 from torchvision import transforms as trans
 from vision.data.base_datamodule import BaseDataModule
@@ -60,7 +61,11 @@ class Imagenet100DataModule(BaseDataModule):
         elif "data" in os.environ:
             self.dataset_path = Path(os.environ["data"])
         else:
-            raise KeyError("Couldn't find environ variable 'RAW_DATA' or 'data'.")
+            self.dataset_path = Path(VISION_DATA_PATH)
+
+        assert (
+            self.dataset_path / "Imagenet100"
+        ).exists(), f"Imagenet100 dataset not found in {self.dataset_path} -- Does it exist and are the env variables correct?"
 
     def train_dataloader(self, split: int, transform: ds.Augmentation, **kwargs) -> DataLoader:
         """Get a train dataloader"""
