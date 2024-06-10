@@ -1,4 +1,4 @@
-# ReSi: A Comprehensive Benchmark for Representatinal Similarity Measures
+# ReSi: A Comprehensive Benchmark for Representational Similarity Measures
 In the following, we describe how the experiments from our Benchmark Paper can be reprduced, and how additional measures could be added.
 
 
@@ -33,12 +33,15 @@ Regarding the models, you need to download the model files from --ZENODO-LINK(S)
 
 ## 2. Running the Benchmark
 
-To rerun experiments using the consig, run
+The main way to (re)run experiments from your benchmark is to set up a `config.yaml` file, and then simply run
 ```bash
     python3 -m repsim.run -c path/to/config.yaml
 ```
+In the `experiments/configs` subdirectory, you can find all the config files necessary to reproduce our experiments. 
 
-For the graph domain, another option to re-run individual tests on a given dataset is to run
+If you want only want to run experiments on specific tests or domains, we provide a detailed descriptions on the config files in Section 2.2. below.
+
+For the graph domain, another option to (re)run individual tests on a given dataset is to run
 
 ```bash
     python3 -m repsim.run -t {test_name} -d {dataset} -m {measures}
@@ -47,12 +50,13 @@ where the latter flag for measures is optional, and by default, all measures wil
 
 ### 2.2 Instructions on Config files
 
+TODO
 
 ### 2.3 Plotting Results
 
 After all computations are done, plots can be produced via the `xyz.ipynb` notebook
 
 
-## 3 Adding a new Measure
+## 3 Adding a New Measure
 
-
+If you want to use our benchmark on a measure that has not been implemented yet, you can easily add your measure to the benchmark with the following steps:
