@@ -85,7 +85,7 @@ where the shape parameter of type `SHAPE_TYPE = Literal["nd", "ntd", "nchw"]` de
 
 #### 3. Wrap your Function into a class that inherits from `RepresentationalSimilarityMeasure`:
 
-To properly fit into our framework, it is crucial that you implement a class for your measure, such that, for instance, the invariance or the semantics of your measure, i.e., whether a higher value indicates more similarity, can be considered.
+To properly fit into our framework, it is crucial that you implement such a class for your measure, such that, for instance, the semantics of your measure, i.e., whether a higher value indicates more similarity, can be handled properly in our benchmark..
 The `RepresentationalSimilarityMeasure` class, as well as its `BaseSimilarityMeasure` parent class, are implemented in and can be imported from `repsim.benchmark.utils`. To wrap your function into such a class, using the following template should be sufficient:
 ```
 class YourMeasure(RepresentationalSimilarityMeasure):
@@ -109,4 +109,7 @@ class YourMeasure(RepresentationalSimilarityMeasure):
         
         return self.sim_func(R, Rp, shape)
 ```
- 
+
+#### 4. Register your measure in the module
+
+Open `repsim.benchmark.__init__.py`, import YourMeasure class, and append it to the `CLASSES` list that is defined in this script. Now, your measure is registered in our benchmark, and can, for isntance, be explicitly inded in the configs via its class name.
