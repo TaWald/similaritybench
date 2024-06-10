@@ -40,12 +40,16 @@ def get_grouping_dataset(group_setting: settings) -> tuple[list, dict[str, str]]
         }
 
     elif group_setting == "RandomLabel":
-        datasets = [d.value for d in IN_RANDOMLABEL_DATAMODULES + STANDARD_DATAMODULES[-1:]]  # Add ImageNet100
+        datasets = [
+            "RandomLabel_100_IN100_DataModule",
+            "RandomLabel_50_IN100_DataModule",
+            "ImageNet100",
+        ]  # Add ImageNet100
         mapping = {
             "RandomLabel_100_IN100_DataModule": "Random Labels: 100%",
-            "RandomLabel_75_IN100_DataModule": "Random Labels: 75%",
+            # "RandomLabel_75_IN100_DataModule": "Random Labels: 75%",
             "RandomLabel_50_IN100_DataModule": "Random Labels: 50%",
-            "RandomLabel_25_IN100_DataModule": "Random Labels: 25%",
+            # "RandomLabel_25_IN100_DataModule": "Random Labels: 25%",
             "ImageNet100": "Random Labels: 0%",
         }
     elif group_setting == "Shortcut":
@@ -118,7 +122,14 @@ def run(group_setting: settings):
                     "Accuracy": accuracy,
                 }
             )
-    df = pd.DataFrame(all_results)
+    return all_results
+
+
+def plot_df(group_setting: str, setting_result: list[dict]):
+
+    mapping = get_grouping_dataset(group_setting)[1]
+    df = pd.DataFrame(setting_result)
+    out_file = EXPERIMENT_RESULTS_PATH / f"model_accuracies_{group_setting}.csv"
     df.to_csv(out_file, index=False)
 
     plt.figure(figsize=(10, 6))
@@ -132,6 +143,12 @@ def run(group_setting: settings):
     # plt.savefig(EXPERIMENT_RESULTS_PATH / f"model_accuracies_{group_setting}.pdf")
 
 
+# def plot_joint(group_setting: str, all_results: list[tuple[str, list[dict]]):
+
+
 if __name__ == "__main__":
-    for setting in ["Shortcut", "GaussNoise", "RandomLabel"]:
-        run(setting)
+    all_results = []
+    for setting in ["GaussNoise", "Shortcut", "RandomLabel"]:
+        setting_result = run(setting)
+        plot_df(setting, setting_result)
+        all_results.append((setting, setting_result))
