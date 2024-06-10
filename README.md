@@ -96,7 +96,7 @@ def your_measure(
     shape: SHAPE_TYPE,
 ) -> float:
 ```
-where the shape parameter of type `SHAPE_TYPE = Literal["nd", "ntd", "nchw"]` defines input format of the given representations: `"nd"` represents input matrices in the $n \times d$ format, `"ntd"` corresponds to $n \times \#tokens \times d$, and `"nchw"` corresponds to $n \times \#channels \times height \times width$. Your measure should be able to process shapes of all these types. If higher-dimension inputs should simply be flattened to the `"nd"` format, you can use the `flatten` function that we provide in `repsim.measures.utils`. We further provide additional functions for preprocessing/normalizing inputs in this module.
+where the shape parameter of type `SHAPE_TYPE = Literal["nd", "ntd", "nchw"]` defines input format of the given representations: `"nd"` represents input matrices in the $n \times d$ format, `"ntd"` corresponds to $n \times ntokens \times d$, and `"nchw"` corresponds to $n \times nchannels \times height \times width$. Your measure should be able to process shapes of all these types. If higher-dimension inputs should simply be flattened to the `"nd"` format, you can use the `flatten` function that we provide in `repsim.measures.utils`. We further provide additional functions for preprocessing/normalizing inputs in this module.
 
 #### 3. Wrap your function into a class that inherits from `RepresentationalSimilarityMeasure`:
 
