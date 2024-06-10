@@ -1,8 +1,6 @@
 # Holds all information needed to run experiments.
 excluded_measures:
   - GeometryScore
-  # - IMDScore
-  # - LinearRegression
 threads: 1
 cache_to_disk: False
 cache_to_mem: True
