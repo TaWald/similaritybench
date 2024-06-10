@@ -16,10 +16,11 @@ pip install -r requirements.txt .
 
 ### 1.2 Set up Experiment Path
 
+The path that all results, datasets, and models should be stored to can be specified by defining a corresponding `"REP_SIM"` path environment variable. If this is not specified, an `experiments/` subdirectory will be created and used as `EXPERIMENT_PATH` by default.
 
 ### 1.3 Loading Result Files
 
-The results from all our experiments are stored in a `results.parquet` file, which is located in the `experiments/results/` directory. Based on this, the plots can be reproduced, and if you want to implement a text a new measure, you can simply add the corresponding results to this file.
+The results from all our experiments are stored in a `results.parquet` file, which you can download from --- and is located in the `EXPERIMENT_PATH/results/` directory. Based on this, the plots can be reproduced, and if you want to implement a text a new measure, you can simply add the corresponding results to this file.
 
 
 ### 1.4 Loading Datasets and Models
