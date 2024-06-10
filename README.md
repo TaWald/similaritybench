@@ -68,3 +68,17 @@ After all computations are done, plots can be produced via the `xyz.ipynb` noteb
 ## 3 Adding a New Measure
 
 If you want to use our benchmark on a measure that has not been implemented yet, you can easily add your measure to the benchmark with the following steps:
+
+#### 1. Implement a similarity function that fits the following signature:
+```
+def measure(
+    R: Union[torch.Tensor, npt.NDArray],
+    Rp: Union[torch.Tensor, npt.NDArray],
+    shape: SHAPE_TYPE,
+) -> float:
+```
+where the shape parameter of type `SHAPE_TYPE = Literal["nd", "ntd", "nchw"]` defines input format of the given representations - `"nd"` represents input matrices in the $n \times d$ format, the other types corresponding higher-dimensional input formats, as common in the vision domain. Your measure should be able to process shapes of all these types. If higher-dimension inputs should simply be flattened to the `"nd"` format, you can use the `flatten` function that we pricive in `repsim.measures.utils`.
+
+
+
+2. 
