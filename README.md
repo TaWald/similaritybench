@@ -37,9 +37,9 @@ The main way to (re)run experiments from your benchmark is to set up a `config.y
 ```bash
     python3 -m repsim.run -c path/to/config.yaml
 ```
-In the `experiments/configs` subdirectory, you can find all the config files necessary to reproduce our experiments. 
+In the `configs/` subdirectory, you can find all the config files necessary to reproduce our experiments. 
 
-If you want only want to run experiments on specific tests or domains, we provide a detailed descriptions on the config files in Section 2.2. below.
+If you want only want to run experiments on specific tests or domains, we provide a detailed descriptions on the config files below.
 
 ### 2.1 Instructions on Config files
 
@@ -47,7 +47,7 @@ TODO
 
 ### 2.2 About Parallelization
 
-TODO
+If you want to run multiple experiments in parallel, it is crucial, that these never write/work on the same results parquet file, as specified by `raw_results_filename` in the configs. Otherwise, the results files will be corrupted due to overwriting each other in a non-complementing way, and later on, the result files may be incomplete, or the evaluation may even crash.
 
 ### 2.3 Running Tests in Graph Domain without Configs
 
