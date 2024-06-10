@@ -57,11 +57,11 @@ Regaring the CSVs of (aggregated) results, which are specied in configs under `t
 For the graph domain, another option to (re)run individual tests for all the graph models (GCN, GraphSAGE, GAT) on a given dataset is to run
 
 ```bash
-    python3 -m repsim.run -t {test_name} -d {dataset} [-m {measures}]
+    python3 -m repsim.run_graphs -t {test_name} -d {dataset} [-m {measures}]
 ```
 Valid dataset names are `cora`, `flickr`, and `ogbn-arxiv`, valid test names are `label_test`, `shortcut_test`, `augmentation_test`, `label_test`, and `output_correlation_test`, where the latter test runs Tests 1 and 2 from our benchmark simultaneously. 
 The argument for measures is optional, and by default, all measures that are registered under `ALL_MEASURES` in the `repsim.measures` module will be used. In this case, results will be saved into files called `{test_name}_{dataset}.parquet`, `{test_name}_{dataset}.csv` (`filename`), and `{test_name}_{dataset}_full.csv` (`full_df_filename`).
-When only specific measures should be used, the measure names will be appended to the results fils names to avoid problems with files overwriting each other (see below).
+When specific measures that should be used are specified, the corresponding measure names will be appended to the result file names to avoid problems with files overwriting each other (cf. Section 2.3 above).
 
 
 ### 2.4 Merging Result Files and Plotting Results
