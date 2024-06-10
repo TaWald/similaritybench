@@ -54,16 +54,19 @@ It is, however, no issue to write on an already existing parquet file with a sin
 
 Regaring the CSVs of (aggregated) results, which are specied in configs under `table_creation` -> `filename` and `full_df_filename`, it is crucial to consider that if the name of an existing file is provided, this existing file will always be overwritten.
 
-### 2.3 Running Tests in Graph Domain without Configs
+### 2.3 Running Tests in Graph Domain without Specifying Configs
 
 For the graph domain, another option to (re)run individual tests for all the graph models (GCN, GraphSAGE, GAT) on a given dataset is to run
 
 ```bash
     python3 -m repsim.run_graphs -t {test_name} -d {dataset} [-m {measures}]
 ```
-Valid dataset names are `cora`, `flickr`, and `ogbn-arxiv`, valid test names are `label_test`, `shortcut_test`, `augmentation_test`, `label_test`, and `output_correlation_test`, where the latter test runs Tests 1 and 2 from our benchmark simultaneously. 
-The argument for measures is optional, and by default, all measures that are registered under `ALL_MEASURES` in the `repsim.measures` module will be used. In this case, results will be saved into files called `{test_name}_{dataset}.parquet`, `{test_name}_{dataset}.csv` (`filename`), and `{test_name}_{dataset}_full.csv` (`full_df_filename`).
+Implicitly, this scripts creates a config file as described above, which is then used to run a test. The config files stored in the configs directory were also generated from this script.
+Valid dataset names are `cora`, `flickr`, and `ogbn-arxiv`, valid test names are `label_test`, `shortcut_test`, `augmentation_test`, `layel_test`, and `output_correlation_test`, where the latter runs Tests 1 and 2 from our benchmark simultaneously. 
+The argument for measures is optional, and by default, all measures that are registered under `ALL_MEASURES` in the `repsim.measures` module will be used. 
+In this case, results will be saved into files called `graphs_{test_name}_{dataset}.parquet`, `graphs_{test_name}_{dataset}.csv` (`filename`), and `graphs_{test_name}_{dataset}_full.csv` (`full_df_filename`).
 When specific measures that should be used are specified, the corresponding measure names will be appended to the result file names to avoid problems with files overwriting each other (cf. Section 2.3 above).
+The name of the generated config file will follow the same pattern.
 
 
 ### 2.4 Merging Result Files
