@@ -43,3 +43,6 @@ manual_data_introspection
 *_pac_api.py
 vision/_model_status_check.py
 vision/_train_model_submission.py
+vision/_simple_submission_print.py
+vision/_merge_parquets.py
+vision/_plot_tables.py
