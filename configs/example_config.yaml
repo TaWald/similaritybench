@@ -24,10 +24,18 @@ experiments:
     # If type is 'OutputCorrelationExperiment', then the following option is necessary to correlate representational similarity to differences in accuracy.
     # use_acc_comparison: True
 
-    representation_dataset: "sst2_sc_rate0558"  # An identifier of the dataset that representations are extracted of. For valid values, see the existing configs. Example: SST2 with shortcut rate 0.558.
+    # An identifier of the dataset that representations are extracted of. Valid values are:
+    #   - For language: keys in repsim.benchmark.registry.NLP_REPRESENTATION_DATASETS and repsim.benchmark.registry.NLP_TRAIN_DATASETS
+    #   - For graphs: 'ogbn-arxiv', 'cora', 'flickr'
+    #   - For vision: 'ImageNet100' (standard images), 'Gauss_Off_ImageNet100DataModule' (augmentation), 'ColorDot_0_ImageNet100DataModule' (shortcut affinity)
+    # See the existing configs for specific examples.
+    #
+    # Example: SST2 with shortcut rate 0.558.
+    representation_dataset: "sst2_sc_rate0558"
 
     # Models included in the experiment.
     # Each key maps to an attribute of models, the values for the key are the allowed values. Selects from the models in repsim.benchmark.registry.ALL_TRAINED_MODELS.
+    # For valid train_dataset keys, check the existing configs.
     #
     # Example: select models from the language domain, with seeds between 0 and 4, and trained on the SST2 dataset with varying shortcut rate.
     filter_key_vals:
@@ -45,7 +53,7 @@ experiments:
         - 3
         - 4
 
-    # If type is 'GroupSeparationExperiment', this model property separates separates models into different groups.
+    # If type is 'GroupSeparationExperiment', 'grouping_keys' lists model properties that separate models into different groups.
     #
     # Example: Each group consists of models trained on the same dataset.
     grouping_keys:
@@ -58,14 +66,15 @@ experiments:
       - architecture
 
 # All comparisons results are stored in this file under the 'results' subdir of the path given in the "REP_SIM" environment variable if defined.
-# Otherwise as defined in repsim.benchmark.paths.EXPERIMENT_RESULTS_PATH.
+# Otherwise as defined in repsim.benchmark.paths.EXPERIMENT_RESULTS_PATH. If the file already exists, new comparisons results will be added.
+# Existing comparisons will be used to speed up the experiment, i.e., they will generally not be recomputed.
 # Must end with .parquet.
-raw_results_filename: results.parquet  # or a file for a specific experiment
+raw_results_filename: results.parquet  # or a file for a specific experiment (recommended when running multiple experiments in parallel to avoid data corruption)
 
 # Options for aggregating evaluation results.
 table_creation:
   save_full_df: True  # If True, saves a long-form dataframe of results.
-  full_df_filename: nlp_sc_sst2_full.csv  # The name of the file with the long-form dataframe.
+  full_df_filename: nlp_sc_sst2_full.csv  # The name of the file with the long-form dataframe. Overwrites existing file.
 
   save_aggregated_df: True  # If True, saves an aggregated pivot table of the results. The following keys define how results are aggregated.
   row_index: similarity_measure # The key to use as the row index in the table.
@@ -73,4 +82,4 @@ table_creation:
     - quality_measure
     - architecture
   value_key: value # The key specifying the value that fills the table (non-header/index values)
-  filename: nlp_sc_sst2_agg.csv # Can be [.xlsx / .csv / .tex] file extension
+  filename: nlp_sc_sst2_agg.csv # Can be [.xlsx / .csv / .tex] file extension. Overwrites existing file.
