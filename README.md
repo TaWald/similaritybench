@@ -1,5 +1,5 @@
 # `ReSi`: A Comprehensive Benchmark for Representational Similarity Measures
-In the following, we describe how the experiments from our Benchmark Paper can be reprduced, and how additional measures could be added.
+In the following, we describe how the experiments from our Benchmark Paper can be reproduced, and how additional measures could be added.
 
 
 ## 1. Setting up the Repository
@@ -52,7 +52,8 @@ TODO
 If you want to run multiple experiments in parallel, it is crucial that these **NEVER** write/work on the same results parquet file, as specified by `raw_results_filename` in the configs, at the same time. Otherwise, the results files will be corrupted due to overwriting each other in a non-complementing way, and later on, the result files may be incomplete, or the evaluation may even crash.
 It is, however, no issue to write on an already existing parquet file with a single process - this will simply append the new results.
 
-Regaring the CSVs of (aggregated) results, which are specied in configs under `table_creation` -> `filename` and `full_df_filename`, it is crucial to consider that if the name of an existing file is provided, this existing file will always be overwritten.
+Regarding the CSVs of (aggregated) results, which are specied in configs under `table_creation` -> `filename` and `full_df_filename`, it is crucial to consider that if the name of an existing file is provided, this existing file will always be overwritten.
+**NOTE:** The given config files in the `configs` directory were designed such that no such overwriting can occur, and thus these can safely be run in parallel.
 
 ### 2.3 Running Tests in Graph Domain without Specifying Configs
 
