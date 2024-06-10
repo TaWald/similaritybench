@@ -41,6 +41,16 @@ In the `experiments/configs` subdirectory, you can find all the config files nec
 
 If you want only want to run experiments on specific tests or domains, we provide a detailed descriptions on the config files in Section 2.2. below.
 
+### 2.1 Instructions on Config files
+
+TODO
+
+### 2.2 About Parallelization
+
+TODO
+
+### 2.3 Running Tests in Graph Domain without Configs
+
 For the graph domain, another option to (re)run individual tests on a given dataset is to run
 
 ```bash
@@ -48,11 +58,8 @@ For the graph domain, another option to (re)run individual tests on a given data
 ```
 where the latter flag for measures is optional, and by default, all measures will be used.
 
-### 2.2 Instructions on Config files
 
-TODO
-
-### 2.3 Plotting Results
+### 2.4 Merging Result Files and Plotting Results
 
 After all computations are done, plots can be produced via the `xyz.ipynb` notebook
 
