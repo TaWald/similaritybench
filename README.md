@@ -117,4 +117,4 @@ class YourMeasure(RepresentationalSimilarityMeasure):
 
 #### 4. Register your measure in the module
 
-Open `repsim.benchmark.__init__.py`, import YourMeasure class, and append it to the `CLASSES` list that is defined in this script - this will also append it to `ALL_MEASURES`, from where we load l. Now, your measure is registered in our benchmark, and can, for isntance, be explicitly inded in the configs via its class name.
+Open `repsim.benchmark.__init__.py`, import `YourMeasure` class, and append it to the `CLASSES` list that is defined in this script - this will also append it to `ALL_MEASURES`, from where we load l. Now, your measure is registered in our benchmark, and can, for instance, be explicitly included in the `config.yaml` filess via its class name.
