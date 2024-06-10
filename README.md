@@ -47,10 +47,10 @@ TODO
 
 ### 2.2 About Parallelization and Overwriting of Result Files
 
-If you want to run multiple experiments in parallel, it is crucial that these **NEVER** write/work on the same results parquet file, as specified by `raw_results_filename` in the configs, at the same. Otherwise, the results files will be corrupted due to overwriting each other in a non-complementing way, and later on, the result files may be incomplete, or the evaluation may even crash.
+If you want to run multiple experiments in parallel, it is crucial that these **NEVER** write/work on the same results parquet file, as specified by `raw_results_filename` in the configs, at the same time. Otherwise, the results files will be corrupted due to overwriting each other in a non-complementing way, and later on, the result files may be incomplete, or the evaluation may even crash.
 It is, however, no issue to write on an already existing parquet file with a single process - this will simply append the new results.
 
-Regaring the CSVs of (aggregated) results, which are specied in configs under `table_creation` -> `filename` and `full_df_filename`, it is crucial to consider that these will always be overwritten to the result from the last config file.
+Regaring the CSVs of (aggregated) results, which are specied in configs under `table_creation` -> `filename` and `full_df_filename`, it is crucial to consider that if the name of an existing file is provided, this existing file will always be overwritten.
 
 ### 2.3 Running Tests in Graph Domain without Configs
 
