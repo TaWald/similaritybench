@@ -1,4 +1,4 @@
-# ReSi: A Comprehensive Benchmark for Representational Similarity Measures
+# `ReSi`: A Comprehensive Benchmark for Representational Similarity Measures
 In the following, we describe how the experiments from our Benchmark Paper can be reprduced, and how additional measures could be added.
 
 
@@ -14,13 +14,15 @@ source .venv/bin/activate
 pip install -r requirements.txt .
 ```
 
+### 1.2 Set up Experiment Path
 
-### 1.2 Loading Result Files
+
+### 1.3 Loading Result Files
 
 The results from all our experiments are stored in a `results.parquet` file, which is located in the èxperiments/results/` directory. Based on this, the plots can be reproduced, and if you want to implement a text a new measure, you can simply add the corresponding results to this file.
 
 
-### 1.3 Loading Datasets and Models
+### 1.4 Loading Datasets and Models
 
 If you want to rerun our experiments from scratch, or test a measure that you have implemented, it is required that the necessary models and datasets have been downloaded.
 Regarding the dataset, for the 
@@ -64,9 +66,12 @@ The argument for measures is optional, and by default, all measures that are reg
 When specific measures that should be used are specified, the corresponding measure names will be appended to the result file names to avoid problems with files overwriting each other (cf. Section 2.3 above).
 
 
-### 2.4 Merging Result Files and Plotting Results
+### 2.4 Merging Result Files
 
 To merge all the parquet files you have produced into a single file, you can apply the script XYZ.
+
+
+### 2.5  Plotting Results
 To plot the results, we however utilite the csv file
 
 
@@ -117,4 +122,4 @@ class YourMeasure(RepresentationalSimilarityMeasure):
 
 #### 4. Register your measure in the module
 
-Open `repsim.benchmark.__init__.py`, import `YourMeasure` class, and append it to the `CLASSES` list that is defined in this script - this will also append it to `ALL_MEASURES`, from where we load l. Now, your measure is registered in our benchmark, and can, for instance, be explicitly included in the `config.yaml` filess via its class name.
+Open `repsim.benchmark.__init__.py`, import `YourMeasure` class, and append it to the `CLASSES` list that is defined in this script - this will also automatically append it to `ALL_MEASURES`, which is the list of measures considered in our benchmark. Thus, your measure is now registered in our benchmark, and can, for instance, be explicitly included in the `config.yaml` files via its class name.
