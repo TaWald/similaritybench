@@ -63,7 +63,7 @@ The main way to (re)run experiments from the benchmark is to set up a `config.ya
 ```bash
     python3 -m repsim.run -c path/to/config.yaml
 ```
-In the `configs/` subdirectory, you can find all the config files necessary to reproduce our experiments.  _TODO: was ist der Unterschied zwischen den configs in `long_vision_configs` und `vision`? Generell prüfen, dass da die richtigen Configs drin sind, d.h., genau die, die wir im Paper verwenden._
+In the `configs/` subdirectory, you can find all the config files necessary to reproduce our experiments.
 
 ### 2.1 Config Files
 
