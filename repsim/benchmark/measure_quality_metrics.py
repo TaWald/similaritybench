@@ -52,7 +52,7 @@ def auprc(intra_group: list[float], cross_group: list[float], larger_is_more_sim
     use_comparison = (~np.isnan(y_score)) & (~np.isnan(y_true))
     if (~use_comparison).sum() > 0:
         logger.warning(
-            f"{(~use_comparison).sum()} model comparisons failed. Using other {use_comparison.sum()} data points."
+            f"{(~use_comparison).sum()} comparisons between models resulted in NaNs. Using non-NaN {use_comparison.sum()} comparisons."
         )
     if use_comparison.sum() == 0:
         return np.nan

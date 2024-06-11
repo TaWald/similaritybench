@@ -63,3 +63,4 @@ ogb
 openpyxl
 albumentations
 einops
+lightning-bolts

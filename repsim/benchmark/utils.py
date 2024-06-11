@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import warnings
 from collections.abc import Sequence
 from dataclasses import asdict
@@ -23,6 +24,10 @@ class ExperimentStorer:
         if path_to_store is None:
             path_to_store = os.path.join(EXPERIMENT_RESULTS_PATH, "experiments.parquet")
         self.path_to_store = path_to_store
+
+        Path(path_to_store).parent.mkdir(parents=True, exist_ok=True)
+        # Create cache dir if it's not there already.
+        (Path(path_to_store).parent.parent / "cache").mkdir(parents=True, exist_ok=True)
         self._old_experiments = (
             pd.read_parquet(self.path_to_store) if os.path.exists(self.path_to_store) else pd.DataFrame()
         )
