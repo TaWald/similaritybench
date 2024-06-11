@@ -111,8 +111,7 @@ def verify_config(config: dict) -> None:
 
 def create_pivot_table(config: dict):
     table_cfg = config.get("table_creation", None)
-    save_aggregated_df = table_cfg.get("save_aggregated_df", True)
-    if table_cfg is not None and save_aggregated_df:
+    if table_cfg is not None and table_cfg.get("save_aggregated_df", True):
         return True
     return False
 
