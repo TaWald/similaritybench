@@ -21,8 +21,12 @@ graphs/output*
 
 jobs*
 
+
 *.env
 *.png
+!figures/Rankings.png
+!figures/ReSi_benchmark.png
+
 ._.DS_Store
 .DS_Store
 
