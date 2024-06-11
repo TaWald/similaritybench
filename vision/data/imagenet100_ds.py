@@ -248,19 +248,24 @@ class ImageNet100Dataset(Dataset):
         return len(self.samples)
 
 
-def create_IN100_datset_from_IN1k(IN100_outpath: Path, path_to_IN1k: str | Path):
+# Deprecated
+# Dataset was originally downloaded from Kaggle
+# So download here https://www.kaggle.com/datasets/ambityga/imagenet100/data
+# Then merge the 'train.X1' to 'train.X4' to one 'train' folder
+# Also rename 'val.X1' to 'val'
+def create_IN100_datset_from_IN1k(in100_outpath: Path, path_to_in1k: str | Path):
 
     expected_path_to_train = ["ILSVRC", "Data", "CLS-LOC", "train"]
-    train_path = path_to_IN1k
+    train_path = Path(path_to_in1k)
     for p in expected_path_to_train:
         train_path = train_path / p
-        assert path_to_IN1k.exists(), f"Path {path_to_IN1k} does not exist."
+        assert train_path.exists(), f"Path {train_path} does not exist."
     expected_val_path = train_path.parent / "val"
     assert expected_val_path.exists(), f"Path {expected_val_path} does not exist."
 
     wnids = list(IN100_LABELS.keys())
 
-    in100_outpath = IN100_outpath.mkdir(exist_ok=True, parents=True)
+    in100_outpath.mkdir(exist_ok=True, parents=True)
     for split, path in zip(["train", "val"], [train_path, expected_val_path]):
         for wnid in tqdm(wnids, desc="Copying 100 IN1k classes to create IN100."):
             outpath = in100_outpath / split / wnid
