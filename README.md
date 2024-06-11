@@ -1,4 +1,5 @@
 ![ReSiBenchmark](figures/ReSi_benchmark.png)
+**The ReSi benchmark quantifies similarity measures through tests that allow the definition of a ground truth similarity**
 # `ReSi`: A Comprehensive Benchmark for Representational Similarity Measures
 The ReSi Benchmark provides a unified framework to quantitatively compare a wide array of representational similiarty measures. It comprises 23 similarity measures, comes with 11 different architectures and spans the Vision, Language and Graph domain. 
 

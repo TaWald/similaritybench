@@ -130,7 +130,7 @@ class AbstractExperiment:
                         runtime = time.perf_counter() - start_time
                         storer.add_results(obj_src, obj_tgt, measure, sim, runtime, overwrite)
                         logger.debug(
-                            f"{measure.name}: Similarity '{sim:.02f}' in {time.perf_counter() - start_time:.1f}s."
+                            f"{measure.name}: Similarity '{sim:.04f}' in {time.perf_counter() - start_time:.1f}s."
                         )
 
                     except Exception as e:
