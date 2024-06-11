@@ -12,6 +12,7 @@ conda active ENVNAME
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt .
+pip install -e .
 ```
 
 ### 1.2 Set up Experiment Path
