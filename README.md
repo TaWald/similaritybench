@@ -14,7 +14,7 @@ In this (preliminary) ReadMe we explain:
 ### 1.1 Install Repository and Requirements
 ```shell
 # Download the repository
-git clone <REPOSITORY_URL> resi # Redacted for anonymity
+git clone <REPOSITORY_URL> resi # Redacted for anonymity. You can download the code clicking on "Download Repository" on the top right.
 cd resi
 
 # Create a virtual environment with Python 3.10
@@ -38,7 +38,7 @@ If this is not specified, the `experiments/` subdirectory will be used as `EXPER
 ### 1.3 Downloading Datasets
 
 If you want to rerun our experiments from scratch, or test a measure that you have implemented, it is required that the necessary models and datasets have been downloaded.
-Most datasets will be automatically downloaded from `huggingface`, `pytorch geometric` or `ogb`.
+Most datasets will be automatically downloaded from `huggingface` ([SST2](https://huggingface.co/datasets/stanfordnlp/sst2), [MNLI](https://huggingface.co/datasets/nyu-mll/glue)), `pytorch geometric` ([Cora](https://pytorch-geometric.readthedocs.io/en/stable/generated/torch_geometric.datasets.Planetoid.html), [flickr](https://pytorch-geometric.readthedocs.io/en/stable/generated/torch_geometric.datasets.Flickr.html#torch_geometric.datasets.Flickr)) or `ogb` ([ogbn-arxiv](https://ogb.stanford.edu/docs/nodeprop/#ogbn-arxiv)) once the first attempt to use them is made.
 All datasets are saved in `EXPERIMENT_PATH/datasets/{nlp,graphs,vision}`, depending on the domain.
 
 For vision, you need to manually download the ImageNet100 dataset from [kaggle](https://www.kaggle.com/datasets/ambityga/imagenet100/data?select=Labels.json) due to license restrictions.
@@ -158,3 +158,7 @@ class YourMeasure(RepresentationalSimilarityMeasure):
 #### 4. Register your measure in the module
 
 Open `repsim/benchmark/__init__.py`, import `YourMeasure` class, and append it to the `CLASSES` list that is defined in this script - this will also automatically append it to `ALL_MEASURES`, which is the list of measures considered in our benchmark. Thus, your measure is now registered in our benchmark, and can, for instance, be explicitly included in the `config.yaml` files via its class name.
+
+## License
+
+Our code is available under CC-BY 4.0.
