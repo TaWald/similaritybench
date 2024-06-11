@@ -24,6 +24,7 @@ from .rsm_norm_difference import RSMNormDifference
 from .statistics import ConcentricityDifference
 from .statistics import MagnitudeDifference
 from .statistics import UniformityDifference
+from .output_similarity import AbsoluteAccDiff
 
 CLASSES = [
     PWCCA,
