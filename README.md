@@ -7,10 +7,15 @@ In the following, we describe how the experiments from our Benchmark Paper can b
 ### 1.1 Virtual environment
 Skip the conda rows if you already have the correct Python version installed.
 ```shell
+# Create Conda Environment ...
 conda create -n ENVNAME python=3.10
 conda active ENVNAME
+# ... or a Virtualenv
 python -m venv .venv
 source .venv/bin/activate
+# Install the repository and all requirements
+git clone <REPOSITORY_URL> resi # Redacted for anonymity
+cd resi
 pip install -r requirements.txt .
 pip install -e .
 ```
