@@ -1,19 +1,14 @@
-cache_to_disk: true
-cache_to_mem: false
+cache_to_disk: false
+cache_to_mem: true
 excluded_measures:
-- RSMNormDifference
-- IMDScore
 - GeometryScore
-- PWCCA
 experiments:
 - filter_key_vals:
     domain: GRAPHS
     identifier:
-    - Shortcut_0
-    - Shortcut_25
-    - Shortcut_50
-    - Shortcut_75
-    - Shortcut_100
+    - Normal
+    - RandomLabels_25
+    - RandomLabels_100
     seed:
     - 0
     - 1
@@ -21,22 +16,22 @@ experiments:
     - 3
     - 4
     train_dataset:
-    - cora
+    - flickr
   grouping_keys:
   - identifier
-  name: shortcut_test GroupSeparationExperiment cora
-  representation_dataset: cora
+  name: label_test flickr
+  representation_dataset: flickr
   separation_keys:
   - architecture
   type: GroupSeparationExperiment
 only_extract_reps: false
-raw_results_filename: shortcut_test_group_separation_cora.parquet
+raw_results_filename: graphs_label_test_flickr.parquet
 table_creation:
   columns:
   - quality_measure
   - architecture
-  filename: shortcut_test_group_separation_cora.csv
-  full_df_filename: shortcut_test_group_separation_cora_full.csv
+  filename: graphs_label_test_flickr.csv
+  full_df_filename: graphs_label_test_flickr_full.csv
   row_index: similarity_measure
   save_aggregated_df: true
   save_full_df: true

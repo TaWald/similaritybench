@@ -1,19 +1,12 @@
-cache_to_disk: true
-cache_to_mem: false
+cache_to_disk: false
+cache_to_mem: true
 excluded_measures:
-- RSMNormDifference
-- IMDScore
 - GeometryScore
-- PWCCA
 experiments:
 - filter_key_vals:
     domain: GRAPHS
     identifier:
-    - Normal
-    - Augmentation_25
-    - Augmentation_50
-    - Augmentation_75
-    - Augmentation_100
+    - MultiLayer
     seed:
     - 0
     - 1
@@ -24,19 +17,19 @@ experiments:
     - ogbn-arxiv
   grouping_keys:
   - identifier
-  name: augmentation_test GroupSeparationExperiment ogbn-arxiv
+  name: layer_test ogbn-arxiv
   representation_dataset: ogbn-arxiv
   separation_keys:
   - architecture
-  type: GroupSeparationExperiment
+  type: MonotonicityExperiment
 only_extract_reps: false
-raw_results_filename: augmentation_test_group_separation_ogbn-arxiv.parquet
+raw_results_filename: graphs_layer_test_ogbn-arxiv.parquet
 table_creation:
   columns:
   - quality_measure
   - architecture
-  filename: augmentation_test_group_separation_ogbn-arxiv.csv
-  full_df_filename: augmentation_test_group_separation_ogbn-arxiv_full.csv
+  filename: graphs_layer_test_ogbn-arxiv.csv
+  full_df_filename: graphs_layer_test_ogbn-arxiv_full.csv
   row_index: similarity_measure
   save_aggregated_df: true
   save_full_df: true

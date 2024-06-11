@@ -1,19 +1,12 @@
-cache_to_disk: true
-cache_to_mem: false
+cache_to_disk: false
+cache_to_mem: true
 excluded_measures:
-- RSMNormDifference
-- IMDScore
 - GeometryScore
-- PWCCA
 experiments:
 - filter_key_vals:
     domain: GRAPHS
     identifier:
-    - Shortcut_0
-    - Shortcut_25
-    - Shortcut_50
-    - Shortcut_75
-    - Shortcut_100
+    - MultiLayer
     seed:
     - 0
     - 1
@@ -24,19 +17,19 @@ experiments:
     - flickr
   grouping_keys:
   - identifier
-  name: shortcut_test OutputCorrelationExperiment flickr
+  name: layer_test flickr
   representation_dataset: flickr
   separation_keys:
   - architecture
-  type: OutputCorrelationExperiment
+  type: MonotonicityExperiment
 only_extract_reps: false
-raw_results_filename: shortcut_test_output_correlation_flickr.parquet
+raw_results_filename: graphs_layer_test_flickr.parquet
 table_creation:
   columns:
   - quality_measure
   - architecture
-  filename: shortcut_test_output_correlation_flickr.csv
-  full_df_filename: shortcut_test_output_correlation_flickr_full.csv
+  filename: graphs_layer_test_flickr.csv
+  full_df_filename: graphs_layer_test_flickr_full.csv
   row_index: similarity_measure
   save_aggregated_df: true
   save_full_df: true

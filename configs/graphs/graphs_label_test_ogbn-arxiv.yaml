@@ -1,18 +1,13 @@
-cache_to_disk: true
-cache_to_mem: false
+cache_to_disk: false
+cache_to_mem: true
 excluded_measures:
-- RSMNormDifference
-- IMDScore
 - GeometryScore
-- PWCCA
 experiments:
 - filter_key_vals:
     domain: GRAPHS
     identifier:
     - Normal
     - RandomLabels_25
-    - RandomLabels_50
-    - RandomLabels_75
     - RandomLabels_100
     seed:
     - 0
@@ -21,22 +16,22 @@ experiments:
     - 3
     - 4
     train_dataset:
-    - cora
+    - ogbn-arxiv
   grouping_keys:
   - identifier
-  name: label_test OutputCorrelationExperiment cora
-  representation_dataset: cora
+  name: label_test ogbn-arxiv
+  representation_dataset: ogbn-arxiv
   separation_keys:
   - architecture
-  type: OutputCorrelationExperiment
+  type: GroupSeparationExperiment
 only_extract_reps: false
-raw_results_filename: label_test_output_correlation_cora.parquet
+raw_results_filename: graphs_label_test_ogbn-arxiv.parquet
 table_creation:
   columns:
   - quality_measure
   - architecture
-  filename: label_test_output_correlation_cora.csv
-  full_df_filename: label_test_output_correlation_cora_full.csv
+  filename: graphs_label_test_ogbn-arxiv.csv
+  full_df_filename: graphs_label_test_ogbn-arxiv_full.csv
   row_index: similarity_measure
   save_aggregated_df: true
   save_full_df: true
