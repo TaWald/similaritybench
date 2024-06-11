@@ -2,43 +2,53 @@
 In the following, we describe how the experiments from our Benchmark Paper can be reproduced, and how additional measures could be added.
 
 
-## 1. Setting up the Repository
+## 1. Setting Up the Repository
 
-### 1.1 Virtual environment
-Skip the conda rows if you already have the correct Python version installed.
+### 1.1 Install Repository and Requirements
 ```shell
-# Create Conda Environment ...
-conda create -n ENVNAME python=3.10
-conda active ENVNAME
-# ... or a Virtualenv
-python -m venv .venv
-source .venv/bin/activate
-# Install the repository and all requirements
+# Download the repository
 git clone <REPOSITORY_URL> resi # Redacted for anonymity
 cd resi
+
+# Create a virtual environment with Python 3.10
+# With Conda ...
+conda create -n ENVNAME python=3.10
+conda active ENVNAME
+# ... or venv
+python -m venv .venv
+source .venv/bin/activate
+
+# Afterwards install the requirements and repository
 pip install -r requirements.txt
 pip install -e .
 ```
 
-### 1.2 Set up Experiment Path
+### 1.2 Set Up Experiment Path (Optional)
 
-The path that all results, datasets, and models should be stored to can be specified by defining a corresponding `"REP_SIM"` path environment variable. If this is not specified, an `experiments/` subdirectory will be created and used as `EXPERIMENT_PATH` by default.
+The `"REP_SIM"` environment variable defines the `EXPERIMENT_PATH` in which all results and models are saved.
+If this is not specified, the `experiments/` subdirectory will be used as `EXPERIMENT_PATH` by default.
 
-### 1.3 Loading Result Files
-
-The results from all our experiments are stored in a `results.parquet` file, which you can download from --- and is located in the `EXPERIMENT_PATH/results/` directory. Based on this, the plots can be reproduced, and if you want to implement a text a new measure, you can simply add the corresponding results to this file.
-
-
-### 1.4 Loading Datasets and Models
+### 1.3 Downloading Datasets
 
 If you want to rerun our experiments from scratch, or test a measure that you have implemented, it is required that the necessary models and datasets have been downloaded.
-Regarding the datasets, for the
-* Language domain, datasets will be automatically downloaded from huggingface.
-* Vision domain, you need to manually download the ImageNet100 dataset from [kaggle](https://www.kaggle.com/datasets/ambityga/imagenet100/data?select=Labels.json) due to license restrictions. After downloading, move `train.X1-4` into one joint `train` folder and rename the `val.X` into a `val` folder so they each contain 100 class folders. This dataset then should be named `Imagenet100` and located in the directory specified by the `VISION_DATA_PATH` (should be `<EXPERIMENT_PATH>/datasets/vision` -- see `repsim/benchmark/paths.py` for details). To get all relevant models you run the script `python vision/download_vision_model.py` to auto-download and extract all the models. Alternatively one can manually download the files from zenodo ([Part 1](https://zenodo.org/records/11544180)/[Part 2](https://zenodo.org/records/11548523)), extract them, and move them into a directory named `<VISION_MODEL_PATH>/vision_models_simbench/.` (check `paths.py` from earlier for `VISION_DATA_PATH` details).
-* Graph domain, we chose datasts that are already included in either the `pytorch geometric`or `ogb` packages. Upon extracting representations for the first time, these datasts will be downloaded automatically into the `EXPERIMENT_PATH/datasets/graphs/`subdirectory.
+Most datasets will be automatically downloaded from `huggingface`, `pytorch geometric` or `ogb`.
+All datasets are saved in `EXPERIMENT_PATH/datasets/{nlp,graphs,vision}`, depending on the domain.
 
-Regarding the models, you need to download the model files from --ZENODO-LINK(S)-- and unpack the zipped files into corresponding subdirectories of ´EXPERIMENT_PATH/models`.
+For vision, you need to manually download the ImageNet100 dataset from [kaggle](https://www.kaggle.com/datasets/ambityga/imagenet100/data?select=Labels.json) due to license restrictions.
+After downloading, move `train.X1-4` into one joint `train` folder and rename the `val.X` into a `val` folder so they each contain 100 class folders.
+This dataset then should be named `Imagenet100` and located in the directory specified by the `VISION_DATA_PATH` (should be `<EXPERIMENT_PATH>/datasets/vision` -- see `repsim/benchmark/paths.py` for details).
 
+### 1.4 Downloading Models
+
+To get all relevant models, you need to download the model files from Zenodo and unpack the zipped files into corresponding subdirectories of `EXPERIMENT_PATH/models`:
+* Language and graphs: https://doi.org/10.5281/zenodo.11565486. Move the content of `models/nlp` and `eval_results.json` inside `nlp_data.zip` into `EXPERIMENT_PATH/models/nlp`. Move the models inside `graph_data.zip` into `EXPERIMENT_PATH/models/graphs`.
+* Vision: Run the script `python vision/download_vision_model.py` to auto-download and extract all the models. Alternatively one can manually download the files from Zenodo ([Part 1](https://zenodo.org/records/11544180)/[Part 2](https://zenodo.org/records/11548523)), extract them, and move them into a directory named `<VISION_MODEL_PATH>/vision_models_simbench/.` (check `paths.py` from earlier for `VISION_DATA_PATH` details).
+
+### 1.5 Downloading Result Files (Optional)
+
+The results from all our experiments are stored in a `results.parquet` file, which you can download from [Zenodo](https://doi.org/10.5281/zenodo.11565486).
+You need this file if you want to easily test a new similarity measure and compare it to the existing results.
+Download the file and place it in the `EXPERIMENT_PATH/results/` directory.
 
 ## 2. Running the Benchmark
 
@@ -79,15 +89,16 @@ The name of the generated config file will follow the same pattern.
 
 ### 2.4 Merging Result Files
 
-To merge all the parquet files you have produced into a single file, you can apply the script XYZ.
+To merge all the parquet files you have produced into a single file, you can use [this script](repsim/merge.py).
 
 
 ### 2.5  Plotting Results
 To plot the results, the csv files with full results are used (`full_df_filename` in the config).
+The results from the paper are available in `experiments/paper_results`.
 [This notebook](tables_and_plots.ipynb) can be used to create the overview table as well as the plots of the rank distribution in the paper.
 
 
-## 3 Adding a New Measure
+## 3. Adding a New Measure
 
 If you want to use our benchmark on a measure that has not been implemented yet, you can easily add your measure to the benchmark with the following steps:
 
@@ -105,10 +116,15 @@ def your_measure(
 ```
 where the shape parameter of type `SHAPE_TYPE = Literal["nd", "ntd", "nchw"]` defines input format of the given representations: `"nd"` represents input matrices in the $n \times d$ format, `"ntd"` corresponds to $n \times ntokens \times d$, and `"nchw"` corresponds to $n \times nchannels \times height \times width$. Your measure should be able to process shapes of all these types. If higher-dimension inputs should simply be flattened to the `"nd"` format, you can use the `flatten` function that we provide in `repsim.measures.utils`. We further provide additional functions for preprocessing/normalizing inputs in this module.
 
+You can skip this step if you implement the function inside the `__call__` method, as described in the next step.
+
 #### 3. Wrap your function into a class that inherits from `RepresentationalSimilarityMeasure`:
 
-To properly fit into our framework, it is crucial that you implement such a class for your measure, such that, for instance, the semantics of your measure, i.e., whether a higher value indicates more similarity, can be handled properly in our benchmark.
-The `RepresentationalSimilarityMeasure` class, as well as its `BaseSimilarityMeasure` parent class, are implemented in and can be imported from `repsim.benchmark.utils`. To wrap your function into such a class, using the following template should be sufficient:
+The class specifies several properties of the similarity measure, such that its values can be correctly interpreted in the benchmark framework.
+Particularly important are `larger_is_more_similar` and `is_symmetric`.
+If you are unsure about the other properties, specify them as `False`.
+The `RepresentationalSimilarityMeasure` class can be imported from `repsim.benchmark.utils`.
+To wrap your function into such a class, you can use the following template:
 ```python
 class YourMeasure(RepresentationalSimilarityMeasure):
     def __init__(self):
@@ -134,4 +150,4 @@ class YourMeasure(RepresentationalSimilarityMeasure):
 
 #### 4. Register your measure in the module
 
-Open `repsim.benchmark.__init__.py`, import `YourMeasure` class, and append it to the `CLASSES` list that is defined in this script - this will also automatically append it to `ALL_MEASURES`, which is the list of measures considered in our benchmark. Thus, your measure is now registered in our benchmark, and can, for instance, be explicitly included in the `config.yaml` files via its class name.
+Open `repsim/benchmark/__init__.py`, import `YourMeasure` class, and append it to the `CLASSES` list that is defined in this script - this will also automatically append it to `ALL_MEASURES`, which is the list of measures considered in our benchmark. Thus, your measure is now registered in our benchmark, and can, for instance, be explicitly included in the `config.yaml` files via its class name.
