@@ -68,7 +68,7 @@ EXPERIMENT_TYPE_DICT = {
 def BASE_FILE_NAME(test, dataset, groups: int = 3, measures: List = None):
     fname_base = f"graphs_{test}_{dataset}"
     if groups != 3 and test != OUTPUT_CORRELATION_EXPERIMENT:
-        fname_base += "_{groups}groups"
+        fname_base += f"_{groups}groups"
     if measures is not None:
         for m in measures:
             fname_base += f"_{m}"
@@ -97,7 +97,7 @@ def build_graph_config(
     measures: List = None,
     save_to_memory=True,
     save_to_disk=False,
-    groups: int = 5,
+    groups: int = 3,
 ):
     if groups == 5:
         experiment_settings = GRAPH_EXPERIMENT_FIVE_GROUPS_DICT[test]
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     yaml_config = build_graph_config(test=args.test, dataset=args.dataset, measures=args.measures, groups=n_groups)
 
     config_path = os.path.join(
-        "configs", "graphs", YAML_CONFIG_FILE_NAME(test=args.test, dataset=args.dataset, groups=args.groups)
+        "configs", "graphs", YAML_CONFIG_FILE_NAME(test=args.test, dataset=args.dataset, groups=n_groups)
     )
     with open(config_path, "w") as file:
         yaml.dump(yaml_config, file)
