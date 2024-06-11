@@ -1,6 +1,13 @@
+![ReSiBenchmark](figures/ReSi_benchmark.png)
 # `ReSi`: A Comprehensive Benchmark for Representational Similarity Measures
-In the following, we describe how the experiments from our Benchmark Paper can be reproduced, and how additional measures could be added.
+The ReSi Benchmark provides a unified framework to quantitatively compare a wide array of representational similiarty measures. It comprises 23 similarity measures, comes with 11 different architectures and spans the Vision, Language and Graph domain. 
 
+In this (preliminary) ReadMe we explain: 
+1. How to setup the Benchmark
+2. How to use the Benchmark (e.g. how to reproduce results from the Paper)
+3. How extend the Benchmark with additional measures.
+
+![Similarity Measure Rankings of our Paper](figures/Rankings.png)
 
 ## 1. Setting Up the Repository
 
