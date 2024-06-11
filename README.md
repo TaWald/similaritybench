@@ -1,8 +1,8 @@
 ![ReSiBenchmark](figures/ReSi_benchmark.png)
 # `ReSi`: A Comprehensive Benchmark for Representational Similarity Measures
-The ReSi Benchmark provides a unified framework to quantitatively compare a wide array of representational similiarty measures. It comprises 23 similarity measures, comes with 11 different architectures and spans the Vision, Language and Graph domain. 
+The `ReSi` Benchmark provides a unified framework to quantitatively compare a wide array of representational similiarty measures. It comprises 23 similarity measures, comes with 11 different architectures and spans the Vision, Language and Graph domain. 
 
-In this (preliminary) ReadMe we explain: 
+In the following we explain: 
 1. How to setup the Benchmark
 2. How to use the Benchmark (e.g. how to reproduce results from the Paper)
 3. How extend the Benchmark with additional measures.
@@ -64,6 +64,12 @@ The main way to (re)run experiments from the benchmark is to set up a `config.ya
     python3 -m repsim.run -c path/to/config.yaml
 ```
 In the `configs/` subdirectory, you can find all the config files necessary to reproduce our experiments.
+
+As a quick example, we also provide a demo config that runs the augmentation affinity test on Cora, using GCN, GraphSAGE, and GAT models, and applying all benchmark measures except PWCCa, which often times fails to converge, and the RSMNormdifference and IMDScore, which take relatively long to compute. This test should finish within a few minutes.
+
+```bash
+    python3 -m repsim.run -c configs/demo_augmentation_test_cora.yaml
+```
 
 ### 2.1 Config Files
 
