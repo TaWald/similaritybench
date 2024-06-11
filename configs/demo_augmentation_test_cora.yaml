@@ -11,8 +11,6 @@ experiments:
     identifier:
     - Normal
     - Augmentation_25
-    - Augmentation_50
-    - Augmentation_75
     - Augmentation_100
     seed:
     - 0
@@ -24,7 +22,7 @@ experiments:
     - cora
   grouping_keys:
   - identifier
-  name: augmentation_test GroupSeparationExperiment cora
+  name: Augmentation Affinity Cora
   representation_dataset: cora
   separation_keys:
   - architecture
@@ -35,8 +33,8 @@ table_creation:
   columns:
   - quality_measure
   - architecture
-  filename: augmentation_test_group_separation_cora.csv
-  full_df_filename: augmentation_test_group_separation_cora_full.csv
+  filename: demo_augmentation_test_cora.csv
+  full_df_filename: demo_augmentation_test_cora_full.csv
   row_index: similarity_measure
   save_aggregated_df: true
   save_full_df: true
