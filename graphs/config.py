@@ -6,7 +6,6 @@ from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import FLICKR_DATASET_NAME
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
-from repsim.benchmark.types_globals import REDDIT_DATASET_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from torch_geometric.nn.models import GAT
@@ -42,7 +41,6 @@ GNN_PARAMS_DEFAULT_NORM = "BatchNorm"
 GNN_PARAMS_DEFAULT_ACTIVATION = "relu"
 
 GAT_PARAMS_DEFAULT_N_HEADS = 8
-# GAT_PARAMS_DEFAULT_DROPOUT = 0.05
 GNN_PARAMS_DIMENSION_KEY = "hidden_channels"
 GNN_PARAMS_N_LAYERS_KEY = "num_layers"
 GNN_PARAMS_DROPOUT_KEY = "dropout"
@@ -59,6 +57,9 @@ OPTIMIZER_PARAMS_DECAY_KEY = "weight_decay"
 
 
 GAT_PARAMS_HEADS_KEY = "heads"
+
+# dataset not included in benchmark
+REDDIT_DATASET_NAME = "reddit"
 
 GNN_PARAMS_DEFAULT_DICT = {
     GNN_PARAMS_DIMENSION_KEY: GNN_PARAMS_DEFAULT_DIMENSION,

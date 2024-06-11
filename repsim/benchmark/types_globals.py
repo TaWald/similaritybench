@@ -25,11 +25,10 @@ BENCHMARK_NN_ARCHITECTURES = (
 # ----------------------------- Datasets trained on ---------------------------- #
 VISION_DATASET_TRAINED_ON = Literal["CIFAR10", "CIFAR100", "ImageNet"]
 NLP_DATASET_TRAINED_ON = Literal["mnli, sst2"]
-GRAPH_DATASET_TRAINED_ON = Literal["ogbn-arxiv", "cora", "reddit", "flickr"]
+GRAPH_DATASET_TRAINED_ON = Literal["ogbn-arxiv", "cora", "flickr"]
 
 ARXIV_DATASET_NAME: GRAPH_DATASET_TRAINED_ON = "ogbn-arxiv"
 CORA_DATASET_NAME: GRAPH_DATASET_TRAINED_ON = "cora"
-REDDIT_DATASET_NAME: GRAPH_DATASET_TRAINED_ON = "reddit"
 FLICKR_DATASET_NAME: GRAPH_DATASET_TRAINED_ON = "flickr"
 
 BENCHMARK_DATASET = VISION_DATASET_TRAINED_ON | NLP_DATASET_TRAINED_ON | GRAPH_DATASET_TRAINED_ON

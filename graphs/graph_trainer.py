@@ -19,6 +19,7 @@ from graphs.config import GNN_PARAMS_N_LAYERS_KEY
 from graphs.config import LAYER_EXPERIMENT_N_LAYERS
 from graphs.config import MAX_TEST_SIZE
 from graphs.config import OPTIMIZER_PARAMS_DICT
+from graphs.config import REDDIT_DATASET_NAME
 from graphs.config import SPLIT_IDX_BENCHMARK_TEST_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import SPLIT_IDX_TRAIN_KEY
@@ -51,7 +52,6 @@ from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_FIVE_GROUPS_DICT
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT_NAME
-from repsim.benchmark.types_globals import REDDIT_DATASET_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import SINGLE_SAMPLE_SEED
