@@ -28,7 +28,7 @@ The results from all our experiments are stored in a `results.parquet` file, whi
 If you want to rerun our experiments from scratch, or test a measure that you have implemented, it is required that the necessary models and datasets have been downloaded.
 Regarding the datasets, for the
 * Language domain, datasets will be automatically downloaded from huggingface.
-* Vision domain, you need to...
+* Vision domain, you need to download ImageNet100 dataset from [kaggle](https://www.kaggle.com/datasets/ambityga/imagenet100/data?select=Labels.json) and move all contents of `train.X1-4` into one joint `train` folder and move the `val.X` into a `val` folder so they contain 100 folders of the classes. For the models you need to call `python vision/download_vision_model.py` to auto-download and extract all the models.
 * Graph domain, we chose datasts that are already included in either the `pytorch geometric`or `ogb` packages. Upon extracting representations for the first time, these datasts will be downloaded automatically into the `EXPERIMENT_PATH/datasets/graphs/`subdirectory.
 
 Regarding the models, you need to download the model files from --ZENODO-LINK(S)-- and unpack the zipped files into corresponding subdirectories of ´EXPERIMENT_PATH/models`.
