@@ -16,7 +16,7 @@ source .venv/bin/activate
 # Install the repository and all requirements
 git clone <REPOSITORY_URL> resi # Redacted for anonymity
 cd resi
-pip install -r requirements.txt .
+pip install -r requirements.txt
 pip install -e .
 ```
 
