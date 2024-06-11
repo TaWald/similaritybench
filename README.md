@@ -65,7 +65,7 @@ The main way to (re)run experiments from the benchmark is to set up a `config.ya
 ```
 In the `configs/` subdirectory, you can find all the config files necessary to reproduce our experiments.
 
-As a quick example, we also provide a demo config that runs the augmentation affinity test on Cora, using GCN, GraphSAGE, and GAT models, and applying all benchmark measures except PWCCa, which often times fails to converge, and the RSMNormdifference and IMDScore, which take relatively long to compute. This test should finish within a few minutes.
+**Example**: As a quick example, we also provide a demo config that runs the augmentation affinity test on Cora, using GCN, GraphSAGE, and GAT models, and applying all benchmark measures except *PWCCA*, which often times fails to converge, and *RSM norm difference* and *IMD score*, which take relatively long to compute. This test should finish within a few minutes.
 
 ```bash
     python3 -m repsim.run -c configs/demo_augmentation_test_cora.yaml
