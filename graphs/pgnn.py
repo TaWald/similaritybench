@@ -88,30 +88,40 @@ class PGNN(torch.nn.Module):
             hidden_channels = out_channels
         # if feature_pre:
         #     self.linear_pre = nn.Linear(in_channels, feature_dim)
-        #     self.conv_first = PGNN_layer(feature_dim, hidden_channels)
+        #     self.init_conv = PGNN_layer(feature_dim, hidden_channels)
         # else:
-        self.conv_first = PGNN_layer(in_channels, hidden_channels)
+        self.convs = nn.ModuleList()
+        self.init_conv = PGNN_layer(in_channels, hidden_channels)
         if num_layers > 1:
-            self.conv_hidden = nn.ModuleList(
-                [PGNN_layer(hidden_channels, hidden_channels) for i in range(num_layers - 2)]
-            )
-            self.conv_out = PGNN_layer(hidden_channels, out_channels)
+            self.convs.append(self.init_conv)
+            for _ in range(num_layers - 2):
+                self.convs.append(PGNN_layer(hidden_channels, hidden_channels))
+            self.convs.append(PGNN_layer(hidden_channels, out_channels))
+        else:
+            self.convs.append(PGNN_layer(in_channels, out_channels))
 
     def forward(self, data):
         x = data.x
         # if self.feature_pre:
         #     x = self.linear_pre(x)
-        x_position, x = self.conv_first(x, data.dists_max, data.dists_argmax)
-        if self.num_layers == 1:
-            return x_position
-        # x = F.relu(x) # Note: optional!
-        if self.dropout > 0:
-            x = F.dropout(x, p=self.dropout, training=self.training)
-        for i in range(self.num_layers - 2):
-            _, x = self.conv_hidden[i](x, data.dists_max, data.dists_argmax)
-            # x = F.relu(x) # Note: optional!
+        # x_position, x = self.init_conv(x, data.dists_max, data.dists_argmax)
+        # if self.num_layers == 1:
+        #     return x_position
+        # # x = F.relu(x) # Note: optional!
+        # if self.dropout > 0:
+        #     x = F.dropout(x, p=self.dropout, training=self.training)
+        # for i in range(self.num_layers - 2):
+        #     _, x = self.conv_hidden[i](x, data.dists_max, data.dists_argmax)
+        #     # x = F.relu(x) # Note: optional!
+        #     if self.dropout > 0:
+        #         x = F.dropout(x, p=self.dropout, training=self.training)
+        # x_position, x = self.conv_out(x, data.dists_max, data.dists_argmax)
+
+        for i, conv in enumerate(self.convs):
+            x_position, x = conv(x, data.dists_max, data.dists_argmax)
+
             if self.dropout > 0:
                 x = F.dropout(x, p=self.dropout, training=self.training)
-        x_position, x = self.conv_out(x, data.dists_max, data.dists_argmax)
+
         x_position = F.normalize(x_position, p=2, dim=-1)
         return x_position
