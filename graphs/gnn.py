@@ -258,7 +258,7 @@ def train_pgnn_model(
     torch.save(model.state_dict(), save_path)
 
     if b_test:
-        return results, test(model, data, split_idx[SPLIT_IDX_TEST_KEY])
+        return results, test_pgnn(model, data, split_idx[SPLIT_IDX_TEST_KEY])
 
     return results
 
