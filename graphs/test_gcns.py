@@ -20,6 +20,7 @@ from graphs.config import OPTIMIZER_PARAMS_LR_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
+from graphs.gnn import get_pgnn_representations
 from graphs.gnn import get_representations
 from graphs.gnn import train_model
 from graphs.gnn import train_pgnn_model
@@ -149,16 +150,22 @@ class GNNTester:
 
         model = self._load_model()
 
-        reps = get_representations(
+        if self.architecture_type == "PGNN":
+            return get_pgnn_representations(
+                model=model,
+                data=self.data,
+                device=self.device,
+                test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
+                layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
+            )
+
+        return get_representations(
             model=model,
             data=self.data,
             device=self.device,
             test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
             layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
-            b_pgnn=self.architecture_type == "PGNN",
         )
-
-        return reps
 
 
 def parse_args():

@@ -144,7 +144,7 @@ def test(model, data, test_idx):
 
 
 @torch.no_grad()
-def get_representations(model, data, device, test_idx, layer_ids, b_pgnn=False):
+def get_representations(model, data, device, test_idx, layer_ids):
     model = model.to(device)
     data = data.to(device)
     test_idx = test_idx.to(device)
@@ -164,10 +164,7 @@ def get_representations(model, data, device, test_idx, layer_ids, b_pgnn=False):
     for i in layer_ids:
         hooks[i] = model.convs[i].register_forward_hook(getActivation(f"layer{i + 1}"))
 
-    if b_pgnn:
-        _ = model(data)
-    else:
-        _ = model(data.x, data.adj_t)
+    _ = model(data.x, data.adj_t)
 
     for i in layer_ids:
         hooks[i].remove()
@@ -303,3 +300,36 @@ def test_pgnn(model, data, test_idx):
     pred = out.argmax(dim=-1, keepdim=True)
 
     return multiclass_accuracy(pred.squeeze(1), data.y.squeeze(1)[test_idx]).detach().cpu().numpy()
+
+
+@torch.no_grad()
+def get_pgnn_representations(model, data, device, test_idx, layer_ids):
+    model = model.to(device)
+    data = data.to(device)
+    test_idx = test_idx.to(device)
+
+    model.eval()
+
+    activations = {}
+
+    def getActivation(name):
+        # the hook signature
+        def hook(model, input, output):
+            activations[name] = output[1].detach()
+
+        return hook
+
+    hooks = dict()
+    for i in layer_ids:
+        hooks[i] = model.convs[i].register_forward_hook(getActivation(f"layer{i + 1}"))
+
+    _ = model(data)
+
+    for i in layer_ids:
+        hooks[i].remove()
+
+    reps = dict()
+    for i in layer_ids:
+        reps[i] = activations[f"layer{i + 1}"].detach()[test_idx].cpu().numpy()
+
+    return reps
