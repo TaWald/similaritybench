@@ -22,6 +22,7 @@ from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
 from graphs.gnn import get_representations
 from graphs.gnn import train_model
+from graphs.gnn import train_pgnn_model
 from graphs.graph_trainer import GraphTrainer
 from repsim.benchmark.paths import BASE_PATH
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
@@ -108,17 +109,30 @@ class GNNTester:
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
         save_path = self.model_path / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
 
-        train_results, test_acc = train_model(
-            model=model,
-            data=self.data,
-            split_idx=self.split_idx,
-            device=self.device,
-            seed=self.seed,
-            optimizer_params=self.optimizer_params,
-            p_drop_edge=0.0,
-            save_path=save_path,
-            b_test=True,
-        )
+        if self.architecture_type == "PGNN":
+            train_results, test_acc = train_pgnn_model(
+                model=model,
+                data=self.data,
+                split_idx=self.split_idx,
+                device=self.device,
+                seed=self.seed,
+                optimizer_params=self.optimizer_params,
+                p_drop_edge=0.0,
+                save_path=save_path,
+                b_test=True,
+            )
+        else:
+            train_results, test_acc = train_model(
+                model=model,
+                data=self.data,
+                split_idx=self.split_idx,
+                device=self.device,
+                seed=self.seed,
+                optimizer_params=self.optimizer_params,
+                p_drop_edge=0.0,
+                save_path=save_path,
+                b_test=True,
+            )
         print(train_results[-1])
 
         df_log = pd.DataFrame(
