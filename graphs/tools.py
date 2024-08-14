@@ -1,5 +1,7 @@
+import multiprocessing as mp
 import random
 
+import networkx as nx
 import numpy as np
 import torch
 
@@ -49,6 +51,67 @@ def shuffle_labels(y, frac=0.5, seed=None):
 # ---------------------------------------------- P-GNN HELPER FUNCTIONS ------------------------------------------------
 # code taken from https://github.com/JiaxuanYou/P-GNN/blob/master/utils.py
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+def single_source_shortest_path_length_range(graph, node_range, cutoff):
+    dists_dict = {}
+    for node in node_range:
+        dists_dict[node] = nx.single_source_shortest_path_length(graph, node, cutoff)
+    return dists_dict
+
+
+def merge_dicts(dicts):
+    result = {}
+    for dictionary in dicts:
+        result.update(dictionary)
+    return result
+
+
+def all_pairs_shortest_path_length_parallel(graph, cutoff=None, num_workers=2):
+    nodes = list(graph.nodes)
+    random.shuffle(nodes)
+    if len(nodes) < 50:
+        num_workers = int(num_workers / 4)
+    elif len(nodes) < 400:
+        num_workers = int(num_workers / 2)
+
+    pool = mp.Pool(processes=num_workers)
+    results = [
+        pool.apply_async(
+            single_source_shortest_path_length_range,
+            args=(graph, nodes[int(len(nodes) / num_workers * i) : int(len(nodes) / num_workers * (i + 1))], cutoff),
+        )
+        for i in range(num_workers)
+    ]
+    output = [p.get() for p in results]
+    dists_dict = merge_dicts(output)
+    pool.close()
+    pool.join()
+    return dists_dict
+
+
+def precompute_dist_data(edge_index, num_nodes, approximate=0):
+    """
+    Here dist is 1/real_dist, higher actually means closer, 0 means disconnected
+    :return:
+    """
+    graph = nx.Graph()
+    edge_list = edge_index.transpose(1, 0).tolist()
+    graph.add_edges_from(edge_list)
+
+    n = num_nodes
+    dists_array = np.zeros((n, n))
+    # dists_dict = nx.all_pairs_shortest_path_length(graph,cutoff=approximate if approximate>0 else None)
+    # dists_dict = {c[0]: c[1] for c in dists_dict}
+    dists_dict = all_pairs_shortest_path_length_parallel(graph, cutoff=approximate if approximate > 0 else None)
+    for i, node_i in enumerate(graph.nodes()):
+        shortest_dist = dists_dict[node_i]
+        for j, node_j in enumerate(graph.nodes()):
+            dist = shortest_dist.get(node_j, -1)
+            if dist != -1:
+                # dists_array[i, j] = 1 / (dist + 1)
+                dists_array[node_i, node_j] = 1 / (dist + 1)
+    return dists_array
 
 
 def get_random_anchorset(n, c=0.5):

@@ -72,25 +72,25 @@ class PGNN(torch.nn.Module):
     def __init__(
         self,
         in_channels,
-        feature_dim,
+        # feature_dim,
         hidden_channels,
         out_channels,
-        feature_pre=True,
+        # feature_pre=True,
         num_layers=2,
         dropout=True,
         **kwargs
     ):
         super(PGNN, self).__init__()
-        self.feature_pre = feature_pre
+        # self.feature_pre = feature_pre
         self.num_layers = num_layers
         self.dropout = dropout
         if num_layers == 1:
             hidden_channels = out_channels
-        if feature_pre:
-            self.linear_pre = nn.Linear(in_channels, feature_dim)
-            self.conv_first = PGNN_layer(feature_dim, hidden_channels)
-        else:
-            self.conv_first = PGNN_layer(in_channels, hidden_channels)
+        # if feature_pre:
+        #     self.linear_pre = nn.Linear(in_channels, feature_dim)
+        #     self.conv_first = PGNN_layer(feature_dim, hidden_channels)
+        # else:
+        self.conv_first = PGNN_layer(in_channels, hidden_channels)
         if num_layers > 1:
             self.conv_hidden = nn.ModuleList(
                 [PGNN_layer(hidden_channels, hidden_channels) for i in range(num_layers - 2)]
@@ -99,8 +99,8 @@ class PGNN(torch.nn.Module):
 
     def forward(self, data):
         x = data.x
-        if self.feature_pre:
-            x = self.linear_pre(x)
+        # if self.feature_pre:
+        #     x = self.linear_pre(x)
         x_position, x = self.conv_first(x, data.dists_max, data.dists_argmax)
         if self.num_layers == 1:
             return x_position

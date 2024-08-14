@@ -10,6 +10,8 @@ from graphs.config import OPTIMIZER_PARAMS_LR_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import SPLIT_IDX_TRAIN_KEY
 from graphs.config import SPLIT_IDX_VAL_KEY
+from graphs.tools import precompute_dist_data
+from graphs.tools import preselect_anchor
 from torch.nn import functional as func
 from torch_geometric.utils import dropout_edge
 from torch_geometric.utils import to_edge_index
@@ -189,3 +191,112 @@ def get_test_output(model, data, device, test_idx, return_accuracy=False):
         return out, float(acc)
 
     return out
+
+
+def train_pgnn_model(
+    model,
+    data,
+    split_idx,
+    device,
+    seed: int,
+    optimizer_params: Dict,
+    p_drop_edge: float,
+    save_path: Path,
+    b_test: bool = False,
+):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    edge_index, _ = to_edge_index(data.adj_t)
+    dists = precompute_dist_data(edge_index.numpy(), data.num_nodes, approximate=0)
+    data.dists = torch.from_numpy(dists).float()
+
+    preselect_anchor(data, layer_num=2)
+
+    model = model.to(device)
+    data = data.to(device)
+
+    # TODO: maybe rearrange this, data passing is currently quite messy
+    train_idx = split_idx[SPLIT_IDX_TRAIN_KEY].to(device)
+    val_idx = split_idx[SPLIT_IDX_VAL_KEY]
+
+    edge_index = edge_index.to(device)
+
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=optimizer_params[OPTIMIZER_PARAMS_LR_KEY],
+        weight_decay=optimizer_params[OPTIMIZER_PARAMS_DECAY_KEY],
+    )
+
+    results = []
+    for epoch in tqdm(range(1, 1 + optimizer_params[OPTIMIZER_PARAMS_EPOCHS_KEY])):
+
+        if p_drop_edge > 0:
+            loss = train_epoch_dropout(
+                model=model,
+                x=data.x,
+                edge_index=edge_index,
+                y=data.y,
+                train_idx=train_idx,
+                p_drop_edge=p_drop_edge,
+                optimizer=optimizer,
+            )
+        else:
+            loss = train_pgnn_epoch(model=model, data=data, train_idx=train_idx, optimizer=optimizer)
+
+        train_acc, val_acc = validate_pgnn(model, data, train_idx, val_idx)
+
+        epoch_res = [epoch, loss, train_acc, val_acc]
+
+        if b_test:
+            test_acc = test_pgnn(model, data, test_idx=split_idx[SPLIT_IDX_TEST_KEY])
+            epoch_res.append(test_acc)
+
+        results.append(epoch_res)
+
+    torch.save(model.state_dict(), save_path)
+
+    if b_test:
+        return results, test(model, data, split_idx[SPLIT_IDX_TEST_KEY])
+
+    return results
+
+
+def train_pgnn_epoch(model, data, train_idx, optimizer):
+    model.train()
+    optimizer.zero_grad()
+    out = model(data)[train_idx]
+    loss = func.cross_entropy(out, data.y.squeeze(1)[train_idx])
+    loss.backward()
+    optimizer.step()
+
+    return loss.item()
+
+
+@torch.no_grad()
+def validate_pgnn(model, data, train_idx, val_idx):
+    model.eval()
+
+    out_train = model(data)[train_idx]
+    train_pred = out_train.argmax(dim=-1, keepdim=True)
+
+    out_val = model(data)[val_idx]
+    val_pred = out_val.argmax(dim=-1, keepdim=True)
+
+    train_acc, val_acc = (
+        multiclass_accuracy(train_pred.squeeze(1), data.y[train_idx].squeeze(1)).detach().cpu().numpy(),
+        multiclass_accuracy(val_pred.squeeze(1), data.y[val_idx].squeeze(1)).detach().cpu().numpy(),
+    )
+
+    return train_acc, val_acc
+
+
+@torch.no_grad()
+def test_pgnn(model, data, test_idx):
+    model.eval()
+
+    out = model(data)[test_idx]
+    pred = out.argmax(dim=-1, keepdim=True)
+
+    return multiclass_accuracy(pred.squeeze(1), data.y.squeeze(1)[test_idx]).detach().cpu().numpy()
