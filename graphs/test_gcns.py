@@ -155,6 +155,7 @@ class GNNTester:
             device=self.device,
             test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
             layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
+            b_pgnn=self.architecture_type == "PGNN",
         )
 
         return reps

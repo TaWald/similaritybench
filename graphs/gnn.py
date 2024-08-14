@@ -144,7 +144,7 @@ def test(model, data, test_idx):
 
 
 @torch.no_grad()
-def get_representations(model, data, device, test_idx, layer_ids):
+def get_representations(model, data, device, test_idx, layer_ids, b_pgnn=False):
     model = model.to(device)
     data = data.to(device)
     test_idx = test_idx.to(device)
@@ -164,7 +164,10 @@ def get_representations(model, data, device, test_idx, layer_ids):
     for i in layer_ids:
         hooks[i] = model.convs[i].register_forward_hook(getActivation(f"layer{i + 1}"))
 
-    _ = model(data.x, data.adj_t)
+    if b_pgnn:
+        _ = model(data)
+    else:
+        _ = model(data.x, data.adj_t)
 
     for i in layer_ids:
         hooks[i].remove()
