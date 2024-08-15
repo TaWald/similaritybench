@@ -8,6 +8,7 @@ from repsim.benchmark.types_globals import AUGMENTATION_100_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_25_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_50_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
+from repsim.benchmark.types_globals import CORA_DATASET_NAME
 from repsim.benchmark.types_globals import DEFAULT_SEEDS
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
@@ -517,6 +518,28 @@ def all_trained_graph_models() -> list[TrainedModel]:
                         additional_kwargs={},
                     )
                 )
+    for i in DEFAULT_SEEDS:
+        all_trained_models.append(
+            GraphModel(
+                domain=GRAPH_DOMAIN,
+                architecture="PGNN",
+                train_dataset=CORA_DATASET_NAME,
+                identifier=STANDARD_SETTING,
+                seed=i,
+                additional_kwargs={},
+            )
+        )
+    for i in [5, 6, 7, 8, 9]:
+        all_trained_models.append(
+            GraphModel(
+                domain=GRAPH_DOMAIN,
+                architecture="PGNN",
+                train_dataset=CORA_DATASET_NAME,
+                identifier=STANDARD_SETTING,
+                seed=i,
+                additional_kwargs={},
+            )
+        )
     return all_trained_models
 
 
