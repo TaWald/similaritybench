@@ -201,6 +201,8 @@ def train_pgnn_model(
     seed: int,
     optimizer_params: Dict,
     p_drop_edge: float,
+    num_layers: int,
+    num_anchors: int,
     save_path: Path,
     b_test: bool = False,
 ):
@@ -212,7 +214,7 @@ def train_pgnn_model(
     dists = precompute_dist_data(edge_index.numpy(), data.num_nodes, approximate=0)
     data.dists = torch.from_numpy(dists).float()
 
-    preselect_anchor(data, layer_num=2)
+    preselect_anchor(data, layer_num=num_layers, anchor_num=num_anchors)
 
     model = model.to(device)
     data = data.to(device)

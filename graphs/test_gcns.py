@@ -17,6 +17,7 @@ from graphs.config import GNN_PARAMS_N_LAYERS_KEY
 from graphs.config import OPTIMIZER_PARAMS_DECAY_KEY
 from graphs.config import OPTIMIZER_PARAMS_DICT
 from graphs.config import OPTIMIZER_PARAMS_LR_KEY
+from graphs.config import PGNN_PARAMS_ANCHOR_NUM_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
@@ -119,6 +120,8 @@ class GNNTester:
                 seed=self.seed,
                 optimizer_params=self.optimizer_params,
                 p_drop_edge=0.0,
+                num_layers=self.gnn_params[GNN_PARAMS_N_LAYERS_KEY],
+                num_anchors=self.gnn_params[PGNN_PARAMS_ANCHOR_NUM_KEY],
                 save_path=save_path,
                 b_test=True,
             )

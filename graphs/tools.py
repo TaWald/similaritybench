@@ -137,7 +137,7 @@ def get_dist_max(anchorset_id, dist, device):
     return dist_max, dist_argmax
 
 
-def preselect_anchor(data, layer_num=1, anchor_num=32, anchor_size_num=4, device="cpu"):
+def preselect_anchor(data, layer_num=1, anchor_num=64, anchor_size_num=4, device="cpu"):
     data.anchor_size_num = anchor_size_num
     data.anchor_set = []
     anchor_num_per_size = anchor_num // anchor_size_num
