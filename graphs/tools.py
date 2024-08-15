@@ -149,3 +149,5 @@ def preselect_anchor(data, layer_num=1, anchor_num=64, anchor_size_num=4, device
 
     anchorset_id = get_random_anchorset(data.num_nodes, c=1)
     data.dists_max, data.dists_argmax = get_dist_max(anchorset_id, data.dists, device)
+
+    return len(anchorset_id)

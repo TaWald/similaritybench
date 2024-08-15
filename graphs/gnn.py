@@ -10,8 +10,6 @@ from graphs.config import OPTIMIZER_PARAMS_LR_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import SPLIT_IDX_TRAIN_KEY
 from graphs.config import SPLIT_IDX_VAL_KEY
-from graphs.tools import precompute_dist_data
-from graphs.tools import preselect_anchor
 from torch.nn import functional as func
 from torch_geometric.utils import dropout_edge
 from torcheval.metrics.functional import multiclass_accuracy
@@ -202,8 +200,6 @@ def train_pgnn_model(
     seed: int,
     optimizer_params: Dict,
     p_drop_edge: float,
-    num_layers: int,
-    num_anchors: int,
     slow_lr_at_epoch: int,
     save_path: Path,
     b_test: bool = False,
@@ -212,19 +208,13 @@ def train_pgnn_model(
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    dists = precompute_dist_data(edge_index.numpy(), data.num_nodes, approximate=0)
-    data.dists = torch.from_numpy(dists).float()
-
-    preselect_anchor(data, layer_num=num_layers, anchor_num=num_anchors)
-
     model = model.to(device)
     data = data.to(device)
+    edge_index = edge_index.to(device)
 
     # TODO: maybe rearrange this, data passing is currently quite messy
     train_idx = split_idx[SPLIT_IDX_TRAIN_KEY].to(device)
     val_idx = split_idx[SPLIT_IDX_VAL_KEY]
-
-    edge_index = edge_index.to(device)
 
     optimizer = torch.optim.Adam(
         model.parameters(),

@@ -72,8 +72,8 @@ class PGNN(torch.nn.Module):
     def __init__(
         self,
         in_channels,
-        # feature_dim,
         hidden_channels,
+        anchor_dim,
         out_channels,
         feature_pre=True,
         num_layers=2,
@@ -97,6 +97,8 @@ class PGNN(torch.nn.Module):
             self.convs.append(PGNN_layer(hidden_channels, out_channels))
         else:
             self.convs.append(PGNN_layer(in_channels, out_channels))
+
+        self.lin_out = nn.Linear(anchor_dim, out_channels)
 
     def forward(self, data):
         x = data.x
@@ -124,4 +126,6 @@ class PGNN(torch.nn.Module):
                 x = F.dropout(x, p=self.dropout, training=self.training)
 
         x_position = F.normalize(x_position, p=2, dim=-1)
+        x_position = self.lin_out(x_position)
+
         return x_position
