@@ -57,6 +57,7 @@ from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import SINGLE_SAMPLE_SEED
 from repsim.benchmark.types_globals import STANDARD_SETTING
 from torch_geometric import transforms as t
+from torch_geometric.utils import to_edge_index
 
 
 class GraphTrainer(ABC):
@@ -76,6 +77,7 @@ class GraphTrainer(ABC):
         self.seed = seed
         self.dataset_name: GRAPH_DATASET_TRAINED_ON = dataset_name
         self.data, self.n_classes, self.split_idx = self.get_data(self.dataset_name)
+        self.edge_index = to_edge_index(self.data.adj_t)[0]
         self.models = dict()
 
         if isinstance(device, str):
@@ -238,6 +240,7 @@ class GraphTrainer(ABC):
         train_results, _ = train_model(
             model=model,
             data=setting_data,
+            edge_index=self.edge_index,
             split_idx=self.split_idx,
             device=self.device,
             seed=self.seed,

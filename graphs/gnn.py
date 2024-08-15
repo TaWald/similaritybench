@@ -14,7 +14,6 @@ from graphs.tools import precompute_dist_data
 from graphs.tools import preselect_anchor
 from torch.nn import functional as func
 from torch_geometric.utils import dropout_edge
-from torch_geometric.utils import to_edge_index
 from torcheval.metrics.functional import multiclass_accuracy
 from tqdm import tqdm
 
@@ -22,6 +21,7 @@ from tqdm import tqdm
 def train_model(
     model,
     data,
+    edge_index,
     split_idx,
     device,
     seed: int,
@@ -41,7 +41,6 @@ def train_model(
     train_idx = split_idx[SPLIT_IDX_TRAIN_KEY].to(device)
     val_idx = split_idx[SPLIT_IDX_VAL_KEY]
 
-    edge_index, _ = to_edge_index(data.adj_t)
     edge_index = edge_index.to(device)
     model.reset_parameters()
 
@@ -91,6 +90,7 @@ def train_epoch(model, x, edge_index, y, train_idx, optimizer):
     model.train()
     optimizer.zero_grad()
     out = model(x, edge_index)[train_idx]
+    print("out.shape", out.shape)
     loss = func.cross_entropy(out, y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
@@ -196,6 +196,7 @@ def get_test_output(model, data, device, test_idx, return_accuracy=False):
 def train_pgnn_model(
     model,
     data,
+    edge_index,
     split_idx,
     device,
     seed: int,
@@ -211,7 +212,6 @@ def train_pgnn_model(
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    edge_index, _ = to_edge_index(data.adj_t)
     dists = precompute_dist_data(edge_index.numpy(), data.num_nodes, approximate=0)
     data.dists = torch.from_numpy(dists).float()
 
@@ -275,6 +275,7 @@ def train_pgnn_epoch(model, data, train_idx, optimizer):
     model.train()
     optimizer.zero_grad()
     out = model(data)[train_idx]
+    print("out.shape", out.shape)
     loss = func.cross_entropy(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()

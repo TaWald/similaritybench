@@ -30,6 +30,7 @@ from repsim.benchmark.paths import BASE_PATH
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from torch_geometric.utils import to_edge_index
 
 SEEDS = [1, 2, 3, 4, 5]
 
@@ -55,6 +56,7 @@ class GNNTester:
         self.dataset_name: GRAPH_DATASET_TRAINED_ON = dataset_name
         self.data, self.n_classes, self.split_idx = GraphTrainer.get_data(self.dataset_name)
         self.model_name = model_name
+        self.edge_index = to_edge_index(self.data.adj_t)[0]
 
         if isinstance(device, str):
             self.device = torch.device(device)
@@ -115,6 +117,7 @@ class GNNTester:
             train_results, test_acc = train_pgnn_model(
                 model=model,
                 data=self.data,
+                edge_index=self.edge_index,
                 split_idx=self.split_idx,
                 device=self.device,
                 seed=self.seed,
@@ -130,6 +133,7 @@ class GNNTester:
             train_results, test_acc = train_model(
                 model=model,
                 data=self.data,
+                edge_index=self.edge_index,
                 split_idx=self.split_idx,
                 device=self.device,
                 seed=self.seed,
