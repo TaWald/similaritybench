@@ -88,7 +88,6 @@ def train_epoch(model, x, edge_index, y, train_idx, optimizer):
     model.train()
     optimizer.zero_grad()
     out = model(x, edge_index)[train_idx]
-    print("out.shape", out.shape)
     loss = func.cross_entropy(out, y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
@@ -200,7 +199,6 @@ def train_pgnn_model(
     seed: int,
     optimizer_params: Dict,
     p_drop_edge: float,
-    slow_lr_at_epoch: int,
     save_path: Path,
     b_test: bool = False,
 ):
@@ -225,10 +223,6 @@ def train_pgnn_model(
     results = []
     n_epochs = optimizer_params[OPTIMIZER_PARAMS_EPOCHS_KEY]
     for epoch in tqdm(range(1, 1 + n_epochs)):
-
-        if slow_lr_at_epoch > 0 and epoch == slow_lr_at_epoch:
-            for param_group in optimizer.param_groups:
-                param_group["lr"] /= 10
 
         if p_drop_edge > 0:
             loss = train_epoch_dropout(
@@ -265,7 +259,6 @@ def train_pgnn_epoch(model, data, train_idx, optimizer):
     model.train()
     optimizer.zero_grad()
     out = model(data)[train_idx]
-    print("out.shape", out.shape)
     loss = func.cross_entropy(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
@@ -332,3 +325,20 @@ def get_pgnn_representations(model, data, device, test_idx, layer_ids):
         reps[i] = activations[f"layer{i + 1}"].detach()[test_idx].cpu().numpy()
 
     return reps
+
+
+@torch.no_grad()
+def get_pgnn_test_output(model, data, device, test_idx, return_accuracy=False):
+    model = model.to(device)
+    data = data.to(device)
+    test_idx = test_idx.to(device)
+
+    model.eval()
+    out = model(data)[test_idx]
+
+    if return_accuracy:
+        pred = out.argmax(dim=-1, keepdim=True)
+        acc = multiclass_accuracy(pred.squeeze(1), data.y.squeeze(1)[test_idx]).detach().cpu().numpy()
+        return out, float(acc)
+
+    return out

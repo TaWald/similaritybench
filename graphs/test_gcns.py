@@ -140,7 +140,6 @@ class GNNTester:
                 seed=self.seed,
                 optimizer_params=self.optimizer_params,
                 p_drop_edge=0.0,
-                slow_lr_at_epoch=200,
                 save_path=save_path,
                 b_test=True,
             )

@@ -19,6 +19,8 @@ from graphs.config import GNN_PARAMS_N_LAYERS_KEY
 from graphs.config import LAYER_EXPERIMENT_N_LAYERS
 from graphs.config import MAX_TEST_SIZE
 from graphs.config import OPTIMIZER_PARAMS_DICT
+from graphs.config import PGNN_PARAMS_ANCHOR_DIM_KEY
+from graphs.config import PGNN_PARAMS_ANCHOR_NUM_KEY
 from graphs.config import REDDIT_DATASET_NAME
 from graphs.config import SPLIT_IDX_BENCHMARK_TEST_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
@@ -26,9 +28,14 @@ from graphs.config import SPLIT_IDX_TRAIN_KEY
 from graphs.config import SPLIT_IDX_VAL_KEY
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
+from graphs.gnn import get_pgnn_representations
+from graphs.gnn import get_pgnn_test_output
 from graphs.gnn import get_representations
 from graphs.gnn import get_test_output
 from graphs.gnn import train_model
+from graphs.gnn import train_pgnn_model
+from graphs.tools import precompute_dist_data
+from graphs.tools import preselect_anchor
 from graphs.tools import shuffle_labels
 from graphs.tools import subsample_torch_index
 from graphs.tools import subsample_torch_mask
@@ -87,6 +94,18 @@ class GraphTrainer(ABC):
             self.device = torch.device(dev_str)
 
         self.gnn_params, self.optimizer_params = self._get_gnn_params()
+
+        if self.architecture_type == "PGNN":
+            dists = precompute_dist_data(self.edge_index.numpy(), self.data.num_nodes, approximate=0)
+            self.data.dists = torch.from_numpy(dists).float()
+
+            anchor_dim = preselect_anchor(
+                self.data,
+                layer_num=self.gnn_params[GNN_PARAMS_N_LAYERS_KEY],
+                anchor_num=self.gnn_params[PGNN_PARAMS_ANCHOR_NUM_KEY],
+            )
+
+            self.gnn_params[PGNN_PARAMS_ANCHOR_DIM_KEY] = anchor_dim
 
         model_dataset_path = GRAPHS_MODEL_PATH / self.dataset_name
 
@@ -237,18 +256,33 @@ class GraphTrainer(ABC):
         Path(self.setting_paths[setting]).mkdir(parents=True, exist_ok=True)
         save_path = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
 
-        train_results, _ = train_model(
-            model=model,
-            data=setting_data,
-            edge_index=self.edge_index,
-            split_idx=self.split_idx,
-            device=self.device,
-            seed=self.seed,
-            optimizer_params=self.optimizer_params,
-            p_drop_edge=p_drop_edge,
-            save_path=save_path,
-            b_test=True,
-        )
+        if self.architecture_type == "PGNN":
+
+            train_results, _ = train_pgnn_model(
+                model=model,
+                data=self.data,
+                edge_index=self.edge_index,
+                split_idx=self.split_idx,
+                device=self.device,
+                seed=self.seed,
+                optimizer_params=self.optimizer_params,
+                p_drop_edge=0.0,
+                save_path=save_path,
+                b_test=True,
+            )
+        else:
+            train_results, _ = train_model(
+                model=model,
+                data=setting_data,
+                edge_index=self.edge_index,
+                split_idx=self.split_idx,
+                device=self.device,
+                seed=self.seed,
+                optimizer_params=self.optimizer_params,
+                p_drop_edge=p_drop_edge,
+                save_path=save_path,
+                b_test=True,
+            )
 
         if log_results:
             self._log_train_results(train_results, setting)
@@ -257,6 +291,15 @@ class GraphTrainer(ABC):
 
         model = self._load_model(setting)
         setting_data = self._get_setting_data(setting)
+
+        if self.architecture_type == "PGNN":
+            return get_pgnn_representations(
+                model=model,
+                data=setting_data,
+                device=self.device,
+                test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
+                layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
+            )
 
         reps = get_representations(
             model=model,
@@ -272,6 +315,15 @@ class GraphTrainer(ABC):
 
         model = self._load_model(setting)
         setting_data = self._get_setting_data(setting)
+
+        if self.architecture_type == "PGNN":
+            return get_pgnn_test_output(
+                model=model,
+                data=setting_data,
+                device=self.device,
+                test_idx=self.split_idx[SPLIT_IDX_BENCHMARK_TEST_KEY],
+                return_accuracy=return_accuracy,
+            )
 
         return get_test_output(
             model=model,
