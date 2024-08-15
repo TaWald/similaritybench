@@ -122,6 +122,7 @@ class GNNTester:
                 p_drop_edge=0.0,
                 num_layers=self.gnn_params[GNN_PARAMS_N_LAYERS_KEY],
                 num_anchors=self.gnn_params[PGNN_PARAMS_ANCHOR_NUM_KEY],
+                slow_lr_at_epoch=200,
                 save_path=save_path,
                 b_test=True,
             )

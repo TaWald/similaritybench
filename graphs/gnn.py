@@ -203,6 +203,7 @@ def train_pgnn_model(
     p_drop_edge: float,
     num_layers: int,
     num_anchors: int,
+    slow_lr_at_epoch: int,
     save_path: Path,
     b_test: bool = False,
 ):
@@ -232,7 +233,12 @@ def train_pgnn_model(
     )
 
     results = []
-    for epoch in tqdm(range(1, 1 + optimizer_params[OPTIMIZER_PARAMS_EPOCHS_KEY])):
+    n_epochs = optimizer_params[OPTIMIZER_PARAMS_EPOCHS_KEY]
+    for epoch in tqdm(range(1, 1 + n_epochs)):
+
+        if slow_lr_at_epoch > 0 and epoch == slow_lr_at_epoch:
+            for param_group in optimizer.param_groups:
+                param_group["lr"] /= 10
 
         if p_drop_edge > 0:
             loss = train_epoch_dropout(
