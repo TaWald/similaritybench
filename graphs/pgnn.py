@@ -77,7 +77,7 @@ class PGNN(torch.nn.Module):
         out_channels,
         feature_pre=True,
         num_layers=2,
-        dropout=True,
+        dropout=0.5,
         **kwargs
     ):
         super(PGNN, self).__init__()
