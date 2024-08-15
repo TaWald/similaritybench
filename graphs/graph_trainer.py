@@ -260,7 +260,7 @@ class GraphTrainer(ABC):
 
             train_results, _ = train_pgnn_model(
                 model=model,
-                data=self.data,
+                data=setting_data,
                 edge_index=self.edge_index,
                 split_idx=self.split_idx,
                 device=self.device,
