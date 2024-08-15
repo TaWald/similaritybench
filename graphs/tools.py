@@ -32,7 +32,7 @@ def shuffle_labels(y, frac=0.5, seed=None):
     is_tensor = torch.is_tensor(y)
 
     if is_tensor:
-        y = y.numpy().flatten()
+        y = y.cpu().numpy().flatten()
 
     n_instances = len(y)
     Y = list(np.unique(y))
