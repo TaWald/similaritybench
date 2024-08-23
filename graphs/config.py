@@ -248,3 +248,6 @@ SPLIT_IDX_TEST_KEY = "test"
 SPLIT_IDX_BENCHMARK_TEST_KEY = "benchmark_test"
 
 MAX_TEST_SIZE = 10000
+
+
+DISTANCE_FILE_NAME = "distance_matrix.npy"

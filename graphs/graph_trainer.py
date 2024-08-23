@@ -1,5 +1,7 @@
 import argparse
 import copy
+import os.path
+import pickle
 from abc import ABC
 from abc import abstractmethod
 from itertools import product
@@ -7,6 +9,7 @@ from pathlib import Path
 from typing import get_args
 from typing import List
 
+import numpy as np
 import pandas as pd
 import torch
 import torch_geometric.datasets
@@ -14,6 +17,7 @@ from graphs import gnn
 from graphs import pgnn
 from graphs.config import DATASET_LIST
 from graphs.config import DEFAULT_DATASET_LIST
+from graphs.config import DISTANCE_FILE_NAME
 from graphs.config import GNN_DICT
 from graphs.config import GNN_LIST
 from graphs.config import GNN_PARAMS_DICT
@@ -93,7 +97,14 @@ class GraphTrainer(ABC):
         self.gnn_params, self.optimizer_params = self._get_gnn_params()
 
         if self.architecture_type == PGNN:
-            dists = precompute_dist_data(self.edge_index.numpy(), self.data.num_nodes, approximate=0)
+            dists_file_path = GRAPHS_DATA_PATH / self.dataset_name / DISTANCE_FILE_NAME
+            if Path(dists_file_path).exists():
+                with open(dists_file_path, "rb") as f:
+                    dists = np.load(f)
+            else:
+                dists = precompute_dist_data(self.edge_index.numpy(), self.data.num_nodes, approximate=0)
+                np.save(dists_file_path, dists)
+
             self.data.dists = torch.from_numpy(dists).float()
 
             anchor_dim = preselect_anchor(
@@ -143,11 +154,13 @@ class GraphTrainer(ABC):
     @staticmethod
     def get_data(dataset_name: GRAPH_DATASET_TRAINED_ON):
 
+        dataset_path = GRAPHS_DATA_PATH / dataset_name
+
         if dataset_name == ARXIV_DATASET_NAME:
             pyg_dataset = PygNodePropPredDataset(
                 name=ARXIV_DATASET_NAME,
                 transform=t.Compose([t.ToUndirected(), t.ToSparseTensor()]),
-                root=GRAPHS_DATA_PATH / ARXIV_DATASET_NAME,
+                root=dataset_path,
             )
 
             split_idx = pyg_dataset.get_idx_split()
@@ -162,7 +175,7 @@ class GraphTrainer(ABC):
 
             if dataset_name == CORA_DATASET_NAME:
                 pyg_dataset = torch_geometric.datasets.Planetoid(
-                    root=GRAPHS_DATA_PATH / dataset_name,
+                    root=dataset_path,
                     name="Cora",
                     transform=t.NormalizeFeatures(),
                 )
