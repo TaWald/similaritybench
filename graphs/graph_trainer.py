@@ -10,6 +10,8 @@ from typing import List
 import pandas as pd
 import torch
 import torch_geometric.datasets
+from graphs import gnn
+from graphs import pgnn
 from graphs.config import DATASET_LIST
 from graphs.config import DEFAULT_DATASET_LIST
 from graphs.config import GNN_DICT
@@ -28,12 +30,6 @@ from graphs.config import SPLIT_IDX_TRAIN_KEY
 from graphs.config import SPLIT_IDX_VAL_KEY
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
-from graphs.gnn import get_pgnn_representations
-from graphs.gnn import get_pgnn_test_output
-from graphs.gnn import get_representations
-from graphs.gnn import get_test_output
-from graphs.gnn import train_model
-from graphs.gnn import train_pgnn_model
 from graphs.tools import precompute_dist_data
 from graphs.tools import preselect_anchor
 from graphs.tools import shuffle_labels
@@ -59,6 +55,7 @@ from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_FIVE_GROUPS_DICT
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import PGNN
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import SINGLE_SAMPLE_SEED
@@ -95,7 +92,7 @@ class GraphTrainer(ABC):
 
         self.gnn_params, self.optimizer_params = self._get_gnn_params()
 
-        if self.architecture_type == "PGNN":
+        if self.architecture_type == PGNN:
             dists = precompute_dist_data(self.edge_index.numpy(), self.data.num_nodes, approximate=0)
             self.data.dists = torch.from_numpy(dists).float()
 
@@ -256,9 +253,9 @@ class GraphTrainer(ABC):
         Path(self.setting_paths[setting]).mkdir(parents=True, exist_ok=True)
         save_path = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
 
-        if self.architecture_type == "PGNN":
+        if self.architecture_type == PGNN:
 
-            train_results, _ = train_pgnn_model(
+            train_results, _ = pgnn.train_model(
                 model=model,
                 data=setting_data,
                 edge_index=self.edge_index,
@@ -266,12 +263,11 @@ class GraphTrainer(ABC):
                 device=self.device,
                 seed=self.seed,
                 optimizer_params=self.optimizer_params,
-                p_drop_edge=0.0,
                 save_path=save_path,
                 b_test=True,
             )
         else:
-            train_results, _ = train_model(
+            train_results, _ = gnn.train_model(
                 model=model,
                 data=setting_data,
                 edge_index=self.edge_index,
@@ -292,8 +288,8 @@ class GraphTrainer(ABC):
         model = self._load_model(setting)
         setting_data = self._get_setting_data(setting)
 
-        if self.architecture_type == "PGNN":
-            return get_pgnn_representations(
+        if self.architecture_type == PGNN:
+            return pgnn.get_representations(
                 model=model,
                 data=setting_data,
                 device=self.device,
@@ -301,7 +297,7 @@ class GraphTrainer(ABC):
                 layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
             )
 
-        reps = get_representations(
+        reps = gnn.get_representations(
             model=model,
             data=setting_data,
             device=self.device,
@@ -316,8 +312,8 @@ class GraphTrainer(ABC):
         model = self._load_model(setting)
         setting_data = self._get_setting_data(setting)
 
-        if self.architecture_type == "PGNN":
-            return get_pgnn_test_output(
+        if self.architecture_type == PGNN:
+            return pgnn.get_test_output(
                 model=model,
                 data=setting_data,
                 device=self.device,
@@ -325,7 +321,7 @@ class GraphTrainer(ABC):
                 return_accuracy=return_accuracy,
             )
 
-        return get_test_output(
+        return gnn.get_test_output(
             model=model,
             data=setting_data,
             device=self.device,
