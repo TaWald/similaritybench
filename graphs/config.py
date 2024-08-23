@@ -1,17 +1,19 @@
 import copy
 
-from graphs.pgnn import PGNN
+from graphs import pgnn
 from repsim.benchmark.types_globals import ARXIV_DATASET_NAME
 from repsim.benchmark.types_globals import CORA_DATASET_NAME
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import FLICKR_DATASET_NAME
+from repsim.benchmark.types_globals import GAT
+from repsim.benchmark.types_globals import GCN
+from repsim.benchmark.types_globals import GRAPHSAGE
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import PGNN
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
-from torch_geometric.nn.models import GAT
-from torch_geometric.nn.models import GCN
-from torch_geometric.nn.models import GraphSAGE
+from torch_geometric.nn import models
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -97,7 +99,7 @@ OPTIMIZER_PARAMS_DEFAULT_DICT = {
 }
 
 GNN_PARAMS_DICT = {
-    "GCN": {
+    GCN: {
         ARXIV_DATASET_NAME: copy.deepcopy(GNN_PARAMS_DEFAULT_DICT),
         CORA_DATASET_NAME: {
             GNN_PARAMS_DIMENSION_KEY: 64,
@@ -115,7 +117,7 @@ GNN_PARAMS_DICT = {
         },
         FLICKR_DATASET_NAME: copy.deepcopy(GNN_PARAMS_DEFAULT_DICT),
     },
-    "GraphSAGE": {
+    GRAPHSAGE: {
         ARXIV_DATASET_NAME: copy.deepcopy(GNN_PARAMS_DEFAULT_DICT),
         CORA_DATASET_NAME: {
             GNN_PARAMS_DIMENSION_KEY: 64,
@@ -133,7 +135,7 @@ GNN_PARAMS_DICT = {
         },
         FLICKR_DATASET_NAME: copy.deepcopy(GNN_PARAMS_DEFAULT_DICT),
     },
-    "GAT": {
+    GAT: {
         ARXIV_DATASET_NAME: copy.deepcopy(GAT_PARAMS_DEFAULT_DICT),
         CORA_DATASET_NAME: {
             GNN_PARAMS_DIMENSION_KEY: 64,
@@ -153,7 +155,7 @@ GNN_PARAMS_DICT = {
         },
         FLICKR_DATASET_NAME: copy.deepcopy(GAT_PARAMS_DEFAULT_DICT),
     },
-    "PGNN": {
+    PGNN: {
         ARXIV_DATASET_NAME: copy.deepcopy(PGNN_PARAMS_DEFAULT_DICT),
         CORA_DATASET_NAME: {
             GNN_PARAMS_DIMENSION_KEY: 32,
@@ -172,7 +174,7 @@ GNN_PARAMS_DICT = {
 }
 
 OPTIMIZER_PARAMS_DICT = {
-    "GCN": {
+    GCN: {
         ARXIV_DATASET_NAME: copy.deepcopy(OPTIMIZER_PARAMS_DEFAULT_DICT),
         CORA_DATASET_NAME: {
             OPTIMIZER_PARAMS_LR_KEY: OPTIMIZER_PARAMS_DEFAULT_LR,
@@ -186,7 +188,7 @@ OPTIMIZER_PARAMS_DICT = {
             OPTIMIZER_PARAMS_DECAY_KEY: OPTIMIZER_PARAMS_DEFAULT_DECAY,
         },
     },
-    "GraphSAGE": {
+    GRAPHSAGE: {
         ARXIV_DATASET_NAME: copy.deepcopy(OPTIMIZER_PARAMS_DEFAULT_DICT),
         CORA_DATASET_NAME: {
             OPTIMIZER_PARAMS_LR_KEY: 0.005,
@@ -200,7 +202,7 @@ OPTIMIZER_PARAMS_DICT = {
             OPTIMIZER_PARAMS_DECAY_KEY: OPTIMIZER_PARAMS_DEFAULT_DECAY,
         },
     },
-    "GAT": {
+    GAT: {
         ARXIV_DATASET_NAME: copy.deepcopy(OPTIMIZER_PARAMS_DEFAULT_DICT),
         CORA_DATASET_NAME: {
             OPTIMIZER_PARAMS_LR_KEY: 0.005,
@@ -210,7 +212,7 @@ OPTIMIZER_PARAMS_DICT = {
         REDDIT_DATASET_NAME: copy.deepcopy(OPTIMIZER_PARAMS_DEFAULT_DICT),
         FLICKR_DATASET_NAME: copy.deepcopy(OPTIMIZER_PARAMS_DEFAULT_DICT),
     },
-    "PGNN": {
+    PGNN: {
         ARXIV_DATASET_NAME: copy.deepcopy(OPTIMIZER_PARAMS_DEFAULT_DICT),
         CORA_DATASET_NAME: {
             OPTIMIZER_PARAMS_LR_KEY: OPTIMIZER_PARAMS_DEFAULT_LR,
@@ -226,8 +228,8 @@ OPTIMIZER_PARAMS_DICT = {
     },
 }
 
-# GNN_DICT = {"gcn": GCN, "sage": GraphSAGE, "gat": GAT}
-GNN_DICT = {"GCN": GCN, "GraphSAGE": GraphSAGE, "GAT": GAT, "PGNN": PGNN}
+# GNN_DICT = {GCN: GCN, "sage": GraphSAGE, GAT: GAT}
+GNN_DICT = {GCN: models.GCN, GRAPHSAGE: models.GraphSAGE, GAT: models.GAT, PGNN: pgnn.PGNN}
 
 GNN_LIST = list(GNN_DICT.keys())
 
