@@ -1,7 +1,5 @@
 import argparse
 import copy
-import os.path
-import pickle
 from abc import ABC
 from abc import abstractmethod
 from itertools import product
@@ -14,7 +12,6 @@ import pandas as pd
 import torch
 import torch_geometric.datasets
 from graphs import gnn
-from graphs import pgnn
 from graphs.config import DATASET_LIST
 from graphs.config import DEFAULT_DATASET_LIST
 from graphs.config import DISTANCE_FILE_NAME
@@ -34,6 +31,7 @@ from graphs.config import SPLIT_IDX_TRAIN_KEY
 from graphs.config import SPLIT_IDX_VAL_KEY
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
+from graphs.pgnn import train as pgnn
 from graphs.tools import precompute_dist_data
 from graphs.tools import preselect_anchor
 from graphs.tools import shuffle_labels
@@ -59,7 +57,7 @@ from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_FIVE_GROUPS_DICT
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import LAYER_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import OUTPUT_CORRELATION_EXPERIMENT_NAME
-from repsim.benchmark.types_globals import PGNN
+from repsim.benchmark.types_globals import PGNN_MODEL_NAME
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
 from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import SINGLE_SAMPLE_SEED
@@ -96,7 +94,7 @@ class GraphTrainer(ABC):
 
         self.gnn_params, self.optimizer_params = self._get_gnn_params()
 
-        if self.architecture_type == PGNN:
+        if self.architecture_type == PGNN_MODEL_NAME:
             dists_file_path = GRAPHS_DATA_PATH / self.dataset_name / DISTANCE_FILE_NAME
             if Path(dists_file_path).exists():
                 with open(dists_file_path, "rb") as f:
@@ -266,12 +264,11 @@ class GraphTrainer(ABC):
         Path(self.setting_paths[setting]).mkdir(parents=True, exist_ok=True)
         save_path = self.setting_paths[setting] / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
 
-        if self.architecture_type == PGNN:
+        if self.architecture_type == PGNN_MODEL_NAME:
 
             train_results, _ = pgnn.train_model(
                 model=model,
                 data=setting_data,
-                edge_index=self.edge_index,
                 split_idx=self.split_idx,
                 device=self.device,
                 seed=self.seed,
@@ -301,7 +298,7 @@ class GraphTrainer(ABC):
         model = self._load_model(setting)
         setting_data = self._get_setting_data(setting)
 
-        if self.architecture_type == PGNN:
+        if self.architecture_type == PGNN_MODEL_NAME:
             return pgnn.get_representations(
                 model=model,
                 data=setting_data,
@@ -325,7 +322,7 @@ class GraphTrainer(ABC):
         model = self._load_model(setting)
         setting_data = self._get_setting_data(setting)
 
-        if self.architecture_type == PGNN:
+        if self.architecture_type == PGNN_MODEL_NAME:
             return pgnn.get_test_output(
                 model=model,
                 data=setting_data,
