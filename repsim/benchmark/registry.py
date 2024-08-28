@@ -13,6 +13,7 @@ from repsim.benchmark.types_globals import DEFAULT_SEEDS
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_DOMAIN
+from repsim.benchmark.types_globals import PGNN_MODEL_NAME
 from repsim.benchmark.types_globals import RANDOM_LABEL_100_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_25_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_50_SETTING
@@ -522,7 +523,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
         all_trained_models.append(
             GraphModel(
                 domain=GRAPH_DOMAIN,
-                architecture="PGNN",
+                architecture=PGNN_MODEL_NAME,
                 train_dataset=CORA_DATASET_NAME,
                 identifier=STANDARD_SETTING,
                 seed=i,
@@ -533,7 +534,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
         all_trained_models.append(
             GraphModel(
                 domain=GRAPH_DOMAIN,
-                architecture="PGNN",
+                architecture=PGNN_MODEL_NAME,
                 train_dataset=CORA_DATASET_NAME,
                 identifier=STANDARD_SETTING,
                 seed=i,
