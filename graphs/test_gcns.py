@@ -6,9 +6,11 @@ from pathlib import Path
 from time import localtime
 from time import strftime
 
+import graphs.pgnn.train as pgnn
 import numpy as np
 import pandas as pd
 import torch
+from graphs import gnn
 from graphs.config import DATASET_LIST
 from graphs.config import GNN_DICT
 from graphs.config import GNN_LIST
@@ -22,10 +24,7 @@ from graphs.config import PGNN_PARAMS_ANCHOR_NUM_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
-from graphs.gnn import get_pgnn_representations
-from graphs.gnn import get_representations
 from graphs.gnn import train_model
-from graphs.gnn import train_pgnn_model
 from graphs.graph_trainer import GraphTrainer
 from graphs.tools import precompute_dist_data
 from graphs.tools import preselect_anchor
@@ -33,6 +32,7 @@ from repsim.benchmark.paths import BASE_PATH
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import PGNN_MODEL_NAME
 from torch_geometric.utils import to_edge_index
 
 SEEDS = [1, 2, 3, 4, 5]
@@ -71,7 +71,7 @@ class GNNTester:
         self.gnn_params["in_channels"] = self.data.num_features
         self.gnn_params["out_channels"] = self.n_classes
 
-        if self.architecture_type == "PGNN":
+        if self.architecture_type == PGNN_MODEL_NAME:
             dists = precompute_dist_data(self.edge_index.numpy(), self.data.num_nodes, approximate=0)
             self.data.dists = torch.from_numpy(dists).float()
 
@@ -129,17 +129,15 @@ class GNNTester:
         save_path = self.model_path / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
         model = GNN_DICT[self.architecture_type](**self.gnn_params)
 
-        if self.architecture_type == "PGNN":
+        if self.architecture_type == PGNN_MODEL_NAME:
 
-            train_results, test_acc = train_pgnn_model(
+            train_results, test_acc = pgnn.train_model(
                 model=model,
                 data=self.data,
-                edge_index=self.edge_index,
                 split_idx=self.split_idx,
                 device=self.device,
                 seed=self.seed,
                 optimizer_params=self.optimizer_params,
-                p_drop_edge=0.0,
                 save_path=save_path,
                 b_test=True,
             )
@@ -172,8 +170,8 @@ class GNNTester:
 
         model = self._load_model()
 
-        if self.architecture_type == "PGNN":
-            return get_pgnn_representations(
+        if self.architecture_type == PGNN_MODEL_NAME:
+            return pgnn.get_representations(
                 model=model,
                 data=self.data,
                 device=self.device,
@@ -181,7 +179,7 @@ class GNNTester:
                 layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
             )
 
-        return get_representations(
+        return gnn.get_representations(
             model=model,
             data=self.data,
             device=self.device,
