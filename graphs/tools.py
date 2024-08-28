@@ -90,7 +90,7 @@ def all_pairs_shortest_path_length_parallel(graph, cutoff=None, num_workers=2):
     return dists_dict
 
 
-def precompute_dist_data(edge_index, num_nodes, approximate=0):
+def precompute_dist_data(edge_index, num_nodes, approximate=0, num_workers=2):
     """
     Here dist is 1/real_dist, higher actually means closer, 0 means disconnected
     :return:
@@ -103,7 +103,9 @@ def precompute_dist_data(edge_index, num_nodes, approximate=0):
     dists_array = np.zeros((n, n))
     # dists_dict = nx.all_pairs_shortest_path_length(graph,cutoff=approximate if approximate>0 else None)
     # dists_dict = {c[0]: c[1] for c in dists_dict}
-    dists_dict = all_pairs_shortest_path_length_parallel(graph, cutoff=approximate if approximate > 0 else None)
+    dists_dict = all_pairs_shortest_path_length_parallel(
+        graph, cutoff=approximate if approximate > 0 else None, num_workers=num_workers
+    )
     for i, node_i in enumerate(graph.nodes()):
         shortest_dist = dists_dict[node_i]
         for j, node_j in enumerate(graph.nodes()):
