@@ -78,10 +78,12 @@ class GNNTester:
             if Path(dists_file_path).exists():
                 with open(dists_file_path, "rb") as f:
                     dists = np.load(f)
+                print("loaded dist file")
             else:
+                print("compute distances")
                 dists = precompute_dist_data(self.edge_index.numpy(), self.data.num_nodes, approximate=0)
                 np.save(dists_file_path, dists)
-
+                print("done")
             self.data.dists = torch.from_numpy(dists).float()
 
             anchor_dim = preselect_anchor(
