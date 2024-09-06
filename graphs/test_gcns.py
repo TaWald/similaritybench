@@ -12,6 +12,7 @@ import pandas as pd
 import torch
 from graphs import gnn
 from graphs.config import DATASET_LIST
+from graphs.config import DISTANCE_FILE_NAME
 from graphs.config import GNN_DICT
 from graphs.config import GNN_LIST
 from graphs.config import GNN_PARAMS_DICT
@@ -29,6 +30,7 @@ from graphs.graph_trainer import GraphTrainer
 from graphs.tools import precompute_dist_data
 from graphs.tools import preselect_anchor
 from repsim.benchmark.paths import BASE_PATH
+from repsim.benchmark.paths import GRAPHS_DATA_PATH
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
@@ -72,7 +74,14 @@ class GNNTester:
         self.gnn_params["out_channels"] = self.n_classes
 
         if self.architecture_type == PGNN_MODEL_NAME:
-            dists = precompute_dist_data(self.edge_index.numpy(), self.data.num_nodes, approximate=0)
+            dists_file_path = GRAPHS_DATA_PATH / self.dataset_name / DISTANCE_FILE_NAME
+            if Path(dists_file_path).exists():
+                with open(dists_file_path, "rb") as f:
+                    dists = np.load(f)
+            else:
+                dists = precompute_dist_data(self.edge_index.numpy(), self.data.num_nodes, approximate=0)
+                np.save(dists_file_path, dists)
+
             self.data.dists = torch.from_numpy(dists).float()
 
             anchor_dim = preselect_anchor(
