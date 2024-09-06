@@ -9,7 +9,7 @@ import torch
 def subsample_torch_mask(idx, size, seed):
     # sample from numpy random state for more safe reproducibility
     rng = np.random.RandomState(seed)
-    numeric_idx = np.arange(len(idx))[idx.numpy()]
+    numeric_idx = np.arange(len(idx), dtype=np.int64)[idx.numpy()]
 
     sub_idx = torch.from_numpy(rng.choice(numeric_idx, size, replace=False))
     res_idx = torch.zeros(size=(len(idx),), dtype=torch.bool)
