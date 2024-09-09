@@ -13,12 +13,16 @@ from repsim.benchmark.types_globals import DEFAULT_SEEDS
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_DOMAIN
+from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_FIVE_GROUPS_DICT
+from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
+from repsim.benchmark.types_globals import MULTI_LAYER_SETTING
 from repsim.benchmark.types_globals import PGNN_MODEL_NAME
 from repsim.benchmark.types_globals import RANDOM_LABEL_100_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_25_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_50_SETTING
 from repsim.benchmark.types_globals import RANDOM_LABEL_75_SETTING
 from repsim.benchmark.types_globals import SETTING_IDENTIFIER
+from repsim.benchmark.types_globals import SHORTCUT_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import STANDARD_SETTING
 from repsim.utils import GraphModel
 from repsim.utils import MNLI
@@ -519,17 +523,24 @@ def all_trained_graph_models() -> list[TrainedModel]:
                         additional_kwargs={},
                     )
                 )
+
+    # ADDITIONAL P-GNN EXPERIMENTS
     for i in DEFAULT_SEEDS:
-        all_trained_models.append(
-            GraphModel(
-                domain=GRAPH_DOMAIN,
-                architecture=PGNN_MODEL_NAME,
-                train_dataset=CORA_DATASET_NAME,
-                identifier=STANDARD_SETTING,
-                seed=i,
-                additional_kwargs={},
+        for setting in (
+            GRAPH_EXPERIMENT_FIVE_GROUPS_DICT[LABEL_EXPERIMENT_NAME]
+            + GRAPH_EXPERIMENT_FIVE_GROUPS_DICT[SHORTCUT_EXPERIMENT_NAME]
+            + [MULTI_LAYER_SETTING]
+        ):
+            all_trained_models.append(
+                GraphModel(
+                    domain=GRAPH_DOMAIN,
+                    architecture=PGNN_MODEL_NAME,
+                    train_dataset=CORA_DATASET_NAME,
+                    identifier=setting,
+                    seed=i,
+                    additional_kwargs={},
+                )
             )
-        )
     for i in [5, 6, 7, 8, 9]:
         all_trained_models.append(
             GraphModel(
