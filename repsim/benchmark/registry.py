@@ -10,10 +10,13 @@ from repsim.benchmark.types_globals import AUGMENTATION_50_SETTING
 from repsim.benchmark.types_globals import AUGMENTATION_75_SETTING
 from repsim.benchmark.types_globals import CORA_DATASET_NAME
 from repsim.benchmark.types_globals import DEFAULT_SEEDS
+from repsim.benchmark.types_globals import GAT_MODEL_NAME
+from repsim.benchmark.types_globals import GCN_MODEL_NAME
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
 from repsim.benchmark.types_globals import GRAPH_DOMAIN
 from repsim.benchmark.types_globals import GRAPH_EXPERIMENT_FIVE_GROUPS_DICT
+from repsim.benchmark.types_globals import GRAPHSAGE_MODEL_NAME
 from repsim.benchmark.types_globals import LABEL_EXPERIMENT_NAME
 from repsim.benchmark.types_globals import MULTI_LAYER_SETTING
 from repsim.benchmark.types_globals import PGNN_MODEL_NAME
@@ -497,7 +500,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
     all_trained_models = []
 
     for i in DEFAULT_SEEDS:
-        for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
+        for arch in [GCN_MODEL_NAME, GRAPHSAGE_MODEL_NAME, GAT_MODEL_NAME]:
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
                 for setting in list(get_args(SETTING_IDENTIFIER)):
                     all_trained_models.append(
@@ -511,7 +514,7 @@ def all_trained_graph_models() -> list[TrainedModel]:
                         )
                     )
     for i in [5, 6, 7, 8, 9]:
-        for arch in get_args(GRAPH_ARCHITECTURE_TYPE):
+        for arch in [GCN_MODEL_NAME, GRAPHSAGE_MODEL_NAME, GAT_MODEL_NAME]:
             for dataset in get_args(GRAPH_DATASET_TRAINED_ON):
                 all_trained_models.append(
                     GraphModel(
