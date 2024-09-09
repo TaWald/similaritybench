@@ -81,7 +81,6 @@ class PGNN(torch.nn.Module):
         feature_pre=True,
         num_layers=2,
         dropout=0.5,
-        **kwargs,
     ):
         super(PGNN, self).__init__()
         self.feature_pre = feature_pre
@@ -104,22 +103,8 @@ class PGNN(torch.nn.Module):
         self.lin_out = nn.Linear(anchor_dim, out_channels)
 
     def forward(self, data):
-        x = data.x
-        # if self.feature_pre:
-        #     x = self.linear_pre(x)
-        # x_position, x = self.init_conv(x, data.dists_max, data.dists_argmax)
-        # if self.num_layers == 1:
-        #     return x_position
-        # # x = F.relu(x) # Note: optional!
-        # if self.dropout > 0:
-        #     x = F.dropout(x, p=self.dropout, training=self.training)
-        # for i in range(self.num_layers - 2):
-        #     _, x = self.conv_hidden[i](x, data.dists_max, data.dists_argmax)
-        #     # x = F.relu(x) # Note: optional!
-        #     if self.dropout > 0:
-        #         x = F.dropout(x, p=self.dropout, training=self.training)
-        # x_position, x = self.conv_out(x, data.dists_max, data.dists_argmax)
 
+        x = data.x
         if self.feature_pre:
             x = self.linear_pre(x)
         for i, conv in enumerate(self.convs):
