@@ -11,7 +11,6 @@ from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import SPLIT_IDX_TRAIN_KEY
 from graphs.config import SPLIT_IDX_VAL_KEY
 from torch.nn import functional as func
-from torch_geometric.utils import dropout_edge
 from torcheval.metrics.functional import multiclass_accuracy
 from tqdm import tqdm
 
@@ -19,12 +18,10 @@ from tqdm import tqdm
 def train_model(
     model,
     data,
-    edge_index,
     split_idx,
     device,
     seed: int,
     optimizer_params: Dict,
-    p_drop_edge: float,
     save_path: Path,
     b_test: bool = False,
 ):
@@ -39,9 +36,6 @@ def train_model(
     train_idx = split_idx[SPLIT_IDX_TRAIN_KEY].to(device)
     val_idx = split_idx[SPLIT_IDX_VAL_KEY]
 
-    edge_index = edge_index.to(device)
-    model.reset_parameters()
-
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=optimizer_params[OPTIMIZER_PARAMS_LR_KEY],
@@ -49,22 +43,10 @@ def train_model(
     )
 
     results = []
-    for epoch in tqdm(range(1, 1 + optimizer_params[OPTIMIZER_PARAMS_EPOCHS_KEY])):
+    n_epochs = optimizer_params[OPTIMIZER_PARAMS_EPOCHS_KEY]
+    for epoch in tqdm(range(1, 1 + n_epochs)):
 
-        if p_drop_edge > 0:
-            loss = train_epoch_dropout(
-                model=model,
-                x=data.x,
-                edge_index=edge_index,
-                y=data.y,
-                train_idx=train_idx,
-                p_drop_edge=p_drop_edge,
-                optimizer=optimizer,
-            )
-        else:
-            loss = train_epoch(
-                model=model, x=data.x, edge_index=edge_index, y=data.y, train_idx=train_idx, optimizer=optimizer
-            )
+        loss = train_epoch(model=model, data=data, train_idx=train_idx, optimizer=optimizer)
 
         train_acc, val_acc = validate(model, data, train_idx, val_idx)
 
@@ -84,28 +66,11 @@ def train_model(
     return results
 
 
-def train_epoch(model, x, edge_index, y, train_idx, optimizer):
+def train_epoch(model, data, train_idx, optimizer):
     model.train()
     optimizer.zero_grad()
-    out = model(x, edge_index)[train_idx]
-    loss = func.cross_entropy(out, y.squeeze(1)[train_idx])
-    loss.backward()
-    optimizer.step()
-
-    return loss.item()
-
-
-def train_epoch_dropout(model, x, edge_index, y, train_idx, p_drop_edge, optimizer):
-    model.train()
-    optimizer.zero_grad()
-
-    if p_drop_edge > 0:
-        curr_adj, _ = dropout_edge(edge_index, p=p_drop_edge)
-        out = model(x, curr_adj)[train_idx]
-    else:
-        out = model(x, edge_index)[train_idx]
-    # loss = func.nll_loss(out, data.y.squeeze(1)[train_idx])
-    loss = func.cross_entropy(out, y.squeeze(1)[train_idx])
+    out = model(data)[train_idx]
+    loss = func.cross_entropy(out, data.y.squeeze(1)[train_idx])
     loss.backward()
     optimizer.step()
 
@@ -116,10 +81,10 @@ def train_epoch_dropout(model, x, edge_index, y, train_idx, p_drop_edge, optimiz
 def validate(model, data, train_idx, val_idx):
     model.eval()
 
-    out_train = model(data.x, data.adj_t)[train_idx]
+    out_train = model(data)[train_idx]
     train_pred = out_train.argmax(dim=-1, keepdim=True)
 
-    out_val = model(data.x, data.adj_t)[val_idx]
+    out_val = model(data)[val_idx]
     val_pred = out_val.argmax(dim=-1, keepdim=True)
 
     train_acc, val_acc = (
@@ -134,7 +99,7 @@ def validate(model, data, train_idx, val_idx):
 def test(model, data, test_idx):
     model.eval()
 
-    out = model(data.x, data.adj_t)[test_idx]
+    out = model(data)[test_idx]
     pred = out.argmax(dim=-1, keepdim=True)
 
     return multiclass_accuracy(pred.squeeze(1), data.y.squeeze(1)[test_idx]).detach().cpu().numpy()
@@ -153,7 +118,7 @@ def get_representations(model, data, device, test_idx, layer_ids):
     def getActivation(name):
         # the hook signature
         def hook(model, input, output):
-            activations[name] = output.detach()
+            activations[name] = output[1].detach()
 
         return hook
 
@@ -161,7 +126,7 @@ def get_representations(model, data, device, test_idx, layer_ids):
     for i in layer_ids:
         hooks[i] = model.convs[i].register_forward_hook(getActivation(f"layer{i + 1}"))
 
-    _ = model(data.x, data.adj_t)
+    _ = model(data)
 
     for i in layer_ids:
         hooks[i].remove()
@@ -180,7 +145,7 @@ def get_test_output(model, data, device, test_idx, return_accuracy=False):
     test_idx = test_idx.to(device)
 
     model.eval()
-    out = model(data.x, data.adj_t)[test_idx]
+    out = model(data)[test_idx]
 
     if return_accuracy:
         pred = out.argmax(dim=-1, keepdim=True)

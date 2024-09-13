@@ -6,10 +6,13 @@ from pathlib import Path
 from time import localtime
 from time import strftime
 
+import graphs.pgnn.train as pgnn
 import numpy as np
 import pandas as pd
 import torch
+from graphs import gnn
 from graphs.config import DATASET_LIST
+from graphs.config import DISTANCE_FILE_NAME
 from graphs.config import GNN_DICT
 from graphs.config import GNN_LIST
 from graphs.config import GNN_PARAMS_DICT
@@ -17,16 +20,22 @@ from graphs.config import GNN_PARAMS_N_LAYERS_KEY
 from graphs.config import OPTIMIZER_PARAMS_DECAY_KEY
 from graphs.config import OPTIMIZER_PARAMS_DICT
 from graphs.config import OPTIMIZER_PARAMS_LR_KEY
+from graphs.config import PGNN_PARAMS_ANCHOR_DIM_KEY
+from graphs.config import PGNN_PARAMS_ANCHOR_NUM_KEY
 from graphs.config import SPLIT_IDX_TEST_KEY
 from graphs.config import TORCH_STATE_DICT_FILE_NAME_SEED
 from graphs.config import TRAIN_LOG_FILE_NAME_SEED
-from graphs.gnn import get_representations
 from graphs.gnn import train_model
 from graphs.graph_trainer import GraphTrainer
+from graphs.tools import precompute_dist_data
+from graphs.tools import preselect_anchor
 from repsim.benchmark.paths import BASE_PATH
+from repsim.benchmark.paths import GRAPHS_DATA_PATH
 from repsim.benchmark.types_globals import EXPERIMENT_SEED
 from repsim.benchmark.types_globals import GRAPH_ARCHITECTURE_TYPE
 from repsim.benchmark.types_globals import GRAPH_DATASET_TRAINED_ON
+from repsim.benchmark.types_globals import PGNN_MODEL_NAME
+from torch_geometric.utils import to_edge_index
 
 SEEDS = [1, 2, 3, 4, 5]
 
@@ -52,6 +61,7 @@ class GNNTester:
         self.dataset_name: GRAPH_DATASET_TRAINED_ON = dataset_name
         self.data, self.n_classes, self.split_idx = GraphTrainer.get_data(self.dataset_name)
         self.model_name = model_name
+        self.edge_index = to_edge_index(self.data.adj_t)[0]
 
         if isinstance(device, str):
             self.device = torch.device(device)
@@ -62,6 +72,28 @@ class GNNTester:
         self.gnn_params = copy.deepcopy(GNN_PARAMS_DICT[self.architecture_type][self.dataset_name])
         self.gnn_params["in_channels"] = self.data.num_features
         self.gnn_params["out_channels"] = self.n_classes
+
+        if self.architecture_type == PGNN_MODEL_NAME:
+            dists_file_path = GRAPHS_DATA_PATH / self.dataset_name / DISTANCE_FILE_NAME
+            if Path(dists_file_path).exists():
+                with open(dists_file_path, "rb") as f:
+                    dists = np.load(f)
+                print("loaded dist file")
+            else:
+                print("compute distances")
+                dists = precompute_dist_data(self.edge_index.numpy(), self.data.num_nodes, approximate=0)
+                np.save(dists_file_path, dists)
+                print("done")
+            self.data.dists = torch.from_numpy(dists).float()
+
+            anchor_dim = preselect_anchor(
+                self.data,
+                layer_num=self.gnn_params[GNN_PARAMS_N_LAYERS_KEY],
+                anchor_num=self.gnn_params[PGNN_PARAMS_ANCHOR_NUM_KEY],
+            )
+
+            self.gnn_params[PGNN_PARAMS_ANCHOR_DIM_KEY] = anchor_dim
+
         if n_layers is not None:
             self.gnn_params[GNN_PARAMS_N_LAYERS_KEY] = n_layers
 
@@ -105,20 +137,34 @@ class GNNTester:
 
         print(f"Train {self.architecture_type} on {self.dataset_name}")
 
-        model = GNN_DICT[self.architecture_type](**self.gnn_params)
         save_path = self.model_path / TORCH_STATE_DICT_FILE_NAME_SEED(self.seed)
+        model = GNN_DICT[self.architecture_type](**self.gnn_params)
 
-        train_results, test_acc = train_model(
-            model=model,
-            data=self.data,
-            split_idx=self.split_idx,
-            device=self.device,
-            seed=self.seed,
-            optimizer_params=self.optimizer_params,
-            p_drop_edge=0.0,
-            save_path=save_path,
-            b_test=True,
-        )
+        if self.architecture_type == PGNN_MODEL_NAME:
+
+            train_results, test_acc = pgnn.train_model(
+                model=model,
+                data=self.data,
+                split_idx=self.split_idx,
+                device=self.device,
+                seed=self.seed,
+                optimizer_params=self.optimizer_params,
+                save_path=save_path,
+                b_test=True,
+            )
+        else:
+            train_results, test_acc = train_model(
+                model=model,
+                data=self.data,
+                edge_index=self.edge_index,
+                split_idx=self.split_idx,
+                device=self.device,
+                seed=self.seed,
+                optimizer_params=self.optimizer_params,
+                p_drop_edge=0.0,
+                save_path=save_path,
+                b_test=True,
+            )
         print(train_results[-1])
 
         df_log = pd.DataFrame(
@@ -135,15 +181,22 @@ class GNNTester:
 
         model = self._load_model()
 
-        reps = get_representations(
+        if self.architecture_type == PGNN_MODEL_NAME:
+            return pgnn.get_representations(
+                model=model,
+                data=self.data,
+                device=self.device,
+                test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
+                layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
+            )
+
+        return gnn.get_representations(
             model=model,
             data=self.data,
             device=self.device,
             test_idx=self.split_idx[SPLIT_IDX_TEST_KEY],
             layer_ids=list(range(self.gnn_params["num_layers"] - 1)),
         )
-
-        return reps
 
 
 def parse_args():

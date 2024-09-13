@@ -57,10 +57,10 @@ gudhi
 evaluate
 accelerate
 albumentations
-torch_geometric
 torcheval
 ogb
 openpyxl
 albumentations
 einops
 lightning-bolts
+tensorboardX
