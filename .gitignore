@@ -40,9 +40,11 @@ __pycache__/*
 *build
 ._.DS_Store
 .DS_Store
-experiments
 vision/data/shortcuts/example_imgs
 vision/_train_submit_to_cluster.py
+
+experiments/*
+!experiments/paper_results/
 
 manual_data_introspection
 *_pac_api.py
