@@ -17,6 +17,8 @@ nlp/saved_test_configurations
 
 graphs/data*
 graphs/output*
+graphs/notebooks/*.tex
+graphs/notebooks/*.pdf
 
 jobs*
 
