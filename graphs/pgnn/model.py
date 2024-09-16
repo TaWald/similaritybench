@@ -81,6 +81,7 @@ class PGNN(torch.nn.Module):
         feature_pre=True,
         num_layers=2,
         dropout=0.5,
+        **kwargs
     ):
         super(PGNN, self).__init__()
         self.feature_pre = feature_pre
