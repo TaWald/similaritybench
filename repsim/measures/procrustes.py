@@ -144,10 +144,15 @@ def aligned_cossim(
     align, _ = scipy.linalg.orthogonal_procrustes(R, Rp)
 
     R_aligned = R @ align
-    sum_cossim = 0
+    sum_cossim = 0.0
+    nan_ct = 0
     for r, rp in zip(R_aligned, Rp):
-        sum_cossim += r.dot(rp) / (np.linalg.norm(r) * np.linalg.norm(rp))
-    return sum_cossim / R.shape[0]
+        if not np.any(r) or not np.any(rp):
+            nan_ct += 1
+            warnings.warn("Full-zero instance representation detected when computing cosine similarity.")
+        else:
+            sum_cossim += r.dot(rp) / (np.linalg.norm(r) * np.linalg.norm(rp))
+    return sum_cossim / (R.shape[0] - nan_ct)
 
 
 def permutation_aligned_cossim(R: Union[torch.Tensor, npt.NDArray], Rp: Union[torch.Tensor, npt.NDArray]) -> float:
@@ -159,9 +164,14 @@ def permutation_aligned_cossim(R: Union[torch.Tensor, npt.NDArray], Rp: Union[to
     Rp_aligned = Rp[:, PRp]
 
     sum_cossim = 0
+    nan_ct = 0
     for r, rp in zip(R_aligned, Rp_aligned):
-        sum_cossim += r.dot(rp) / (np.linalg.norm(r) * np.linalg.norm(rp))
-    return sum_cossim / R.shape[0]
+        if not np.any(r) or not np.any(rp):
+            nan_ct += 1
+            warnings.warn("Full-zero instance representation detected when computing cosine similarity.")
+        else:
+            sum_cossim += r.dot(rp) / (np.linalg.norm(r) * np.linalg.norm(rp))
+    return sum_cossim / (R.shape[0] - nan_ct)
 
 
 class ProcrustesSizeAndShapeDistance(RepresentationalSimilarityMeasure):
