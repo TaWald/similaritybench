@@ -186,7 +186,6 @@ def permutation_aligned_cossim(R: Union[torch.Tensor, npt.NDArray], Rp: Union[to
     for r, rp in zip(R_aligned, Rp_aligned):
         if not np.any(r) or not np.any(rp):
             nan_ct += 1
-            warnings.warn("Full-zero instance representation detected when computing cosine similarity.")
         else:
             sum_cossim += r.dot(rp) / (np.linalg.norm(r) * np.linalg.norm(rp))
     if nan_ct == R.shape[0]:
