@@ -12,6 +12,7 @@ from .multiscale_intrinsic_distance import IMDScore
 from .nearest_neighbor import JaccardSimilarity
 from .nearest_neighbor import RankSimilarity
 from .nearest_neighbor import SecondOrderCosineSimilarity
+from .output_similarity import AbsoluteAccDiff
 from .output_similarity import Disagreement
 from .output_similarity import JSD
 from .procrustes import AlignedCosineSimilarity
@@ -24,7 +25,7 @@ from .rsm_norm_difference import RSMNormDifference
 from .statistics import ConcentricityDifference
 from .statistics import MagnitudeDifference
 from .statistics import UniformityDifference
-from .output_similarity import AbsoluteAccDiff
+from .utils import RepresentationalSimilarityMeasure
 
 CLASSES = [
     PWCCA,
@@ -53,6 +54,6 @@ CLASSES = [
     CKA,
 ]
 
-ALL_MEASURES = {m().name: m() for m in CLASSES}
+ALL_MEASURES: dict[str, RepresentationalSimilarityMeasure] = {m().name: m() for m in CLASSES}
 
 FUNCTIONAL_SIMILARITY_MEASURES = {m().name: m() for m in [JSD, Disagreement]}
