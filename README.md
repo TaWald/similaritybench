@@ -1,8 +1,8 @@
 ![ReSiBenchmark](figures/ReSi_benchmark.png)
 # `ReSi`: A Comprehensive Benchmark for Representational Similarity Measures
-The `ReSi` Benchmark provides a unified framework to quantitatively compare a wide array of representational similiarty measures. It comprises 23 similarity measures, comes with 11 different architectures and spans the Vision, Language and Graph domain. 
+The `ReSi` Benchmark provides a unified framework to quantitatively compare a wide array of representational similiarty measures. It comprises 23 similarity measures, comes with 11 different architectures and spans the Vision, Language and Graph domain.
 
-In the following we explain: 
+In the following we explain:
 1. How to setup the Benchmark
 2. How to use the Benchmark (e.g. how to reproduce results from the Paper)
 3. How extend the Benchmark with additional measures.
@@ -19,7 +19,7 @@ cd resi
 
 # Create a virtual environment with Python 3.10
 # With Conda ...
-conda create -n ENVNAME python=3.10
+conda create -n ENVNAME python=3.10 cmake  # cmake is required for rtd
 conda active ENVNAME
 # ... or venv
 python -m venv .venv
