@@ -1,5 +1,6 @@
 import random
 
+from tenacity import _unset
 from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR100
 from vision.data.cifar100_dm import CIFAR100DataModule
@@ -17,24 +18,26 @@ class RandomLabel_100_C100_DataModule(CIFAR100DataModule):
         """Get a train dataloader"""
         dataset = CIFAR100(
             root=self.dataset_path,
-            split="train",
-            kfold_split=split,
+            train=True,
+            download=False,
             transform=self.get_transforms(transform),
         )
 
-        samples = dataset.samples
+        targets = dataset.targets
 
         # Depending on the random ratio,
-        do_random_labels = [random.random() < self.random_label_percent for _ in range(len(samples))]
-        new_im_lbl_pairs = []
-        for (im_path, lbl), do_ in zip(samples, do_random_labels):
+        do_random_labels = [random.random() < self.random_label_percent for _ in range(len(targets))]
+        new_lbls_pairs = []
+        for lbl, do_ in zip(targets, do_random_labels):
             if do_:
-                new_im_lbl_pairs.append((im_path, random.randint(0, 99)))
+                new_lbls_pairs.append(random.randint(0, 99))
             else:
-                new_im_lbl_pairs.append((im_path, lbl))
+                new_lbls_pairs.append(lbl)
 
-        dataset.samples = new_im_lbl_pairs
+        dataset.targets = new_lbls_pairs
 
+        train_ids, _ = self.get_train_val_split(split, len(dataset))
+        dataset = _unset(dataset, train_ids)
         # INFO: Currently does not differentiate into different folds, as the
         #   Dataset comes with a deliberate validation set.
         return DataLoader(dataset=dataset, **kwargs)
