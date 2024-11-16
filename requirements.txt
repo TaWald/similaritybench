@@ -48,7 +48,6 @@ hydra-core
 ipykernel
 huggingface-hub
 ipywidgets
-pyarrow
 tokenizers
 datasets
 transformers
@@ -57,9 +56,7 @@ gudhi
 evaluate
 accelerate
 albumentations
-torch_geometric
 torcheval
-ogb
 openpyxl
-albumentations
 einops
+pl_bolts
