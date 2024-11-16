@@ -114,7 +114,7 @@ def train_vision_model(
         return  # No need to train the model again if it exists
 
     loaded_model, datamodule, params, arch_params = load_model_and_datamodule(model_info)
-    if ds.Dataset(train_dataset) in (SHORTCUT_DATAMODULES + IN_SHORTCUT_DATAMODULES):
+    if ds.Dataset(train_dataset) in (SHORTCUT_DATAMODULES + C100_SHORTCUT_DATAMODULES + IN_SHORTCUT_DATAMODULES):
         lnm_cls = ShortcutLightningModule
         no_sc_dm, full_sc_dm = fd.get_min_max_shortcut_datamodules(train_dataset)
         trainer_cls = partial(ShortcutTrainer, no_sc_datamodule=no_sc_dm, full_sc_datamodule=full_sc_dm)

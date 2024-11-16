@@ -4,9 +4,7 @@ from torch.utils.data import Subset
 from torchvision import transforms as trans
 from vision.data.cifar100_dm import CIFAR100DataModule
 from vision.data.shortcuts.cifar100_color_dataset import ColorDotCIFAR100
-from vision.data.shortcuts.imagenet100_color_ds import ColorDotImageNet100Dataset
 from vision.randaugment.randaugment import CIFAR10Policy
-from vision.randaugment.randaugment import Cutout
 from vision.util import data_structs as ds
 
 
