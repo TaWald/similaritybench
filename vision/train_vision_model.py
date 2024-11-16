@@ -31,6 +31,14 @@ SHORTCUT_DATAMODULES = [
     ds.Dataset.CDOT0,
 ]
 
+C100_SHORTCUT_DATAMODULES = [
+    ds.Dataset.C100CDOT100,
+    ds.Dataset.C100CDOT75,
+    ds.Dataset.C100CDOT50,
+    ds.Dataset.C100CDOT25,
+    ds.Dataset.C100CDOT0,
+]
+
 IN_SHORTCUT_DATAMODULES = [
     ds.Dataset.INCDOT100,
     ds.Dataset.INCDOT75,
@@ -46,12 +54,27 @@ IN_RANDOMLABEL_DATAMODULES = [
     ds.Dataset.INRLABEL25,
 ]
 
+C100_RANDOMLABEL_DATAMODULES = [
+    ds.Dataset.C100RLABEL100,
+    ds.Dataset.C100RLABEL75,
+    ds.Dataset.C100RLABEL50,
+    ds.Dataset.C100RLABEL25,
+]
+
 AUGMENTATION_DATAMODULES = [
     ds.Dataset.GaussMAX,
     ds.Dataset.GaussL,
     ds.Dataset.GaussM,
     ds.Dataset.GaussS,
     ds.Dataset.GaussOff,
+]
+
+C100_AUGMENTATION_DATAMODULES = [
+    ds.Dataset.C100GaussMAX,
+    ds.Dataset.C100GaussL,
+    ds.Dataset.C100GaussM,
+    ds.Dataset.C100GaussS,
+    ds.Dataset.C100GaussOff,
 ]
 
 IN_AUGMENTATION_DATAMODULES = [
