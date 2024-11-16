@@ -18,7 +18,7 @@ class ColorDotCIFAR100(CIFAR100):
         target_transform=None,
         download=False,
         dot_correlation: int = 100,
-        dot_diameter=5,
+        dot_diameter=3,
         rng_seed=123,
     ):
         super().__init__(
@@ -75,12 +75,12 @@ class ColorDotCIFAR100(CIFAR100):
 if __name__ == "__main__":
     n_samples = 30
     dot_corr = 100
-    dot_diam = 5
+    dot_diam = 3
     from repsim.benchmark.paths import VISION_DATA_PATH
     import os
     from pathlib import Path
 
-    save_path = Path(__file__).parent / "example_imgs"
+    save_path = Path(__file__).parent / "example_imgs_c100"
     save_path.mkdir(exist_ok=True)
 
     # ----------------------------- Actual execution ----------------------------- #
