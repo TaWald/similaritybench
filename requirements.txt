@@ -5,24 +5,17 @@ torchvision
 pytorch-lightning==1.9.5
 pyarrow
 pandas
-
 pytest
 tqdm
-
 seaborn
 opencv-python
-
 black==24.1.1
-
 geometry-score @ git+https://github.com/KhrulkovV/geometry-score
 msid @ git+https://github.com/xgfs/imd
-
 ripserplusplus @ git+https://github.com/simonzhang00/ripser-plusplus.git
 rtd @ git+https://github.com/IlyaTrofimov/RTD.git
-
 torch_geometric
 ogb
-
 six
 tensorboard
 matplotlib
@@ -42,7 +35,6 @@ setuptools
 Pillow
 plotly
 loguru
-hug
 huggingface_hub
 jsonlines
 textattack
