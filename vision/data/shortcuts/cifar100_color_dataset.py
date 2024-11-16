@@ -4,11 +4,11 @@ from typing import Tuple
 
 from matplotlib import pyplot as plt
 from PIL import Image
-from torchvision.datasets import CIFAR10
+from torchvision.datasets import CIFAR100
 from vision.data.shortcuts.shortcut_transforms import ColorDotShortcut
 
 
-class ColorDotCIFAR10(CIFAR10):
+class ColorDotCIFAR100(CIFAR100):
 
     def __init__(
         self,
@@ -29,7 +29,7 @@ class ColorDotCIFAR10(CIFAR10):
             download=download,
         )
         self._color_sc_gen = ColorDotShortcut(
-            n_classes=10,
+            n_classes=100,
             n_channels=3,
             image_size=(32, 32),
             dataset_mean=0,
@@ -84,8 +84,8 @@ if __name__ == "__main__":
     save_path.mkdir(exist_ok=True)
 
     # ----------------------------- Actual execution ----------------------------- #
-    cdotc10 = ColorDotCIFAR10(
-        root=os.path.join(VISION_DATA_PATH, "CIFAR10"),
+    cdotc10 = ColorDotCIFAR100(
+        root=os.path.join(VISION_DATA_PATH, "CIFAR100"),
         train=True,
         transform=None,
         target_transform=None,
@@ -106,4 +106,4 @@ if __name__ == "__main__":
         axs[0].set_title(f"Orig. Image; lbl: {target}")
         axs[1].imshow(cdot_image)
         axs[1].set_title(f"ColorDot Image; color lbl: {color_label}")
-        plt.savefig(save_path / f"color_dot_cifar10_{i}.png")
+        plt.savefig(save_path / f"color_dot_cifar100_{i}.png")
