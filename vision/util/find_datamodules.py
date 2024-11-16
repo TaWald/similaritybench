@@ -1,10 +1,15 @@
 from vision.data.base_datamodule import BaseDataModule
 from vision.data.cifar100_dm import CIFAR100DataModule
 from vision.data.cifar10_dm import CIFAR10DataModule
+from vision.data.higher_aug.higher_aug_dm import Gauss_L_CIFAR100DataModule
 from vision.data.higher_aug.higher_aug_dm import Gauss_L_CIFAR10DataModule
+from vision.data.higher_aug.higher_aug_dm import Gauss_M_CIFAR100DataModule
 from vision.data.higher_aug.higher_aug_dm import Gauss_M_CIFAR10DataModule
+from vision.data.higher_aug.higher_aug_dm import Gauss_Max_CIFAR100DataModule
 from vision.data.higher_aug.higher_aug_dm import Gauss_Max_CIFAR10DataModule
+from vision.data.higher_aug.higher_aug_dm import Gauss_Off_CIFAR100DataModule
 from vision.data.higher_aug.higher_aug_dm import Gauss_Off_CIFAR10DataModule
+from vision.data.higher_aug.higher_aug_dm import Gauss_S_CIFAR100DataModule
 from vision.data.higher_aug.higher_aug_dm import Gauss_S_CIFAR10DataModule
 from vision.data.higher_aug.higher_aug_IN100_dm import Gauss_L_Imagenet100DataModule
 from vision.data.higher_aug.higher_aug_IN100_dm import Gauss_M_Imagenet100DataModule
@@ -14,11 +19,20 @@ from vision.data.higher_aug.higher_aug_IN100_dm import Gauss_S_Imagenet100DataMo
 from vision.data.imagenet100_dm import Imagenet100DataModule
 from vision.data.imagenet_dm import ImagenetDataModule
 from vision.data.medmnist_dm import DermaMNISTDataModule
+from vision.data.random_labels.rl_c100_dm import RandomLabel_100_C100_DataModule
+from vision.data.random_labels.rl_c100_dm import RandomLabel_25_C100_DataModule
+from vision.data.random_labels.rl_c100_dm import RandomLabel_50_C100_DataModule
+from vision.data.random_labels.rl_c100_dm import RandomLabel_75_C100_DataModule
 from vision.data.random_labels.rl_c10_dm import RandomLabel_CIFAR10DataModule
 from vision.data.random_labels.rl_in100_dm import RandomLabel_100_IN100_DataModule
 from vision.data.random_labels.rl_in100_dm import RandomLabel_25_IN100_DataModule
 from vision.data.random_labels.rl_in100_dm import RandomLabel_50_IN100_DataModule
 from vision.data.random_labels.rl_in100_dm import RandomLabel_75_IN100_DataModule
+from vision.data.shortcuts.sc_c100_dm import ColorDot_0_C100Datamodule
+from vision.data.shortcuts.sc_c100_dm import ColorDot_100_C100Datamodule
+from vision.data.shortcuts.sc_c100_dm import ColorDot_25_C100Datamodule
+from vision.data.shortcuts.sc_c100_dm import ColorDot_50_C100Datamodule
+from vision.data.shortcuts.sc_c100_dm import ColorDot_75_C100Datamodule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_0_CIFAR10DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_100_CIFAR10DataModule
 from vision.data.shortcuts.sc_cifar10_dm import ColorDot_25_CIFAR10DataModule
@@ -56,6 +70,34 @@ def get_datamodule(dataset: ds.Dataset | str, advanced_da: bool = True) -> BaseD
         raise NotImplementedError()
     elif dataset == ds.Dataset.RandomLabelC10:
         return RandomLabel_CIFAR10DataModule(advanced_da)
+    elif dataset == ds.Dataset.C100RLABEL100:
+        return RandomLabel_100_C100_DataModule(advanced_da)
+    elif dataset == ds.Dataset.C100RLABEL75:
+        return RandomLabel_75_C100_DataModule(advanced_da)
+    elif dataset == ds.Dataset.C100RLABEL50:
+        return RandomLabel_50_C100_DataModule(advanced_da)
+    elif dataset == ds.Dataset.C100RLABEL25:
+        return RandomLabel_25_C100_DataModule(advanced_da)
+    elif dataset == ds.Dataset.C100CDOT100:
+        return ColorDot_100_C100Datamodule(advanced_da)
+    elif dataset == ds.Dataset.C100CDOT75:
+        return ColorDot_75_C100Datamodule(advanced_da)
+    elif dataset == ds.Dataset.C100CDOT50:
+        return ColorDot_50_C100Datamodule(advanced_da)
+    elif dataset == ds.Dataset.C100CDOT25:
+        return ColorDot_25_C100Datamodule(advanced_da)
+    elif dataset == ds.Dataset.C100CDOT0:
+        return ColorDot_0_C100Datamodule(advanced_da)
+    elif dataset == ds.Dataset.C100GaussMAX:
+        return Gauss_Max_CIFAR100DataModule(advanced_da)
+    elif dataset == ds.Dataset.C100GaussL:
+        return Gauss_L_CIFAR100DataModule(advanced_da)
+    elif dataset == ds.Dataset.C100GaussM:
+        return Gauss_M_CIFAR100DataModule(advanced_da)
+    elif dataset == ds.Dataset.C100GaussS:
+        return Gauss_S_CIFAR100DataModule(advanced_da)
+    elif dataset == ds.Dataset.C100GaussOff:
+        return Gauss_Off_CIFAR100DataModule(advanced_da)
     elif dataset == ds.Dataset.CDOT100:
         return ColorDot_100_CIFAR10DataModule(advanced_da)
     elif dataset == ds.Dataset.CDOT75:

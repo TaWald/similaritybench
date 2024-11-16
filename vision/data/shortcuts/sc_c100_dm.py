@@ -108,17 +108,17 @@ class ColorDot_100_C100Datamodule(CIFAR100DataModule):
         return NotImplementedError()
 
 
-class ColorDot_75_IN100Datamodule(ColorDot_100_C100Datamodule):
+class ColorDot_75_C100Datamodule(ColorDot_100_C100Datamodule):
     dot_correlation = 75
 
 
-class ColorDot_50_IN100Datamodule(ColorDot_100_C100Datamodule):
+class ColorDot_50_C100Datamodule(ColorDot_100_C100Datamodule):
     dot_correlation = 50
 
 
-class ColorDot_25_IN100Datamodule(ColorDot_100_C100Datamodule):
+class ColorDot_25_C100Datamodule(ColorDot_100_C100Datamodule):
     dot_correlation = 25
 
 
-class ColorDot_0_IN100Datamodule(ColorDot_100_C100Datamodule):
+class ColorDot_0_C100Datamodule(ColorDot_100_C100Datamodule):
     dot_correlation = 0
