@@ -175,21 +175,6 @@ def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
         ds.Dataset.GaussS,
         ds.Dataset.GaussOff,
         ds.Dataset.RandomLabelC10,
-        ds.Dataset.C100CDOT0,
-        ds.Dataset.C100CDOT25,
-        ds.Dataset.C100CDOT50,
-        ds.Dataset.C100CDOT75,
-        ds.Dataset.C100CDOT100,
-        ds.Dataset.C100GaussMAX,
-        ds.Dataset.C100GaussL,
-        ds.Dataset.C100GaussM,
-        ds.Dataset.C100GaussS,
-        ds.Dataset.C100GaussOff,
-        ds.Dataset.C100RLABEL100,
-        ds.Dataset.C100RLABEL75,
-        ds.Dataset.C100RLABEL50,
-        ds.Dataset.C100RLABEL25,
-        ds.Dataset.CIFAR100,
     ]:
         output_classes = 10
         in_ch = 3
@@ -219,7 +204,23 @@ def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
         input_resolution = (224, 224)
         early_downsampling = True
         global_average_pooling = 5
-    elif dataset == ds.Dataset.CIFAR100:
+    elif dataset in [
+        ds.Dataset.CIFAR100,
+        ds.Dataset.C100CDOT0,
+        ds.Dataset.C100CDOT25,
+        ds.Dataset.C100CDOT50,
+        ds.Dataset.C100CDOT75,
+        ds.Dataset.C100CDOT100,
+        ds.Dataset.C100GaussMAX,
+        ds.Dataset.C100GaussL,
+        ds.Dataset.C100GaussM,
+        ds.Dataset.C100GaussS,
+        ds.Dataset.C100GaussOff,
+        ds.Dataset.C100RLABEL100,
+        ds.Dataset.C100RLABEL75,
+        ds.Dataset.C100RLABEL50,
+        ds.Dataset.C100RLABEL25,
+    ]:
         output_classes = 100
         in_ch = 3
         input_resolution = (32, 32)
