@@ -17,6 +17,9 @@ black==24.1.1
 geometry-score @ git+https://github.com/KhrulkovV/geometry-score
 msid @ git+https://github.com/xgfs/imd
 
+ripserplusplus @ git+https://github.com/simonzhang00/ripser-plusplus.git
+rtd @ git+https://github.com/IlyaTrofimov/RTD.git
+
 torch_geometric
 ogb
 
@@ -59,4 +62,5 @@ albumentations
 torcheval
 openpyxl
 einops
-pl_bolts
+lightning-bolts
+tensorboardX

@@ -187,6 +187,11 @@ class ImageNet100Dataset(Dataset):
         """
         assert os.path.exists(self.root), f"Dataset not found at path {self.root}"
 
+        expected_keys = set(IN100_LABELS.keys())
+        actual_keys = set(os.listdir(self.root / "train"))
+
+        assert actual_keys.issuperset(expected_keys), f"Expected keys: {expected_keys} Actual keys: {actual_keys}"
+
         for data_dir, n_data in zip(["train", "val"], [1300, 50]):
             train_data = self.root / data_dir
             train_data_class_dirs = list(train_data.iterdir())

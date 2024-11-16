@@ -4,9 +4,6 @@ from pathlib import Path
 from loguru import logger
 
 
-# TODO: merge with types_globals?
-
-
 def get_experiments_path() -> Path:
     """
     Path to directory containing all (downloaded/trained) models used to extract representations, datasets, and results.
@@ -22,8 +19,6 @@ def get_experiments_path() -> Path:
         exp_pth.mkdir(exist_ok=True)
         return exp_pth
 
-
-# TODO: add file names/conventions for result file names?
 
 BASE_PATH = get_experiments_path()
 VISION_MODEL_PATH = Path(BASE_PATH, "models", "vision")

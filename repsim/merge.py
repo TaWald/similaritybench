@@ -119,7 +119,7 @@ def merge_parquets(config_path: str):
     verify_merge_config(config)
     logger.debug("Merge config is valid")
     to_be_merged_parquets: list[Path] = get_to_be_merged_parquets(config)
-    out_parquet: Path = get_output_parquet()
+    out_parquet: Path = get_output_parquet(config)
 
     all_dataframes = [pd.read_parquet(pq) for pq in to_be_merged_parquets]
 
