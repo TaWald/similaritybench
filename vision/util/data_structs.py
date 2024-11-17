@@ -73,7 +73,7 @@ class Dataset(Enum):
     C100GaussL = "Gauss_L_CIFAR100DataModule"
     C100GaussM = "Gauss_M_CIFAR100DataModule"
     C100GaussS = "Gauss_S_CIFAR100DataModule"
-    C100GaussOff = "Gauss_Off_CIFAR10DataModule"
+    C100GaussOff = "Gauss_Off_CIFAR100DataModule"
     INGaussMAX = "Gauss_Max_ImageNet100DataModule"
     INGaussL = "Gauss_L_ImageNet100DataModule"
     INGaussM = "Gauss_M_ImageNet100DataModule"
