@@ -178,7 +178,7 @@ class NLPModel(TrainedModel):
 
     @property
     def n_layers(self):
-        arch_to_layers = {"BERT-L": 13}
+        arch_to_layers = {"BERT-L": 13, "albert-base-v2": 13}
         return arch_to_layers[self.architecture]
 
     def _check_repsim_dataset_exists(self, representation_dataset_id: str) -> None:

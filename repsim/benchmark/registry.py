@@ -304,6 +304,19 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             token_pos=0,
         )
         for i in range(10)
+    ] + [
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="sst2",
+            identifier=STANDARD_SETTING,
+            seed=ft_seed,
+            path=str(
+                repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"sst2_pre{pretrain_seed}_ft{ft_seed}"
+            ),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos=0,
+        )
+        for pretrain_seed, ft_seed in zip([0] * 10, range(123, 133))
     ]
     base_mnli_models = [
         NLPModel(
