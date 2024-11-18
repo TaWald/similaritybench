@@ -44,7 +44,11 @@ vision/data/shortcuts/example_imgs
 vision/_train_submit_to_cluster.py
 
 experiments/*
-!experiments/paper_results/
+experiments/paper_results/*/parquet
+!experiments/paper_results/*.csv
+
+tables/*
+figures/*
 
 manual_data_introspection
 *_pac_api.py
