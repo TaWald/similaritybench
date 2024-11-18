@@ -1,7 +1,7 @@
 import random
 
-from tenacity import _unset
 from torch.utils.data import DataLoader
+from torch.utils.data import Subset
 from torchvision.datasets import CIFAR100
 from vision.data.cifar100_dm import CIFAR100DataModule
 from vision.util import data_structs as ds
@@ -37,7 +37,7 @@ class RandomLabel_100_C100_DataModule(CIFAR100DataModule):
         dataset.targets = new_lbls_pairs
 
         train_ids, _ = self.get_train_val_split(split, len(dataset))
-        dataset = _unset(dataset, train_ids)
+        dataset = Subset(dataset, train_ids)
         # INFO: Currently does not differentiate into different folds, as the
         #   Dataset comes with a deliberate validation set.
         return DataLoader(dataset=dataset, **kwargs)
