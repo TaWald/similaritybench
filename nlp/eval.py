@@ -215,7 +215,7 @@ def main(cfg: DictConfig):
             [model.train_dataset]
             + [dataset for setting in matched_settings for dataset in cfg.datasets[setting][dataset_key]]
         )
-        logger.debug(f"{model}: {datasets_to_eval_on=}")
+        logger.debug(f"{model.id}: {datasets_to_eval_on=}")
 
         for ds_to_eval_on in datasets_to_eval_on:
             if ds_to_eval_on in results[model.id]:
