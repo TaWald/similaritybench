@@ -9,7 +9,7 @@ cache_to_mem: false
 only_extract_reps: true
 rerun_nans: false
 experiments:
-- name: Vision Short Cut Correlation Experiments
+- name: Vision Short Cut C100 Correlation Experiments
   type: GroupSeparationExperiment
   representation_dataset: ColorDot_0_C100DataModule
   filter_key_vals:

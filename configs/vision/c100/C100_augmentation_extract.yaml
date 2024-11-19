@@ -1,7 +1,5 @@
-excluded_measures:
-- PWCCA
-- GeometryScore
-- IMDScore
+included_measures:
+- CKA
 threads: 1
 cache_to_disk: true
 cache_to_mem: false

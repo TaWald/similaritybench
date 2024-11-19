@@ -4,7 +4,7 @@ excluded_measures:
 - RSMNormDifference
 - DistanceCorrelation
 - RSA
-- CKA
+- RTD
 threads: 1
 cache_to_disk: true
 cache_to_mem: false
@@ -32,10 +32,10 @@ experiments:
   - train_dataset
   separation_keys:
   - architecture
-raw_results_filename: C100_randomlabel_resnet34.parquet
+raw_results_filename: C100_randomlabel_r34.parquet
 table_creation:
   save_full_df: true
-  full_df_filename: C100_randomlabel_resnet34.csv
+  full_df_filename: C100_randomlabel_r34.csv
   save_aggregated_df: true
   row_index: similarity_measure
   columns:
@@ -44,4 +44,4 @@ table_creation:
   - quality_measure
   - architecture
   value_key: value
-  filename: C100_randomlabel_resnet34.xlsx
+  filename: C100_randomlabel_r34.xlsx

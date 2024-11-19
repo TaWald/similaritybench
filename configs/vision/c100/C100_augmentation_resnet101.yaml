@@ -34,10 +34,10 @@ experiments:
   - train_dataset
   separation_keys:
   - architecture
-raw_results_filename: c100_augment_resnet101.parquet
+raw_results_filename: c100_augment_r101.parquet
 table_creation:
   save_full_df: true
-  full_df_filename: c100_augment_resnet101.csv
+  full_df_filename: c100_augment_r101.csv
   save_aggregated_df: false
   row_index: similarity_measure
   columns:
@@ -46,4 +46,4 @@ table_creation:
   - quality_measure
   - architecture
   value_key: value
-  filename: c100_augment_resnet101.xlsx
+  filename: c100_augment_r101.xlsx
