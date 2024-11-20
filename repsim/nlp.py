@@ -156,7 +156,7 @@ def extract_representations(
     dataset: datasets.Dataset,
     prompt_creator: Union[Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]],
     device: str,
-    token_pos_to_extract: Optional[int] = None,
+    token_pos_to_extract: Optional[int | str] = None,
 ) -> Sequence[torch.Tensor]:
     all_representations = []
 
@@ -200,7 +200,14 @@ def extract_representations(
 
         # If we dont need the full representation for all tokens, discard unneeded ones.
         if token_pos_to_extract is not None:
-            out = tuple((representations[:, token_pos_to_extract, :].unsqueeze(1) for representations in out))
+            if isinstance(token_pos_to_extract, int):
+                out = tuple((representations[:, token_pos_to_extract, :].unsqueeze(1) for representations in out))
+            elif token_pos_to_extract == "mean":
+                out = tuple((representations.mean(dim=1).unsqueeze(1) for representations in out))
+            else:
+                raise ValueError(
+                    f"Unknown token_pos_to_extract: {token_pos_to_extract}. Must be integer for specific token or 'mean'"
+                )
 
         out = tuple((representations.to("cpu") for representations in out))
         all_representations.append(out)

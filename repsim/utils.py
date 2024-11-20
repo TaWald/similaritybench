@@ -159,7 +159,7 @@ class NLPModel(TrainedModel):
         "sst2", "sst2_sc_rate0558", "sst2_sc_rate0668", "sst2_sc_rate0779", "sst2_sc_rate0889", "sst2_sc_rate10"
     ]
     model_type: Literal["sequence-classification"] = "sequence-classification"
-    token_pos: Optional[int] = (
+    token_pos: Optional[int | Literal["mean"]] = (
         None  # Index of the token relevant for classification. If set, only the representation of this token will be extracted.
     )
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
@@ -170,6 +170,10 @@ class NLPModel(TrainedModel):
         super().__post_init__()
         if self.domain != "NLP":
             raise ValueError("This class should only be used for NLP models with huggingface.")
+        if not isinstance(self.token_pos, int) and self.token_pos != "mean":
+            raise ValueError(
+                f"token_pos must be an integer for a specific token or 'mean' for the mean of all tokens, but is {self.token_pos}"
+            )
 
         from repsim.benchmark.registry import NLP_REPRESENTATION_DATASETS, NLP_TRAIN_DATASETS
 

@@ -591,6 +591,36 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
         for i in range(5)
     ]
 
+    # mean pooled representations
+    base_sst2_models_meanpooled = [
+        NLPModel(
+            train_dataset="sst2",
+            identifier=STANDARD_SETTING,
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos="mean",
+            additional_kwargs={
+                "token_pos": "mean"
+            },  # important because added to id. Otherwise not distinguishable from CLS-token model
+        )
+        for i in range(10)
+    ] + [
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="sst2",
+            identifier=STANDARD_SETTING,
+            seed=ft_seed,
+            path=str(
+                repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"sst2_pre{pretrain_seed}_ft{ft_seed}"
+            ),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos="mean",
+            additional_kwargs={"token_pos": "mean"},
+        )
+        for pretrain_seed, ft_seed in zip([0] * 10, range(123, 133))
+    ]
+
     return (
         base_sst2_models
         + base_mnli_models
@@ -600,6 +630,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
         + memorizing_mnli_models
         + augmented_sst2_models
         + augmented_mnli_models
+        + base_sst2_models_meanpooled
     )
 
 
