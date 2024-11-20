@@ -192,7 +192,7 @@ def main(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
     print("Working directory : {}".format(os.getcwd()))
 
-    models = all_trained_nlp_models()
+    models = [model for model in all_trained_nlp_models() if model.token_pos != "mean"]
     all_datasets = NLP_REPRESENTATION_DATASETS | NLP_TRAIN_DATASETS
 
     results = load_results(cfg.results_path)
@@ -215,7 +215,7 @@ def main(cfg: DictConfig):
             [model.train_dataset]
             + [dataset for setting in matched_settings for dataset in cfg.datasets[setting][dataset_key]]
         )
-        logger.debug(f"{model}: {datasets_to_eval_on=}")
+        logger.debug(f"{model.id}: {datasets_to_eval_on=}")
 
         for ds_to_eval_on in datasets_to_eval_on:
             if ds_to_eval_on in results[model.id]:

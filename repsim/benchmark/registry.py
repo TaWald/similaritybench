@@ -130,6 +130,7 @@ NLP_TRAIN_DATASETS = {
     "mnli_sc_rate0677": MNLI("mnli_sc_rate0677", shortcut_rate=0.677, shortcut_seed=0),
     "mnli_sc_rate08385": MNLI("mnli_sc_rate08385", shortcut_rate=0.8385, shortcut_seed=0),
     "mnli_sc_rate1": MNLI("mnli_sc_rate1", shortcut_rate=1.0, shortcut_seed=0),
+    "mnli_sc_rate10": MNLI("mnli_sc_rate1", shortcut_rate=1.0, shortcut_seed=0),  # alias
     "mnli_mem_rate025": MNLI(
         "mnli_mem_rate025",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "memorizing" / "glue__mnli_labels5_strength025"),
@@ -383,6 +384,17 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             token_pos=0,
         )
         for i in range(10)
+    ] + [
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="mnli",  # type:ignore
+            identifier=STANDARD_SETTING,
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"glue__mnli_pre0_ft{i}"),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos=0,
+        )
+        for i in range(10)
     ]
 
     shortcut_sst2_models = []
@@ -400,6 +412,24 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     token_pos=0,  # only CLS token has been validated as different
                 )
             )
+    for seed in range(5):
+        for rate in ["0558", "0889", "10"]:
+            shortcut_sst2_models.append(
+                NLPModel(
+                    architecture="albert-base-v2",
+                    identifier=f"Shortcut_{rate}",  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_sc_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "albert"
+                        / "shortcut"
+                        / f"sst2_pre0_ft{seed}_scrate{rate}"
+                    ),
+                    tokenizer_name="albert/albert-base-v2",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
     shortcut_mnli_models = []
     for seed in range(5):
         for rate in ["0354", "05155", "0677", "08385", "1"]:
@@ -414,6 +444,24 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                         / f"glue__mnli_pre{seed}_ft{seed}_scrate{rate}"
                     ),
                     tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+    for seed in range(5):
+        for rate in ["0354", "08385", "10"]:
+            shortcut_mnli_models.append(
+                NLPModel(
+                    architecture="albert-base-v2",
+                    identifier=f"Shortcut_{rate}",  # type:ignore
+                    seed=seed,
+                    train_dataset=f"mnli_sc_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "albert"
+                        / "shortcut"
+                        / f"glue__mnli_pre0_ft{seed}_scrate{rate}"
+                    ),
+                    tokenizer_name="albert/albert-base-v2",
                     token_pos=0,  # only CLS token has been validated as different
                 )
             )
@@ -452,6 +500,51 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
         )
         for i in range(5)
     ]
+    for seed in range(5):
+        for rate in ["075", "10"]:
+            if rate == "075" and seed == 0:
+                continue  # seed 0 has mem100-like behavior. We add seed 6 below.
+            memorizing_sst2_models.append(
+                NLPModel(
+                    architecture="albert-base-v2",
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_mem_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "albert"
+                        / "memorizing"
+                        / f"sst2_pre0_ft{seed}_labels5_strength{rate}"
+                    ),
+                    tokenizer_name="albert/albert-base-v2",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+    memorizing_sst2_models.append(
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="sst2_mem_rate075",  # type:ignore
+            identifier="RandomLabels_75",
+            seed=6,
+            path=str(
+                repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "memorizing" / f"sst2_pre0_ft6_labels5_strength075"
+            ),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos=0,
+        )
+    )
+    memorizing_sst2_models += [
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="sst2",
+            identifier="RandomLabels_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"sst2_pre0_ft{i}"),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos=0,
+        )
+        for i in range(123, 128)
+    ]
 
     memorizing_mnli_models = []
     rate_to_setting = {
@@ -487,6 +580,36 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
         )
         for i in range(5)
     ]
+    for seed in range(5):
+        for rate in ["075", "10"]:
+            memorizing_mnli_models.append(
+                NLPModel(
+                    architecture="albert-base-v2",
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"mnli_mem_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "albert"
+                        / "memorizing"
+                        / f"glue__mnli_pre0_ft{seed}_labels5_strength{rate}"
+                    ),
+                    tokenizer_name="albert/albert-base-v2",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+    memorizing_mnli_models += [
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="mnli",
+            identifier="RandomLabels_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"glue__mnli_pre0_ft{i}"),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos=0,
+        )
+        for i in range(5)
+    ]
 
     rate_to_setting = {
         "025": AUGMENTATION_25_SETTING,
@@ -511,6 +634,24 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     token_pos=0,  # only CLS token has been validated as different
                 )
             )
+    for seed in range(5):
+        for rate in ["10"]:
+            augmented_sst2_models.append(
+                NLPModel(
+                    architecture="albert-base-v2",
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_aug_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "albert"
+                        / "augmentation"
+                        / f"sst2_pre0_ft{seed}_eda_strength{rate}"
+                    ),
+                    tokenizer_name="albert/albert-base-v2",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
     augmented_sst2_models += [
         NLPModel(
             train_dataset="sst2",
@@ -521,6 +662,19 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             token_pos=0,
         )
         for i in range(10)
+    ] + [
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="sst2",
+            identifier="Augmentation_0",
+            seed=ft_seed,
+            path=str(
+                repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"sst2_pre{pretrain_seed}_ft{ft_seed}"
+            ),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos=0,
+        )
+        for pretrain_seed, ft_seed in zip([0] * 10, range(123, 133))
     ]
 
     augmented_mnli_models = []
@@ -551,7 +705,251 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
         )
         for i in range(5)
     ]
+    for seed in range(5):  # TODO: train more models
+        for rate in ["025", "10"]:
+            augmented_mnli_models.append(
+                NLPModel(
+                    architecture="albert-base-v2",
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"mnli_aug_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "albert"
+                        / "augmentation"
+                        / f"glue__mnli_pre0_ft{seed}_eda_strength{rate}"
+                    ),
+                    tokenizer_name="albert/albert-base-v2",
+                    token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+    augmented_mnli_models += [
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="mnli",
+            identifier="Augmentation_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"glue__mnli_pre0_ft{i}"),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos=0,
+        )
+        for i in range(5)
+    ]
 
+    # mean pooled representations
+    base_sst2_models_meanpooled = [
+        NLPModel(
+            train_dataset="sst2",
+            identifier=STANDARD_SETTING,
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos="mean",
+            additional_kwargs={
+                "token_pos": "mean"
+            },  # important because added to id. Otherwise not distinguishable from CLS-token model
+        )
+        for i in range(10)
+    ] + [
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="sst2",
+            identifier=STANDARD_SETTING,
+            seed=ft_seed,
+            path=str(
+                repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"sst2_pre{pretrain_seed}_ft{ft_seed}"
+            ),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos="mean",
+            additional_kwargs={"token_pos": "mean"},
+        )
+        for pretrain_seed, ft_seed in zip([0] * 10, range(123, 133))
+    ]
+
+    shortcut_sst2_models_meanpooled = []
+    for seed in range(10):
+        for rate in ["0558", "0668", "0779", "0889", "10"]:
+            shortcut_sst2_models_meanpooled.append(
+                NLPModel(
+                    identifier=f"Shortcut_{rate}",  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_sc_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH / "shortcut" / f"sst2_pre{seed}_ft{seed}_scrate{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos="mean",
+                    additional_kwargs={"token_pos": "mean"},
+                )
+            )
+    for seed in range(5):
+        for rate in ["0558", "0889", "10"]:
+            shortcut_sst2_models_meanpooled.append(
+                NLPModel(
+                    architecture="albert-base-v2",
+                    identifier=f"Shortcut_{rate}",  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_sc_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "albert"
+                        / "shortcut"
+                        / f"sst2_pre0_ft{seed}_scrate{rate}"
+                    ),
+                    tokenizer_name="albert/albert-base-v2",
+                    token_pos="mean",
+                    additional_kwargs={"token_pos": "mean"},
+                )
+            )
+
+    memorizing_sst2_models_meanpooled = []
+    rate_to_setting = {
+        "025": RANDOM_LABEL_25_SETTING,
+        "05": RANDOM_LABEL_50_SETTING,
+        "075": RANDOM_LABEL_75_SETTING,
+        "10": RANDOM_LABEL_100_SETTING,
+    }
+    for seed in range(5):
+        for rate in ["025", "05", "075", "10"]:
+            memorizing_sst2_models_meanpooled.append(
+                NLPModel(
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_mem_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "memorizing"
+                        / f"sst2_pre{seed}_ft{seed}_labels5_strength{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos="mean",
+                    additional_kwargs={"token_pos": "mean"},
+                )
+            )
+    memorizing_sst2_models_meanpooled += [
+        NLPModel(
+            train_dataset="sst2",
+            identifier="RandomLabels_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos="mean",
+            additional_kwargs={"token_pos": "mean"},
+        )
+        for i in range(5)
+    ]
+    for seed in range(5):
+        for rate in ["075", "10"]:
+            if rate == "075" and seed == 0:
+                continue  # seed 0 has mem100-like behavior. We add seed 6 below.
+            memorizing_sst2_models_meanpooled.append(
+                NLPModel(
+                    architecture="albert-base-v2",
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_mem_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "albert"
+                        / "memorizing"
+                        / f"sst2_pre0_ft{seed}_labels5_strength{rate}"
+                    ),
+                    tokenizer_name="albert/albert-base-v2",
+                    token_pos="mean",
+                    additional_kwargs={"token_pos": "mean"},
+                )
+            )
+    memorizing_sst2_models_meanpooled.append(
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="sst2_mem_rate075",  # type:ignore
+            identifier="RandomLabels_75",
+            seed=6,
+            path=str(
+                repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "memorizing" / f"sst2_pre0_ft6_labels5_strength075"
+            ),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos="mean",
+            additional_kwargs={"token_pos": "mean"},
+        )
+    )
+    memorizing_sst2_models_meanpooled += [
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="sst2",
+            identifier="RandomLabels_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"sst2_pre0_ft{i}"),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos="mean",
+            additional_kwargs={"token_pos": "mean"},
+        )
+        for i in range(123, 128)
+    ]
+
+    augmented_sst2_models_meanpooled = []
+    for seed in range(10):
+        for rate in ["025", "05", "075", "10"]:
+            augmented_sst2_models_meanpooled.append(
+                NLPModel(
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_aug_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "augmentation"
+                        / f"sst2_pre{seed}_ft{seed}_eda_strength{rate}"
+                    ),
+                    tokenizer_name=f"google/multiberts-seed_{seed}",
+                    token_pos="mean",
+                    additional_kwargs={"token_pos": "mean"},
+                )
+            )
+    for seed in range(5):
+        for rate in ["10"]:
+            augmented_sst2_models_meanpooled.append(
+                NLPModel(
+                    architecture="albert-base-v2",
+                    identifier=rate_to_setting[rate],  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_aug_rate{rate}",  # type:ignore
+                    path=str(
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "albert"
+                        / "augmentation"
+                        / f"sst2_pre0_ft{seed}_eda_strength{rate}"
+                    ),
+                    tokenizer_name="albert/albert-base-v2",
+                    token_pos="mean",
+                    additional_kwargs={"token_pos": "mean"},
+                )
+            )
+    augmented_sst2_models_meanpooled += [
+        NLPModel(
+            train_dataset="sst2",
+            identifier="Augmentation_0",
+            seed=i,
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            tokenizer_name=f"google/multiberts-seed_{i}",
+            token_pos="mean",
+            additional_kwargs={"token_pos": "mean"},
+        )
+        for i in range(10)
+    ] + [
+        NLPModel(
+            architecture="albert-base-v2",
+            train_dataset="sst2",
+            identifier="Augmentation_0",
+            seed=ft_seed,
+            path=str(
+                repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"sst2_pre{pretrain_seed}_ft{ft_seed}"
+            ),
+            tokenizer_name="albert/albert-base-v2",
+            token_pos="mean",
+            additional_kwargs={"token_pos": "mean"},
+        )
+        for pretrain_seed, ft_seed in zip([0] * 10, range(123, 133))
+    ]
     return (
         base_sst2_models
         + base_mnli_models
@@ -561,6 +959,10 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
         + memorizing_mnli_models
         + augmented_sst2_models
         + augmented_mnli_models
+        + base_sst2_models_meanpooled
+        + shortcut_sst2_models_meanpooled
+        + memorizing_sst2_models_meanpooled
+        + augmented_sst2_models_meanpooled
     )
 
 
