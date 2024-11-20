@@ -192,7 +192,7 @@ def main(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
     print("Working directory : {}".format(os.getcwd()))
 
-    models = all_trained_nlp_models()
+    models = [model for model in all_trained_nlp_models() if model.token_pos != "mean"]
     all_datasets = NLP_REPRESENTATION_DATASETS | NLP_TRAIN_DATASETS
 
     results = load_results(cfg.results_path)
