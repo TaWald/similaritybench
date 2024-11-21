@@ -219,13 +219,51 @@ def all_trained_vision_models() -> list[VisionModel]:
                         )
                     )
     for i in range(5):
-        for arch in ["ResNet18", "ResNet34", "ResNet101" "VGG11"]:
+        for arch in ["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19"]:
+            for dataset in [
+                "ColorDot_100_C100DataModule",
+                "ColorDot_75_C100DataModule",
+                "ColorDot_50_C100DataModule",
+                "ColorDot_25_C100DataModule",
+                "ColorDot_0_C100DataModule",
+            ]:
+                for identifier in ["Shortcut"]:
+                    all_trained_vision_models.append(
+                        VisionModel(
+                            domain="VISION",
+                            architecture=arch,
+                            train_dataset=dataset,
+                            identifier=identifier,
+                            seed=i,
+                        )
+                    )
+    for i in range(5):
+        for arch in ["ResNet18", "ResNet34", "ResNet101", "VGG11"]:
             for dataset in [
                 "Gauss_Max_CIFAR10DataModule",
                 "Gauss_L_CIFAR10DataModule",
                 "Gauss_M_CIFAR10DataModule",
                 "Gauss_S_CIFAR10DataModule",
                 "Gauss_Off_CIFAR10DataModule",  # N
+            ]:
+                for identifier in ["GaussNoise"]:
+                    all_trained_vision_models.append(
+                        VisionModel(
+                            domain="VISION",
+                            architecture=arch,
+                            train_dataset=dataset,
+                            identifier=identifier,
+                            seed=i,
+                        )
+                    )
+    for i in range(5):
+        for arch in ["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19"]:
+            for dataset in [
+                "Gauss_Max_CIFAR100DataModule",
+                "Gauss_L_CIFAR100DataModule",
+                "Gauss_M_CIFAR100DataModule",
+                "Gauss_S_CIFAR100DataModule",
+                "Gauss_Off_CIFAR100DataModule",  # N
             ]:
                 for identifier in ["GaussNoise"]:
                     all_trained_vision_models.append(
@@ -280,6 +318,23 @@ def all_trained_vision_models() -> list[VisionModel]:
                 "RandomLabel_75_IN100_DataModule",
                 "RandomLabel_50_IN100_DataModule",
                 "RandomLabel_25_IN100_DataModule",
+            ]:
+                all_trained_vision_models.append(
+                    VisionModel(
+                        domain="VISION",
+                        architecture=arch,
+                        train_dataset=dataset,
+                        identifier="Randomlabel",
+                        seed=i,
+                    )
+                )
+    for i in range(5):
+        for arch in ["VGG11", "VGG19", "ResNet18", "ResNet34", "ResNet101"]:
+            for dataset in [
+                "RandomLabel_100_C100_DataModule",
+                "RandomLabel_75_C100_DataModule",
+                "RandomLabel_50_C100_DataModule",
+                "RandomLabel_25_C100_DataModule",
             ]:
                 all_trained_vision_models.append(
                     VisionModel(

@@ -1,10 +1,10 @@
-excluded_measures:
-- GeometryScore
-- IMDScore
-- RSMNormDifference
-- DistanceCorrelation
-- RSA
-- CKA
+# excluded_measures:
+# - GeometryScore
+# - IMDScore
+# - RSMNormDifference
+# - DistanceCorrelation
+# - RSA
+# - CKA
 threads: 1
 cache_to_disk: true
 cache_to_mem: false
