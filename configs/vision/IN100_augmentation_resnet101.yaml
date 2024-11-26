@@ -1,12 +1,5 @@
-# excluded_measures:
-# - GeometryScore
-# - IMDScore
-# - RSMNormDifference
-# - DistanceCorrelation
-# - RSA
-# - CKA
-# - SVCCA
-# - PWCCA
+excluded_measures:
+  - GeometryScore
 threads: 1
 cache_to_disk: true
 cache_to_mem: false
