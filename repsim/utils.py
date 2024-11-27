@@ -158,7 +158,7 @@ class NLPModel(TrainedModel):
     train_dataset: Literal[
         "sst2", "sst2_sc_rate0558", "sst2_sc_rate0668", "sst2_sc_rate0779", "sst2_sc_rate0889", "sst2_sc_rate10"
     ]
-    model_type: Literal["sequence-classification"] = "sequence-classification"
+    model_type: Literal["sequence-classification", "causal-lm"] = "sequence-classification"
     token_pos: Optional[int | Literal["mean"]] = (
         None  # Index of the token relevant for classification. If set, only the representation of this token will be extracted.
     )
@@ -182,7 +182,7 @@ class NLPModel(TrainedModel):
 
     @property
     def n_layers(self):
-        arch_to_layers = {"BERT-L": 13, "albert-base-v2": 13}
+        arch_to_layers = {"BERT-L": 13, "albert-base-v2": 13, "smollm2-1.7b": 25}
         return arch_to_layers[self.architecture]
 
     def _check_repsim_dataset_exists(self, representation_dataset_id: str) -> None:
@@ -247,7 +247,9 @@ class NLPModel(TrainedModel):
                 shortcut_seed=representation_dataset.shortcut_seed,
                 feature_column=representation_dataset.feature_column,
             )
-            output = Prediction(origin_model=self, _representation_dataset=representation_dataset_id, _output=logits)
+            output = NLPModelOutput(
+                origin_model=self, _representation_dataset=representation_dataset_id, _output=logits
+            )
         return output
 
     def get_accuracy(self, representation_dataset_id: str, **kwargs) -> Accuracy:

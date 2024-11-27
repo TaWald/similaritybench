@@ -97,6 +97,12 @@ NLP_TRAIN_DATASETS = {
         augmentation_rate=1.0,
         augmentation_type="eda",
     ),
+    "sst2_sft": SST2(
+        name="sst2_sft",
+        local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "llm_sft" / "standard" / "sst2"),
+        split="train",
+        feature_column="sft",
+    ),
     "mnli_aug_rate025": MNLI(
         "mnli_aug_rate025",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "mnli_eda_strength025"),
@@ -175,6 +181,12 @@ NLP_REPRESENTATION_DATASETS = {
     "sst2_sc_rate0558": SST2(name="sst2_sc_rate0558", split="validation", shortcut_rate=0.558, shortcut_seed=0),
     "sst2_mem_rate0": SST2(name="sst2_mem_rate0", split="validation"),
     "sst2_aug_rate0": SST2(name="sst2_aug_rate0", split="validation"),
+    "sst2_sft": SST2(
+        name="sst2_sft",
+        local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "llm_sft" / "standard" / "sst2"),
+        split="validation",
+        feature_column="sft",
+    ),
     "mnli": MNLI(name="mnli", split="validation_matched"),
     "mnli_aug_rate0": MNLI(name="mnli_aug_rate0", split="validation_matched"),
     "mnli_mem_rate0": MNLI(name="mnli_mem_rate0", split="validation_matched"),
@@ -350,30 +362,49 @@ def all_trained_vision_models() -> list[VisionModel]:
 
 
 def all_trained_nlp_models() -> Sequence[NLPModel]:
-    base_sst2_models = [
-        NLPModel(
-            train_dataset="sst2",
-            identifier=STANDARD_SETTING,
-            seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
-            tokenizer_name=f"google/multiberts-seed_{i}",
-            token_pos=0,
-        )
-        for i in range(10)
-    ] + [
-        NLPModel(
-            architecture="albert-base-v2",
-            train_dataset="sst2",
-            identifier=STANDARD_SETTING,
-            seed=ft_seed,
-            path=str(
-                repsim.benchmark.paths.NLP_MODEL_PATH / "albert" / "standard" / f"sst2_pre{pretrain_seed}_ft{ft_seed}"
-            ),
-            tokenizer_name="albert/albert-base-v2",
-            token_pos=0,
-        )
-        for pretrain_seed, ft_seed in zip([0] * 10, range(123, 133))
-    ]
+    base_sst2_models = (
+        [
+            NLPModel(
+                train_dataset="sst2",
+                identifier=STANDARD_SETTING,
+                seed=i,
+                path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+                tokenizer_name=f"google/multiberts-seed_{i}",
+                token_pos=0,
+            )
+            for i in range(10)
+        ]
+        + [
+            NLPModel(
+                architecture="albert-base-v2",
+                train_dataset="sst2",
+                identifier=STANDARD_SETTING,
+                seed=ft_seed,
+                path=str(
+                    repsim.benchmark.paths.NLP_MODEL_PATH
+                    / "albert"
+                    / "standard"
+                    / f"sst2_pre{pretrain_seed}_ft{ft_seed}"
+                ),
+                tokenizer_name="albert/albert-base-v2",
+                token_pos=0,
+            )
+            for pretrain_seed, ft_seed in zip([0] * 10, range(123, 133))
+        ]
+        + [
+            NLPModel(
+                architecture="smollm2-1.7b",
+                model_type="causal-lm",
+                train_dataset="sst2_sft",  # type:ignore
+                identifier=STANDARD_SETTING,
+                seed=seed,
+                path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_sst2_seed{seed}_bs16_ff/checkpoint-500",
+                tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
+                token_pos=-1,
+            )
+            for seed in range(5, 10)
+        ]
+    )
     base_mnli_models = [
         NLPModel(
             train_dataset="mnli",  # type:ignore
@@ -430,6 +461,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     token_pos=0,  # only CLS token has been validated as different
                 )
             )
+
     shortcut_mnli_models = []
     for seed in range(5):
         for rate in ["0354", "05155", "0677", "08385", "1"]:

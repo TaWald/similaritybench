@@ -1,4 +1,5 @@
 /.venv
+/.llmenv
 /.vscode
 /multirun
 /outputs
