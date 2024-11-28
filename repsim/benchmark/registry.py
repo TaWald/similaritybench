@@ -103,6 +103,30 @@ NLP_TRAIN_DATASETS = {
         split="train",
         feature_column="sft",
     ),
+    "sst2_sft_sc_rate0558": SST2(
+        name="sst2_sft_sc_rate0558",
+        local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "llm_sft" / "shortcut" / "sst2_sc_rate0558"),
+        split="train",
+        feature_column="sft",
+        shortcut_rate=0.558,
+        shortcut_seed=0,
+    ),
+    "sst2_sft_sc_rate10": SST2(
+        name="sst2_sft_sc_rate10",
+        local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "llm_sft" / "shortcut" / "sst2_sc_rate10"),
+        split="train",
+        feature_column="sft",
+        shortcut_rate=1.0,
+        shortcut_seed=0,
+    ),
+    "sst2_sft_mem_rate10": SST2(
+        name="sst2_sft_mem_rate10",
+        local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "llm_sft" / "memorization" / "sst2_rate10"),
+        split="train",
+        feature_column="sft",
+        memorization_rate=1.0,
+        memorization_seed=0,
+    ),
     "mnli_aug_rate025": MNLI(
         "mnli_aug_rate025",
         path=str(repsim.benchmark.paths.NLP_DATA_PATH / "robustness" / "mnli_eda_strength025"),
@@ -186,6 +210,14 @@ NLP_REPRESENTATION_DATASETS = {
         local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "llm_sft" / "standard" / "sst2"),
         split="validation",
         feature_column="sft",
+    ),
+    "sst2_sft_sc_rate0558": SST2(
+        name="sst2_sft_sc_rate0558",
+        local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "llm_sft" / "shortcut" / "sst2_sc_rate0558"),
+        split="validation",
+        feature_column="sft",
+        shortcut_rate=0.558,
+        shortcut_seed=0,
     ),
     "mnli": MNLI(name="mnli", split="validation_matched"),
     "mnli_aug_rate0": MNLI(name="mnli_aug_rate0", split="validation_matched"),
@@ -402,7 +434,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                 tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                 token_pos=-1,
             )
-            for seed in range(5, 10)
+            for seed in range(10)
         ]
     )
     base_mnli_models = [
@@ -459,6 +491,21 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     ),
                     tokenizer_name="albert/albert-base-v2",
                     token_pos=0,  # only CLS token has been validated as different
+                )
+            )
+    for seed in range(10):
+        for rate in ["0558", "10"]:
+            rateId = rate if rate == "0558" else ""
+            shortcut_sst2_models.append(
+                NLPModel(
+                    architecture="smollm2-1.7b",
+                    model_type="causal-lm",
+                    identifier=f"Shortcut_{rate}",  # type:ignore
+                    seed=seed,
+                    train_dataset=f"sst2_sft_sc_rate{rate}",  # type:ignore
+                    path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_sst2-shortcut{rateId}_seed{seed}_bs16_ff/checkpoint-500",
+                    tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
+                    token_pos=-1,  # only CLS token has been validated as different
                 )
             )
 
@@ -576,6 +623,31 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             token_pos=0,
         )
         for i in range(123, 128)
+    ]
+    memorizing_sst2_models += [
+        NLPModel(
+            architecture="smollm2-1.7b",
+            model_type="causal-lm",
+            train_dataset="sst2_sft",  # type:ignore
+            identifier="RandomLabels_0",
+            seed=seed,
+            path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_sst2_seed{seed}_bs16_ff/checkpoint-500",
+            tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
+            token_pos=-1,
+        )
+        for seed in range(10)
+    ] + [
+        NLPModel(
+            architecture="smollm2-1.7b",
+            model_type="causal-lm",
+            train_dataset="sst2_sft_mem_rate10",  # type:ignore
+            identifier=RANDOM_LABEL_100_SETTING,
+            seed=seed,
+            path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_sst2-mem10_seed{seed}_bs16_ff/checkpoint-500",
+            tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
+            token_pos=-1,
+        )
+        for seed in range(10)
     ]
 
     memorizing_mnli_models = []

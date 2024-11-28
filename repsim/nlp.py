@@ -95,6 +95,7 @@ def get_dataset(
     if dataset_path == "csv":
         ds = datasets.load_dataset(dataset_path, data_files=data_files)
     elif local_path or Path(dataset_path).exists():
+        logger.debug(f"Loading dataset locally from {local_path if local_path else dataset_path}")
         ds = datasets.load_from_disk(local_path) if local_path else datasets.load_from_disk(dataset_path)
     else:
         ds = datasets.load_dataset(dataset_path, name)
@@ -370,7 +371,7 @@ def get_representations(
     if dataset is None:
         # This is the first time the dataset gets loaded
         dataset = get_dataset(dataset_path, dataset_config, local_path=dataset_local_path)
-        if shortcut_rate is not None:
+        if shortcut_rate is not None and model_type != "causal-lm":
             assert shortcut_seed is not None
             assert feature_column is not None
             logger.info(f"Adding shortcuts with rate {shortcut_rate} and seed {shortcut_seed}")
