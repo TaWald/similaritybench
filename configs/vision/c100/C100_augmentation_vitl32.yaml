@@ -1,5 +1,5 @@
-# excluded_measures:
-# - GeometryScore
+excluded_measures:
+- GeometryScore
 # - IMDScore
 # - RSMNormDifference
 # - DistanceCorrelation
