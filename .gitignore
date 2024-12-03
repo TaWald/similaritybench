@@ -9,6 +9,7 @@
 /.cache
 /runs
 /figs
+/smollm
 
 build/
 nlp/multirun
