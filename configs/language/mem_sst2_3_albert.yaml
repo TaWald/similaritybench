@@ -23,16 +23,22 @@ experiments:
     - "sst2_mem_rate075"
     - "sst2_mem_rate10"
     seed:
-    - 0
+        # - 0
     - 1
     - 2
     - 3
     - 4
+    - 6      # additional seed because seed 0 did not converge for rate 0.75
+    - 123      # seeds of the standard models (mem_rate=0)
+    - 124
+    - 125
+    - 126
+    - 127
     domain: NLP
     token_pos:
     - 0
     architecture:
-    - BERT-L
+    - albert-base-v2
   grouping_keys:   # Separates the trained models by this key into groups for the `GroupSeparationExperiment`.
   - train_dataset
   separation_keys:   # Creates a separate experiment for each unique value of the key.
@@ -41,7 +47,7 @@ raw_results_filename: nlp_mem_sst2.parquet # Must end with .parquet. The full re
 
 table_creation:
   save_full_df: true
-  full_df_filename: mem_sst2_bert_cls.csv
+  full_df_filename: mem_sst2_albert_cls.csv
   # ---
   save_aggregated_df: true
   row_index: similarity_measure # The key to use as the row index in the table.

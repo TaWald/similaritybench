@@ -1,4 +1,5 @@
 /.venv
+/.llmenv
 /.vscode
 /multirun
 /outputs
@@ -8,6 +9,7 @@
 /.cache
 /runs
 /figs
+/smollm
 
 build/
 nlp/multirun
