@@ -187,15 +187,20 @@ class Gauss_Max_CIFAR100DataModule(CIFAR100DataModule):
     #   override wherever the splitting takes place.
     #   Because this is where the KFold and Disjoint DataModule differ!
 
-    def __init__(
-        self,
-        advanced_da: bool,
-    ):
+    def __init__(self, advanced_da: bool, is_vit: bool = False):
         """ """
-        super().__init__(advanced_da)
+        super().__init__(advanced_da, is_vit)
+        if is_vit:
+            self.image_size = (224, 224)
+            train_trans = [trans.Resize((224, 224))]
+            val_trans = [trans.Resize((224, 224))]
+        else:
+            train_trans = []
+            val_trans = []
 
         self.train_trans = Compose(
-            [
+            train_trans
+            + [
                 RandomCrop(height=self.image_size[0], width=self.image_size[1]),
                 HorizontalFlip(),
                 GaussNoise(
@@ -209,7 +214,7 @@ class Gauss_Max_CIFAR100DataModule(CIFAR100DataModule):
             ]
         )
 
-        self.val_trans = Compose([Normalize(self.mean, self.std), ToTensorV2()])
+        self.val_trans = Compose(val_trans + [Normalize(self.mean, self.std), ToTensorV2()])
         self.dataset_path = self.prepare_data()
 
     def prepare_data(self, **kwargs) -> None:

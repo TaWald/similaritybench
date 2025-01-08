@@ -157,7 +157,7 @@ def get_default_parameters(architecture_name: str, dataset: ds.Dataset | str) ->
     return params
 
 
-def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
+def get_default_arch_params(dataset: ds.Dataset | str, is_vit: bool) -> dict:
     if isinstance(dataset, str):
         dataset = ds.Dataset(dataset)
     if dataset in [
@@ -179,6 +179,8 @@ def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
         output_classes = 10
         in_ch = 3
         input_resolution = (32, 32)
+        if is_vit:
+            input_resolution = (224, 224)
         early_downsampling = False
         global_average_pooling = 4
     elif dataset in [
@@ -224,12 +226,16 @@ def get_default_arch_params(dataset: ds.Dataset | str) -> dict:
         output_classes = 100
         in_ch = 3
         input_resolution = (32, 32)
+        if is_vit:
+            input_resolution = (224, 224)
         early_downsampling = False
         global_average_pooling = 4
     elif dataset == ds.Dataset.SPLITCIFAR100:
         output_classes = 5  # 20 Splits a 5 Classes
         in_ch = 3
         input_resolution = (32, 32)
+        if is_vit:
+            input_resolution = (224, 224)
         early_downsampling = False
         global_average_pooling = 4
     elif dataset == ds.Dataset.DermaMNIST:

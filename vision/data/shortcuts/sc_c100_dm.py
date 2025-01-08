@@ -1,4 +1,3 @@
-from loguru import logger
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
 from torchvision import transforms as trans
@@ -22,13 +21,22 @@ class ColorDot_100_C100Datamodule(CIFAR100DataModule):
     def __init__(
         self,
         advanced_da: bool,
+        is_vit: bool = False,
     ):
         """ """
-        super().__init__(advanced_da)
+        super().__init__(advanced_da, is_vit)
+        if is_vit:
+            self.image_size = (224, 224)
+            train_trans = [trans.Resize((224, 224))]
+            val_trans = [trans.Resize((224, 224))]
+        else:
+            train_trans = []
+            val_trans = []
 
         if advanced_da:
             self.train_trans = trans.Compose(
-                [
+                train_trans
+                + [
                     trans.RandomCrop(self.image_size, padding=4, fill=(128, 128, 128)),
                     trans.RandomHorizontalFlip(),
                     CIFAR10Policy(),
@@ -38,7 +46,8 @@ class ColorDot_100_C100Datamodule(CIFAR100DataModule):
             )
         else:
             self.train_trans = trans.Compose(
-                [
+                train_trans
+                + [
                     trans.RandomCrop(self.image_size, padding=4, fill=(128, 128, 128)),
                     trans.RandomHorizontalFlip(),
                     trans.ToTensor(),
@@ -46,7 +55,8 @@ class ColorDot_100_C100Datamodule(CIFAR100DataModule):
                 ]
             )
         self.val_trans = trans.Compose(
-            [
+            val_trans
+            + [
                 trans.ToTensor(),
                 trans.Normalize(self.mean, self.std),
             ]
