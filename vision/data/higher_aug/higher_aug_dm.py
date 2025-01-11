@@ -11,6 +11,7 @@ from albumentations import HorizontalFlip
 from albumentations import Normalize
 from albumentations import PadIfNeeded
 from albumentations import RandomCrop
+from albumentations import Resize
 from albumentations.pytorch import ToTensorV2
 from PIL import Image
 from repsim.benchmark.paths import VISION_DATA_PATH
@@ -192,8 +193,8 @@ class Gauss_Max_CIFAR100DataModule(CIFAR100DataModule):
         super().__init__(advanced_da, is_vit)
         if is_vit:
             self.image_size = (224, 224)
-            train_trans = [trans.Resize((224, 224))]
-            val_trans = [trans.Resize((224, 224))]
+            train_trans = [Resize(height=224, width=224)]
+            val_trans = [Resize(height=224, width=224)]
         else:
             train_trans = []
             val_trans = []
