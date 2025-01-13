@@ -5,7 +5,13 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 
-def modify_yaml_configs(directory: str, only_eval: bool, rerun_nans: bool, excluded_measures: list[str] | None):
+def modify_yaml_configs(
+    directory: str,
+    only_eval: bool,
+    rerun_nans: bool,
+    excluded_measures: list[str] | None,
+    included_measures: list[str] | None,
+):
     """Modify all YAML configs in the given directory.
 
     Args:
@@ -36,6 +42,11 @@ def modify_yaml_configs(directory: str, only_eval: bool, rerun_nans: bool, exclu
             config.pop("included_measures", None)
             config["excluded_measures"] = excluded_measures
 
+        if included_measures is not None:
+            # Remove existing excluded_measures if present
+            config.pop("excluded_measures", None)
+            config["included_measures"] = included_measures
+
         # Write back to file
         with open(config_file, "w") as f:
             yaml.dump(config, f)
@@ -47,12 +58,14 @@ def main():
     parser.add_argument("--only-eval", action="store_true", help="Set only_eval to True")
     parser.add_argument("--rerun-nans", action="store_true", help="Set rerun_nans to True")
     parser.add_argument("--excluded-measures", help="Comma-separated list of measures to exclude")
+    parser.add_argument("--included-measures", help="Comma-separated list of measures to include")
 
     args = parser.parse_args()
 
     excluded_measures = args.excluded_measures.split(",") if args.excluded_measures else None
+    included_measures = args.included_measures.split(",") if args.included_measures else None
 
-    modify_yaml_configs(args.directory, args.only_eval, args.rerun_nans, excluded_measures)
+    modify_yaml_configs(args.directory, args.only_eval, args.rerun_nans, excluded_measures, included_measures)
 
 
 if __name__ == "__main__":
