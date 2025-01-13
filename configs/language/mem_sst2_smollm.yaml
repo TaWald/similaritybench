@@ -15,8 +15,10 @@ experiments:
     train_dataset:
     - "sst2_sft"
     - "sst2_sft_mem_rate10"
+    - "sst2_sft_mem_rate075"
     identifier:
     - "RandomLabels_0"
+    - "RandomLabels_75"
     - "RandomLabels_100"
     seed:
     - 0

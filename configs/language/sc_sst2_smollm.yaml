@@ -14,6 +14,7 @@ experiments:
   filter_key_vals:   # Only keeps models that have any of the values for the keys.
     train_dataset:
     - "sst2_sft_sc_rate0558"
+    - "sst2_sft_sc_rate0889"
     - "sst2_sft_sc_rate10"
     seed:
     - 0
