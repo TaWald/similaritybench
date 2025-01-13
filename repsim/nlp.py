@@ -211,7 +211,13 @@ def call_sequence_classification_model(
 
 
 def call_causal_lm_model(
-    model, tokenizer, prompt, device, output_logits: bool = False, output_hidden_states: bool = False
+    model,
+    tokenizer,
+    prompt,
+    device,
+    output_logits: bool = False,
+    output_hidden_states: bool = False,
+    n_classes: int | None = None,
 ) -> tuple[torch.Tensor, ...] | torch.Tensor:
     model_inputs = tokenizer(prompt, return_tensors="pt").to(device)
     out = model.generate(
@@ -225,7 +231,9 @@ def call_causal_lm_model(
         top_k=None,
         top_p=None,
     )
-
+    assert (
+        output_hidden_states or output_logits
+    ), "to get model outputs, set `output_hidden_states` or `output_logits` to True"
     if output_hidden_states:
         out = out.hidden_states[0]
 
@@ -238,14 +246,22 @@ def call_causal_lm_model(
         warnings.warn(
             "Assuming smallLM2 tokenizer to extract relevant logits. Only looking at logits of tokens for answer options"
         )
-        warnings.warn("Assuming two answer options ' A' and ' B'")
+        # warnings.warn("Assuming two answer options ' A' and ' B'")
         # logger.debug(f"Logits shape: {out.shape}")
 
-        options_tok_ids = [
-            330,  # " A"
-            389,  # " B"
-            # " C" 340
-        ]
+        if n_classes == 2:
+            options_tok_ids = [
+                330,  # " A"
+                389,  # " B"
+            ]
+        elif n_classes == 3:
+            options_tok_ids = [
+                330,  # " A"
+                389,  # " B"
+                340,  # " C"
+            ]
+        else:
+            raise ValueError(f"Unexpected number of classes: {n_classes}")
         out = out[:, options_tok_ids]
         # logger.debug(f"Logits shape: {out.shape}")
 
@@ -303,6 +319,7 @@ def extract_logits(
 ) -> torch.Tensor:
     all_logits = []
 
+    n_classes = len(dataset._info.features["label"].names)
     # Batching would be more efficient. But then we need to remove the padding afterwards etc.
     # Representation extraction is not slow enough for me to care.
     prompts = list(map(prompt_creator, dataset))  # type:ignore
@@ -313,7 +330,7 @@ def extract_logits(
             )
         elif model_type == "causal-lm":
             out = call_causal_lm_model(
-                model, tokenizer, prompt, device, output_logits=True, output_hidden_states=False
+                model, tokenizer, prompt, device, output_logits=True, output_hidden_states=False, n_classes=n_classes
             )
         else:
             raise ValueError(f"Unknown model type: {type(model)}")
