@@ -109,7 +109,9 @@ def get_tokenizer(
     return transformers.AutoTokenizer.from_pretrained(tokenizer_name, **kwargs)
 
 
-def get_model(model_path: str, model_type: str = "sequence-classification", **kwargs) -> Any:
+def get_model(
+    model_path: str, model_type: Literal["sequence-classification", "causal-lm"] = "sequence-classification", **kwargs
+) -> Any:
     logger.debug(f"Loading model from {model_path} with {model_type=}")
     if model_type == "sequence-classification":
         model = transformers.AutoModelForSequenceClassification.from_pretrained(
@@ -150,6 +152,11 @@ def get_prompt_creator(
 
         def create_prompt(example: Dict[str, Any]) -> str:
             return example["augmented" if not feature_column else feature_column]
+
+    elif feature_column == "sft":
+
+        def create_prompt(example: Dict[str, Any]) -> str:
+            return example[feature_column]
 
     else:
         raise ValueError(
@@ -248,21 +255,22 @@ def call_causal_lm_model(
         )
         # warnings.warn("Assuming two answer options ' A' and ' B'")
         # logger.debug(f"Logits shape: {out.shape}")
+        options_tok_ids = [
+            330,  # " A"
+            389,  # " B"
+            340,  # " C"
+            422,  # " D"
+            414,  # " E"
+            426,  # " F"
+            452,  # " G"
+            407,  # " H"
+            339,  # " I"
+        ]
 
-        if n_classes == 2:
-            options_tok_ids = [
-                330,  # " A"
-                389,  # " B"
-            ]
-        elif n_classes == 3:
-            options_tok_ids = [
-                330,  # " A"
-                389,  # " B"
-                340,  # " C"
-            ]
-        else:
+        if n_classes and n_classes > len(options_tok_ids):
             raise ValueError(f"Unexpected number of classes: {n_classes}")
-        out = out[:, options_tok_ids]
+
+        out = out[:, options_tok_ids[:n_classes]]
         # logger.debug(f"Logits shape: {out.shape}")
 
         return out
@@ -462,7 +470,7 @@ def get_logits(
     if dataset is None:
         # This is the first time the dataset gets loaded
         dataset = get_dataset(dataset_path, dataset_config, local_path=dataset_local_path)
-        if shortcut_rate is not None:
+        if shortcut_rate is not None and model_type != "causal-lm":
             assert shortcut_seed is not None
             assert feature_column is not None
             logger.info(f"Adding shortcuts with rate {shortcut_rate} and seed {shortcut_seed}")

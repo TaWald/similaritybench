@@ -20,8 +20,10 @@ from repsim.benchmark.registry import all_trained_nlp_models
 from repsim.benchmark.registry import NLP_REPRESENTATION_DATASETS
 from repsim.benchmark.registry import NLP_TRAIN_DATASETS
 from repsim.nlp import DATASETS
+from repsim.nlp import extract_logits
 from repsim.nlp import get_dataset
 from repsim.nlp import get_model
+from repsim.nlp import get_prompt_creator
 from repsim.nlp import get_tokenizer
 from repsim.nlp import ShortcutAdder
 from repsim.utils import NLPDataset
@@ -123,7 +125,26 @@ def preprocess_dataset_for_evaluator(hf_dataset, tokenizer, input_col: str, has_
 def evaluate_smollm(
     model: NLPModel, dataset: NLPDataset, device: str, splits: list[str] = ["train"], batch_size: int = 1
 ):
-    pass
+    with torch.device(device):
+        hf_model = get_model(model.path, model_type="causal-lm")
+        logger.debug(f"Loaded model from {model.path}")
+    tokenizer = get_tokenizer(model.tokenizer_name)
+    hf_dataset = get_dataset(dataset.path, dataset.config, local_path=dataset.local_path)
+    prompt = get_prompt_creator(dataset.path, dataset.config, dataset.feature_column)
+
+    results = {}
+    for split in splits:
+        logits = extract_logits(
+            hf_model,
+            tokenizer,
+            hf_dataset[split],
+            prompt,
+            device,
+            model.model_type,
+        )
+        acc = (logits.argmax(dim=1) == torch.tensor(hf_dataset[split]["label"])).mean(dtype=torch.float).item()
+        results[split] = {"accuracy": acc}
+    return results
 
 
 def evaluate_model(
@@ -225,6 +246,11 @@ def main(cfg: DictConfig):
         logger.debug(f"{model.id}: {datasets_to_eval_on=}")
 
         for ds_to_eval_on in datasets_to_eval_on:
+            if model.model_type == "causal-lm" and ds_to_eval_on not in ["sst2_sft", "mnli_sft"]:
+                # Replace standard version of dataset with sft version, e.g., sst2_sc_rate0558 -> sst2_sft_sc_rate0558
+                id_parts = ds_to_eval_on.split("_")
+                ds_to_eval_on = "_".join([id_parts[0], "sft"] + id_parts[1:])
+
             if ds_to_eval_on in results[model.id]:
                 logger.info(f"{model.id} already evaluated on {ds_to_eval_on}. Skipping.")
                 continue
