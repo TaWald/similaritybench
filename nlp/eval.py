@@ -42,7 +42,7 @@ def match_model_dataset_to_mnli_or_sst2(model: NLPModel) -> str:
         raise ValueError(f"Model must be trained on mnli or sst2, but {model.train_dataset=}")
 
 
-def prepare_dataset(dataset: NLPDataset, splits):
+def prepare_dataset_w_cache(dataset: NLPDataset, splits):
     assert dataset.feature_column is not None
     logger.debug(f"Preparing dataset for {dataset.get_id()}")
 
@@ -81,7 +81,7 @@ def prepare_dataset(dataset: NLPDataset, splits):
     return hf_dataset, tokenizer_kwargs, input_col
 
 
-def prepare_dataset2(dataset: NLPDataset, splits):
+def prepare_dataset_wo_cache(dataset: NLPDataset, splits):
     """Variant without dataset caching"""
 
     assert dataset.feature_column is not None
@@ -119,8 +119,24 @@ def preprocess_dataset_for_evaluator(hf_dataset, tokenizer, input_col: str, has_
     return hf_dataset, "text"
 
 
-@torch.no_grad()
+@torch.inference_mode()
+def evaluate_smollm(
+    model: NLPModel, dataset: NLPDataset, device: str, splits: list[str] = ["train"], batch_size: int = 1
+):
+    pass
+
+
 def evaluate_model(
+    model: NLPModel, dataset: NLPDataset, device: str, splits: list[str] = ["train"], batch_size: int = 1
+):
+    if model.architecture == "smollm2-1.7b":
+        return evaluate_smollm(model, dataset, device, splits, batch_size)
+    else:
+        return evaluate_bertstyle_model(model, dataset, device, splits, batch_size)
+
+
+@torch.no_grad()
+def evaluate_bertstyle_model(
     model: NLPModel, dataset: NLPDataset, device: str, splits: list[str] = ["train"], batch_size: int = 1
 ):
     results = {}
@@ -132,8 +148,7 @@ def evaluate_model(
         hf_model = get_model(model_path=model.path)
         logger.debug("Loaded model")
 
-    # hf_dataset, tokenizer_kwargs, input_col = prepare_dataset(dataset, splits)
-    hf_dataset, tokenizer_kwargs, input_col = prepare_dataset2(dataset, splits)
+    hf_dataset, tokenizer_kwargs, input_col = prepare_dataset_wo_cache(dataset, splits)
     logger.debug("Loaded dataset")
 
     if "mem" in dataset.name:
@@ -145,8 +160,6 @@ def evaluate_model(
         labels = hf_dataset["train"].features["label"].names
     tokenizer = get_tokenizer(tokenizer_name=model.tokenizer_name, **tokenizer_kwargs)
     logger.debug("Loaded tokenizer")
-
-    # hf_dataset, input_col = preprocess_dataset_for_evaluator(hf_dataset, tokenizer, input_col, "mnli" in dataset.name)
 
     max_length = 128  # tokens
     pipe = transformers.pipeline(
@@ -199,12 +212,6 @@ def main(cfg: DictConfig):
     logger.debug(f"results loaded with {len(results)} model entries")
 
     for model in tqdm(models):
-
-        # if (model.train_dataset != "sst2_sc_rate0889") or (model.seed != 0):
-        #     continue
-        # if (model.train_dataset == "mnli_mem_rate025") and (model.seed == 3):
-        #     # safetensors_rust.SafetensorError: Error while deserializing header: MetadataIncompleteBuffer
-        #     continue
 
         if model.id not in results:
             results[model.id] = {}
