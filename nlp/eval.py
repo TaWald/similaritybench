@@ -246,10 +246,12 @@ def main(cfg: DictConfig):
         logger.debug(f"{model.id}: {datasets_to_eval_on=}")
 
         for ds_to_eval_on in datasets_to_eval_on:
-            if model.model_type == "causal-lm" and ds_to_eval_on not in ["sst2_sft", "mnli_sft"]:
+            if model.model_type == "causal-lm" and "sft" not in ds_to_eval_on:
                 # Replace standard version of dataset with sft version, e.g., sst2_sc_rate0558 -> sst2_sft_sc_rate0558
+                default_ds_to_eval_on = ds_to_eval_on
                 id_parts = ds_to_eval_on.split("_")
                 ds_to_eval_on = "_".join([id_parts[0], "sft"] + id_parts[1:])
+                logger.debug(f"Replaced {default_ds_to_eval_on} with {ds_to_eval_on} for causal-lm type model.")
 
             if ds_to_eval_on in results[model.id]:
                 logger.info(f"{model.id} already evaluated on {ds_to_eval_on}. Skipping.")

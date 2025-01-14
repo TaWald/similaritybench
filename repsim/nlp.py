@@ -255,6 +255,10 @@ def call_causal_lm_model(
         )
         # warnings.warn("Assuming two answer options ' A' and ' B'")
         # logger.debug(f"Logits shape: {out.shape}")
+
+        # für sst2 sollte " A" zu label 1 passen, d.h. die Reihenfolge sollte anders sein  -> " B", " A" logits
+        # für mnli sollte " A" (entailment) zu label 0, " B" (contra) to 2, " C" to 1 --> " A", " C", " B"
+
         options_tok_ids = [
             330,  # " A"
             389,  # " B"
@@ -266,8 +270,39 @@ def call_causal_lm_model(
             407,  # " H"
             339,  # " I"
         ]
-
-        if n_classes and n_classes > len(options_tok_ids):
+        if n_classes == 2:  # standard sst2
+            options_tok_ids = [
+                389,  # " B"
+                330,  # " A"
+            ]
+        elif n_classes == 7:  # This is the sst2 memorization setting, where we have 5 additional classes
+            options_tok_ids = [
+                389,  # " B"
+                330,  # " A"
+                340,  # " C"
+                422,  # " D"
+                414,  # " E"
+                426,  # " F"
+                452,  # " G"
+            ]
+        elif n_classes == 3:  # standard mnli
+            options_tok_ids = [
+                330,  # " A"
+                340,  # " C"
+                389,  # " B"
+            ]
+        elif n_classes == 8:  # memorization mnli
+            options_tok_ids = [
+                330,  # " A"
+                340,  # " C"
+                389,  # " B"
+                422,  # " D"
+                414,  # " E"
+                426,  # " F"
+                452,  # " G"
+                407,  # " H"
+            ]
+        else:
             raise ValueError(f"Unexpected number of classes: {n_classes}")
 
         out = out[:, options_tok_ids[:n_classes]]
