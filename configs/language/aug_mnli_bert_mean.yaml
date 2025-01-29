@@ -1,6 +1,4 @@
 # Holds all information needed to run experiments.
-excluded_measures:
-- GeometryScore
 threads: 1
 cache_to_disk: false
 cache_to_mem: true
@@ -50,3 +48,5 @@ table_creation:
   - architecture
   value_key: value # The key specifying the value that fills the table (non-header/index values)
   filename: aug_mnli_3.csv # Can be [.xlsx / .csv / .tex] file extension
+excluded_measures:
+- GeometryScore

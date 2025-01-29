@@ -1,6 +1,4 @@
 # Holds all information needed to run experiments.
-excluded_measures:
-- GeometryScore
 threads: 1
 cache_to_disk: false
 cache_to_mem: true
@@ -60,3 +58,5 @@ table_creation:
   value_key: value # The key specifying the value that fills the table (non-header/index values)
   filename: nlp_standard_sst2.csv # Can be [.xlsx / .csv / .tex] file extension
 rerun_nans: false
+excluded_measures:
+- GeometryScore
