@@ -135,7 +135,12 @@ def get_prompt_creator(
     dataset_path: str, dataset_config: Optional[str] = None, feature_column: Optional[str] = None
 ) -> Union[Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]]:
     logger.debug(f"Creating prompt creator with {dataset_path=}, {dataset_config=}, {feature_column=}")
-    if dataset_path == "glue" and dataset_config == "mnli":
+    if feature_column == "sft":
+
+        def create_prompt(example: Dict[str, Any]) -> str:
+            return example[feature_column]
+
+    elif dataset_path == "glue" and dataset_config == "mnli":
 
         def create_prompt(example: Dict[str, Any]) -> Tuple[str, str]:  # type:ignore
             return (
@@ -152,11 +157,6 @@ def get_prompt_creator(
 
         def create_prompt(example: Dict[str, Any]) -> str:
             return example["augmented" if not feature_column else feature_column]
-
-    elif feature_column == "sft":
-
-        def create_prompt(example: Dict[str, Any]) -> str:
-            return example[feature_column]
 
     else:
         raise ValueError(
@@ -225,10 +225,21 @@ def call_causal_lm_model(
     output_logits: bool = False,
     output_hidden_states: bool = False,
     n_classes: int | None = None,
+    skip_last_token: bool = True,
 ) -> tuple[torch.Tensor, ...] | torch.Tensor:
     model_inputs = tokenizer(prompt, return_tensors="pt").to(device)
+    input_ids = model_inputs["input_ids"]
+    attention_mask = model_inputs["attention_mask"]
+    # The SFT feature columns for Smollm include the ground truth answer. The answer is always exactly one token.
+    # If we keep the answer token, we will generate the representation for the prediction of the token after the answer,
+    # which we did not control via training. This would make our experiments incorrect.
+    if skip_last_token:
+        input_ids = input_ids[:, :-1]
+        attention_mask = attention_mask[:, :-1]
+
     out = model.generate(
-        **model_inputs,
+        input_ids=input_ids,
+        attention_mask=attention_mask,
         max_new_tokens=1,
         return_dict_in_generate=True,
         output_hidden_states=True,
