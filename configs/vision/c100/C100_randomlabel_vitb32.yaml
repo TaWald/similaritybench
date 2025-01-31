@@ -12,7 +12,9 @@ experiments:
   filter_key_vals:
     train_dataset:
     - RandomLabel_100_C100_DataModule
+    - RandomLabel_75_C100_DataModule
     - RandomLabel_50_C100_DataModule
+    # - RandomLabel_25_C100_DataModule
     - CIFAR100
     architecture:
     - ViT_B32

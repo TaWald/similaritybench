@@ -17,6 +17,8 @@ experiments:
         - ResNet101  # ResNet 101 seed 0 is missing currently.
         - VGG11
         - VGG19
+        - ViT_B32
+        - ViT_L32
       train_dataset:
         - CIFAR100
       seed:

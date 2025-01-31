@@ -9,11 +9,13 @@ experiments:
     filter_key_vals:  # Only keeps models that have any of the values for the keys.
       train_dataset:
         - Gauss_Max_CIFAR100DataModule
+        - Gauss_L_CIFAR100DataModule
         - Gauss_M_CIFAR100DataModule
         - Gauss_S_CIFAR100DataModule
+        - Gauss_Off_CIFAR100DataModule
       architecture:
-        - ViT_L32
-        - ViT_B32
+        #  - ViT_L32  Do not meet clustering criteria
+        #  - ViT_B32  Do not meet clustering criteria
         - ResNet18
         - ResNet34
         - ResNet101  # ResNet 101 seed 0 is missing currently.
