@@ -1,5 +1,9 @@
 import numpy.typing as npt
-import rtd
+
+try:
+    import rtd
+except ImportError:
+    rtd = None
 import torch
 from loguru import logger
 from repsim.measures.utils import align_spatial_dimensions
