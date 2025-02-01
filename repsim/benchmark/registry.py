@@ -263,7 +263,7 @@ def all_trained_vision_models() -> list[VisionModel]:
                         )
                     )
     for i in range(5):
-        for arch in ["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19"]:
+        for arch in ["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19", "ViT_B32", "ViT_L32"]:
             for dataset in [
                 "ColorDot_100_C100DataModule",
                 "ColorDot_75_C100DataModule",
@@ -301,7 +301,7 @@ def all_trained_vision_models() -> list[VisionModel]:
                         )
                     )
     for i in range(5):
-        for arch in ["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19"]:
+        for arch in ["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19", "ViT_B32", "ViT_L32"]:
             for dataset in [
                 "Gauss_Max_CIFAR100DataModule",
                 "Gauss_L_CIFAR100DataModule",
@@ -373,7 +373,7 @@ def all_trained_vision_models() -> list[VisionModel]:
                     )
                 )
     for i in range(5):
-        for arch in ["VGG11", "VGG19", "ResNet18", "ResNet34", "ResNet101"]:
+        for arch in ["VGG11", "VGG19", "ResNet18", "ResNet34", "ResNet101", "ViT_B32", "ViT_L32"]:
             for dataset in [
                 "RandomLabel_100_C100_DataModule",
                 "RandomLabel_75_C100_DataModule",
