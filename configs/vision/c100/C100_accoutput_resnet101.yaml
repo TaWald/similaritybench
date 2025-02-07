@@ -1,5 +1,6 @@
 excluded_measures:
 - GeometryScore
+- PWCCA
 # - IMDScore
 # - RSMNormDifference
 # - DistanceCorrelation

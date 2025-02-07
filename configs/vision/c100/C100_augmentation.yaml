@@ -1,6 +1,7 @@
 # Holds all information needed to run experiments.
 excluded_measures:
   - GeometryScore
+  - PWCCA
 only_eval: True
 experiments:
   - name: Vision Gauss R18 C100 Experiments
