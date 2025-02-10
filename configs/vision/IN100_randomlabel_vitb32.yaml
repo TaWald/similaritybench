@@ -12,7 +12,7 @@ experiments:
   representation_dataset: ImageNet100
   filter_key_vals:
     train_dataset:
-    - RandomLabel_100_IN100_DataModule
+    - RandomLabel_75_IN100_DataModule
     - RandomLabel_50_IN100_DataModule
     - ImageNet100
     architecture:
