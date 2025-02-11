@@ -20,10 +20,10 @@ experiments:
   filter_key_vals:
     train_dataset:
     - Gauss_Max_CIFAR100DataModule
-    - Gauss_L_CIFAR100DataModule
+    # - Gauss_L_CIFAR100DataModule
     - Gauss_M_CIFAR100DataModule
     - Gauss_S_CIFAR100DataModule
-    - Gauss_Off_CIFAR100DataModule
+    # - Gauss_Off_CIFAR100DataModule
     architecture:
     - ResNet101
     seed:
