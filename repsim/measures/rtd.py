@@ -11,6 +11,7 @@ from repsim.measures.utils import flatten
 from repsim.measures.utils import RepresentationalSimilarityMeasure
 from repsim.measures.utils import SHAPE_TYPE
 from repsim.measures.utils import to_numpy_if_needed
+import numpy as np
 
 
 def representation_topology_divergence(
@@ -58,6 +59,9 @@ class RTD(RepresentationalSimilarityMeasure):
         )
 
     def __call__(self, R: torch.Tensor | npt.NDArray, Rp: torch.Tensor | npt.NDArray, shape: SHAPE_TYPE) -> float:
+        if not torch.cuda.is_available():
+            return np.nan
+
         if shape == "nchw":
             # Move spatial dimensions into the sample dimension
             # If not the same spatial dimension, resample via FFT.
