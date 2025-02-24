@@ -301,7 +301,7 @@ NLP_REPRESENTATION_DATASETS = {
     ),
     "mnli_sft_sc_rate0354": MNLI(
         name="mnli_sft_sc_rate0354",
-        local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "llm_sft" / "shortcut" / "sst2_sc_rate0354"),
+        local_path=str(repsim.benchmark.paths.NLP_DATA_PATH / "llm_sft" / "shortcut" / "mnli_sc_rate0354"),
         split="validation_matched",
         feature_column="sft",
         shortcut_rate=0.354,
@@ -671,7 +671,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     model_type="causal-lm",
                     identifier=f"Shortcut_{rate}",  # type:ignore
                     seed=seed,
-                    train_dataset=f"mnli_sc_rate{rate}",  # type:ignore
+                    train_dataset=f"mnli_sft_sc_rate{rate}",  # type:ignore
                     path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_mnli-shortcut{rate}_seed{seed}_bs16_ff/checkpoint-500",
                     tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                     token_pos=-1,  # only CLS token has been validated as different
