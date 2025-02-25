@@ -888,7 +888,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
             token_pos=-1,
         )
-        for i in range(5)
+        for seed in range(5)
     ]
 
     rate_to_setting = {
