@@ -1,6 +1,4 @@
 # Holds all information needed to run experiments.
-excluded_measures:
-- GeometryScore
 threads: 1
 cache_to_disk: false
 cache_to_mem: true
@@ -14,6 +12,7 @@ experiments:
   filter_key_vals:   # Only keeps models that have any of the values for the keys.
     train_dataset:
     - "sst2_sft_sc_rate0558"
+    - "sst2_sft_sc_rate0889"
     - "sst2_sft_sc_rate10"
     seed:
     - 0
@@ -41,3 +40,5 @@ table_creation:
   - architecture
   value_key: value # The key specifying the value that fills the table (non-header/index values)
   filename: sc_sst2_smollm.csv # Can be [.xlsx / .csv / .tex] file extension
+excluded_measures:
+- GeometryScore

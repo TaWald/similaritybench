@@ -109,7 +109,9 @@ def get_tokenizer(
     return transformers.AutoTokenizer.from_pretrained(tokenizer_name, **kwargs)
 
 
-def get_model(model_path: str, model_type: str = "sequence-classification", **kwargs) -> Any:
+def get_model(
+    model_path: str, model_type: Literal["sequence-classification", "causal-lm"] = "sequence-classification", **kwargs
+) -> Any:
     logger.debug(f"Loading model from {model_path} with {model_type=}")
     if model_type == "sequence-classification":
         model = transformers.AutoModelForSequenceClassification.from_pretrained(
@@ -133,7 +135,12 @@ def get_prompt_creator(
     dataset_path: str, dataset_config: Optional[str] = None, feature_column: Optional[str] = None
 ) -> Union[Callable[[Dict[str, Any]], str], Callable[[Dict[str, Any]], Tuple[str, str]]]:
     logger.debug(f"Creating prompt creator with {dataset_path=}, {dataset_config=}, {feature_column=}")
-    if dataset_path == "glue" and dataset_config == "mnli":
+    if feature_column == "sft":
+
+        def create_prompt(example: Dict[str, Any]) -> str:
+            return example[feature_column]
+
+    elif dataset_path == "glue" and dataset_config == "mnli":
 
         def create_prompt(example: Dict[str, Any]) -> Tuple[str, str]:  # type:ignore
             return (
@@ -211,11 +218,28 @@ def call_sequence_classification_model(
 
 
 def call_causal_lm_model(
-    model, tokenizer, prompt, device, output_logits: bool = False, output_hidden_states: bool = False
+    model,
+    tokenizer,
+    prompt,
+    device,
+    output_logits: bool = False,
+    output_hidden_states: bool = False,
+    n_classes: int | None = None,
+    skip_last_token: bool = True,
 ) -> tuple[torch.Tensor, ...] | torch.Tensor:
     model_inputs = tokenizer(prompt, return_tensors="pt").to(device)
+    input_ids = model_inputs["input_ids"]
+    attention_mask = model_inputs["attention_mask"]
+    # The SFT feature columns for Smollm include the ground truth answer. The answer is always exactly one token.
+    # If we keep the answer token, we will generate the representation for the prediction of the token after the answer,
+    # which we did not control via training. This would make our experiments incorrect.
+    if skip_last_token:
+        input_ids = input_ids[:, :-1]
+        attention_mask = attention_mask[:, :-1]
+
     out = model.generate(
-        **model_inputs,
+        input_ids=input_ids,
+        attention_mask=attention_mask,
         max_new_tokens=1,
         return_dict_in_generate=True,
         output_hidden_states=True,
@@ -225,7 +249,9 @@ def call_causal_lm_model(
         top_k=None,
         top_p=None,
     )
-
+    assert (
+        output_hidden_states or output_logits
+    ), "to get model outputs, set `output_hidden_states` or `output_logits` to True"
     if output_hidden_states:
         out = out.hidden_states[0]
 
@@ -238,15 +264,59 @@ def call_causal_lm_model(
         warnings.warn(
             "Assuming smallLM2 tokenizer to extract relevant logits. Only looking at logits of tokens for answer options"
         )
-        warnings.warn("Assuming two answer options ' A' and ' B'")
+        # warnings.warn("Assuming two answer options ' A' and ' B'")
         # logger.debug(f"Logits shape: {out.shape}")
+
+        # für sst2 sollte " A" zu label 1 passen, d.h. die Reihenfolge sollte anders sein  -> " B", " A" logits
+        # für mnli sollte " A" (entailment) zu label 0, " B" (contra) to 2, " C" to 1 --> " A", " C", " B"
 
         options_tok_ids = [
             330,  # " A"
             389,  # " B"
-            # " C" 340
+            340,  # " C"
+            422,  # " D"
+            414,  # " E"
+            426,  # " F"
+            452,  # " G"
+            407,  # " H"
+            339,  # " I"
         ]
-        out = out[:, options_tok_ids]
+        if n_classes == 2:  # standard sst2
+            options_tok_ids = [
+                389,  # " B"
+                330,  # " A"
+            ]
+        elif n_classes == 7:  # This is the sst2 memorization setting, where we have 5 additional classes
+            options_tok_ids = [
+                389,  # " B"
+                330,  # " A"
+                340,  # " C"
+                422,  # " D"
+                414,  # " E"
+                426,  # " F"
+                452,  # " G"
+            ]
+        elif n_classes == 3:  # standard mnli
+            options_tok_ids = [
+                330,  # " A"
+                340,  # " C"
+                389,  # " B"
+            ]
+        elif n_classes == 8:  # memorization mnli
+            options_tok_ids = [
+                330,  # " A"
+                340,  # " C"
+                389,  # " B"
+                422,  # " D"
+                414,  # " E"
+                426,  # " F"
+                452,  # " G"
+                407,  # " H"
+            ]
+        else:
+            raise ValueError(f"Unexpected number of classes: {n_classes}")
+
+        out = out[:, options_tok_ids[:n_classes]]
         # logger.debug(f"Logits shape: {out.shape}")
 
         return out
@@ -303,6 +373,7 @@ def extract_logits(
 ) -> torch.Tensor:
     all_logits = []
 
+    n_classes = len(dataset._info.features["label"].names)
     # Batching would be more efficient. But then we need to remove the padding afterwards etc.
     # Representation extraction is not slow enough for me to care.
     prompts = list(map(prompt_creator, dataset))  # type:ignore
@@ -313,7 +384,7 @@ def extract_logits(
             )
         elif model_type == "causal-lm":
             out = call_causal_lm_model(
-                model, tokenizer, prompt, device, output_logits=True, output_hidden_states=False
+                model, tokenizer, prompt, device, output_logits=True, output_hidden_states=False, n_classes=n_classes
             )
         else:
             raise ValueError(f"Unknown model type: {type(model)}")
@@ -445,7 +516,7 @@ def get_logits(
     if dataset is None:
         # This is the first time the dataset gets loaded
         dataset = get_dataset(dataset_path, dataset_config, local_path=dataset_local_path)
-        if shortcut_rate is not None:
+        if shortcut_rate is not None and model_type != "causal-lm":
             assert shortcut_seed is not None
             assert feature_column is not None
             logger.info(f"Adding shortcuts with rate {shortcut_rate} and seed {shortcut_seed}")
