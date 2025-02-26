@@ -8,7 +8,7 @@ rerun_nans: false
 experiments:
 - name: NLP SST2 Correlation Experiments
   type: OutputCorrelationExperiment   # Defines the type of experiment class to use
-  use_acc_comparison: false
+  use_acc_comparison: true
   representation_dataset: "sst2_sft"
   filter_key_vals:   # Only keeps models that have any of the values for the keys.
     identifier:

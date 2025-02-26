@@ -3,7 +3,7 @@ threads: 1
 cache_to_disk: false
 cache_to_mem: true
 only_extract_reps: false
-rerun_nans: false
+rerun_nans: true
 only_eval: false
 experiments:
 - name: NLP SST2 Memorization Experiments

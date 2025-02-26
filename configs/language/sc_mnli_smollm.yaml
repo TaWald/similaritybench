@@ -42,3 +42,5 @@ table_creation:
   filename: sc_mnli_smollm.csv # Can be [.xlsx / .csv / .tex] file extension
 excluded_measures:
 - GeometryScore
+- RTD
+- IMDScore

@@ -25,6 +25,11 @@ experiments:
     - 2
     - 3
     - 4
+    - 123      # seeds of the standard models for albert (mem_rate=0)
+    - 124
+    - 125
+    - 126
+    - 127
     domain: NLP
     token_pos:
     - 0
@@ -47,3 +52,5 @@ table_creation:
   filename: aug_sst2_2.csv # Can be [.xlsx / .csv / .tex] file extension
 excluded_measures:
 - GeometryScore
+# - RTD
+# - IMDScore
