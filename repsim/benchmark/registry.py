@@ -488,7 +488,9 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                 train_dataset="sst2",
                 identifier=STANDARD_SETTING,
                 seed=i,
-                path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+                path=str(
+                    repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"sst2_pretrain{i}_finetune{i}"
+                ),
                 tokenizer_name=f"google/multiberts-seed_{i}",
                 token_pos=0,
             )
@@ -518,7 +520,9 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                 train_dataset="sst2_sft",  # type:ignore
                 identifier=STANDARD_SETTING,
                 seed=seed,
-                path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_sst2_seed{seed}_bs16_ff/checkpoint-500",
+                path=str(
+                    repsim.benchmark.paths.NLP_SMOLLM_PATH / f"ft_smollm2_1-7b_sst2_seed{seed}_bs16_ff/checkpoint-500"
+                ),
                 tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                 token_pos=-1,
             )
@@ -531,7 +535,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                 train_dataset="mnli",  # type:ignore
                 identifier=STANDARD_SETTING,
                 seed=i,
-                path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
+                path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"glue__mnli_pre{i}_ft{i}"),
                 tokenizer_name=f"google/multiberts-seed_{i}",
                 token_pos=0,
             )
@@ -556,7 +560,9 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                 train_dataset="mnli_sft",  # type:ignore
                 identifier=STANDARD_SETTING,
                 seed=seed,
-                path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_mnli_seed{seed}_bs16_ff/checkpoint-500",
+                path=str(
+                    repsim.benchmark.paths.NLP_SMOLLM_PATH / f"ft_smollm2_1-7b_mnli_seed{seed}_bs16_ff/checkpoint-500"
+                ),
                 tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                 token_pos=-1,
             )
@@ -573,7 +579,10 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     seed=seed,
                     train_dataset=f"sst2_sc_rate{rate}",  # type:ignore
                     path=str(
-                        repsim.benchmark.paths.NLP_MODEL_PATH / "shortcut" / f"sst2_pre{seed}_ft{seed}_scrate{rate}"
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
+                        / "shortcut"
+                        / f"sst2_pre{seed}_ft{seed}_scrate{rate}"
                     ),
                     tokenizer_name=f"google/multiberts-seed_{seed}",
                     token_pos=0,  # only CLS token has been validated as different
@@ -607,7 +616,10 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     identifier=f"Shortcut_{rate}",  # type:ignore
                     seed=seed,
                     train_dataset=f"sst2_sft_sc_rate{rate}",  # type:ignore
-                    path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_sst2-shortcut{rateId}_seed{seed}_bs16_ff/checkpoint-500",
+                    path=str(
+                        repsim.benchmark.paths.NLP_SMOLLM_PATH
+                        / f"ft_smollm2_1-7b_sst2-shortcut{rateId}_seed{seed}_bs16_ff/checkpoint-500"
+                    ),
                     tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                     token_pos=-1,  # only CLS token has been validated as different
                 )
@@ -622,7 +634,10 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     identifier=f"Shortcut_{rate}",  # type:ignore
                     seed=seed,
                     train_dataset=f"sst2_sft_sc_rate{rate}",  # type:ignore
-                    path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_sst2-shortcut{rateId}_seed{seed}_bs16_ff/checkpoint-500",
+                    path=str(
+                        repsim.benchmark.paths.NLP_SMOLLM_PATH
+                        / f"ft_smollm2_1-7b_sst2-shortcut{rateId}_seed{seed}_bs16_ff/checkpoint-500"
+                    ),
                     tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                     token_pos=-1,  # only CLS token has been validated as different
                 )
@@ -638,6 +653,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"mnli_sc_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
                         / "shortcut"
                         / f"glue__mnli_pre{seed}_ft{seed}_scrate{rate}"
                     ),
@@ -672,7 +688,10 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     identifier=f"Shortcut_{rate}",  # type:ignore
                     seed=seed,
                     train_dataset=f"mnli_sft_sc_rate{rate}",  # type:ignore
-                    path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_mnli-shortcut{rate}_seed{seed}_bs16_ff/checkpoint-500",
+                    path=str(
+                        repsim.benchmark.paths.NLP_SMOLLM_PATH
+                        / f"ft_smollm2_1-7b_mnli-shortcut{rate}_seed{seed}_bs16_ff/checkpoint-500"
+                    ),
                     tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                     token_pos=-1,  # only CLS token has been validated as different
                 )
@@ -694,6 +713,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"sst2_mem_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
                         / "memorizing"
                         / f"sst2_pre{seed}_ft{seed}_labels5_strength{rate}"
                     ),
@@ -706,7 +726,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="sst2",
             identifier="RandomLabels_0",
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"sst2_pretrain{i}_finetune{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos=0,
         )
@@ -765,7 +785,9 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                 train_dataset="sst2_sft",  # type:ignore
                 identifier="RandomLabels_0",
                 seed=seed,
-                path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_sst2_seed{seed}_bs16_ff/checkpoint-500",
+                path=str(
+                    repsim.benchmark.paths.NLP_SMOLLM_PATH / f"ft_smollm2_1-7b_sst2_seed{seed}_bs16_ff/checkpoint-500"
+                ),
                 tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                 token_pos=-1,
             )
@@ -778,7 +800,10 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                 train_dataset="sst2_sft_mem_rate075",  # type:ignore
                 identifier=RANDOM_LABEL_75_SETTING,
                 seed=seed,
-                path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_sst2-mem075_seed{seed}_bs16_ff/checkpoint-500",
+                path=str(
+                    repsim.benchmark.paths.NLP_SMOLLM_PATH
+                    / f"ft_smollm2_1-7b_sst2-mem075_seed{seed}_bs16_ff/checkpoint-500"
+                ),
                 tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                 token_pos=-1,
             )
@@ -791,7 +816,10 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                 train_dataset="sst2_sft_mem_rate10",  # type:ignore
                 identifier=RANDOM_LABEL_100_SETTING,
                 seed=seed,
-                path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_sst2-mem10_seed{seed}_bs16_ff/checkpoint-500",
+                path=str(
+                    repsim.benchmark.paths.NLP_SMOLLM_PATH
+                    / f"ft_smollm2_1-7b_sst2-mem10_seed{seed}_bs16_ff/checkpoint-500"
+                ),
                 tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                 token_pos=-1,
             )
@@ -815,6 +843,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"mnli_mem_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
                         / "memorizing"
                         / f"glue__mnli_pre{seed}_ft{seed}_labels5_strength{rate}"
                     ),
@@ -827,7 +856,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="mnli",
             identifier="RandomLabels_0",
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"glue__mnli_pre{i}_ft{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos=0,
         )
@@ -872,7 +901,10 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"mnli_sft_mem_rate{rate}",  # type:ignore
                     identifier=rate_to_setting[rate],  # type:ignore
                     seed=seed,
-                    path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_mnli-mem{rate}_seed{seed}_bs16_ff/checkpoint-500",
+                    path=str(
+                        repsim.benchmark.paths.NLP_SMOLLM_PATH
+                        / f"ft_smollm2_1-7b_mnli-mem{rate}_seed{seed}_bs16_ff/checkpoint-500"
+                    ),
                     tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
                     token_pos=-1,
                 )
@@ -884,7 +916,9 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="mnli_sft",  # type:ignore
             identifier="RandomLabels_0",
             seed=seed,
-            path=f"/root/similaritybench/smollm/finetuning/ft_smollm2_1-7b_mnli_seed{seed}_bs16_ff/checkpoint-500",
+            path=str(
+                repsim.benchmark.paths.NLP_SMOLLM_PATH / f"ft_smollm2_1-7b_mnli_seed{seed}_bs16_ff/checkpoint-500"
+            ),
             tokenizer_name="HuggingFaceTB/SmolLM2-1.7B",
             token_pos=-1,
         )
@@ -907,6 +941,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"sst2_aug_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
                         / "augmentation"
                         / f"sst2_pre{seed}_ft{seed}_eda_strength{rate}"
                     ),
@@ -937,7 +972,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="sst2",
             identifier="Augmentation_0",
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"sst2_pretrain{i}_finetune{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos=0,
         )
@@ -967,6 +1002,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"mnli_aug_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
                         / "augmentation"
                         / f"glue__mnli_pre{seed}_ft{seed}_eda_strength{rate}"
                     ),
@@ -979,7 +1015,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="mnli",
             identifier="Augmentation_0",
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"glue__mnli_pre{i}_ft{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos=0,
         )
@@ -1022,7 +1058,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="sst2",
             identifier=STANDARD_SETTING,
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"sst2_pretrain{i}_finetune{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos="mean",
             additional_kwargs={
@@ -1055,7 +1091,10 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     seed=seed,
                     train_dataset=f"sst2_sc_rate{rate}",  # type:ignore
                     path=str(
-                        repsim.benchmark.paths.NLP_MODEL_PATH / "shortcut" / f"sst2_pre{seed}_ft{seed}_scrate{rate}"
+                        repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
+                        / "shortcut"
+                        / f"sst2_pre{seed}_ft{seed}_scrate{rate}"
                     ),
                     tokenizer_name=f"google/multiberts-seed_{seed}",
                     token_pos="mean",
@@ -1098,6 +1137,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"sst2_mem_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
                         / "memorizing"
                         / f"sst2_pre{seed}_ft{seed}_labels5_strength{rate}"
                     ),
@@ -1111,7 +1151,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="sst2",
             identifier="RandomLabels_0",
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"sst2_pretrain{i}_finetune{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos="mean",
             additional_kwargs={"token_pos": "mean"},
@@ -1183,6 +1223,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"sst2_aug_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
                         / "augmentation"
                         / f"sst2_pre{seed}_ft{seed}_eda_strength{rate}"
                     ),
@@ -1215,7 +1256,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="sst2",
             identifier="Augmentation_0",
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"sst2_pretrain{i}_finetune{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"sst2_pretrain{i}_finetune{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos="mean",
             additional_kwargs={"token_pos": "mean"},
@@ -1242,7 +1283,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="mnli",  # type:ignore
             identifier=STANDARD_SETTING,
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"glue__mnli_pre{i}_ft{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos="mean",
             additional_kwargs={"token_pos": "mean"},
@@ -1271,6 +1312,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"mnli_sc_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
                         / "shortcut"
                         / f"glue__mnli_pre{seed}_ft{seed}_scrate{rate}"
                     ),
@@ -1314,6 +1356,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"mnli_mem_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
                         / "memorizing"
                         / f"glue__mnli_pre{seed}_ft{seed}_labels5_strength{rate}"
                     ),
@@ -1327,7 +1370,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="mnli",
             identifier="RandomLabels_0",
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"glue__mnli_pre{i}_ft{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos="mean",
             additional_kwargs={"token_pos": "mean"},
@@ -1383,6 +1426,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
                     train_dataset=f"mnli_aug_rate{rate}",  # type:ignore
                     path=str(
                         repsim.benchmark.paths.NLP_MODEL_PATH
+                        / "bert"
                         / "augmentation"
                         / f"glue__mnli_pre{seed}_ft{seed}_eda_strength{rate}"
                     ),
@@ -1396,7 +1440,7 @@ def all_trained_nlp_models() -> Sequence[NLPModel]:
             train_dataset="mnli",
             identifier="Augmentation_0",
             seed=i,
-            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "standard" / f"glue__mnli_pre{i}_ft{i}"),
+            path=str(repsim.benchmark.paths.NLP_MODEL_PATH / "bert" / "standard" / f"glue__mnli_pre{i}_ft{i}"),
             tokenizer_name=f"google/multiberts-seed_{i}",
             token_pos="mean",
             additional_kwargs={"token_pos": "mean"},
