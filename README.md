@@ -48,7 +48,7 @@ This dataset then should be named `Imagenet100` and located in the directory spe
 ### 1.4 Downloading Models
 
 To get all relevant models, you need to download the model files from Zenodo and unpack the zipped files into corresponding subdirectories of `EXPERIMENT_PATH/models`:
-* Language and graphs: https://doi.org/10.5281/zenodo.11565486. Move the content of `models/nlp` and `eval_results.json` inside `nlp_data.zip` into `EXPERIMENT_PATH/models/nlp`. Move the models inside `graph_data.zip` into `EXPERIMENT_PATH/models/graphs`.
+* Language and graphs: https://doi.org/10.5281/zenodo.11565486. Move the content of `models/nlp` inside `nlp_data.zip` into `EXPERIMENT_PATH/models/nlp`. Move the models inside `graph_data.zip` into `EXPERIMENT_PATH/models/graphs`. SmolLM2 models need to be downloaded separately due to their size (~420GB in total) from https://console.share.innkube.fim.uni-passau.de/browser/public/resi-benchmark%2F.
 * Vision: Run the script `python vision/download_vision_model.py` to auto-download and extract all the models. Alternatively one can manually download the files from Zenodo ([Part 1](https://zenodo.org/records/11544180)/[Part 2](https://zenodo.org/records/11548523)), extract them, and move them into a directory named `<VISION_MODEL_PATH>/vision_models_simbench/.` (check `paths.py` from earlier for `VISION_DATA_PATH` details).
 
 ### 1.5 Downloading Result Files (Optional)
