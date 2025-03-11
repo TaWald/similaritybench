@@ -11,7 +11,7 @@ GRAPH_DOMAIN: DOMAIN_TYPE = "GRAPHS"
 
 # ----------------------------- All Architectures ---------------------------- #
 VISION_ARCHITECTURE_TYPE = Literal["ResNet18", "ResNet34", "ResNet101", "VGG11", "VGG19", "ViT_B32", "ViT_L32"]
-NLP_ARCHITECTURE_TYPE = Literal["BERT-L", "BERT-Base"]
+NLP_ARCHITECTURE_TYPE = Literal["BERT-L", "BERT-Base", "albert-base-v2", "smollm2-1.7b"]
 GRAPH_ARCHITECTURE_TYPE = Literal["GCN", "GAT", "GraphSAGE", "PGNN"]
 
 GCN_MODEL_NAME: GRAPH_ARCHITECTURE_TYPE = "GCN"

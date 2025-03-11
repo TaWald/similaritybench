@@ -22,6 +22,7 @@ from .procrustes import PermutationProcrustes
 from .procrustes import ProcrustesSizeAndShapeDistance
 from .rsa import RSA
 from .rsm_norm_difference import RSMNormDifference
+from .rtd import RTD
 from .statistics import ConcentricityDifference
 from .statistics import MagnitudeDifference
 from .statistics import UniformityDifference
@@ -52,6 +53,7 @@ CLASSES = [
     MagnitudeDifference,
     UniformityDifference,
     CKA,
+    RTD,
 ]
 
 ALL_MEASURES: dict[str, RepresentationalSimilarityMeasure] = {m().name: m() for m in CLASSES}
