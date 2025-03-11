@@ -92,6 +92,12 @@ def get_dataset(
     local_path: Optional[str] = None,
     data_files: Optional[str | list[str] | dict[str, str] | dict[str, list[str]]] = None,
 ) -> datasets.dataset_dict.DatasetDict:
+    # Huggingface moved SST2 and MNLI to new paths on the hub. Here, we update the old paths to the new paths.
+    if dataset_path == "sst2":
+        dataset_path = "stanfordnlp/sst2"
+    elif dataset_path == "glue":
+        dataset_path = "nyu-mll/glue"
+
     if dataset_path == "csv":
         ds = datasets.load_dataset(dataset_path, data_files=data_files)
     elif local_path or Path(dataset_path).exists():
